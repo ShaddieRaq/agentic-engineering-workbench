@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { SimpleHarness } from "./harness/simpleHarness.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
@@ -9,9 +10,10 @@ if (!apiKey) {
 
 async function main(apiKey: string): Promise<void> {
   const provider = new OpenAIProvider(apiKey);
+  const harness = new SimpleHarness(provider);
 
-  const output = await provider.generateText(
-    "Reply with exactly: Provider abstraction works.",
+  const output = await harness.run(
+    "Reply with exactly: The harness is using the OpenAI provider.",
   );
 
   console.log(output);
