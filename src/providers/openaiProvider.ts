@@ -1,6 +1,7 @@
 import OpenAI from "openai";
+import type { AIProvider } from "./aiProvider.js";
 
-export class OpenAIProvider {
+export class OpenAIProvider implements AIProvider {
   private readonly client: OpenAI;
 
   constructor(apiKey: string) {
