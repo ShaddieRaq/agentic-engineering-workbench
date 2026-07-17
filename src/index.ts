@@ -17,6 +17,7 @@ async function main(apiKey: string): Promise<void> {
   );
 
   console.log(result.output);
+  console.log(`Duration: ${result.durationMs.toFixed(0)} ms`);
 }
 
 main(apiKey).catch((error: unknown) => {
