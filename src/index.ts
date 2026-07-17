@@ -1,5 +1,5 @@
 import "dotenv/config";
-import OpenAI from "openai";
+import { OpenAIProvider } from "./providers/openaiProvider.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -7,19 +7,17 @@ if (!apiKey) {
   throw new Error("OPENAI_API_KEY is missing from .env");
 }
 
-const client = new OpenAI({ apiKey });
+async function main(apiKey: string): Promise<void> {
+  const provider = new OpenAIProvider(apiKey);
 
-async function main(): Promise<void> {
-  const response = await client.responses.create({
-    model: "gpt-5.4",
-    input:
-      "Reply with exactly: Agentic Engineering Workbench is connected.",
-  });
+  const output = await provider.generateText(
+    "Reply with exactly: Provider abstraction works.",
+  );
 
-  console.log(response.output_text);
+  console.log(output);
 }
 
-main().catch((error: unknown) => {
-  console.error("API request failed:", error);
+main(apiKey).catch((error: unknown) => {
+  console.error("Application failed:", error);
   process.exit(1);
 });
