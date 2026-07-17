@@ -9,9 +9,8 @@ describe("SimpleHarness", () => {
 
     const result = await harness.run("Analyze this task");
 
-    expect(result).toEqual({
-      task: "Analyze this task",
-      output: "Harness response",
-    });
+    expect(result.task).toBe("Analyze this task");
+    expect(result.output).toBe("Harness response");
+    expect(result.durationMs).toBeGreaterThanOrEqual(0);
   });
 });
