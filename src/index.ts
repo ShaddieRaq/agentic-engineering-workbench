@@ -12,11 +12,11 @@ async function main(apiKey: string): Promise<void> {
   const provider = new OpenAIProvider(apiKey);
   const harness = new SimpleHarness(provider);
 
-  const output = await harness.run(
+  const result = await harness.run(
     "Reply with exactly: The harness is using the OpenAI provider.",
   );
 
-  console.log(output);
+  console.log(result.output);
 }
 
 main(apiKey).catch((error: unknown) => {
