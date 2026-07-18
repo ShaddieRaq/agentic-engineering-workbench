@@ -47,6 +47,7 @@ describe("writeRun", () => {
       };
 
     const filePath = await writeRun(result, runsDirectory);
+    expect(filePath).toContain("run-test-run-123.json");
     const fileContents = await readFile(filePath, "utf8");
 
     expect(JSON.parse(fileContents)).toEqual(result);

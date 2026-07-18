@@ -8,8 +8,7 @@ export async function writeRun(
 ): Promise<string> {
   await mkdir(runsDirectory, { recursive: true });
 
-  const timestamp = result.completedAt.replaceAll(":", "-");
-  const filePath = join(runsDirectory, `run-${timestamp}.json`);
+  const filePath = join(runsDirectory, `run-${result.runId}.json`);
 
   await writeFile(filePath, JSON.stringify(result, null, 2), "utf8");
 
