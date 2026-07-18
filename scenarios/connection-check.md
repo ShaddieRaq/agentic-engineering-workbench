@@ -1,0 +1,1 @@
+Reply with exactly: The harness is using the OpenAI provider.
