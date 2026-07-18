@@ -5,6 +5,7 @@ import { writeRun } from "./harness/runWriter.js";
 import { loadRole } from "./harness/roleLoader.js";
 import { loadTask } from "./harness/taskLoader.js";
 import { parseArgs } from "./cli/parseArgs.js";
+import { getFileId } from "./cli/getFileId.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -18,8 +19,8 @@ async function main(apiKey: string): Promise<void> {
     const provider = new OpenAIProvider(apiKey);
     const harness = new SimpleHarness(provider);
 
-    const role = await loadRole("technical-coach", rolePath);
-    const task = await loadTask("connection-check", taskPath);
+    const role = await loadRole(getFileId(rolePath), rolePath);
+    const task = await loadTask(getFileId(taskPath), taskPath);
 
     const result = await harness.run(role, task);
     const runFilePath = await writeRun(result);
