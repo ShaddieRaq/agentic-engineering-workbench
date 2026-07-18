@@ -16,10 +16,11 @@ export class SimpleHarness {
     const durationMs = performance.now() - startedAt;
 
     return {
-      task,
-      output,
-      durationMs,
-      completedAt: new Date().toISOString(),
-    };
+        role,
+        task,
+        output,
+        durationMs,
+        completedAt: new Date().toISOString(),
+      };
   }
 }

@@ -25,6 +25,10 @@ describe("writeRun", () => {
     createdDirectories.push(runsDirectory);
 
     const result = {
+        role: {
+            id: "technical-coach",
+            instructions: "Explain concepts clearly and practically.",
+          },
         task: {
           id: "analyze-task",
           instruction: "Analyze this task",
