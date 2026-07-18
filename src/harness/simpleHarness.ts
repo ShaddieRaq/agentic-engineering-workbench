@@ -12,9 +12,10 @@ export class SimpleHarness {
     const durationMs = performance.now() - startedAt;
   
     return {
-      task,
-      output,
-      durationMs,
-    };
+        task,
+        output,
+        durationMs,
+        completedAt: new Date().toISOString(),
+      };
   }
 }
