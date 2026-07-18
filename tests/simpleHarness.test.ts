@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { SimpleHarness } from "../src/harness/simpleHarness.js";
 import { FakeProvider } from "../src/providers/fakeProvider.js";
 
+const role = {
+    id: "technical-coach",
+    instructions: "Explain concepts clearly and practically.",
+  };
+  
 describe("SimpleHarness", () => {
     it("returns the task and provider response", async () => {
       const provider = new FakeProvider("Harness response");
@@ -12,7 +17,7 @@ describe("SimpleHarness", () => {
         instruction: "Analyze this task",
       };
   
-      const result = await harness.run(task);
+      const result = await harness.run(role, task);
   
       expect(result.task).toEqual(task);
       expect(result.output).toBe("Harness response");

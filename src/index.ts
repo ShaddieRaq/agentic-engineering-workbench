@@ -9,11 +9,16 @@ if (!apiKey) {
   throw new Error("OPENAI_API_KEY is missing from .env");
 }
 
+const role = {
+    id: "technical-coach",
+    instructions: "Follow the task exactly and respond concisely.",
+  };
+
 async function main(apiKey: string): Promise<void> {
   const provider = new OpenAIProvider(apiKey);
   const harness = new SimpleHarness(provider);
 
-  const result = await harness.run({
+  const result = await harness.run(role, {
     id: "connection-check",
     instruction:
       "Reply with exactly: The harness is using the OpenAI provider.",

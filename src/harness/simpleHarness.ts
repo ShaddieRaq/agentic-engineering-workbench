@@ -1,22 +1,25 @@
 import type { AIProvider } from "../providers/aiProvider.js";
+import { buildPrompt } from "./buildPrompt.js";
 import type { HarnessResult } from "./harnessResult.js";
+import type { RoleSpec } from "./roleSpec.js";
 import type { TaskSpec } from "./taskSpec.js";
 
 export class SimpleHarness {
-    constructor(private readonly provider: AIProvider) {}
-  
-    async run(task: TaskSpec): Promise<HarnessResult> {
-      const startedAt = performance.now();
-  
-      const output = await this.provider.generateText(task.instruction);
-  
-      const durationMs = performance.now() - startedAt;
-  
-      return {
-        task,
-        output,
-        durationMs,
-        completedAt: new Date().toISOString(),
-      };
-    }
+  constructor(private readonly provider: AIProvider) {}
+
+  async run(role: RoleSpec, task: TaskSpec): Promise<HarnessResult> {
+    const startedAt = performance.now();
+    const prompt = buildPrompt(role, task);
+
+    const output = await this.provider.generateText(prompt);
+
+    const durationMs = performance.now() - startedAt;
+
+    return {
+      task,
+      output,
+      durationMs,
+      completedAt: new Date().toISOString(),
+    };
   }
+}
