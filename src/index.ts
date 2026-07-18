@@ -3,6 +3,7 @@ import { SimpleHarness } from "./harness/simpleHarness.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { writeRun } from "./harness/runWriter.js";
 import { loadRole } from "./harness/roleLoader.js";
+import { loadTask } from "./harness/taskLoader.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -19,11 +20,12 @@ async function main(apiKey: string): Promise<void> {
   const provider = new OpenAIProvider(apiKey);
   const harness = new SimpleHarness(provider);
 
-  const result = await harness.run(role, {
-    id: "connection-check",
-    instruction:
-      "Reply with exactly: The harness is using the OpenAI provider.",
-  });
+  const task = await loadTask(
+    "connection-check",
+    "scenarios/connection-check.md",
+  );
+  
+  const result = await harness.run(role, task);
   const runFilePath = await writeRun(result);
 
   console.log(result.output);
