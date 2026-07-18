@@ -2,6 +2,7 @@ import "dotenv/config";
 import { SimpleHarness } from "./harness/simpleHarness.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { writeRun } from "./harness/runWriter.js";
+import { loadRole } from "./harness/roleLoader.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -9,10 +10,10 @@ if (!apiKey) {
   throw new Error("OPENAI_API_KEY is missing from .env");
 }
 
-const role = {
-    id: "technical-coach",
-    instructions: "Follow the task exactly and respond concisely.",
-  };
+const role = await loadRole(
+    "technical-coach",
+    "roles/technical-coach.md",
+  );
 
 async function main(apiKey: string): Promise<void> {
   const provider = new OpenAIProvider(apiKey);
