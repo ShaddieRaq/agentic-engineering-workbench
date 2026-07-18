@@ -26,5 +26,6 @@ describe("SimpleHarness", () => {
         expect(result.role).toEqual(role);
         expect(result.prompt).toContain(role.instructions);
         expect(result.prompt).toContain(task.instruction);
+        expect(result.runId).toBeTruthy();
     });
 });
