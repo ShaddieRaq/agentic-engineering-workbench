@@ -4,29 +4,34 @@ import type { HarnessResult } from "./harnessResult.js";
 import { roleSpecSchema, type RoleSpec } from "./roleSpec.js";
 import { taskSpecSchema, type TaskSpec } from "./taskSpec.js";
 import { randomUUID } from "node:crypto";
+import type { ContextItem } from "./contextItem.js";
 
 export class SimpleHarness {
-  constructor(private readonly provider: AIProvider) {}
+    constructor(private readonly provider: AIProvider) { }
 
-  async run(role: RoleSpec, task: TaskSpec): Promise<HarnessResult> {
-    const validatedRole = roleSpecSchema.parse(role);
-    const validatedTask = taskSpecSchema.parse(task);
-  
-    const startedAt = performance.now();
-    const prompt = buildPrompt(validatedRole, validatedTask);
-  
-    const output = await this.provider.generateText(prompt);
+    async run(
+        role: RoleSpec,
+        task: TaskSpec,
+        context: ContextItem[] = [],
+    ): Promise<HarnessResult> {
+        const validatedRole = roleSpecSchema.parse(role);
+        const validatedTask = taskSpecSchema.parse(task);
 
-    const durationMs = performance.now() - startedAt;
+        const startedAt = performance.now();
+        const prompt = buildPrompt(validatedRole, validatedTask, context);
 
-    return {
-        runId: randomUUID(),
-        role: validatedRole,
-        task: validatedTask,
-        prompt,
-        output,
-        durationMs,
-        completedAt: new Date().toISOString(),
-      };
-  }
+        const output = await this.provider.generateText(prompt);
+
+        const durationMs = performance.now() - startedAt;
+
+        return {
+            runId: randomUUID(),
+            role: validatedRole,
+            task: validatedTask,
+            prompt,
+            output,
+            durationMs,
+            completedAt: new Date().toISOString(),
+        };
+    }
 }
