@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { SimpleHarness } from "./harness/simpleHarness.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
+import { writeRun } from "./harness/runWriter.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -16,8 +17,11 @@ async function main(apiKey: string): Promise<void> {
     "Reply with exactly: The harness is using the OpenAI provider.",
   );
 
+  const runFilePath = await writeRun(result);
+
   console.log(result.output);
   console.log(`Duration: ${result.durationMs.toFixed(0)} ms`);
+  console.log(`Run saved: ${runFilePath}`);
 }
 
 main(apiKey).catch((error: unknown) => {
