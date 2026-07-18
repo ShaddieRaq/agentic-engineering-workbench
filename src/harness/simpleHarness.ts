@@ -1,25 +1,28 @@
 import type { AIProvider } from "../providers/aiProvider.js";
 import { buildPrompt } from "./buildPrompt.js";
 import type { HarnessResult } from "./harnessResult.js";
-import type { RoleSpec } from "./roleSpec.js";
-import type { TaskSpec } from "./taskSpec.js";
+import { roleSpecSchema, type RoleSpec } from "./roleSpec.js";
+import { taskSpecSchema, type TaskSpec } from "./taskSpec.js";
 import { randomUUID } from "node:crypto";
 
 export class SimpleHarness {
   constructor(private readonly provider: AIProvider) {}
 
   async run(role: RoleSpec, task: TaskSpec): Promise<HarnessResult> {
+    const validatedRole = roleSpecSchema.parse(role);
+    const validatedTask = taskSpecSchema.parse(task);
+  
     const startedAt = performance.now();
-    const prompt = buildPrompt(role, task);
-
+    const prompt = buildPrompt(validatedRole, validatedTask);
+  
     const output = await this.provider.generateText(prompt);
 
     const durationMs = performance.now() - startedAt;
 
     return {
         runId: randomUUID(),
-        role,
-        task,
+        role: validatedRole,
+        task: validatedTask,
         prompt,
         output,
         durationMs,

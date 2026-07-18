@@ -28,4 +28,20 @@ describe("SimpleHarness", () => {
         expect(result.prompt).toContain(task.instruction);
         expect(result.runId).toBeTruthy();
     });
+    it("rejects an invalid task before calling the provider", async () => {
+        const provider = new FakeProvider("This should not be returned");
+        const harness = new SimpleHarness(provider);
+      
+        const role = {
+          id: "technical-coach",
+          instructions: "Explain concepts clearly and practically.",
+        };
+      
+        const invalidTask = {
+          id: "invalid-task",
+          instruction: "",
+        };
+      
+        await expect(harness.run(role, invalidTask)).rejects.toThrow();
+      });
 });
