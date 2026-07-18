@@ -13,10 +13,11 @@ async function main(apiKey: string): Promise<void> {
   const provider = new OpenAIProvider(apiKey);
   const harness = new SimpleHarness(provider);
 
-  const result = await harness.run(
-    "Reply with exactly: The harness is using the OpenAI provider.",
-  );
-
+  const result = await harness.run({
+    id: "connection-check",
+    instruction:
+      "Reply with exactly: The harness is using the OpenAI provider.",
+  });
   const runFilePath = await writeRun(result);
 
   console.log(result.output);

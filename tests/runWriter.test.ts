@@ -25,11 +25,14 @@ describe("writeRun", () => {
     createdDirectories.push(runsDirectory);
 
     const result = {
-      task: "Analyze this task",
-      output: "Harness response",
-      durationMs: 25,
-      completedAt: "2026-07-18T12:41:33.640Z",
-    };
+        task: {
+          id: "analyze-task",
+          instruction: "Analyze this task",
+        },
+        output: "Harness response",
+        durationMs: 25,
+        completedAt: "2026-07-18T12:41:33.640Z",
+      };
 
     const filePath = await writeRun(result, runsDirectory);
     const fileContents = await readFile(filePath, "utf8");

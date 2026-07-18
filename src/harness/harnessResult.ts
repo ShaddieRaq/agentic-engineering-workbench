@@ -1,6 +1,8 @@
+import type { TaskSpec } from "./taskSpec.js";
+
 export interface HarnessResult {
-    task: string;
-    output: string;
-    durationMs: number;
-    completedAt: string;
-  }
+  task: TaskSpec;
+  output: string;
+  durationMs: number;
+  completedAt: string;
+}
