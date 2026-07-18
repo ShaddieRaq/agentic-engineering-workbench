@@ -18,6 +18,7 @@ export class SimpleHarness {
     return {
         role,
         task,
+        prompt,
         output,
         durationMs,
         completedAt: new Date().toISOString(),

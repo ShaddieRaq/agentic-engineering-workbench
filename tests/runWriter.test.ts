@@ -33,6 +33,13 @@ describe("writeRun", () => {
           id: "analyze-task",
           instruction: "Analyze this task",
         },
+        prompt: [
+            "ROLE INSTRUCTIONS:",
+            "Explain concepts clearly and practically.",
+            "",
+            "TASK:",
+            "Analyze this task",
+          ].join("\n"),
         output: "Harness response",
         durationMs: 25,
         completedAt: "2026-07-18T12:41:33.640Z",
