@@ -13,6 +13,7 @@ export class SimpleHarness {
     constructor(
         private readonly provider: AIProvider,
         private readonly evaluators: Evaluator[],
+        private readonly harnessId: string,
     ) { }
 
     async run(
@@ -49,6 +50,7 @@ export class SimpleHarness {
 
         return {
             runId: randomUUID(),
+            harnessId: this.harnessId,
             role: validatedRole,
             task: validatedTask,
             context: validatedContext,

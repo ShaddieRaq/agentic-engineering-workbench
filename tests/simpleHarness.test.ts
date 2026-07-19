@@ -12,9 +12,11 @@ const role = {
 describe("SimpleHarness", () => {
     it("returns the task and provider response", async () => {
         const provider = new FakeProvider("Harness response");
-        const harness = new SimpleHarness(provider, [
-            new NonEmptyOutputEvaluator(),
-        ]);
+        const harness = new SimpleHarness(
+            provider,
+            [new NonEmptyOutputEvaluator()],
+            "test-harness",
+        );
 
         const task = {
             id: "analyze-task",
@@ -44,7 +46,8 @@ describe("SimpleHarness", () => {
         const provider = new FakeProvider("This should not be returned");
         const harness = new SimpleHarness(provider, [
             new NonEmptyOutputEvaluator(),
-        ]);
+        ],
+            "test-harness");
 
         const role = {
             id: "technical-coach",
@@ -62,7 +65,8 @@ describe("SimpleHarness", () => {
         const provider = new FakeProvider("This should not be returned");
         const harness = new SimpleHarness(provider, [
             new NonEmptyOutputEvaluator(),
-        ]);
+        ],
+            "test-harness");
 
         const role = {
             id: "technical-coach",
@@ -90,7 +94,8 @@ describe("SimpleHarness", () => {
         const provider = new FakeProvider("Context-aware response");
         const harness = new SimpleHarness(provider, [
             new NonEmptyOutputEvaluator(),
-        ]);
+        ],
+            "test-harness");
 
         const role = {
             id: "technical-coach",
@@ -121,34 +126,35 @@ describe("SimpleHarness", () => {
     it("runs every configured evaluator", async () => {
         const provider = new FakeProvider("Hello");
         const harness = new SimpleHarness(provider, [
-          new NonEmptyOutputEvaluator(),
-          new MinimumLengthEvaluator(10),
-        ]);
-      
+            new NonEmptyOutputEvaluator(),
+            new MinimumLengthEvaluator(10),
+        ],
+            "test-harness");
+
         const result = await harness.run(
             {
-              id: "coach",
-              instructions: "Explain clearly.",
+                id: "coach",
+                instructions: "Explain clearly.",
             },
             {
-              id: "example",
-              instruction: "Explain the example.",
+                id: "example",
+                instruction: "Explain the example.",
             },
             [],
-          );
-      
+        );
+
         expect(result.evaluations).toEqual([
-          {
-            evaluatorId: "non-empty-output",
-            passed: true,
-            message: "The agent produced output.",
-          },
-          {
-            evaluatorId: "minimum-length",
-            passed: false,
-            message: "The output had 5 characters but required at least 10.",
-          },
+            {
+                evaluatorId: "non-empty-output",
+                passed: true,
+                message: "The agent produced output.",
+            },
+            {
+                evaluatorId: "minimum-length",
+                passed: false,
+                message: "The output had 5 characters but required at least 10.",
+            },
         ]);
         expect(result.passed).toBe(false);
-      });
+    });
 });

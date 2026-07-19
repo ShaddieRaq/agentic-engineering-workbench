@@ -25,6 +25,7 @@ async function main(apiKey: string): Promise<void> {
     const harness = new SimpleHarness(
         provider,
         harnessDefinition.evaluators,
+        harnessDefinition.id,
       );
     const role = await loadRole(getFileId(rolePath), rolePath);
     const task = await loadTask(getFileId(taskPath), taskPath);
