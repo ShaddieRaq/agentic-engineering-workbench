@@ -17,11 +17,11 @@ if (!apiKey) {
 
 async function main(apiKey: string): Promise<void> {
 
-    const { rolePath, taskPath, contextPaths } = parseArgs(
+    const { rolePath, taskPath, contextPaths, harnessId } = parseArgs(
         process.argv.slice(2),
-    );
+      );
     const provider = new OpenAIProvider(apiKey);
-    const harnessDefinition = getHarnessDefinition("technical-coach");
+    const harnessDefinition = getHarnessDefinition(harnessId);
     const harness = new SimpleHarness(
         provider,
         harnessDefinition.evaluators,
