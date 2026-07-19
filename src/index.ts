@@ -10,6 +10,7 @@ import { loadContextItem } from "./harness/contextLoader.js";
 import { NonEmptyOutputEvaluator } from "./evaluations/evaluateNonEmptyOutput.js";
 import { MinimumLengthEvaluator } from "./evaluations/minimumLengthEvaluator.js";
 import { RequiredPhraseEvaluator } from "./evaluations/requiredPhraseEvaluator.js";
+import { ForbiddenPhraseEvaluator } from "./evaluations/forbiddenPhraseEvaluator.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -27,6 +28,7 @@ async function main(apiKey: string): Promise<void> {
         new NonEmptyOutputEvaluator(),
         new MinimumLengthEvaluator(100),
         new RequiredPhraseEvaluator("agentic harness"),
+        new ForbiddenPhraseEvaluator("I cannot help"),
       ]);
     const role = await loadRole(getFileId(rolePath), rolePath);
     const task = await loadTask(getFileId(taskPath), taskPath);
