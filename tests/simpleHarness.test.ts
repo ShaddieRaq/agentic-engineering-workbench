@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SimpleHarness } from "../src/harness/simpleHarness.js";
 import { FakeProvider } from "../src/providers/fakeProvider.js";
 import { NonEmptyOutputEvaluator } from "../src/evaluations/evaluateNonEmptyOutput.js";
+import { MinimumLengthEvaluator } from "../src/evaluations/minimumLengthEvaluator.js";
 
 const role = {
     id: "technical-coach",
@@ -12,8 +13,8 @@ describe("SimpleHarness", () => {
     it("returns the task and provider response", async () => {
         const provider = new FakeProvider("Harness response");
         const harness = new SimpleHarness(provider, [
-  new NonEmptyOutputEvaluator(),
-]);
+            new NonEmptyOutputEvaluator(),
+        ]);
 
         const task = {
             id: "analyze-task",
@@ -33,17 +34,17 @@ describe("SimpleHarness", () => {
         expect(result.context).toEqual([]);
         expect(result.evaluations).toEqual([
             {
-              evaluatorId: "non-empty-output",
-              passed: true,
-              message: "The agent produced output.",
+                evaluatorId: "non-empty-output",
+                passed: true,
+                message: "The agent produced output.",
             },
-          ]);
+        ]);
     });
     it("rejects an invalid task before calling the provider", async () => {
         const provider = new FakeProvider("This should not be returned");
         const harness = new SimpleHarness(provider, [
-  new NonEmptyOutputEvaluator(),
-]);
+            new NonEmptyOutputEvaluator(),
+        ]);
 
         const role = {
             id: "technical-coach",
@@ -60,8 +61,8 @@ describe("SimpleHarness", () => {
     it("rejects invalid context before calling the provider", async () => {
         const provider = new FakeProvider("This should not be returned");
         const harness = new SimpleHarness(provider, [
-  new NonEmptyOutputEvaluator(),
-]);
+            new NonEmptyOutputEvaluator(),
+        ]);
 
         const role = {
             id: "technical-coach",
@@ -88,8 +89,8 @@ describe("SimpleHarness", () => {
     it("includes valid context in the prompt and result", async () => {
         const provider = new FakeProvider("Context-aware response");
         const harness = new SimpleHarness(provider, [
-  new NonEmptyOutputEvaluator(),
-]);
+            new NonEmptyOutputEvaluator(),
+        ]);
 
         const role = {
             id: "technical-coach",
@@ -117,4 +118,36 @@ describe("SimpleHarness", () => {
             "This project is an agentic engineering workbench.",
         );
     });
+    it("runs every configured evaluator", async () => {
+        const provider = new FakeProvider("Hello");
+        const harness = new SimpleHarness(provider, [
+          new NonEmptyOutputEvaluator(),
+          new MinimumLengthEvaluator(10),
+        ]);
+      
+        const result = await harness.run(
+            {
+              id: "coach",
+              instructions: "Explain clearly.",
+            },
+            {
+              id: "example",
+              instruction: "Explain the example.",
+            },
+            [],
+          );
+      
+        expect(result.evaluations).toEqual([
+          {
+            evaluatorId: "non-empty-output",
+            passed: true,
+            message: "The agent produced output.",
+          },
+          {
+            evaluatorId: "minimum-length",
+            passed: false,
+            message: "The output had 5 characters but required at least 10.",
+          },
+        ]);
+      });
 });
