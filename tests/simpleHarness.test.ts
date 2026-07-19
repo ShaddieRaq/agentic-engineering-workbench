@@ -32,43 +32,73 @@ describe("SimpleHarness", () => {
     it("rejects an invalid task before calling the provider", async () => {
         const provider = new FakeProvider("This should not be returned");
         const harness = new SimpleHarness(provider);
-      
+
         const role = {
-          id: "technical-coach",
-          instructions: "Explain concepts clearly and practically.",
+            id: "technical-coach",
+            instructions: "Explain concepts clearly and practically.",
         };
-      
+
         const invalidTask = {
-          id: "invalid-task",
-          instruction: "",
+            id: "invalid-task",
+            instruction: "",
         };
-      
+
         await expect(harness.run(role, invalidTask)).rejects.toThrow();
-      });
-      it("rejects invalid context before calling the provider", async () => {
+    });
+    it("rejects invalid context before calling the provider", async () => {
         const provider = new FakeProvider("This should not be returned");
         const harness = new SimpleHarness(provider);
-      
+
         const role = {
-          id: "technical-coach",
-          instructions: "Explain concepts clearly and practically.",
+            id: "technical-coach",
+            instructions: "Explain concepts clearly and practically.",
         };
-      
+
         const task = {
-          id: "explain-harness",
-          instruction: "Explain what an agentic harness is.",
+            id: "explain-harness",
+            instruction: "Explain what an agentic harness is.",
         };
-      
+
         const invalidContext = [
-          {
-            id: "readme",
-            source: "README.md",
-            content: "",
-          },
+            {
+                id: "readme",
+                source: "README.md",
+                content: "",
+            },
         ];
-      
+
         await expect(
-          harness.run(role, task, invalidContext),
+            harness.run(role, task, invalidContext),
         ).rejects.toThrow();
-      });
+    });
+    it("includes valid context in the prompt and result", async () => {
+        const provider = new FakeProvider("Context-aware response");
+        const harness = new SimpleHarness(provider);
+
+        const role = {
+            id: "technical-coach",
+            instructions: "Explain concepts clearly and practically.",
+        };
+
+        const task = {
+            id: "analyze-project",
+            instruction: "Explain what this project does.",
+        };
+
+        const context = [
+            {
+                id: "readme",
+                source: "README.md",
+                content: "This project is an agentic engineering workbench.",
+            },
+        ];
+
+        const result = await harness.run(role, task, context);
+
+        expect(result.context).toEqual(context);
+        expect(result.prompt).toContain("Source: README.md");
+        expect(result.prompt).toContain(
+            "This project is an agentic engineering workbench.",
+        );
+    });
 });
