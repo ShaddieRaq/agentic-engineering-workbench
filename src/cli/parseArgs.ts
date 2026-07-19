@@ -1,6 +1,7 @@
 export interface CliArgs {
     rolePath: string;
     taskPath: string;
+    contextPaths: string[];
   }
   
   export function parseArgs(args: string[]): CliArgs {
@@ -17,9 +18,14 @@ export interface CliArgs {
     if (taskIndex === -1 || !taskPath) {
       throw new Error("Missing required --task argument");
     }
-  
+    const contextPaths = args
+    .map((value, index) =>
+      value === "--context" ? args[index + 1] : undefined,
+    )
+    .filter((value): value is string => Boolean(value));
     return {
-      rolePath,
-      taskPath,
-    };
+        rolePath,
+        taskPath,
+        contextPaths,
+      };
   }
