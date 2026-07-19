@@ -18,6 +18,7 @@ describe("parseArgs", () => {
         rolePath: "roles/technical-coach.md",
         taskPath: "scenarios/connection-check.md",
         contextPaths: ["README.md", "docs/architecture.md"],
+        harnessId: "technical-coach",
       });
   });
 
@@ -47,5 +48,17 @@ describe("parseArgs", () => {
     ]);
   
     expect(result.contextPaths).toEqual([]);
+  });
+  it("parses a harness id", () => {
+    const result = parseArgs([
+      "--harness",
+      "technical-coach",
+      "--role",
+      "roles/technical-coach.md",
+      "--task",
+      "scenarios/explain-agentic-harness.md",
+    ]);
+  
+    expect(result.harnessId).toBe("technical-coach");
   });
 });
