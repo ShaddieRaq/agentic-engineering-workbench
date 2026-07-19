@@ -27,6 +27,7 @@ describe("SimpleHarness", () => {
         expect(result.prompt).toContain(role.instructions);
         expect(result.prompt).toContain(task.instruction);
         expect(result.runId).toBeTruthy();
+        expect(result.context).toEqual([]);
     });
     it("rejects an invalid task before calling the provider", async () => {
         const provider = new FakeProvider("This should not be returned");

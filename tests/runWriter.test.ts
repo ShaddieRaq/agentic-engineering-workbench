@@ -34,6 +34,7 @@ describe("writeRun", () => {
           id: "analyze-task",
           instruction: "Analyze this task",
         },
+        context: [],
         prompt: [
             "ROLE INSTRUCTIONS:",
             "Explain concepts clearly and practically.",

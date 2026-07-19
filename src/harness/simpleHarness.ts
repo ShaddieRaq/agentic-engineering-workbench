@@ -37,6 +37,7 @@ export class SimpleHarness {
             runId: randomUUID(),
             role: validatedRole,
             task: validatedTask,
+            context: validatedContext,
             prompt,
             output,
             durationMs,
