@@ -7,10 +7,7 @@ import { loadTask } from "./harness/taskLoader.js";
 import { parseArgs } from "./cli/parseArgs.js";
 import { getFileId } from "./cli/getFileId.js";
 import { loadContextItem } from "./harness/contextLoader.js";
-import { NonEmptyOutputEvaluator } from "./evaluations/evaluateNonEmptyOutput.js";
-import { MinimumLengthEvaluator } from "./evaluations/minimumLengthEvaluator.js";
-import { RequiredPhraseEvaluator } from "./evaluations/requiredPhraseEvaluator.js";
-import { ForbiddenPhraseEvaluator } from "./evaluations/forbiddenPhraseEvaluator.js";
+import { technicalCoachHarness } from "./harnesses/technicalCoachHarness.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -24,12 +21,10 @@ async function main(apiKey: string): Promise<void> {
         process.argv.slice(2),
     );
     const provider = new OpenAIProvider(apiKey);
-    const harness = new SimpleHarness(provider, [
-        new NonEmptyOutputEvaluator(),
-        new MinimumLengthEvaluator(100),
-        new RequiredPhraseEvaluator("agentic harness"),
-        new ForbiddenPhraseEvaluator("I cannot help"),
-      ]);
+    const harness = new SimpleHarness(
+        provider,
+        technicalCoachHarness.evaluators,
+      );
     const role = await loadRole(getFileId(rolePath), rolePath);
     const task = await loadTask(getFileId(taskPath), taskPath);
     const context = await Promise.all(
