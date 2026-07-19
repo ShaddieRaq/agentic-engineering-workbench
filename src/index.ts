@@ -6,6 +6,7 @@ import { loadRole } from "./harness/roleLoader.js";
 import { loadTask } from "./harness/taskLoader.js";
 import { parseArgs } from "./cli/parseArgs.js";
 import { getFileId } from "./cli/getFileId.js";
+import { loadContextItem } from "./harness/contextLoader.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -15,14 +16,20 @@ if (!apiKey) {
 
 async function main(apiKey: string): Promise<void> {
 
-    const { rolePath, taskPath } = parseArgs(process.argv.slice(2));
+    const { rolePath, taskPath, contextPaths } = parseArgs(
+        process.argv.slice(2),
+    );
     const provider = new OpenAIProvider(apiKey);
     const harness = new SimpleHarness(provider);
 
     const role = await loadRole(getFileId(rolePath), rolePath);
     const task = await loadTask(getFileId(taskPath), taskPath);
-
-    const result = await harness.run(role, task);
+    const context = await Promise.all(
+        contextPaths.map((contextPath) =>
+            loadContextItem(getFileId(contextPath), contextPath),
+        ),
+    );
+    const result = await harness.run(role, task, context);
     const runFilePath = await writeRun(result);
 
     console.log(result.output);
