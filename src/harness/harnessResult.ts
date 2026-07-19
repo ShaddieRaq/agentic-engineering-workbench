@@ -13,4 +13,5 @@ export interface HarnessResult {
     evaluations: EvaluationResult[];
     durationMs: number;
     completedAt: string;
+    passed: boolean;
 }

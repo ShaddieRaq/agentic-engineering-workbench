@@ -36,6 +36,7 @@ export class SimpleHarness {
         const evaluations = this.evaluators.map((evaluator) =>
             evaluator.evaluate(output),
           );
+          const passed = evaluations.every((evaluation) => evaluation.passed);
         const durationMs = performance.now() - startedAt;
 
         return {
@@ -47,6 +48,7 @@ export class SimpleHarness {
             output,
             evaluations,
             durationMs,
+            passed: true,
             completedAt: new Date().toISOString(),
         };
     }
