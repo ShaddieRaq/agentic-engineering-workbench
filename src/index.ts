@@ -35,6 +35,13 @@ async function main(apiKey: string): Promise<void> {
     console.log(result.output);
     console.log(`Duration: ${result.durationMs.toFixed(0)} ms`);
     console.log(`Run saved: ${runFilePath}`);
+    for (const evaluation of result.evaluations) {
+        console.log(
+          `Evaluation [${evaluation.evaluatorId}]: ${
+            evaluation.passed ? "PASS" : "FAIL"
+          } - ${evaluation.message}`,
+        );
+      }
 }
 
 main(apiKey).catch((error: unknown) => {
