@@ -14,4 +14,10 @@ describe("getHarnessDefinition", () => {
       "Unknown harness: unknown",
     );
   });
+  it("returns the basic reliability harness", () => {
+    const definition = getHarnessDefinition("basic-reliability");
+  
+    expect(definition.id).toBe("basic-reliability");
+    expect(definition.evaluators).toHaveLength(2);
+  });
 });
