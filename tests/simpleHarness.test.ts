@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SimpleHarness } from "../src/harness/simpleHarness.js";
 import { FakeProvider } from "../src/providers/fakeProvider.js";
+import { NonEmptyOutputEvaluator } from "../src/evaluations/evaluateNonEmptyOutput.js";
 
 const role = {
     id: "technical-coach",
@@ -10,7 +11,9 @@ const role = {
 describe("SimpleHarness", () => {
     it("returns the task and provider response", async () => {
         const provider = new FakeProvider("Harness response");
-        const harness = new SimpleHarness(provider);
+        const harness = new SimpleHarness(provider, [
+  new NonEmptyOutputEvaluator(),
+]);
 
         const task = {
             id: "analyze-task",
@@ -38,7 +41,9 @@ describe("SimpleHarness", () => {
     });
     it("rejects an invalid task before calling the provider", async () => {
         const provider = new FakeProvider("This should not be returned");
-        const harness = new SimpleHarness(provider);
+        const harness = new SimpleHarness(provider, [
+  new NonEmptyOutputEvaluator(),
+]);
 
         const role = {
             id: "technical-coach",
@@ -54,7 +59,9 @@ describe("SimpleHarness", () => {
     });
     it("rejects invalid context before calling the provider", async () => {
         const provider = new FakeProvider("This should not be returned");
-        const harness = new SimpleHarness(provider);
+        const harness = new SimpleHarness(provider, [
+  new NonEmptyOutputEvaluator(),
+]);
 
         const role = {
             id: "technical-coach",
@@ -80,7 +87,9 @@ describe("SimpleHarness", () => {
     });
     it("includes valid context in the prompt and result", async () => {
         const provider = new FakeProvider("Context-aware response");
-        const harness = new SimpleHarness(provider);
+        const harness = new SimpleHarness(provider, [
+  new NonEmptyOutputEvaluator(),
+]);
 
         const role = {
             id: "technical-coach",

@@ -7,6 +7,7 @@ import { loadTask } from "./harness/taskLoader.js";
 import { parseArgs } from "./cli/parseArgs.js";
 import { getFileId } from "./cli/getFileId.js";
 import { loadContextItem } from "./harness/contextLoader.js";
+import { NonEmptyOutputEvaluator } from "./evaluations/evaluateNonEmptyOutput.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -20,8 +21,9 @@ async function main(apiKey: string): Promise<void> {
         process.argv.slice(2),
     );
     const provider = new OpenAIProvider(apiKey);
-    const harness = new SimpleHarness(provider);
-
+    const harness = new SimpleHarness(provider, [
+        new NonEmptyOutputEvaluator(),
+      ]);
     const role = await loadRole(getFileId(rolePath), rolePath);
     const task = await loadTask(getFileId(taskPath), taskPath);
     const context = await Promise.all(

@@ -4,14 +4,16 @@ import type { HarnessResult } from "./harnessResult.js";
 import { roleSpecSchema, type RoleSpec } from "./roleSpec.js";
 import { taskSpecSchema, type TaskSpec } from "./taskSpec.js";
 import { randomUUID } from "node:crypto";
-import { NonEmptyOutputEvaluator } from "../evaluations/evaluateNonEmptyOutput.js";
 import {
     contextItemSchema,
     type ContextItem,
   } from "./contextItem.js";
-
+  import type { Evaluator } from "../evaluations/evaluator.js";
 export class SimpleHarness {
-    constructor(private readonly provider: AIProvider) { }
+    constructor(
+        private readonly provider: AIProvider,
+        private readonly evaluators: Evaluator[],
+      ) {}
 
     async run(
         role: RoleSpec,
@@ -31,11 +33,9 @@ export class SimpleHarness {
           );
 
         const output = await this.provider.generateText(prompt);
-        const evaluator = new NonEmptyOutputEvaluator();
-
-        const evaluations = [
-          evaluator.evaluate(output),
-        ];
+        const evaluations = this.evaluators.map((evaluator) =>
+            evaluator.evaluate(output),
+          );
         const durationMs = performance.now() - startedAt;
 
         return {
