@@ -41,6 +41,7 @@ describe("SimpleHarness", () => {
                 message: "The agent produced output.",
             },
         ]);
+        expect(result.harnessId).toBe("test-harness");
     });
     it("rejects an invalid task before calling the provider", async () => {
         const provider = new FakeProvider("This should not be returned");
