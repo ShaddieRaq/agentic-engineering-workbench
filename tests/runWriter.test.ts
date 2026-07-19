@@ -43,6 +43,13 @@ describe("writeRun", () => {
             "Analyze this task",
           ].join("\n"),
         output: "Harness response",
+        evaluations: [
+            {
+              evaluatorId: "non-empty-output",
+              passed: true,
+              message: "The agent produced output.",
+            },
+          ],
         durationMs: 25,
         completedAt: "2026-07-18T12:41:33.640Z",
       };

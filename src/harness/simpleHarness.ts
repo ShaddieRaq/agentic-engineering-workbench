@@ -4,6 +4,7 @@ import type { HarnessResult } from "./harnessResult.js";
 import { roleSpecSchema, type RoleSpec } from "./roleSpec.js";
 import { taskSpecSchema, type TaskSpec } from "./taskSpec.js";
 import { randomUUID } from "node:crypto";
+import { evaluateNonEmptyOutput } from "../evaluations/evaluateNonEmptyOutput.js";
 import {
     contextItemSchema,
     type ContextItem,
@@ -30,7 +31,9 @@ export class SimpleHarness {
           );
 
         const output = await this.provider.generateText(prompt);
-
+        const evaluations = [
+            evaluateNonEmptyOutput(output),
+          ];
         const durationMs = performance.now() - startedAt;
 
         return {
@@ -40,6 +43,7 @@ export class SimpleHarness {
             context: validatedContext,
             prompt,
             output,
+            evaluations,
             durationMs,
             completedAt: new Date().toISOString(),
         };

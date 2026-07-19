@@ -28,6 +28,13 @@ describe("SimpleHarness", () => {
         expect(result.prompt).toContain(task.instruction);
         expect(result.runId).toBeTruthy();
         expect(result.context).toEqual([]);
+        expect(result.evaluations).toEqual([
+            {
+              evaluatorId: "non-empty-output",
+              passed: true,
+              message: "The agent produced output.",
+            },
+          ]);
     });
     it("rejects an invalid task before calling the provider", async () => {
         const provider = new FakeProvider("This should not be returned");
