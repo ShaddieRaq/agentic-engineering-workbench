@@ -46,6 +46,7 @@ async function main(apiKey: string): Promise<void> {
           } - ${evaluation.message}`,
         );
       }
+      console.log(`Overall result: ${result.passed ? "PASS" : "FAIL"}`);
 }
 
 main(apiKey).catch((error: unknown) => {
