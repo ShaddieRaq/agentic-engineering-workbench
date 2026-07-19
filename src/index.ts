@@ -8,6 +8,7 @@ import { parseArgs } from "./cli/parseArgs.js";
 import { getFileId } from "./cli/getFileId.js";
 import { loadContextItem } from "./harness/contextLoader.js";
 import { NonEmptyOutputEvaluator } from "./evaluations/evaluateNonEmptyOutput.js";
+import { MinimumLengthEvaluator } from "./evaluations/minimumLengthEvaluator.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -23,6 +24,7 @@ async function main(apiKey: string): Promise<void> {
     const provider = new OpenAIProvider(apiKey);
     const harness = new SimpleHarness(provider, [
         new NonEmptyOutputEvaluator(),
+        new MinimumLengthEvaluator(100),
       ]);
     const role = await loadRole(getFileId(rolePath), rolePath);
     const task = await loadTask(getFileId(taskPath), taskPath);
