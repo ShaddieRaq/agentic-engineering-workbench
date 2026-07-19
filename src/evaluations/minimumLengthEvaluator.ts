@@ -1,13 +1,13 @@
 import type { EvaluationResult } from "./evaluationResult.js";
-import type { Evaluator } from "./evaluator.js";
+import type { EvaluationInput, Evaluator } from "./evaluator.js";
 
 export class MinimumLengthEvaluator implements Evaluator {
   readonly id = "minimum-length";
 
   constructor(private readonly minimumCharacters: number) {}
 
-  evaluate(output: string): EvaluationResult {
-    const characterCount = output.trim().length;
+  evaluate(input: EvaluationInput): EvaluationResult {
+    const characterCount = input.output.trim().length;
     const passed = characterCount >= this.minimumCharacters;
 
     return {

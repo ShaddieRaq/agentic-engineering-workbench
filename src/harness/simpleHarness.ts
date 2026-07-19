@@ -7,13 +7,13 @@ import { randomUUID } from "node:crypto";
 import {
     contextItemSchema,
     type ContextItem,
-  } from "./contextItem.js";
-  import type { Evaluator } from "../evaluations/evaluator.js";
+} from "./contextItem.js";
+import type { Evaluator } from "../evaluations/evaluator.js";
 export class SimpleHarness {
     constructor(
         private readonly provider: AIProvider,
         private readonly evaluators: Evaluator[],
-      ) {}
+    ) { }
 
     async run(
         role: RoleSpec,
@@ -24,19 +24,27 @@ export class SimpleHarness {
         const validatedTask = taskSpecSchema.parse(task);
         const validatedContext = context.map((item) =>
             contextItemSchema.parse(item),
-          );
+        );
         const startedAt = performance.now();
         const prompt = buildPrompt(
             validatedRole,
             validatedTask,
             validatedContext,
-          );
+        );
 
         const output = await this.provider.generateText(prompt);
+        const evaluationInput = {
+            role: validatedRole,
+            task: validatedTask,
+            context: validatedContext,
+            prompt,
+            output,
+        };
+
         const evaluations = this.evaluators.map((evaluator) =>
-            evaluator.evaluate(output),
-          );
-          const passed = evaluations.every((evaluation) => evaluation.passed);
+            evaluator.evaluate(evaluationInput),
+        );
+        const passed = evaluations.every((evaluation) => evaluation.passed);
         const durationMs = performance.now() - startedAt;
 
         return {
