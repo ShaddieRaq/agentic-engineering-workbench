@@ -1,15 +1,18 @@
 import type { EvaluationResult } from "./evaluationResult.js";
+import type { Evaluator } from "./evaluator.js";
 
-export function evaluateNonEmptyOutput(
-  output: string,
-): EvaluationResult {
-  const passed = output.trim().length > 0;
+export class NonEmptyOutputEvaluator implements Evaluator {
+  readonly id = "non-empty-output";
 
-  return {
-    evaluatorId: "non-empty-output",
-    passed,
-    message: passed
-      ? "The agent produced output."
-      : "The agent produced no output.",
-  };
+  evaluate(output: string): EvaluationResult {
+    const passed = output.trim().length > 0;
+
+    return {
+      evaluatorId: this.id,
+      passed,
+      message: passed
+        ? "The agent produced output."
+        : "The agent produced no output.",
+    };
+  }
 }

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { evaluateNonEmptyOutput } from "../src/evaluations/evaluateNonEmptyOutput.js";
+import { NonEmptyOutputEvaluator } from "../src/evaluations/evaluateNonEmptyOutput.js";
 
-describe("evaluateNonEmptyOutput", () => {
+describe("NonEmptyOutputEvaluator", () => {
   it("passes when the agent produces output", () => {
-    const result = evaluateNonEmptyOutput("Agent response");
+    const evaluator = new NonEmptyOutputEvaluator();
+
+    const result = evaluator.evaluate("Agent response");
 
     expect(result).toEqual({
       evaluatorId: "non-empty-output",
@@ -13,7 +15,9 @@ describe("evaluateNonEmptyOutput", () => {
   });
 
   it("fails when the output is empty", () => {
-    const result = evaluateNonEmptyOutput("   ");
+    const evaluator = new NonEmptyOutputEvaluator();
+
+    const result = evaluator.evaluate("   ");
 
     expect(result).toEqual({
       evaluatorId: "non-empty-output",
