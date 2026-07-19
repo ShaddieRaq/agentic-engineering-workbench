@@ -37,6 +37,7 @@ async function main(apiKey: string): Promise<void> {
     const result = await harness.run(role, task, context);
     const runFilePath = await writeRun(result);
 
+    console.log(`Harness: ${result.harnessId}`);
     console.log(result.output);
     console.log(`Duration: ${result.durationMs.toFixed(0)} ms`);
     console.log(`Run saved: ${runFilePath}`);
@@ -47,7 +48,7 @@ async function main(apiKey: string): Promise<void> {
           } - ${evaluation.message}`,
         );
       }
-      console.log(`Overall result: ${result.passed ? "PASS" : "FAIL"}`);
+    console.log(`Overall result: ${result.passed ? "PASS" : "FAIL"}`);
 }
 
 main(apiKey).catch((error: unknown) => {
