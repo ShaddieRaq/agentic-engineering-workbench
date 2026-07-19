@@ -4,7 +4,10 @@ import type { HarnessResult } from "./harnessResult.js";
 import { roleSpecSchema, type RoleSpec } from "./roleSpec.js";
 import { taskSpecSchema, type TaskSpec } from "./taskSpec.js";
 import { randomUUID } from "node:crypto";
-import type { ContextItem } from "./contextItem.js";
+import {
+    contextItemSchema,
+    type ContextItem,
+  } from "./contextItem.js";
 
 export class SimpleHarness {
     constructor(private readonly provider: AIProvider) { }
@@ -16,9 +19,15 @@ export class SimpleHarness {
     ): Promise<HarnessResult> {
         const validatedRole = roleSpecSchema.parse(role);
         const validatedTask = taskSpecSchema.parse(task);
-
+        const validatedContext = context.map((item) =>
+            contextItemSchema.parse(item),
+          );
         const startedAt = performance.now();
-        const prompt = buildPrompt(validatedRole, validatedTask, context);
+        const prompt = buildPrompt(
+            validatedRole,
+            validatedTask,
+            validatedContext,
+          );
 
         const output = await this.provider.generateText(prompt);
 

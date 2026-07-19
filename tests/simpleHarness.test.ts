@@ -44,4 +44,30 @@ describe("SimpleHarness", () => {
       
         await expect(harness.run(role, invalidTask)).rejects.toThrow();
       });
+      it("rejects invalid context before calling the provider", async () => {
+        const provider = new FakeProvider("This should not be returned");
+        const harness = new SimpleHarness(provider);
+      
+        const role = {
+          id: "technical-coach",
+          instructions: "Explain concepts clearly and practically.",
+        };
+      
+        const task = {
+          id: "explain-harness",
+          instruction: "Explain what an agentic harness is.",
+        };
+      
+        const invalidContext = [
+          {
+            id: "readme",
+            source: "README.md",
+            content: "",
+          },
+        ];
+      
+        await expect(
+          harness.run(role, task, invalidContext),
+        ).rejects.toThrow();
+      });
 });
