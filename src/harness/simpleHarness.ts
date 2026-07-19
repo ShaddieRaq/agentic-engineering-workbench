@@ -48,7 +48,7 @@ export class SimpleHarness {
             output,
             evaluations,
             durationMs,
-            passed: true,
+            passed,
             completedAt: new Date().toISOString(),
         };
     }

@@ -149,5 +149,6 @@ describe("SimpleHarness", () => {
             message: "The output had 5 characters but required at least 10.",
           },
         ]);
+        expect(result.passed).toBe(false);
       });
 });
