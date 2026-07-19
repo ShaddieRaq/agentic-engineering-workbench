@@ -7,7 +7,7 @@ import { loadTask } from "./harness/taskLoader.js";
 import { parseArgs } from "./cli/parseArgs.js";
 import { getFileId } from "./cli/getFileId.js";
 import { loadContextItem } from "./harness/contextLoader.js";
-import { technicalCoachHarness } from "./harnesses/technicalCoachHarness.js";
+import { getHarnessDefinition } from "./harnesses/harnessRegistry.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -21,9 +21,10 @@ async function main(apiKey: string): Promise<void> {
         process.argv.slice(2),
     );
     const provider = new OpenAIProvider(apiKey);
+    const harnessDefinition = getHarnessDefinition("technical-coach");
     const harness = new SimpleHarness(
         provider,
-        technicalCoachHarness.evaluators,
+        harnessDefinition.evaluators,
       );
     const role = await loadRole(getFileId(rolePath), rolePath);
     const task = await loadTask(getFileId(taskPath), taskPath);
