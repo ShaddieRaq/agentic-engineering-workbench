@@ -27,6 +27,7 @@ describe("writeRun", () => {
     const result = {
         runId: "test-run-123",
         harnessId: "test-harness",
+        scenarioId: null,
         role: {
             id: "technical-coach",
             instructions: "Explain concepts clearly and practically.",

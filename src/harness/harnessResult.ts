@@ -6,6 +6,7 @@ import type { EvaluationResult } from "../evaluations/evaluationResult.js";
 export interface HarnessResult {
     runId: string;
     harnessId: string;
+    scenarioId: string | null;
     role: RoleSpec;
     task: TaskSpec;
     context: ContextItem[];

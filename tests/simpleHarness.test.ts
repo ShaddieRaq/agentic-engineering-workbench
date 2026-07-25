@@ -42,6 +42,22 @@ describe("SimpleHarness", () => {
             },
         ]);
         expect(result.harnessId).toBe("test-harness");
+        expect(result.scenarioId).toBeNull();
+    });
+    it("records the configured scenario ID", async () => {
+        const harness = new SimpleHarness(
+            new FakeProvider("Harness response"),
+            [],
+            "test-harness",
+            "test-scenario",
+        );
+
+        const result = await harness.run(role, {
+            id: "analyze-task",
+            instruction: "Analyze this task",
+        });
+
+        expect(result.scenarioId).toBe("test-scenario");
     });
     it("rejects an invalid task before calling the provider", async () => {
         const provider = new FakeProvider("This should not be returned");
