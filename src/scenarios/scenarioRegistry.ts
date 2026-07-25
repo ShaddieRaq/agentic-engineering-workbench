@@ -2,15 +2,21 @@ import type { ScenarioDefinition } from "./scenarioDefinition.js";
 import { explainAgenticHarnessScenario } from "./explainAgenticHarnessScenario.js";
 
 const scenarios: Record<string, ScenarioDefinition> = {
-  [explainAgenticHarnessScenario.id]: explainAgenticHarnessScenario,
+    [explainAgenticHarnessScenario.id]: explainAgenticHarnessScenario,
 };
 
 export function getScenarioDefinition(id: string): ScenarioDefinition {
-  const definition = scenarios[id];
+    const definition = scenarios[id];
 
-  if (!definition) {
-    throw new Error(`Unknown scenario: ${id}`);
-  }
+    if (!definition) {
+        throw new Error(`Unknown scenario: ${id}`);
+    }
 
-  return definition;
+    return definition;
+}
+
+export function findScenarioDefinition(
+    id: string,
+): ScenarioDefinition | undefined {
+    return scenarios[id];
 }

@@ -31,6 +31,9 @@ The agent must:
 - Preserve working behavior unless a change is intentionally breaking.
 - Require tests for new behavior.
 - Keep explanations connected to reusable engineering concepts, not only this application.
+- Prioritize teaching AI engineering workflows and agentic-system concepts over general code formatting or style.
+- Do not spend guided implementation steps on manual formatting when the IDE formatter is sufficient, unless formatting affects correctness or obscures behavior.
+- Connect each change to relevant agentic-development areas such as context engineering, evaluation, orchestration, workflow control, observability, evidence, failure handling, provider abstraction, and tool permissions.
 
 ## Required Turn Format
 

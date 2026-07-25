@@ -8,6 +8,8 @@ import { parseArgs } from "./cli/parseArgs.js";
 import { getFileId } from "./cli/getFileId.js";
 import { loadContextItem } from "./harness/contextLoader.js";
 import { getHarnessDefinition } from "./harnesses/harnessRegistry.js";
+import { composeEvaluators } from "./evaluations/composeEvaluators.js";
+import { findScenarioDefinition } from "./scenarios/scenarioRegistry.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -19,16 +21,21 @@ async function main(apiKey: string): Promise<void> {
 
     const { rolePath, taskPath, contextPaths, harnessId } = parseArgs(
         process.argv.slice(2),
-      );
+    );
     const provider = new OpenAIProvider(apiKey);
     const harnessDefinition = getHarnessDefinition(harnessId);
-    const harness = new SimpleHarness(
-        provider,
-        harnessDefinition.evaluators,
-        harnessDefinition.id,
-      );
     const role = await loadRole(getFileId(rolePath), rolePath);
     const task = await loadTask(getFileId(taskPath), taskPath);
+    const scenarioDefinition = findScenarioDefinition(task.id);
+    const evaluators = composeEvaluators(
+        harnessDefinition,
+        scenarioDefinition,
+    );
+    const harness = new SimpleHarness(
+        provider,
+        evaluators,
+        harnessDefinition.id,
+    );
     const context = await Promise.all(
         contextPaths.map((contextPath) =>
             loadContextItem(getFileId(contextPath), contextPath),
@@ -43,11 +50,10 @@ async function main(apiKey: string): Promise<void> {
     console.log(`Run saved: ${runFilePath}`);
     for (const evaluation of result.evaluations) {
         console.log(
-          `Evaluation [${evaluation.evaluatorId}]: ${
-            evaluation.passed ? "PASS" : "FAIL"
-          } - ${evaluation.message}`,
+            `Evaluation [${evaluation.evaluatorId}]: ${evaluation.passed ? "PASS" : "FAIL"
+            } - ${evaluation.message}`,
         );
-      }
+    }
     console.log(`Overall result: ${result.passed ? "PASS" : "FAIL"}`);
 }
 

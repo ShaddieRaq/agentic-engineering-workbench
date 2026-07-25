@@ -6,7 +6,7 @@ describe("getHarnessDefinition", () => {
     const definition = getHarnessDefinition("technical-coach");
 
     expect(definition.id).toBe("technical-coach");
-    expect(definition.evaluators).toHaveLength(4);
+    expect(definition.evaluators).toHaveLength(3);
   });
 
   it("rejects an unknown harness", () => {
