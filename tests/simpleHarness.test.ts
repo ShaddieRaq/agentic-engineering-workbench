@@ -1,9 +1,16 @@
-import { describe, expect, it, vi } from "vitest";
+import {
+    describe,
+    expect,
+    expectTypeOf,
+    it,
+    vi,
+} from "vitest";
 import { SimpleHarness } from "../src/harness/simpleHarness.js";
 import { FakeProvider } from "../src/providers/fakeProvider.js";
 import { NonEmptyOutputEvaluator } from "../src/evaluations/evaluateNonEmptyOutput.js";
 import { MinimumLengthEvaluator } from "../src/evaluations/minimumLengthEvaluator.js";
 import { z } from "zod";
+import { AIProviderError } from "../src/providers/aiProviderError.js";
 
 const role = {
     id: "technical-coach",
@@ -215,34 +222,93 @@ describe("SimpleHarness", () => {
             prompt: result.prompt,
             outputSchema,
         });
+        expectTypeOf(result.parsedOutput).toEqualTypeOf<
+            { answer: string } | null
+        >();
     });
     it("preserves raw and parsed provider evidence", async () => {
         const provider = new FakeProvider("Unused response");
-    
+
         vi.spyOn(provider, "generate").mockResolvedValue({
-          rawOutput: '{"answer":"Structured response"}',
-          parsedOutput: {
-            answer: "Structured response",
-          },
-          refusal: null,
+            rawOutput: '{"answer":"Structured response"}',
+            parsedOutput: {
+                answer: "Structured response",
+            },
+            refusal: null,
         });
-    
+
         const harness = new SimpleHarness(
-          provider,
-          [],
-          "test-harness",
-          "test-scenario",
+            provider,
+            [],
+            "test-harness",
+            "test-scenario",
         );
-    
+
         const result = await harness.run(role, {
-          id: "structured-task",
-          instruction: "Return a structured answer.",
+            id: "structured-task",
+            instruction: "Return a structured answer.",
         });
-    
+
         expect(result.output).toBe('{"answer":"Structured response"}');
         expect(result.parsedOutput).toEqual({
-          answer: "Structured response",
+            answer: "Structured response",
         });
         expect(result.refusal).toBeNull();
-      });
+    });
+    it("records provider failures instead of rejecting the run", async () => {
+        const provider = new FakeProvider("Unused response");
+
+        vi.spyOn(provider, "generate").mockRejectedValue(
+            new Error("Provider unavailable."),
+        );
+
+        const harness = new SimpleHarness(
+            provider,
+            [],
+            "test-harness",
+        );
+
+        const result = await harness.run(role, {
+            id: "failing-task",
+            instruction: "Run this task.",
+        });
+
+        expect(result.output).toBe("");
+        expect(result.parsedOutput).toBeNull();
+        expect(result.refusal).toBeNull();
+        expect(result.executionFailure).toEqual({
+            stage: "provider",
+            category: "unknown",
+            message: "Provider unavailable.",
+        });
+        expect(result.passed).toBe(false);
+    });
+    it("preserves a classified provider failure", async () => {
+        const provider = new FakeProvider("Unused response");
+
+        vi.spyOn(provider, "generate").mockRejectedValue(
+            new AIProviderError(
+                "transport",
+                "The provider connection failed.",
+            ),
+        );
+
+        const harness = new SimpleHarness(
+            provider,
+            [],
+            "test-harness",
+        );
+
+        const result = await harness.run(role, {
+            id: "failing-task",
+            instruction: "Run this task.",
+        });
+
+        expect(result.executionFailure).toEqual({
+            stage: "provider",
+            category: "transport",
+            message: "The provider connection failed.",
+        });
+        expect(result.passed).toBe(false);
+    });
 });

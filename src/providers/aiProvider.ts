@@ -1,16 +1,18 @@
 import type { ZodType } from "zod";
 
-export interface AIProviderRequest {
-  prompt: string;
-  outputSchema?: ZodType;
+export interface AIProviderRequest<TOutput = unknown> {
+    prompt: string;
+    outputSchema?: ZodType<TOutput>;
 }
 
-export interface AIProviderResult {
+export interface AIProviderResult<TOutput = unknown> {
     rawOutput: string;
-    parsedOutput: unknown | null;
+    parsedOutput: TOutput | null;
     refusal: string | null;
-  }
+}
 
 export interface AIProvider {
-    generate(request: AIProviderRequest): Promise<AIProviderResult>;
-  }
+    generate<TOutput = unknown>(
+        request: AIProviderRequest<TOutput>,
+    ): Promise<AIProviderResult<TOutput>>;
+}

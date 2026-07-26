@@ -274,9 +274,9 @@ Status: Accepted
 
 Define task-specific structured output schemas in the scenario layer.
 
-Scenario definitions may expose an optional Zod schema. Provider and harness changes will consume that contract without embedding task-specific response shapes.
+Scenario definitions may expose an optional Zod schema. Providers and harnesses consume that contract without embedding task-specific response shapes.
 
-Future structured runs will preserve the raw model response alongside any parsed output.
+Structured runs preserve the raw model response alongside parsed output and explicit refusal evidence.
 
 ### Rationale
 
@@ -291,3 +291,28 @@ Raw output remains necessary for debugging schema failures, replaying validation
 - individual schema modules retain precise inferred TypeScript types
 - providers remain unaware of specific scenario fields
 - parsing must not overwrite or discard raw model output
+
+---
+
+## Decision 014 — Normalize Provider Failures Into Run Evidence
+
+Status: Accepted
+
+### Decision
+
+Provider adapters translate known SDK failures into provider-neutral categories.
+The harness records transport, parsing, and unknown provider failures in
+`HarnessResult` and marks the run as failed.
+
+### Rationale
+
+Provider exceptions should not terminate execution without leaving inspectable
+evidence. The harness should not depend on vendor-specific exception classes.
+
+### Consequences
+
+- OpenAI connection failures are classified as `transport`
+- JSON and Zod failures are classified as `parsing`
+- unrecognized provider exceptions are classified as `unknown`
+- provider failures produce an empty raw output when no response is available
+- execution failure forces overall run failure even when no evaluators exist

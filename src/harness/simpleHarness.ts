@@ -1,29 +1,31 @@
-import type { AIProvider } from "../providers/aiProvider.js";
+import type { AIProvider, AIProviderResult } from "../providers/aiProvider.js";
 import { buildPrompt } from "./buildPrompt.js";
 import type { HarnessResult } from "./harnessResult.js";
 import { roleSpecSchema, type RoleSpec } from "./roleSpec.js";
 import { taskSpecSchema, type TaskSpec } from "./taskSpec.js";
 import { randomUUID } from "node:crypto";
 import type { ZodType } from "zod";
+import { AIProviderError } from "../providers/aiProviderError.js";
 import {
     contextItemSchema,
     type ContextItem,
 } from "./contextItem.js";
 import type { Evaluator } from "../evaluations/evaluator.js";
-export class SimpleHarness {
+
+export class SimpleHarness<TOutput = unknown> {
     constructor(
         private readonly provider: AIProvider,
         private readonly evaluators: Evaluator[],
         private readonly harnessId: string,
         private readonly scenarioId: string | null = null,
-        private readonly outputSchema?: ZodType,
+        private readonly outputSchema?: ZodType<TOutput>,
     ) { }
 
     async run(
         role: RoleSpec,
         task: TaskSpec,
         context: ContextItem[] = [],
-    ): Promise<HarnessResult> {
+    ): Promise<HarnessResult<TOutput>> {
         const validatedRole = roleSpecSchema.parse(role);
         const validatedTask = taskSpecSchema.parse(task);
         const validatedContext = context.map((item) =>
@@ -36,12 +38,35 @@ export class SimpleHarness {
             validatedContext,
         );
 
-        const providerResult = await this.provider.generate({
-            prompt,
-            ...(this.outputSchema
-              ? { outputSchema: this.outputSchema }
-              : {}),
-          });
+        let providerResult: AIProviderResult<TOutput>;
+        let executionFailure:
+            HarnessResult<TOutput>["executionFailure"] = null;
+
+        try {
+            providerResult = await this.provider.generate({
+                prompt,
+                ...(this.outputSchema
+                    ? { outputSchema: this.outputSchema }
+                    : {}),
+            });
+        } catch (error: unknown) {
+            providerResult = {
+                rawOutput: "",
+                parsedOutput: null,
+                refusal: null,
+            };
+            executionFailure = {
+                stage: "provider",
+                category:
+                    error instanceof AIProviderError
+                        ? error.category
+                        : "unknown",
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : String(error),
+            };
+        }
         const output = providerResult.rawOutput;
         const evaluationInput = {
             role: validatedRole,
@@ -54,7 +79,9 @@ export class SimpleHarness {
         const evaluations = this.evaluators.map((evaluator) =>
             evaluator.evaluate(evaluationInput),
         );
-        const passed = evaluations.every((evaluation) => evaluation.passed);
+        const passed =
+            executionFailure === null &&
+            evaluations.every((evaluation) => evaluation.passed);
         const durationMs = performance.now() - startedAt;
 
         return {
@@ -68,6 +95,7 @@ export class SimpleHarness {
             output,
             parsedOutput: providerResult.parsedOutput,
             refusal: providerResult.refusal,
+            executionFailure,
             evaluations,
             durationMs,
             passed,

@@ -3,7 +3,18 @@ import type { TaskSpec } from "./taskSpec.js";
 import type { ContextItem } from "./contextItem.js";
 import type { EvaluationResult } from "../evaluations/evaluationResult.js";
 
-export interface HarnessResult {
+export type ExecutionFailureCategory =
+    | "transport"
+    | "parsing"
+    | "unknown";
+
+export interface ExecutionFailure {
+    stage: "provider";
+    category: ExecutionFailureCategory;
+    message: string;
+}
+
+export interface HarnessResult<TOutput = unknown> {
     runId: string;
     harnessId: string;
     scenarioId: string | null;
@@ -12,11 +23,12 @@ export interface HarnessResult {
     context: ContextItem[];
     prompt: string;
     output: string;
-    parsedOutput: unknown | null;
+    parsedOutput: TOutput | null;
     refusal: string | null;
+    executionFailure: ExecutionFailure | null;
     evaluations: EvaluationResult[];
     durationMs: number;
     completedAt: string;
     passed: boolean;
-    
+
 }

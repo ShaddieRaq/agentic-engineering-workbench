@@ -57,6 +57,7 @@ describe("writeRun", () => {
             },
           ],
         durationMs: 25,
+        executionFailure: null,
         passed: true,
         completedAt: "2026-07-18T12:41:33.640Z",
       };

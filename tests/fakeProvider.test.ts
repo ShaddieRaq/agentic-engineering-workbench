@@ -1,4 +1,10 @@
-import { describe, expect, it } from "vitest";
+import {
+    describe,
+    expect,
+    expectTypeOf,
+    it,
+  } from "vitest";
+  import { z } from "zod";
 import { FakeProvider } from "../src/providers/fakeProvider.js";
 
 describe("FakeProvider", () => {
@@ -14,5 +20,19 @@ describe("FakeProvider", () => {
       parsedOutput: null,
       refusal: null,
     });
+  });
+  it("preserves the schema output type in the provider result", async () => {
+    const provider = new FakeProvider("Structured response");
+
+    const result = await provider.generate({
+      prompt: "Return a structured response.",
+      outputSchema: z.object({
+        answer: z.string(),
+      }),
+    });
+
+    expectTypeOf(result.parsedOutput).toEqualTypeOf<
+      { answer: string } | null
+    >();
   });
 });

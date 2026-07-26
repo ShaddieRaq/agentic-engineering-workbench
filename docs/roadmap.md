@@ -138,7 +138,7 @@ Exit criteria:
 
 ## Phase 7 — Structured Output
 
-Status: In progress
+Status: Complete foundation
 
 Implemented:
 
@@ -151,11 +151,8 @@ Implemented:
 - deterministic invalid-JSON and schema-mismatch evaluation
 - persisted raw, parsed, and refusal evidence
 - removal of the legacy string-only provider path
-
-Still needed:
-
-- persist provider parsing and transport failures as run evidence
-- strengthen scenario-specific typed access to parsed results
+- provider parsing, transport, and unknown failure evidence
+- schema-derived parsed-output types propagated through providers and harnesses
 
 ## Phase 8 — Scenario Suites
 

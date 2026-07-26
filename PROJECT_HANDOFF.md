@@ -96,6 +96,8 @@ The project currently supports:
 - provider-neutral generation requests and results
 - plain-text and structured OpenAI generation
 - raw, parsed, and refusal evidence preservation
+- provider transport, parsing, and unknown failure evidence
+- schema-derived parsed-output type propagation
 - CLI harness selection
 - persisted JSON run records
 - overall pass/fail status
@@ -185,7 +187,7 @@ schema fields.
 Current milestone:
 
 ```text
-Structured output foundation
+Phase 7 structured output complete
 ```
 
 Verified test state:
@@ -193,7 +195,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 24 test files passed
-59 tests passed
+64 tests passed
 ```
 
 This state must be verified before continuing:
@@ -221,17 +223,15 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Continue Phase 7 by persisting provider parsing and transport failures as run
-evidence instead of allowing them to terminate execution without an inspectable
-result.
+Begin Phase 8 by defining a scenario-suite contract that groups scenarios for
+repeatable execution without adding concurrency or reporting behavior yet.
 
 ## Broader Roadmap
 
-1. Complete structured-output failure evidence and typed result handling.
-2. Add scenario suites and repeated runs.
-3. Compare prompts, providers, and context strategies.
-4. Add controlled tools.
-5. Add multi-step workflows.
-6. Add adversarial scenarios.
-7. Add model-based evaluators where deterministic checks are insufficient.
-8. Generate reliability reports.
+1. Add scenario suites and repeated runs.
+2. Compare prompts, providers, and context strategies.
+3. Add controlled tools.
+4. Add multi-step workflows.
+5. Add adversarial scenarios.
+6. Add model-based evaluators where deterministic checks are insufficient.
+7. Generate reliability reports.

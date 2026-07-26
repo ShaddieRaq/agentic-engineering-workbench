@@ -93,7 +93,13 @@ Provider results keep execution evidence separate:
 ```
 
 `OpenAIProvider` translates Zod schemas through the OpenAI structured-output
-helper. `FakeProvider` returns deterministic provider results for offline tests.
+helper. Provider request and result types carry the schema output type through
+generic `TOutput` parameters. `FakeProvider` returns deterministic provider
+results for offline tests.
+
+Known SDK connection and parsing errors are translated into provider-neutral
+`AIProviderError` categories. `SimpleHarness` records those failures, and
+unclassified provider exceptions, as run evidence.
 
 ### Role
 
@@ -280,6 +286,7 @@ Each run currently records:
   output,
   parsedOutput,
   refusal,
+  executionFailure,
   evaluations,
   passed,
   durationMs,
@@ -290,7 +297,8 @@ Each run currently records:
 `output` preserves the raw provider response. `parsedOutput` contains
 schema-validated structured data when available, otherwise `null`. `refusal`
 records an explicit provider refusal separately from parsing or evaluation
-failure.
+failure. `executionFailure` records provider transport, parsing, or unknown
+failures and forces the overall run result to fail.
 
 ### Registry
 

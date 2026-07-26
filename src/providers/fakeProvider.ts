@@ -7,7 +7,9 @@ import type {
 export class FakeProvider implements AIProvider {
   constructor(private readonly response: string) {}
 
-  async generate(_request: AIProviderRequest): Promise<AIProviderResult> {
+  async generate<TOutput = unknown>(
+    _request: AIProviderRequest<TOutput>,
+  ): Promise<AIProviderResult<TOutput>> {
     return {
       rawOutput: this.response,
       parsedOutput: null,
