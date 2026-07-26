@@ -90,12 +90,15 @@ The project currently supports:
 - a harness registry
 - scenario definitions
 - a scenario registry
+- optional scenario resolution
+- harness and scenario evaluator composition
 - CLI harness selection
 - persisted JSON run records
 - overall pass/fail status
 - duration tracking
 - unique run IDs
 - recorded harness IDs
+- recorded scenario IDs
 - structured evidence for each run
 
 ## Current Evaluators
@@ -106,6 +109,7 @@ Implemented deterministic evaluators:
 - `MinimumLengthEvaluator`
 - `RequiredPhraseEvaluator`
 - `ForbiddenPhraseEvaluator`
+- `RequiredSectionEvaluator`
 
 Evaluators receive:
 
@@ -129,10 +133,9 @@ Current evaluators:
 
 - nonempty output
 - minimum length of 100
-- required phrase: `agentic harness`
 - forbidden phrase: `I cannot help`
 
-The required phrase is scenario-specific and should eventually be removed from this general harness.
+Task-specific checks are intentionally excluded from this reusable harness.
 
 ### `basic-reliability`
 
@@ -163,24 +166,25 @@ The scenario contains:
 
 ```text
 RequiredPhraseEvaluator("agentic harness")
+RequiredSectionEvaluator("Practical Example")
 ```
 
-This is the correct conceptual location for that requirement.
+The related task explicitly requests the `Practical Example` Markdown heading.
 
 ## Last Confirmed State
 
 Last confirmed milestone:
 
 ```text
-Commit: a9467bf
-Description: Test scenario registry
+Commit: 75c4689
+Description: Add required section evaluation
 ```
 
 Last confirmed test state:
 
 ```text
-19 test files passed
-38 tests passed
+21 test files passed
+47 tests passed
 ```
 
 This state must be verified before continuing:
@@ -192,125 +196,30 @@ npm run typecheck
 npm test
 ```
 
-## Current Architectural Question
-
-The next work is to combine:
-
-- general harness evaluators
-- scenario-specific evaluators
-
-A naive implementation would do this:
-
-```ts
-const scenarioDefinition = getScenarioDefinition(task.id);
-
-const evaluators = [
-  ...harnessDefinition.evaluators,
-  ...scenarioDefinition.evaluators,
-];
-```
-
-However, the scenario registry currently contains only:
-
-```text
-explain-agentic-harness
-```
-
-The CLI can also run tasks such as:
-
-```text
-connection-check
-```
-
-A required scenario lookup would therefore throw:
-
-```text
-Unknown scenario: connection-check
-```
-
-## Decision Still Required
-
-The project needs a clear relationship between tasks and scenarios.
-
-Possible designs:
-
-### Option A — Every runnable task must have a scenario definition
-
-Advantages:
-
-- explicit
-- consistent
-- every task has evaluation expectations
-
-Disadvantages:
-
-- simple utility tasks require boilerplate scenario definitions
-
-### Option B — Scenario lookup is optional
-
-Advantages:
-
-- tasks without scenario-specific checks still run
-- low boilerplate
-- general harness checks remain available
-
-Disadvantages:
-
-- some tasks may accidentally run without useful scenario evaluation
-
-### Option C — Register zero-evaluator scenarios for simple tasks
-
-Advantages:
-
-- all task IDs still resolve through the registry
-- relationship remains explicit
-
-Disadvantages:
-
-- creates definitions that may contain little value
-
-The agent must explain these tradeoffs before implementation.
-
-## Recommended Current Direction
-
-The likely best near-term design is optional scenario lookup:
+## Current Scenario Resolution
 
 ```text
 Harness evaluators always run.
 Scenario evaluators run when a scenario definition exists.
 ```
 
-This preserves current CLI behavior while allowing scenario-specific expectations.
-
-Do not implement this blindly. Inspect the existing registry and `src/index.ts` first.
+The CLI resolves scenarios by task ID with `findScenarioDefinition`.
+Tasks such as `connection-check` intentionally run with harness evaluators only.
+The composed evaluator list is created before model execution.
+Each run records the matched scenario ID or explicit `null`.
 
 ## Immediate Next Step
 
-Inspect:
-
-```bash
-cat src/index.ts
-```
-
-Then inspect:
-
-```bash
-cat src/scenarios/scenarioRegistry.ts
-```
-
-After reviewing both files, decide how optional scenario resolution should be represented.
+Begin Phase 7 by defining a structured output contract for one scenario.
+Explain the contract and raw-output preservation tradeoffs before changing provider interfaces.
 
 ## Broader Roadmap
 
-After scenario evaluation composition:
-
-1. Remove scenario-specific checks from general harness definitions.
-2. Record scenario ID in run results.
-3. Add structured-output evaluation.
-4. Add scenario suites and repeated runs.
-5. Compare prompts, providers, and context strategies.
-6. Add controlled tools.
-7. Add multi-step workflows.
-8. Add adversarial scenarios.
-9. Add model-based evaluators where deterministic checks are insufficient.
-10. Generate reliability reports.
+1. Add structured-output evaluation.
+2. Add scenario suites and repeated runs.
+3. Compare prompts, providers, and context strategies.
+4. Add controlled tools.
+5. Add multi-step workflows.
+6. Add adversarial scenarios.
+7. Add model-based evaluators where deterministic checks are insufficient.
+8. Generate reliability reports.

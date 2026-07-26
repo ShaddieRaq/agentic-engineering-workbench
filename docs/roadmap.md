@@ -81,13 +81,13 @@ Implemented:
 - minimum length evaluator
 - required phrase evaluator
 - forbidden phrase evaluator
+- required section evaluator
 - multiple evaluator execution
 - overall pass/fail status
 - CLI evaluation output
 
 Still needed:
 
-- required section evaluator
 - structured JSON evaluator
 - context-grounding checks
 - expected-value evaluator
@@ -105,17 +105,17 @@ Implemented:
 - harness registry
 - CLI harness selection
 - harness ID recorded in run results
+- task-specific checks moved out of general harnesses
 
 Still needed:
 
-- move task-specific checks out of general harnesses
 - configurable provider/model settings
 - harness-level execution limits
 - harness-level retry policy
 
 ## Phase 6 — Scenario Definitions
 
-Status: In progress
+Status: Complete foundation
 
 Implemented:
 
@@ -123,14 +123,11 @@ Implemented:
 - `explainAgenticHarnessScenario`
 - scenario registry
 - scenario registry tests
-
-Current work:
-
-- define optional scenario lookup
-- combine harness and scenario evaluators
-- preserve tasks that have no scenario definition
-- remove duplicated required-phrase evaluation
-- record scenario ID in run results
+- optional scenario lookup
+- harness and scenario evaluator composition
+- intentional support for tasks without scenario definitions
+- scenario-specific required phrase and required section evaluation
+- scenario ID recorded in run results
 
 Exit criteria:
 
@@ -286,8 +283,8 @@ Planned:
 
 ## Near-Term Priorities
 
-1. Finish scenario evaluator composition.
-2. Remove scenario-specific checks from `technicalCoachHarness`.
-3. Record scenario ID in each run.
-4. Add a required-section evaluator.
-5. Introduce structured output for one scenario.
+1. Define a structured output contract for one scenario.
+2. Extend provider support for structured output.
+3. Preserve both raw and parsed model output.
+4. Record schema-validation failures as run evidence.
+5. Begin scenario suites and repeated-run reliability measurement.

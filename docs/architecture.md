@@ -247,6 +247,7 @@ Each run currently records:
 {
   runId,
   harnessId,
+  scenarioId,
   role,
   task,
   context,
@@ -298,17 +299,15 @@ Specific checks:
 - output explains model versus harness responsibilities
 ```
 
-## Current Known Design Issue
+## Scenario Resolution
 
-`technicalCoachHarness` currently includes:
+Scenario lookup is optional and keyed by task ID.
 
-```text
-RequiredPhraseEvaluator("agentic harness")
-```
+Harness evaluators always run. When a matching scenario exists, its evaluators
+are appended after the harness evaluators. Tasks without scenarios continue with
+general harness checks only.
 
-That check belongs to the `explain-agentic-harness` scenario.
-
-The project is in the process of moving scenario-specific expectations out of general harness definitions.
+The selected scenario ID, or explicit `null`, is recorded in each run result.
 
 ## Architectural Principles
 

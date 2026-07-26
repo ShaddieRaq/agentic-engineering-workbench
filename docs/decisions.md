@@ -148,7 +148,7 @@ The harness should not hardcode one fixed evaluation policy.
 
 ## Decision 008 — Separate Harness Policy From Scenario Expectations
 
-Status: Accepted in principle; integration in progress
+Status: Accepted
 
 ### Decision
 
@@ -174,7 +174,11 @@ explanation must include "agentic harness"
 
 - harnesses remain reusable
 - scenarios express specific success criteria
-- CLI execution must intentionally handle tasks with no scenario definition
+- scenario lookup is optional and keyed by task ID
+- harness evaluators always run
+- matching scenario evaluators are appended after harness evaluators
+- tasks without scenarios continue with general harness checks
+- run evidence records the scenario ID or explicit `null`
 
 ---
 
