@@ -210,6 +210,28 @@ Scenario-specific evaluators may check:
 - prohibited claims
 - grounding in supplied context
 
+### Scenario Suite Definition
+
+A scenario suite definition groups registered scenario IDs for collective
+execution.
+
+Suite definitions are validated with Zod and require:
+
+```ts
+{
+  id,
+  description,
+  scenarioIds
+}
+```
+
+Suites must contain at least one scenario and may not contain duplicate scenario
+IDs. Repeated execution remains separate from suite membership.
+
+The suite registry resolves suites by ID. The suite resolver expands each
+scenario ID through the scenario registry and rejects unknown references before
+execution begins.
+
 ### Evaluator
 
 An evaluator checks a property of the run.

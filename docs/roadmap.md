@@ -156,9 +156,18 @@ Implemented:
 
 ## Phase 8 — Scenario Suites
 
-Status: Not started
+Status: In progress
 
-Planned:
+Implemented:
+
+- Zod-validated scenario-suite definitions
+- nonempty and unique scenario membership
+- `core-reliability` suite definition
+- scenario-suite registry
+- suite-to-scenario reference resolution
+- rejection of unknown scenario references
+
+Still needed:
 
 - run many scenarios together
 - scenario datasets

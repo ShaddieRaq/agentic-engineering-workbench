@@ -316,3 +316,28 @@ evidence. The harness should not depend on vendor-specific exception classes.
 - unrecognized provider exceptions are classified as `unknown`
 - provider failures produce an empty raw output when no response is available
 - execution failure forces overall run failure even when no evaluators exist
+
+---
+
+## Decision 015 — Suites Reference Registered Scenario IDs
+
+Status: Accepted
+
+### Decision
+
+Scenario suites contain unique scenario IDs rather than embedded scenario
+definitions. Suite definitions are validated with Zod, resolved through the
+scenario registry, and rejected before execution when a reference is unknown.
+
+### Rationale
+
+Scenario definitions remain the source of truth for evaluators and output
+schemas. Suite membership should not duplicate that policy or use repeated IDs
+to imply execution count.
+
+### Consequences
+
+- suite definitions remain small and serializable
+- scenario policy changes are automatically visible to suites
+- unknown scenario references fail before suite execution
+- repeated execution is modeled separately from suite membership
