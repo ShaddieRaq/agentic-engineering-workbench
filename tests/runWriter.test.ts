@@ -44,7 +44,11 @@ describe("writeRun", () => {
             "TASK:",
             "Analyze this task",
           ].join("\n"),
-        output: "Harness response",
+          output: '{"answer":"Harness response"}',
+          parsedOutput: {
+            answer: "Harness response",
+          },
+          refusal: null,
         evaluations: [
             {
               evaluatorId: "non-empty-output",

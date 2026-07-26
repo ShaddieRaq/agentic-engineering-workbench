@@ -12,6 +12,8 @@ export interface HarnessResult {
     context: ContextItem[];
     prompt: string;
     output: string;
+    parsedOutput: unknown | null;
+    refusal: string | null;
     evaluations: EvaluationResult[];
     durationMs: number;
     completedAt: string;

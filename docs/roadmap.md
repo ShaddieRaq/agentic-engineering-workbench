@@ -138,16 +138,24 @@ Exit criteria:
 
 ## Phase 7 — Structured Output
 
-Status: Not started
+Status: In progress
 
-Planned:
+Implemented:
 
-- provider support for structured output
-- Zod schemas for agent responses
-- invalid-output handling
-- schema evaluation
-- typed parsed results
-- raw response preservation
+- scenario-specific Zod output contract for `explain-agentic-harness`
+- optional output schema on `ScenarioDefinition`
+- provider-neutral request and result contracts
+- schema propagation from scenario selection through the harness
+- OpenAI Zod structured-output parsing
+- explicit refusal preservation
+- deterministic invalid-JSON and schema-mismatch evaluation
+- persisted raw, parsed, and refusal evidence
+- removal of the legacy string-only provider path
+
+Still needed:
+
+- persist provider parsing and transport failures as run evidence
+- strengthen scenario-specific typed access to parsed results
 
 ## Phase 8 — Scenario Suites
 

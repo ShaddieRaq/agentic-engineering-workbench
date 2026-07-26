@@ -36,6 +36,7 @@ async function main(apiKey: string): Promise<void> {
         evaluators,
         harnessDefinition.id,
         scenarioDefinition?.id ?? null,
+        scenarioDefinition?.outputSchema,
     );
     const context = await Promise.all(
         contextPaths.map((contextPath) =>

@@ -6,6 +6,7 @@
   - why the model alone is not the full agent system
   - one small practical example
 
-  Present the practical example under a Markdown heading titled "Practical Example".
+  Use the structured response fields to separate the definition, responsibilities, model boundary, and practical
+  example.
 
   Keep the explanation concise and practical.

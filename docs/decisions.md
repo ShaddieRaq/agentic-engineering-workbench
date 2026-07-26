@@ -263,3 +263,31 @@ The user wants to learn agent engineering without depending on ChatGPT web as th
 - OpenAI is accessed through an API key
 - files, tests, runs, and architecture remain locally controlled
 - external platforms may be optional integrations later
+
+---
+
+## Decision 013 — Structured Output Contracts Belong to Scenarios
+
+Status: Accepted
+
+### Decision
+
+Define task-specific structured output schemas in the scenario layer.
+
+Scenario definitions may expose an optional Zod schema. Provider and harness changes will consume that contract without embedding task-specific response shapes.
+
+Future structured runs will preserve the raw model response alongside any parsed output.
+
+### Rationale
+
+Different scenarios require different response structures. Keeping schemas with scenarios preserves separation between reusable execution policy and task-specific success criteria.
+
+Raw output remains necessary for debugging schema failures, replaying validation, and preserving complete run evidence.
+
+### Consequences
+
+- scenarios can adopt structured output incrementally
+- the scenario registry exposes schemas through the general `ZodType` boundary
+- individual schema modules retain precise inferred TypeScript types
+- providers remain unaware of specific scenario fields
+- parsing must not overwrite or discard raw model output

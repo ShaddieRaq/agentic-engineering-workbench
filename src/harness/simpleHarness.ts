@@ -4,6 +4,7 @@ import type { HarnessResult } from "./harnessResult.js";
 import { roleSpecSchema, type RoleSpec } from "./roleSpec.js";
 import { taskSpecSchema, type TaskSpec } from "./taskSpec.js";
 import { randomUUID } from "node:crypto";
+import type { ZodType } from "zod";
 import {
     contextItemSchema,
     type ContextItem,
@@ -15,6 +16,7 @@ export class SimpleHarness {
         private readonly evaluators: Evaluator[],
         private readonly harnessId: string,
         private readonly scenarioId: string | null = null,
+        private readonly outputSchema?: ZodType,
     ) { }
 
     async run(
@@ -34,7 +36,13 @@ export class SimpleHarness {
             validatedContext,
         );
 
-        const output = await this.provider.generateText(prompt);
+        const providerResult = await this.provider.generate({
+            prompt,
+            ...(this.outputSchema
+              ? { outputSchema: this.outputSchema }
+              : {}),
+          });
+        const output = providerResult.rawOutput;
         const evaluationInput = {
             role: validatedRole,
             task: validatedTask,
@@ -58,6 +66,8 @@ export class SimpleHarness {
             context: validatedContext,
             prompt,
             output,
+            parsedOutput: providerResult.parsedOutput,
+            refusal: providerResult.refusal,
             evaluations,
             durationMs,
             passed,

@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { SimpleHarness } from "../src/harness/simpleHarness.js";
 import { FakeProvider } from "../src/providers/fakeProvider.js";
 import { NonEmptyOutputEvaluator } from "../src/evaluations/evaluateNonEmptyOutput.js";
 import { MinimumLengthEvaluator } from "../src/evaluations/minimumLengthEvaluator.js";
+import { z } from "zod";
 
 const role = {
     id: "technical-coach",
@@ -174,4 +175,74 @@ describe("SimpleHarness", () => {
         ]);
         expect(result.passed).toBe(false);
     });
+    it("uses the provider request contract", async () => {
+        const provider = new FakeProvider("Harness response");
+        const generateSpy = vi.spyOn(provider, "generate");
+
+        const harness = new SimpleHarness(provider, [], "test-harness");
+
+        const result = await harness.run(role, {
+            id: "analyze-task",
+            instruction: "Analyze this task",
+        });
+
+        expect(generateSpy).toHaveBeenCalledWith({
+            prompt: result.prompt,
+        });
+        expect(result.output).toBe("Harness response");
+    });
+    it("passes the scenario output schema to the provider", async () => {
+        const provider = new FakeProvider("Structured response");
+        const generateSpy = vi.spyOn(provider, "generate");
+        const outputSchema = z.object({
+            answer: z.string(),
+        });
+
+        const harness = new SimpleHarness(
+            provider,
+            [],
+            "test-harness",
+            "test-scenario",
+            outputSchema,
+        );
+
+        const result = await harness.run(role, {
+            id: "structured-task",
+            instruction: "Return a structured answer.",
+        });
+
+        expect(generateSpy).toHaveBeenCalledWith({
+            prompt: result.prompt,
+            outputSchema,
+        });
+    });
+    it("preserves raw and parsed provider evidence", async () => {
+        const provider = new FakeProvider("Unused response");
+    
+        vi.spyOn(provider, "generate").mockResolvedValue({
+          rawOutput: '{"answer":"Structured response"}',
+          parsedOutput: {
+            answer: "Structured response",
+          },
+          refusal: null,
+        });
+    
+        const harness = new SimpleHarness(
+          provider,
+          [],
+          "test-harness",
+          "test-scenario",
+        );
+    
+        const result = await harness.run(role, {
+          id: "structured-task",
+          instruction: "Return a structured answer.",
+        });
+    
+        expect(result.output).toBe('{"answer":"Structured response"}');
+        expect(result.parsedOutput).toEqual({
+          answer: "Structured response",
+        });
+        expect(result.refusal).toBeNull();
+      });
 });

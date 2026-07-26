@@ -70,6 +70,31 @@ This allows:
 - model comparison later
 - cleaner architecture
 
+The provider accepts a request containing:
+
+```ts
+{
+  prompt,
+  outputSchema?
+}
+```
+
+Plain-text requests use the normal response path. Requests with an output
+schema use provider-supported structured generation.
+
+Provider results keep execution evidence separate:
+
+```ts
+{
+  rawOutput,
+  parsedOutput,
+  refusal
+}
+```
+
+`OpenAIProvider` translates Zod schemas through the OpenAI structured-output
+helper. `FakeProvider` returns deterministic provider results for offline tests.
+
 ### Role
 
 A role defines behavioral instructions.
@@ -253,12 +278,19 @@ Each run currently records:
   context,
   prompt,
   output,
+  parsedOutput,
+  refusal,
   evaluations,
   passed,
   durationMs,
   completedAt
 }
 ```
+
+`output` preserves the raw provider response. `parsedOutput` contains
+schema-validated structured data when available, otherwise `null`. `refusal`
+records an explicit provider refusal separately from parsing or evaluation
+failure.
 
 ### Registry
 

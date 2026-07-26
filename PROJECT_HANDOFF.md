@@ -92,6 +92,10 @@ The project currently supports:
 - a scenario registry
 - optional scenario resolution
 - harness and scenario evaluator composition
+- scenario-specific Zod output contracts
+- provider-neutral generation requests and results
+- plain-text and structured OpenAI generation
+- raw, parsed, and refusal evidence preservation
 - CLI harness selection
 - persisted JSON run records
 - overall pass/fail status
@@ -110,6 +114,7 @@ Implemented deterministic evaluators:
 - `RequiredPhraseEvaluator`
 - `ForbiddenPhraseEvaluator`
 - `RequiredSectionEvaluator`
+- `StructuredOutputEvaluator`
 
 Evaluators receive:
 
@@ -152,8 +157,10 @@ Current files:
 
 ```text
 src/scenarios/scenarioDefinition.ts
+src/scenarios/explainAgenticHarnessOutput.ts
 src/scenarios/explainAgenticHarnessScenario.ts
 src/scenarios/scenarioRegistry.ts
+src/evaluations/structuredOutputEvaluator.ts
 ```
 
 Registered scenario:
@@ -166,25 +173,27 @@ The scenario contains:
 
 ```text
 RequiredPhraseEvaluator("agentic harness")
-RequiredSectionEvaluator("Practical Example")
+StructuredOutputEvaluator(explainAgenticHarnessOutputSchema)
 ```
 
-The related task explicitly requests the `Practical Example` Markdown heading.
+The scenario exposes `explainAgenticHarnessOutputSchema` for provider-supported
+structured generation. The related task requests content aligned with the
+schema fields.
 
-## Last Confirmed State
+## Current Verified State
 
-Last confirmed milestone:
+Current milestone:
 
 ```text
-Commit: 75c4689
-Description: Add required section evaluation
+Structured output foundation
 ```
 
-Last confirmed test state:
+Verified test state:
 
 ```text
-21 test files passed
-47 tests passed
+npm run typecheck passed
+24 test files passed
+59 tests passed
 ```
 
 This state must be verified before continuing:
@@ -207,15 +216,18 @@ The CLI resolves scenarios by task ID with `findScenarioDefinition`.
 Tasks such as `connection-check` intentionally run with harness evaluators only.
 The composed evaluator list is created before model execution.
 Each run records the matched scenario ID or explicit `null`.
+When a scenario exposes an output schema, the CLI passes it through
+`SimpleHarness` to the provider request.
 
 ## Immediate Next Step
 
-Begin Phase 7 by defining a structured output contract for one scenario.
-Explain the contract and raw-output preservation tradeoffs before changing provider interfaces.
+Continue Phase 7 by persisting provider parsing and transport failures as run
+evidence instead of allowing them to terminate execution without an inspectable
+result.
 
 ## Broader Roadmap
 
-1. Add structured-output evaluation.
+1. Complete structured-output failure evidence and typed result handling.
 2. Add scenario suites and repeated runs.
 3. Compare prompts, providers, and context strategies.
 4. Add controlled tools.
