@@ -235,10 +235,18 @@ execution begins.
 The scenario-suite runner resolves the complete suite before execution, then
 awaits an injected scenario executor once for each scenario. This keeps suite
 ordering separate from harness and provider behavior and prevents partial
-execution when reference resolution fails.
+execution when reference resolution fails. Each executor invocation returns a
+`HarnessResult`, and the runner preserves those results in suite order:
 
-The current runner is sequential and does not yet collect results, repeat runs,
-aggregate metrics, or schedule concurrent work.
+```ts
+{
+  suiteId,
+  runs
+}
+```
+
+The current runner is sequential and does not yet repeat runs, aggregate
+metrics, or schedule concurrent work.
 
 ### Evaluator
 

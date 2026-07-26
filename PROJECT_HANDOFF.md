@@ -96,6 +96,7 @@ The project currently supports:
 - sequential scenario-suite execution
 - injected scenario execution behavior
 - preflight rejection before partial suite execution
+- suite-run result collection preserving ordered `HarnessResult` evidence
 - optional scenario resolution
 - harness and scenario evaluator composition
 - scenario-specific Zod output contracts
@@ -193,7 +194,7 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 8 sequential scenario-suite runner
+Phase 8 scenario-suite result collection
 ```
 
 Verified test state:
@@ -229,9 +230,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Return collected harness results from the sequential suite runner and define a
-suite-run result contract. Defer repetition, pass-rate aggregation,
-concurrency, and reporting behavior.
+Add an explicit repetition count to suite execution and preserve every repeated
+`HarnessResult`. Defer pass-rate aggregation, concurrency, and reporting
+behavior.
 
 ## Broader Roadmap
 

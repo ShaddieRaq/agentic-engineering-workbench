@@ -169,10 +169,11 @@ Implemented:
 - sequential scenario-suite runner
 - injected scenario executor
 - preflight resolution before any scenario executes
+- collected `HarnessResult` evidence in suite order
+- suite-run result contract containing the suite ID and run records
 
 Still needed:
 
-- collect scenario run results
 - scenario datasets
 - repeated runs
 - pass-rate calculation

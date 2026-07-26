@@ -367,3 +367,27 @@ invalid.
 - current execution order is explicit and sequential
 - invalid references cause zero scenario executions
 - result collection, repetition, and concurrency remain separate additions
+
+---
+
+## Decision 017 — Preserve Ordered Suite Run Evidence
+
+Status: Accepted
+
+### Decision
+
+Each scenario executor returns a `HarnessResult`. The scenario-suite runner
+collects those results in execution order and returns them with the suite ID.
+
+### Rationale
+
+Suite execution must retain the same evidence used for individual-run
+debugging and evaluation. Returning raw run records keeps orchestration
+observable without prematurely combining evidence into summary metrics.
+
+### Consequences
+
+- callers receive every scenario's complete run evidence
+- result order matches the suite's sequential execution order
+- aggregation can be added without changing the underlying evidence
+- repetition, pass-rate calculation, and concurrency remain separate concerns

@@ -1,18 +1,30 @@
 import type { ScenarioDefinition } from "../scenarios/scenarioDefinition.js";
 import type { ScenarioSuiteDefinition } from "./scenarioSuiteDefinition.js";
 import { resolveScenarioSuite } from "./scenarioSuiteResolver.js";
+import type { HarnessResult } from "../harness/harnessResult.js";
 
 export type ScenarioExecutor = (
-  scenario: ScenarioDefinition,
-) => Promise<void>;
+    scenario: ScenarioDefinition,
+  ) => Promise<HarnessResult>;
 
-export async function runScenarioSuite(
-  suite: ScenarioSuiteDefinition,
-  executeScenario: ScenarioExecutor,
-): Promise<void> {
-  const scenarios = resolveScenarioSuite(suite);
-
-  for (const scenario of scenarios) {
-    await executeScenario(scenario);
+  export interface ScenarioSuiteRunResult {
+    suiteId: string;
+    runs: HarnessResult[];
   }
-}
+
+  export async function runScenarioSuite(
+    suite: ScenarioSuiteDefinition,
+    executeScenario: ScenarioExecutor,
+  ): Promise<ScenarioSuiteRunResult> {
+    const scenarios = resolveScenarioSuite(suite);
+    const runs: HarnessResult[] = [];
+
+    for (const scenario of scenarios) {
+      runs.push(await executeScenario(scenario));
+    }
+
+    return {
+      suiteId: suite.id,
+      runs,
+    };
+  }
