@@ -9,7 +9,7 @@ describe("getScenarioDefinition", () => {
         const definition = getScenarioDefinition("explain-agentic-harness");
 
         expect(definition.id).toBe("explain-agentic-harness");
-        expect(definition.evaluators).toHaveLength(1);
+        expect(definition.evaluators).toHaveLength(2);
     });
 
     it("rejects an unknown scenario", () => {

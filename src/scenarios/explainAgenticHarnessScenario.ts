@@ -1,4 +1,5 @@
 import { RequiredPhraseEvaluator } from "../evaluations/requiredPhraseEvaluator.js";
+import { RequiredSectionEvaluator } from "../evaluations/requiredSectionEvaluator.js"
 import type { ScenarioDefinition } from "./scenarioDefinition.js";
 
 export const explainAgenticHarnessScenario: ScenarioDefinition = {
@@ -6,5 +7,6 @@ export const explainAgenticHarnessScenario: ScenarioDefinition = {
   description: "Explains what an agentic harness is and how it works.",
   evaluators: [
     new RequiredPhraseEvaluator("agentic harness"),
+    new RequiredSectionEvaluator("Practical Example"),
   ],
 };
