@@ -341,3 +341,29 @@ to imply execution count.
 - scenario policy changes are automatically visible to suites
 - unknown scenario references fail before suite execution
 - repeated execution is modeled separately from suite membership
+
+---
+
+## Decision 016 — Inject Scenario Execution Into the Suite Runner
+
+Status: Accepted
+
+### Decision
+
+The scenario-suite runner resolves all scenario references before execution and
+invokes an injected scenario executor sequentially.
+
+### Rationale
+
+Suite orchestration should control membership and ordering without embedding
+role loading, task loading, provider construction, or harness execution.
+Preflight resolution prevents partial execution when suite references are
+invalid.
+
+### Consequences
+
+- suite execution remains testable without live providers
+- scenario execution policy can evolve independently
+- current execution order is explicit and sequential
+- invalid references cause zero scenario executions
+- result collection, repetition, and concurrency remain separate additions

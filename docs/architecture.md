@@ -232,6 +232,14 @@ The suite registry resolves suites by ID. The suite resolver expands each
 scenario ID through the scenario registry and rejects unknown references before
 execution begins.
 
+The scenario-suite runner resolves the complete suite before execution, then
+awaits an injected scenario executor once for each scenario. This keeps suite
+ordering separate from harness and provider behavior and prevents partial
+execution when reference resolution fails.
+
+The current runner is sequential and does not yet collect results, repeat runs,
+aggregate metrics, or schedule concurrent work.
+
 ### Evaluator
 
 An evaluator checks a property of the run.

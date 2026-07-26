@@ -166,10 +166,13 @@ Implemented:
 - scenario-suite registry
 - suite-to-scenario reference resolution
 - rejection of unknown scenario references
+- sequential scenario-suite runner
+- injected scenario executor
+- preflight resolution before any scenario executes
 
 Still needed:
 
-- run many scenarios together
+- collect scenario run results
 - scenario datasets
 - repeated runs
 - pass-rate calculation

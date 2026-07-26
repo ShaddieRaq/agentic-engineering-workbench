@@ -93,6 +93,9 @@ The project currently supports:
 - Zod-validated scenario-suite definitions
 - a scenario-suite registry
 - scenario-suite reference resolution
+- sequential scenario-suite execution
+- injected scenario execution behavior
+- preflight rejection before partial suite execution
 - optional scenario resolution
 - harness and scenario evaluator composition
 - scenario-specific Zod output contracts
@@ -190,15 +193,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 8 scenario-suite definition foundation
+Phase 8 sequential scenario-suite runner
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-27 test files passed
-71 tests passed
+28 test files passed
+73 tests passed
 ```
 
 This state must be verified before continuing:
@@ -226,9 +229,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add a sequential scenario-suite runner with an injected scenario executor.
-Keep execution order explicit and defer repetition, aggregation, concurrency,
-and reporting behavior.
+Return collected harness results from the sequential suite runner and define a
+suite-run result contract. Defer repetition, pass-rate aggregation,
+concurrency, and reporting behavior.
 
 ## Broader Roadmap
 
