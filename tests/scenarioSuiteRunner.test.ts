@@ -7,6 +7,30 @@ import {
 import type { HarnessResult } from "../src/harness/harnessResult.js";
 import type { ScenarioDefinition } from "../src/scenarios/scenarioDefinition.js";
 
+const harnessResult: HarnessResult = {
+    runId: "run-1",
+    harnessId: "test-harness",
+    scenarioId: "explain-agentic-harness",
+    role: {
+      id: "test-role",
+      instructions: "Test instructions.",
+    },
+    task: {
+      id: "test-task",
+      instruction: "Test task.",
+    },
+    context: [],
+    prompt: "Test prompt.",
+    output: "Test output.",
+    parsedOutput: null,
+    refusal: null,
+    executionFailure: null,
+    evaluations: [],
+    durationMs: 1,
+    completedAt: "2026-07-26T12:00:00.000Z",
+    passed: true,
+  };
+
 describe("runScenarioSuite", () => {
     it("executes nothing when suite resolution fails", async () => {
         const executeScenario = vi.fn<ScenarioExecutor>(
@@ -36,30 +60,6 @@ describe("runScenarioSuite", () => {
     it("collects every scenario result", async () => {
         const suite = getScenarioSuiteDefinition("core-reliability");
     
-        const harnessResult: HarnessResult = {
-          runId: "run-1",
-          harnessId: "test-harness",
-          scenarioId: "explain-agentic-harness",
-          role: {
-            id: "test-role",
-            instructions: "Test instructions.",
-          },
-          task: {
-            id: "test-task",
-            instruction: "Test task.",
-          },
-          context: [],
-          prompt: "Test prompt.",
-          output: "Test output.",
-          parsedOutput: null,
-          refusal: null,
-          executionFailure: null,
-          evaluations: [],
-          durationMs: 1,
-          completedAt: "2026-07-26T12:00:00.000Z",
-          passed: true,
-        };
-    
         const executeScenario = vi.fn(
           async (_scenario: ScenarioDefinition) => harnessResult,
         );
@@ -75,4 +75,43 @@ describe("runScenarioSuite", () => {
           runs: [harnessResult],
         });
       });
+
+      it("repeats each scenario the requested number of times", async () => {
+        const suite = getScenarioSuiteDefinition("core-reliability");
+        let runNumber = 0;
+    
+        const executeScenario = vi.fn(
+          async (_scenario: ScenarioDefinition): Promise<HarnessResult> => ({
+            ...harnessResult,
+            runId: `run-${++runNumber}`,
+          }),
+        );
+    
+        const result = await runScenarioSuite(suite, executeScenario, {
+          repetitions: 3,
+        });
+    
+        expect(executeScenario).toHaveBeenCalledTimes(3);
+        expect(result.runs.map((run) => run.runId)).toEqual([
+          "run-1",
+          "run-2",
+          "run-3",
+        ]);
+      });
+      it.each([0, -1, 1.5])(
+        "rejects invalid repetition count %s",
+        async (repetitions) => {
+          const suite = getScenarioSuiteDefinition("core-reliability");
+          const executeScenario = vi.fn(
+            async (_scenario: ScenarioDefinition): Promise<HarnessResult> =>
+              harnessResult,
+          );
+    
+          await expect(
+            runScenarioSuite(suite, executeScenario, { repetitions }),
+          ).rejects.toThrow();
+    
+          expect(executeScenario).not.toHaveBeenCalled();
+        },
+      );
 });

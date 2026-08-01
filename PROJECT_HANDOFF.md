@@ -97,6 +97,8 @@ The project currently supports:
 - injected scenario execution behavior
 - preflight rejection before partial suite execution
 - suite-run result collection preserving ordered `HarnessResult` evidence
+- runtime-validated repeated scenario execution
+- scenario-major ordering of repeated run evidence
 - optional scenario resolution
 - harness and scenario evaluator composition
 - scenario-specific Zod output contracts
@@ -194,7 +196,7 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 8 scenario-suite result collection
+Phase 8 repeated scenario-suite execution
 ```
 
 Verified test state:
@@ -202,7 +204,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 28 test files passed
-73 tests passed
+77 tests passed
 ```
 
 This state must be verified before continuing:
@@ -230,9 +232,8 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add an explicit repetition count to suite execution and preserve every repeated
-`HarnessResult`. Defer pass-rate aggregation, concurrency, and reporting
-behavior.
+Calculate suite-level pass rates from the preserved `HarnessResult` evidence.
+Defer concurrency and reporting behavior.
 
 ## Broader Roadmap
 

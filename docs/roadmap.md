@@ -171,11 +171,12 @@ Implemented:
 - preflight resolution before any scenario executes
 - collected `HarnessResult` evidence in suite order
 - suite-run result contract containing the suite ID and run records
+- runtime-validated positive-integer repetition policy
+- sequential repeated runs with scenario-major evidence ordering
 
 Still needed:
 
 - scenario datasets
-- repeated runs
 - pass-rate calculation
 - failure summaries
 - regression comparison

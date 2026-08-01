@@ -391,3 +391,29 @@ observable without prematurely combining evidence into summary metrics.
 - result order matches the suite's sequential execution order
 - aggregation can be added without changing the underlying evidence
 - repetition, pass-rate calculation, and concurrency remain separate concerns
+
+---
+
+## Decision 018 — Model Repetition as Validated Execution Policy
+
+Status: Accepted
+
+### Decision
+
+Scenario-suite execution accepts a repetition count that defaults to one and
+must be a positive integer. The runner executes repetitions sequentially in
+scenario-major order and preserves every resulting `HarnessResult`.
+
+### Rationale
+
+Repeated observations measure nondeterministic reliability; they are not
+duplicate suite membership. Runtime validation prevents empty, negative, or
+fractional execution plans from producing misleading evidence.
+
+### Consequences
+
+- suite definitions continue to contain unique scenario IDs
+- existing callers retain single-run behavior by default
+- repeated evidence for each scenario stays adjacent
+- invalid repetition policies fail before scenario execution
+- aggregation and concurrency remain independent additions

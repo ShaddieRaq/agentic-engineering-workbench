@@ -245,8 +245,12 @@ execution when reference resolution fails. Each executor invocation returns a
 }
 ```
 
-The current runner is sequential and does not yet repeat runs, aggregate
-metrics, or schedule concurrent work.
+The runner accepts a runtime-validated repetition count. Repetitions must be a
+positive integer and default to one, preserving the original single-run
+behavior. Execution remains sequential and scenario-major, so repeated results
+for the same scenario remain adjacent in the returned evidence.
+
+The runner does not yet aggregate metrics or schedule concurrent work.
 
 ### Evaluator
 
