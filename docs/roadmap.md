@@ -232,11 +232,22 @@ Future extensions:
 
 ## Phase 10 — Controlled Tools
 
-Status: Not started
+Status: In progress
 
-Planned safe tools:
+Implemented:
 
-- list files
+- generic typed tool-definition contract
+- Zod-validated tool inputs and outputs
+- shared tool executor with structured call evidence
+- validation, permission, and execution failure categories
+- root-bounded immediate-directory `list-files` tool
+- lexical traversal and symbolic-link escape protection
+- denied-path and bounded-output policies
+- deterministic entry ordering
+- operator-facing `list-files` CLI
+
+Remaining safe tools:
+
 - read files
 - search repository text
 - inspect package metadata

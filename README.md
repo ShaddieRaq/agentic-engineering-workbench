@@ -79,3 +79,16 @@ npm run experiment -- \
   --candidate-model gpt-5.4-mini \
   --harness technical-coach
 ```
+
+## Run the First Controlled Tool
+
+List one level of repository files through the same validated, root-bounded
+execution contract that future agents will use:
+
+```bash
+npm run list-files -- --path src --max-entries 20
+```
+
+The command prints structured tool-call evidence. Paths outside the repository,
+denied paths, invalid inputs, and output-limit behavior are handled by explicit
+policy rather than model judgment.

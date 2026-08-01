@@ -215,6 +215,26 @@ The current harness:
 
 It is currently single-step.
 
+### Controlled Tools
+
+Tools are deterministic capabilities exposed through a generic execution
+controller. A tool definition owns its ID, description, Zod input/output
+schemas, and capability implementation. The controller validates input,
+executes the capability, validates output, and records one `ToolCallEvidence`
+result containing timing, normalized input, output, and classified failure.
+
+The first tool, `list-files`, lists one directory level beneath an
+operator-selected repository root. Its policy:
+
+- rejects lexical traversal outside the root
+- resolves real paths to prevent symbolic-link escape
+- denies `.git`, `.env`, `node_modules`, and `runs` by default
+- caps output using both request and policy limits
+- sorts entries for deterministic evidence
+
+The CLI invokes this boundary directly. Model-driven tool selection is not yet
+connected; permission enforcement is tested independently first.
+
 ### Harness Definition
 
 A harness definition contains reusable execution or evaluation policy.

@@ -796,3 +796,34 @@ hypothesis test.
 - small perfect samples retain appropriately wide intervals
 - pass-rate direction and confidence-interval relationship remain separate
 - formal significance tests and experiment power analysis remain future work
+
+---
+
+## Decision 032 — Validate Tool Boundaries Before Model Tool Selection
+
+Status: Accepted
+
+### Decision
+
+Represent tools as typed definitions with Zod input/output contracts and run
+them through one deterministic executor that records structured evidence.
+Begin with an immediate-directory `list-files` capability whose allowed root is
+chosen by the application, not the model. Enforce lexical and real-path
+containment, denied path segments, and output limits before connecting any tool
+to provider tool calling.
+
+### Rationale
+
+Model tool selection adds probabilistic control flow. Permission enforcement
+must already be correct and independently testable before that layer exists.
+Separating the capability from its controller allows every later tool to share
+validation, failure classification, timing, and evidence behavior.
+
+### Consequences
+
+- invalid inputs, permission denials, and execution failures remain distinct
+- normalized executed input is preserved in evidence
+- invalid tool output is classified as an execution defect
+- direct traversal and symbolic-link escape are denied
+- sensitive and high-volume repository paths are hidden by default
+- the model currently cannot select or invoke tools

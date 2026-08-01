@@ -148,6 +148,10 @@ The project currently supports:
 - recorded harness IDs
 - recorded scenario IDs
 - structured evidence for each run
+- generic Zod-validated tool definitions
+- structured tool-call evidence and failure classification
+- root-bounded `list-files` with traversal, symlink, deny-list, and output-limit policy
+- operator-facing controlled-tool CLI
 
 ## Current Evaluators
 
@@ -229,15 +233,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 9 reliability experiments complete; Phase 10 controlled tools next
+Phase 10 controlled tools: root-bounded list-files complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-48 test files passed
-132 tests passed
+51 test files passed
+141 tests passed
 ```
 
 This state must be verified before continuing:
@@ -265,10 +269,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Begin Phase 10 with one read-only, root-bounded repository inspection tool.
-Define its input/output schema, permission policy, output limit, evidence
-contract, and deterministic tests before connecting it to model-driven tool
-selection.
+Add a root-bounded `read-file` tool with explicit byte limits, denied paths,
+binary-file rejection, and the shared tool evidence contract. Keep model-driven
+tool selection disconnected until the read-only capability set is complete.
 
 ## Broader Roadmap
 

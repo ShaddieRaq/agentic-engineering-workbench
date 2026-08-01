@@ -8,6 +8,7 @@
     "agent": "tsx src/index.ts",
     "dataset": "tsx src/runDataset.ts",
     "experiment": "tsx src/runExperiment.ts",
+    "list-files": "tsx src/runListFilesTool.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
