@@ -145,6 +145,13 @@ describe("runRepositoryAnalysis", () => {
     expect(result.parsedOutput).toEqual(parsedAnalysis);
     expect(result.provider?.model).toBe("test-model");
     expect(result.executionFailure).toBeNull();
+    expect(result.evaluations).toMatchObject([
+      {
+        evaluatorId: "repository-evidence-paths",
+        passed: true,
+        invalidPaths: [],
+      },
+    ]);
     expect(result.succeeded).toBe(true);
   });
 
@@ -159,6 +166,7 @@ describe("runRepositoryAnalysis", () => {
 
     expect(result.refusal).toBe("I cannot analyze this repository.");
     expect(result.executionFailure).toBeNull();
+    expect(result.evaluations).toEqual([]);
     expect(result.succeeded).toBe(false);
   });
 
@@ -176,6 +184,31 @@ describe("runRepositoryAnalysis", () => {
       category: "transport",
       message: "Provider unavailable.",
     });
+    expect(result.evaluations).toEqual([]);
+    expect(result.succeeded).toBe(false);
+  });
+
+  it("fails a structured result that cites unavailable context", async () => {
+    const invalidAnalysis: RepositoryAnalysisOutput = {
+      ...parsedAnalysis,
+      risks: [
+        {
+          risk: "An unobserved implementation may fail.",
+          evidencePaths: ["src/unobserved.ts"],
+        },
+      ],
+    };
+    const provider = new TestProvider({
+      rawOutput: JSON.stringify(invalidAnalysis),
+      parsedOutput: invalidAnalysis,
+      refusal: null,
+      provider: { model: "test-model", usage: null },
+    });
+    const result = await runRepositoryAnalysis(inspection(), provider);
+
+    expect(result.evaluations[0]?.invalidPaths).toEqual([
+      "src/unobserved.ts",
+    ]);
     expect(result.succeeded).toBe(false);
   });
 });

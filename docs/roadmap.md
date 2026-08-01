@@ -303,6 +303,10 @@ Implemented:
 - live `analyze-repository` composition root and CLI
 - economical default model with explicit model override
 - concise terminal summary separated from full run evidence
+- deterministic analysis citation validation
+- exact comparison against assembled context sources
+- available, cited, and invalid path evidence
+- citation evaluation included in overall analysis status
 
 Initial use cases:
 

@@ -319,6 +319,14 @@ model and instruction, and prints only a concise operational summary. Full
 prompts, source content, structured output, refusals, usage, and failures remain
 in the ignored evidence artifact.
 
+After structured generation, a deterministic citation evaluator collects every
+evidence path from architecture components, entry points, risks, and test
+recommendations. It compares exact repository-relative paths against accepted
+context sources. The evaluation records available, cited, and invalid paths.
+An otherwise valid model response is unsuccessful when it cites context that
+was not assembled, and the CLI reports the evaluation failure separately from
+provider failure.
+
 ### Harness Definition
 
 A harness definition contains reusable execution or evaluation policy.

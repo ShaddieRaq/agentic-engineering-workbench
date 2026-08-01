@@ -11,6 +11,10 @@ import {
 import type { RepositoryInspectionWorkflowResult } from "./repositoryInspectionWorkflow.js";
 import type { RepositoryAnalysisOutput } from "./repositoryAnalysisOutput.js";
 import { buildRepositoryAnalysisRequest } from "./repositoryAnalysisRequest.js";
+import {
+  evaluateRepositoryAnalysisCitations,
+  type RepositoryAnalysisCitationEvaluation,
+} from "./repositoryAnalysisEvaluator.js";
 
 export interface RepositoryAnalysisExecutionFailure {
   stage: "provider";
@@ -32,6 +36,7 @@ export interface RepositoryAnalysisRunResult {
   refusal: string | null;
   provider: AIProviderEvidence | null;
   executionFailure: RepositoryAnalysisExecutionFailure | null;
+  evaluations: RepositoryAnalysisCitationEvaluation[];
   succeeded: boolean;
   durationMs: number;
   completedAt: string;
@@ -70,6 +75,15 @@ export async function runRepositoryAnalysis(
     };
   }
 
+  const evaluations = providerResult.parsedOutput === null
+    ? []
+    : [
+        evaluateRepositoryAnalysisCitations(
+          providerResult.parsedOutput,
+          inspection.contextAssembly,
+        ),
+      ];
+
   return {
     analysisRunId: randomUUID(),
     inspection,
@@ -83,10 +97,12 @@ export async function runRepositoryAnalysis(
     provider:
       executionFailure === null ? providerResult.provider : null,
     executionFailure,
+    evaluations,
     succeeded:
       executionFailure === null &&
       providerResult.refusal === null &&
-      providerResult.parsedOutput !== null,
+      providerResult.parsedOutput !== null &&
+      evaluations.every(({ passed }) => passed),
     durationMs: performance.now() - startedAt,
     completedAt: new Date().toISOString(),
   };

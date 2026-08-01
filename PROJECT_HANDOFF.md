@@ -177,6 +177,8 @@ The project currently supports:
 - unified inspection, request, provider, refusal, failure, and timing evidence
 - persisted repository-analysis artifacts
 - live `analyze-repository` CLI with model and instruction configuration
+- deterministic repository-analysis citation evaluation
+- exact available, cited, and invalid context-path evidence
 
 ## Current Evaluators
 
@@ -258,15 +260,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 11 local engineering assistant: live repository analysis available
+Phase 11 local engineering assistant: grounded live repository analysis available
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-67 test files passed
-191 tests passed
+68 test files passed
+194 tests passed
 ```
 
 This state must be verified before continuing:
@@ -294,9 +296,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Run the first live repository analysis and inspect its persisted evidence. Then
-add deterministic citation validation so every reported evidence path must come
-from the assembled context before the analysis is considered successful.
+Add change-aware context selection. When Git evidence contains modified or
+untracked paths, prioritize safely readable changed files alongside orientation
+context so diff-review analysis can cite implementation evidence.
 
 ## Broader Roadmap
 

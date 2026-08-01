@@ -51,6 +51,14 @@ async function main(): Promise<void> {
     );
   }
 
+  for (const evaluation of result.evaluations) {
+    if (!evaluation.passed) {
+      console.log(
+        `Evaluation [${evaluation.evaluatorId}]: ${evaluation.message}`,
+      );
+    }
+  }
+
   if (!result.succeeded) {
     process.exitCode = 1;
   }

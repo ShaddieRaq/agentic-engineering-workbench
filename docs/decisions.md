@@ -1134,3 +1134,32 @@ analysis.
 - terminal output reports status, model, context usage, path, and finding counts
 - `.env` and `runs/` remain excluded from version control
 - choosing another model or task does not change workflow implementation
+
+---
+
+## Decision 043 — Treat Unsupported Citations as Analysis Failure
+
+Status: Accepted
+
+### Decision
+
+After structured repository analysis, deterministically collect all evidence
+paths and compare them exactly against sources accepted into context. Preserve
+available, cited, and invalid paths in an evaluation result. Require the
+citation evaluation to pass before the analysis run is successful.
+
+### Rationale
+
+A schema can require citation fields but cannot prove that cited files were
+actually available to the model. Allowing invented or unloaded paths would make
+the output look grounded while defeating the evidence boundary. Exact path
+matching is transparent and avoids silently treating aliases as equivalent.
+
+### Consequences
+
+- structurally valid output can still fail grounding evaluation
+- unavailable citations remain visible for debugging and prompt improvement
+- provider success, refusal, execution failure, and evaluation failure remain
+  distinct states
+- the CLI reports failed citation evaluation separately
+- semantic support within a correctly cited file remains a future evaluator

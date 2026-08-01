@@ -52,6 +52,7 @@ describe("writeRepositoryAnalysis", () => {
       refusal: null,
       provider: { model: "test-model", usage: null },
       executionFailure: null,
+      evaluations: [],
       succeeded: false,
       durationMs: 2,
       completedAt: "2026-08-01T12:00:01.000Z",

@@ -157,3 +157,5 @@ npm run analyze-repository
 The command defaults to `gpt-5.4-mini`, saves the complete artifact under
 `runs/`, and prints a concise summary. Use `--model gpt-5.4` to override the
 model or `--instruction "..."` to supply a specific analysis task.
+Structured findings count as successful only when every evidence path exactly
+matches a file that was loaded into the analysis context.
