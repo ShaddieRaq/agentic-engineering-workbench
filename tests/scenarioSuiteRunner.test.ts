@@ -34,6 +34,7 @@ const harnessResult: HarnessResult = {
     output: "Test output.",
     parsedOutput: null,
     refusal: null,
+    provider: null,
     executionFailure: null,
     evaluations: [],
     durationMs: 1,

@@ -54,6 +54,10 @@ export class SimpleHarness<TOutput = unknown> {
                 rawOutput: "",
                 parsedOutput: null,
                 refusal: null,
+                provider: {
+                    model: "unknown",
+                    usage: null,
+                },
             };
             executionFailure = {
                 stage: "provider",
@@ -95,6 +99,10 @@ export class SimpleHarness<TOutput = unknown> {
             output,
             parsedOutput: providerResult.parsedOutput,
             refusal: providerResult.refusal,
+            provider:
+                executionFailure === null
+                    ? providerResult.provider
+                    : null,
             executionFailure,
             evaluations,
             durationMs,

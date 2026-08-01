@@ -36,7 +36,16 @@ describe("runScenarioDatasetExperiment", () => {
       instructions: "Follow the task.",
     };
     const baselineExecutor = createScenarioDatasetExecutor({
-      provider: new FakeProvider("Invalid output"),
+      provider: new FakeProvider("Invalid output", {
+        model: "gpt-5.4",
+        usage: {
+          inputTokens: 100,
+          cachedInputTokens: 0,
+          outputTokens: 50,
+          reasoningTokens: 10,
+          totalTokens: 150,
+        },
+      }),
       role,
       harnessDefinition,
     });
@@ -48,6 +57,16 @@ describe("runScenarioDatasetExperiment", () => {
           modelBoundary: "The model generates the proposed output.",
           practicalExample: "Test support answers before release.",
         }),
+        {
+          model: "gpt-5.4",
+          usage: {
+            inputTokens: 90,
+            cachedInputTokens: 0,
+            outputTokens: 40,
+            reasoningTokens: 5,
+            totalTokens: 130,
+          },
+        },
       ),
       role,
       harnessDefinition,
@@ -86,6 +105,16 @@ describe("runScenarioDatasetExperiment", () => {
       expect(comparison.averageDurationDeltaMs).toEqual(
         expect.any(Number),
       );
+    }
+
+    expect(result.tokenCostComparisons).toHaveLength(2);
+
+    for (const comparison of result.tokenCostComparisons) {
+      expect(comparison).toMatchObject({
+        totalTokensDelta: -20,
+        tokenClassification: "fewer",
+        costClassification: "cheaper",
+      });
     }
   });
 });

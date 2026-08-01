@@ -702,3 +702,37 @@ also allows later reporting to present the evidence without recalculation.
 - experiment artifacts expose reliability and latency independently
 - observed latency direction does not imply statistical significance
 - token usage and cost remain separate future evidence signals
+
+---
+
+## Decision 029 — Preserve Usage Before Estimating Cost
+
+Status: Accepted
+
+### Decision
+
+Store provider-neutral model and token-usage evidence in every successful
+`HarnessResult`. Derive experiment cost from an explicit, dated pricing policy
+instead of storing a provider-reported or silently hardcoded cost. Keep token,
+cost, latency, and reliability comparisons as separate signals.
+
+The initial pricing policy covers standard GPT-5.4 requests below 272,000 input
+tokens using the rates observed on 2026-08-01 from the official OpenAI pricing
+page. Unsupported models, long-context requests, failed calls, and missing
+usage produce `null` cost evidence rather than a fabricated zero.
+
+### Rationale
+
+Token counts are durable execution evidence; prices are mutable business
+policy. Separating them allows old runs to be repriced later and makes every
+estimate auditable. Separate signals prevent a cheaper but less reliable
+candidate from appearing unconditionally better.
+
+### Consequences
+
+- persisted runs expose model and token usage without OpenAI field names
+- failed provider calls explicitly have no provider evidence
+- cached input is priced separately from uncached input
+- reasoning tokens remain visible and are already included in output-token cost
+- experiment comparisons require complete, equally sized usage samples
+- pricing identifiers, source URL, and observation date remain inspectable

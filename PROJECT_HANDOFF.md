@@ -123,6 +123,9 @@ The project currently supports:
 - executable controlled role-comparison experiments
 - persisted baseline, candidate, and per-case comparison evidence
 - per-case latency summaries and baseline-versus-candidate comparison
+- provider-neutral model and token-usage evidence
+- per-case token and estimated-cost experiment comparisons
+- dated, source-linked GPT-5.4 standard pricing policy
 - deterministic baseline-versus-candidate reliability comparison
 - explicit regression, improvement, unchanged, and insufficient-evidence states
 - optional scenario resolution
@@ -222,15 +225,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 9 per-case reliability and latency experiments
+Phase 9 reliability, latency, token, and cost experiments
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-46 test files passed
-124 tests passed
+47 test files passed
+127 tests passed
 ```
 
 This state must be verified before continuing:
@@ -258,9 +261,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Run the role-comparison experiment and inspect its separate reliability and
-latency evidence. Then propagate provider token usage into `HarnessResult` and
-derive per-case token and cost comparisons.
+Run the role-comparison experiment and inspect its separate reliability,
+latency, token, and estimated-cost evidence. Then make model selection an
+explicit experiment variable instead of a provider implementation constant.
 
 ## Broader Roadmap
 

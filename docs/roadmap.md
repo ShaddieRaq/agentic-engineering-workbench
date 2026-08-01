@@ -214,15 +214,18 @@ Implemented:
 - per-case reliability comparison in the experiment CLI
 - per-case latency sample count, average, minimum, and maximum
 - observed candidate-versus-baseline average-latency comparison
+- provider-neutral model and token-usage evidence on every successful run
+- input, cached-input, output, reasoning, and total-token preservation
+- auditable GPT-5.4 standard short-context pricing policy
+- per-case baseline-versus-candidate token and estimated-cost comparison
+- explicit insufficient-evidence behavior for missing or unsupported usage
 
 Planned:
 
 - compare context strategies
 - compare prompts
 - compare models
-- repeatability measurement
-- token and cost tracking
-- baseline versus candidate runs
+- statistical confidence for repeated-run comparisons
 
 ## Phase 10 — Controlled Tools
 

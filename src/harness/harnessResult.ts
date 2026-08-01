@@ -2,6 +2,7 @@ import type { RoleSpec } from "./roleSpec.js";
 import type { TaskSpec } from "./taskSpec.js";
 import type { ContextItem } from "./contextItem.js";
 import type { EvaluationResult } from "../evaluations/evaluationResult.js";
+import type { AIProviderEvidence } from "../providers/aiProvider.js";
 
 export type ExecutionFailureCategory =
     | "transport"
@@ -25,6 +26,7 @@ export interface HarnessResult<TOutput = unknown> {
     output: string;
     parsedOutput: TOutput | null;
     refusal: string | null;
+    provider: AIProviderEvidence | null;
     executionFailure: ExecutionFailure | null;
     evaluations: EvaluationResult[];
     durationMs: number;

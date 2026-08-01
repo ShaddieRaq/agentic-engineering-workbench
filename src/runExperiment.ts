@@ -75,6 +75,21 @@ async function main(): Promise<void> {
       `Latency [${comparison.datasetCaseId}]: ${comparison.classification} (${delta})`,
     );
   }
+
+  for (const comparison of result.tokenCostComparisons) {
+    const tokenDelta =
+      comparison.totalTokensDelta === null
+        ? "n/a"
+        : `${comparison.totalTokensDelta >= 0 ? "+" : ""}${comparison.totalTokensDelta} tokens`;
+    const costDelta =
+      comparison.estimatedCostDeltaUsd === null
+        ? "n/a"
+        : `${comparison.estimatedCostDeltaUsd >= 0 ? "+" : "-"}$${Math.abs(comparison.estimatedCostDeltaUsd).toFixed(6)} estimated`;
+
+    console.log(
+      `Usage [${comparison.datasetCaseId}]: ${comparison.tokenClassification} (${tokenDelta}), ${comparison.costClassification} (${costDelta})`,
+    );
+  }
 }
 
 main().catch((error: unknown) => {

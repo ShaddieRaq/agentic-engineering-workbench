@@ -235,6 +235,16 @@ describe("SimpleHarness", () => {
                 answer: "Structured response",
             },
             refusal: null,
+            provider: {
+                model: "test-model",
+                usage: {
+                    inputTokens: 10,
+                    cachedInputTokens: 0,
+                    outputTokens: 5,
+                    reasoningTokens: 0,
+                    totalTokens: 15,
+                },
+            },
         });
 
         const harness = new SimpleHarness(
@@ -254,6 +264,16 @@ describe("SimpleHarness", () => {
             answer: "Structured response",
         });
         expect(result.refusal).toBeNull();
+        expect(result.provider).toEqual({
+            model: "test-model",
+            usage: {
+                inputTokens: 10,
+                cachedInputTokens: 0,
+                outputTokens: 5,
+                reasoningTokens: 0,
+                totalTokens: 15,
+            },
+        });
     });
     it("records provider failures instead of rejecting the run", async () => {
         const provider = new FakeProvider("Unused response");
@@ -276,6 +296,7 @@ describe("SimpleHarness", () => {
         expect(result.output).toBe("");
         expect(result.parsedOutput).toBeNull();
         expect(result.refusal).toBeNull();
+        expect(result.provider).toBeNull();
         expect(result.executionFailure).toEqual({
             stage: "provider",
             category: "unknown",

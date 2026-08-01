@@ -448,6 +448,7 @@ Each run currently records:
   output,
   parsedOutput,
   refusal,
+  provider,
   executionFailure,
   evaluations,
   passed,
@@ -459,7 +460,9 @@ Each run currently records:
 `output` preserves the raw provider response. `parsedOutput` contains
 schema-validated structured data when available, otherwise `null`. `refusal`
 records an explicit provider refusal separately from parsing or evaluation
-failure. `executionFailure` records provider transport, parsing, or unknown
+failure. `provider` records the actual model plus input, cached-input, output,
+reasoning, and total-token usage when the provider supplies it.
+`executionFailure` records provider transport, parsing, or unknown
 failures and forces the overall run result to fail.
 
 ### Registry

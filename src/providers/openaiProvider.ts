@@ -1,6 +1,8 @@
 import OpenAI, { APIConnectionError } from "openai";
+import type { Response } from "openai/resources/responses/responses";
 import type {
     AIProvider,
+    AIProviderEvidence,
     AIProviderRequest,
     AIProviderResult,
 } from "./aiProvider.js";
@@ -10,6 +12,7 @@ import { ZodError } from "zod";
 
 export class OpenAIProvider implements AIProvider {
     private readonly client: OpenAI;
+    private readonly model = "gpt-5.4";
 
     constructor(apiKey: string, client?: OpenAI) {
         this.client = client ?? new OpenAI({ apiKey });
@@ -40,6 +43,27 @@ export class OpenAIProvider implements AIProvider {
         }
     }
 
+    private getProviderEvidence(
+        response: Response,
+    ): AIProviderEvidence {
+        const usage = response.usage;
+
+        return {
+            model: response.model,
+            usage: usage
+                ? {
+                    inputTokens: usage.input_tokens,
+                    cachedInputTokens:
+                        usage.input_tokens_details.cached_tokens,
+                    outputTokens: usage.output_tokens,
+                    reasoningTokens:
+                        usage.output_tokens_details.reasoning_tokens,
+                    totalTokens: usage.total_tokens,
+                }
+                : null,
+        };
+    }
+
     async generate<TOutput = unknown>(
         request: AIProviderRequest<TOutput>,
     ): Promise<AIProviderResult<TOutput>> {
@@ -48,7 +72,7 @@ export class OpenAIProvider implements AIProvider {
             const response =
                 await this.executeWithFailureTranslation(() =>
                     this.client.responses.create({
-                        model: "gpt-5.4",
+                        model: this.model,
                         input: request.prompt,
                     }),
                 );
@@ -58,13 +82,14 @@ export class OpenAIProvider implements AIProvider {
                 rawOutput: response.output_text,
                 parsedOutput: null,
                 refusal: null,
+                provider: this.getProviderEvidence(response),
             };
         }
 
         const response =
             await this.executeWithFailureTranslation(() =>
                 this.client.responses.parse({
-                    model: "gpt-5.4",
+                    model: this.model,
                     input: request.prompt,
                     text: {
                         format: zodTextFormat(
@@ -96,6 +121,7 @@ export class OpenAIProvider implements AIProvider {
             rawOutput: response.output_text,
             parsedOutput: response.output_parsed,
             refusal,
+            provider: this.getProviderEvidence(response),
         };
     }
 }

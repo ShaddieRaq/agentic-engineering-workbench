@@ -19,6 +19,10 @@ describe("FakeProvider", () => {
       rawOutput: "Test response",
       parsedOutput: null,
       refusal: null,
+      provider: {
+        model: "fake",
+        usage: null,
+      },
     });
   });
   it("preserves the schema output type in the provider result", async () => {

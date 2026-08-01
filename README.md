@@ -43,7 +43,8 @@ Use one repetition and one concurrent call while validating your setup.
 The experiment command holds the dataset, scenario policy, harness, model, and
 execution policy constant while changing the role instructions. It persists
 both evidence sets and prints the observed reliability and average-latency
-change for every case.
+change for every case. It also prints total-token and estimated-cost changes
+when complete usage evidence and a matching pricing policy are available.
 
 ```bash
 npm run experiment -- \
@@ -56,3 +57,7 @@ npm run experiment -- \
 
 With default execution settings, this makes four model calls: two baseline
 cases and two candidate cases.
+
+Cost is an estimate derived from persisted token counts and a dated pricing
+policy. Reliability, latency, tokens, and cost remain separate signals in the
+saved experiment artifact.

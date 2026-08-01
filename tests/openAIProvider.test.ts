@@ -4,6 +4,25 @@ import { OpenAIProvider } from "../src/providers/openaiProvider.js";
 import type OpenAI from "openai";
 import { APIConnectionError } from "openai";
 
+const responseUsage = {
+    input_tokens: 120,
+    input_tokens_details: { cached_tokens: 20 },
+    output_tokens: 30,
+    output_tokens_details: { reasoning_tokens: 10 },
+    total_tokens: 150,
+};
+
+const providerEvidence = {
+    model: "gpt-5.4",
+    usage: {
+        inputTokens: 120,
+        cachedInputTokens: 20,
+        outputTokens: 30,
+        reasoningTokens: 10,
+        totalTokens: 150,
+    },
+};
+
 describe("OpenAIProvider", () => {
     it("returns raw and parsed structured output", async () => {
         const parse = vi.fn().mockResolvedValue({
@@ -12,6 +31,8 @@ describe("OpenAIProvider", () => {
                 answer: "Structured response",
             },
             output: [],
+            model: "gpt-5.4",
+            usage: responseUsage,
         });
 
         const client = {
@@ -48,6 +69,7 @@ describe("OpenAIProvider", () => {
                 answer: "Structured response",
             },
             refusal: null,
+            provider: providerEvidence,
         });
     });
     it("preserves a structured-output refusal", async () => {
@@ -65,6 +87,8 @@ describe("OpenAIProvider", () => {
                     ],
                 },
             ],
+            model: "gpt-5.4",
+            usage: responseUsage,
         });
 
         const client = {
@@ -86,11 +110,14 @@ describe("OpenAIProvider", () => {
             rawOutput: "",
             parsedOutput: null,
             refusal: "I cannot provide that response.",
+            provider: providerEvidence,
         });
     });
     it("returns a plain-text provider result", async () => {
         const create = vi.fn().mockResolvedValue({
             output_text: "Plain response",
+            model: "gpt-5.4",
+            usage: responseUsage,
         });
 
         const client = {
@@ -113,6 +140,7 @@ describe("OpenAIProvider", () => {
             rawOutput: "Plain response",
             parsedOutput: null,
             refusal: null,
+            provider: providerEvidence,
         });
     });
     it("classifies connection failures as transport errors", async () => {

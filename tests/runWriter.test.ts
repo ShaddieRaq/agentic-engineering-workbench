@@ -49,6 +49,16 @@ describe("writeRun", () => {
             answer: "Harness response",
           },
           refusal: null,
+          provider: {
+            model: "test-model",
+            usage: {
+              inputTokens: 10,
+              cachedInputTokens: 0,
+              outputTokens: 5,
+              reasoningTokens: 0,
+              totalTokens: 15,
+            },
+          },
         evaluations: [
             {
               evaluatorId: "non-empty-output",

@@ -14,6 +14,11 @@ import {
   type LatencyComparison,
 } from "../orchestration/latencyComparison.js";
 import type { ScenarioDatasetExperimentDefinition } from "./scenarioDatasetExperimentDefinition.js";
+import {
+  compareTokenCostSummaries,
+  summarizeTokenCosts,
+  type TokenCostComparison,
+} from "../orchestration/tokenCostComparison.js";
 
 export interface ScenarioDatasetCaseComparison
   extends ReliabilityComparison {
@@ -25,12 +30,18 @@ export interface ScenarioDatasetCaseLatencyComparison
   datasetCaseId: string;
 }
 
+export interface ScenarioDatasetCaseTokenCostComparison
+  extends TokenCostComparison {
+  datasetCaseId: string;
+}
+
 export interface ScenarioDatasetExperimentResult {
   definition: ScenarioDatasetExperimentDefinition;
   baseline: ScenarioDatasetRunResult;
   candidate: ScenarioDatasetRunResult;
   reliabilityComparisons: ScenarioDatasetCaseComparison[];
   latencyComparisons: ScenarioDatasetCaseLatencyComparison[];
+  tokenCostComparisons: ScenarioDatasetCaseTokenCostComparison[];
   completedAt: string;
 }
 
@@ -41,6 +52,15 @@ function durationsForCase(
   return result.runs
     .filter((run) => run.datasetCaseId === datasetCaseId)
     .map((run) => run.harnessResult.durationMs);
+}
+
+function providerEvidenceForCase(
+  result: ScenarioDatasetRunResult,
+  datasetCaseId: string,
+) {
+  return result.runs
+    .filter((run) => run.datasetCaseId === datasetCaseId)
+    .map((run) => run.harnessResult.provider);
 }
 
 export async function runScenarioDatasetExperiment(
@@ -105,6 +125,19 @@ export async function runScenarioDatasetExperiment(
       ),
     }),
   );
+  const tokenCostComparisons = baseline.caseSummaries.map(
+    ({ datasetCaseId }): ScenarioDatasetCaseTokenCostComparison => ({
+      datasetCaseId,
+      ...compareTokenCostSummaries(
+        summarizeTokenCosts(
+          providerEvidenceForCase(baseline, datasetCaseId),
+        ),
+        summarizeTokenCosts(
+          providerEvidenceForCase(candidate, datasetCaseId),
+        ),
+      ),
+    }),
+  );
 
   return {
     definition,
@@ -112,6 +145,7 @@ export async function runScenarioDatasetExperiment(
     candidate,
     reliabilityComparisons,
     latencyComparisons,
+    tokenCostComparisons,
     completedAt: new Date().toISOString(),
   };
 }
