@@ -982,3 +982,33 @@ failure or still support diagnosis.
 - one failed step does not erase other independent inspection results
 - overall success requires every configured step to succeed
 - model-directed tool choice remains a later, separately tested boundary
+
+---
+
+## Decision 038 — Select Context Only From Observed Repository Evidence
+
+Status: Accepted
+
+### Decision
+
+Derive repository-orientation context candidates from the successful root
+listing using a deterministic allowlisted policy. Include only observed files,
+order them by stable priority, record a rationale for each, and link the
+selection to its source tool-call ID. Mark selection incomplete when listing
+evidence failed or was truncated.
+
+### Rationale
+
+Context selection is an engineering policy, not synonymous with reading every
+available file. Requiring an observed source prevents fabricated paths, while
+priorities and rationales make inclusion decisions inspectable. Separating
+selection from content loading allows a later aggregate token or byte budget to
+reject candidates without losing the original reasoning.
+
+### Consequences
+
+- the workflow cannot select files absent from its repository evidence
+- selection behavior is deterministic and independently testable
+- incomplete discovery remains visible instead of appearing comprehensive
+- file contents remain outside the workflow until a separate permitted read
+- later model prompts can cite why each context item was included

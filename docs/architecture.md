@@ -280,6 +280,13 @@ an earlier step fails; the workflow status remains failed while preserving the
 other available evidence. The model does not yet choose tools or control this
 sequence.
 
+After inspection, a pure repository-orientation selector derives a bounded set
+of context candidates from the successful root listing. It may select only
+files that were actually observed. Each candidate carries a stable priority and
+rationale, and the selection records the source tool-call ID. A failed or
+truncated listing marks the selection incomplete; it never causes paths to be
+invented. Selection does not read file contents.
+
 ### Harness Definition
 
 A harness definition contains reusable execution or evaluation policy.

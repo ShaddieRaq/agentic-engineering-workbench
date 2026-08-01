@@ -165,6 +165,8 @@ The project currently supports:
 - explicit repository-inspection workflow and CLI
 - ordered package, repository-shape, and Git-change evidence
 - workflow identity, timing, status, and continue-on-failure collection
+- deterministic observed-file-only context selection
+- context-candidate priority, rationale, and completeness evidence
 
 ## Current Evaluators
 
@@ -246,15 +248,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 11 local engineering assistant: explicit repository inspection complete
+Phase 11 local engineering assistant: deterministic context selection complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-60 test files passed
-175 tests passed
+61 test files passed
+178 tests passed
 ```
 
 This state must be verified before continuing:
@@ -282,9 +284,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add a deterministic context-selection step that derives relevant source-file
-candidates from repository-inspection evidence before any model call. Preserve
-the selection rationale as workflow evidence.
+Read the selected repository-orientation candidates through the bounded
+`read-file` tool. Apply an aggregate context budget and preserve accepted and
+rejected candidate evidence before any model call.
 
 ## Broader Roadmap
 

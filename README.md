@@ -143,3 +143,5 @@ npm run inspect-repository
 
 The workflow collects package metadata, the top-level repository shape, and
 current Git changes into one result while retaining each tool call's evidence.
+It also selects a small set of observed orientation files and records why each
+is a context candidate; it does not read those files yet.

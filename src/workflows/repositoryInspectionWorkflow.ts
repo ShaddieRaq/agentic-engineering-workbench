@@ -16,6 +16,10 @@ import {
   executeTool,
   type ToolCallEvidence,
 } from "../tools/toolExecutor.js";
+import {
+  selectRepositoryContext,
+  type RepositoryContextSelection,
+} from "./repositoryContextSelector.js";
 
 export interface RepositoryInspectionTools {
   packageMetadata: ToolDefinition<
@@ -54,6 +58,7 @@ export interface RepositoryInspectionWorkflowResult {
   workflowRunId: string;
   workflowId: "repository-inspection";
   steps: RepositoryInspectionStep[];
+  contextSelection: RepositoryContextSelection;
   succeeded: boolean;
   durationMs: number;
   completedAt: string;
@@ -114,6 +119,7 @@ export async function runRepositoryInspectionWorkflow(
     workflowRunId: randomUUID(),
     workflowId: "repository-inspection",
     steps,
+    contextSelection: selectRepositoryContext(fileEvidence),
     succeeded: steps.every((step) => step.evidence.succeeded),
     durationMs: performance.now() - startedAt,
     completedAt: new Date().toISOString(),

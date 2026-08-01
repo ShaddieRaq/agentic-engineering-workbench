@@ -284,6 +284,10 @@ Implemented:
 - continue-on-failure collection for independent read-only inspections
 - workflow run identity, timing, and overall status
 - operator-facing `inspect-repository` CLI
+- deterministic repository-orientation context selection
+- observed-file-only candidate policy
+- per-candidate priority and rationale evidence
+- explicit incomplete-selection state for failed or truncated listings
 
 Initial use cases:
 

@@ -64,7 +64,13 @@ function createTools(
       "repositoryFiles",
       listFilesInputSchema,
       listFilesOutputSchema,
-      { entries: [], truncated: false },
+      {
+        entries: [
+          { path: "README.md", type: "file" },
+          { path: "package.json", type: "file" },
+        ],
+        truncated: false,
+      },
     ),
     gitChanges: tool(
       "gitChanges",
@@ -100,6 +106,11 @@ describe("runRepositoryInspectionWorkflow", () => {
       "git-changes",
     ]);
     expect(result.steps.every((step) => step.evidence.succeeded)).toBe(true);
+    expect(result.contextSelection.candidates.map(({ path }) => path)).toEqual([
+      "README.md",
+      "package.json",
+    ]);
+    expect(result.contextSelection.complete).toBe(true);
     expect(result.succeeded).toBe(true);
     expect(result.durationMs).toBeGreaterThanOrEqual(0);
     expect(new Date(result.completedAt).toString()).not.toBe("Invalid Date");
