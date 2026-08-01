@@ -210,6 +210,31 @@ Scenario-specific evaluators may check:
 - prohibited claims
 - grounding in supplied context
 
+### Scenario Dataset
+
+A scenario dataset separates concrete model inputs from scenario evaluation
+policy. Each validated case contains:
+
+```ts
+{
+  id,
+  scenarioId,
+  task,
+  context
+}
+```
+
+The referenced scenario remains the source of evaluators and any structured
+output contract. Roles, harnesses, and providers remain outside the dataset so
+the same cases can compare different system configurations.
+
+Datasets are nonempty and require unique case IDs. The dataset registry exposes
+validated datasets by stable ID. Dataset resolution joins every case to the
+scenario registry and rejects unknown policy references before execution.
+
+The registered `agentic-harness-audiences` dataset currently exercises the
+`explain-agentic-harness` policy with beginner and staff-engineer inputs.
+
 ### Scenario Suite Definition
 
 A scenario suite definition groups registered scenario IDs for collective

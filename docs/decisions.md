@@ -472,3 +472,31 @@ totals.
 - diagnostic counts may exceed the number of failed runs
 - original messages and run evidence remain available for investigation
 - summary calculation remains deterministic and replayable
+
+---
+
+## Decision 021 — Separate Dataset Inputs From Scenario Policy
+
+Status: Accepted
+
+### Decision
+
+Model evaluation inputs as validated scenario dataset cases containing a stable
+case ID, scenario-policy reference, task, and explicit context. Keep roles,
+harnesses, providers, evaluators, and output schemas outside dataset cases.
+
+### Rationale
+
+One logical quality contract should be reusable across many input variations.
+Copying evaluators or schemas into each case would create policy drift and make
+comparisons unreliable. Keeping system configuration outside the dataset also
+allows the same evidence set to compare prompts and providers later.
+
+### Consequences
+
+- datasets remain serializable and provider-neutral
+- scenario definitions remain the source of evaluation policy
+- case IDs can anchor replay and comparison evidence
+- empty datasets and duplicate case IDs are rejected
+- unknown scenario references fail during resolution
+- dataset execution must preserve case identity separately from run identity

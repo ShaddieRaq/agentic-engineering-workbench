@@ -179,10 +179,16 @@ Implemented:
 - provider execution-failure counts by category
 - evaluator-failure counts by evaluator ID
 - separate outcome and diagnostic summaries
+- Zod-validated scenario dataset cases
+- nonempty datasets with unique case IDs
+- explicit task and context inputs per case
+- registered `agentic-harness-audiences` dataset
+- dataset-to-scenario policy resolution
+- rejection of unknown scenario policy references
 
 Still needed:
 
-- scenario datasets
+- dataset case execution and case-level evidence
 - regression comparison
 - configurable concurrency
 

@@ -104,6 +104,10 @@ The project currently supports:
 - suite execution-failure counts by provider-neutral category
 - suite evaluator-failure counts by evaluator ID
 - separate outcome and diagnostic summaries
+- Zod-validated scenario dataset cases and definitions
+- a scenario dataset registry
+- dataset-to-scenario policy resolution
+- registered audience-specific agentic-harness inputs
 - optional scenario resolution
 - harness and scenario evaluator composition
 - scenario-specific Zod output contracts
@@ -201,15 +205,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 8 deterministic suite failure summaries
+Phase 8 scenario dataset foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-29 test files passed
-80 tests passed
+33 test files passed
+87 tests passed
 ```
 
 This state must be verified before continuing:
@@ -237,9 +241,8 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Define scenario dataset cases so a logical scenario can be exercised against
-multiple explicit inputs without duplicating scenario policy. Defer concurrency
-and report presentation.
+Execute resolved dataset cases while preserving dataset and case identity with
+each `HarnessResult`. Defer concurrency and report presentation.
 
 ## Broader Roadmap
 
