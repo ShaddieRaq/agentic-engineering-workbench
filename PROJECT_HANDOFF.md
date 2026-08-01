@@ -99,6 +99,8 @@ The project currently supports:
 - suite-run result collection preserving ordered `HarnessResult` evidence
 - runtime-validated repeated scenario execution
 - scenario-major ordering of repeated run evidence
+- pure suite evidence summarization
+- suite-level total, passed, failed, and pass-rate metrics
 - optional scenario resolution
 - harness and scenario evaluator composition
 - scenario-specific Zod output contracts
@@ -196,15 +198,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 8 repeated scenario-suite execution
+Phase 8 suite-level reliability metrics
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-28 test files passed
-77 tests passed
+29 test files passed
+79 tests passed
 ```
 
 This state must be verified before continuing:
@@ -232,8 +234,8 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Calculate suite-level pass rates from the preserved `HarnessResult` evidence.
-Defer concurrency and reporting behavior.
+Add deterministic failure summaries derived from preserved `HarnessResult`
+evidence. Defer concurrency and report presentation.
 
 ## Broader Roadmap
 

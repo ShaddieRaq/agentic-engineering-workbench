@@ -173,11 +173,13 @@ Implemented:
 - suite-run result contract containing the suite ID and run records
 - runtime-validated positive-integer repetition policy
 - sequential repeated runs with scenario-major evidence ordering
+- pure suite-evidence summarization
+- total, passed, and failed run counts
+- suite pass-rate ratio with explicit no-evidence semantics
 
 Still needed:
 
 - scenario datasets
-- pass-rate calculation
 - failure summaries
 - regression comparison
 - configurable concurrency

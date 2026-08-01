@@ -250,7 +250,14 @@ positive integer and default to one, preserving the original single-run
 behavior. Execution remains sequential and scenario-major, so repeated results
 for the same scenario remain adjacent in the returned evidence.
 
-The runner does not yet aggregate metrics or schedule concurrent work.
+After execution, a pure suite summarizer derives total, passed, and failed run
+counts plus a pass-rate ratio from the preserved evidence. A pass rate is
+`null` when there are no runs, distinguishing absent evidence from a measured
+zero-percent result. The runner returns this summary alongside the unmodified
+run records.
+
+The runner does not yet produce failure-category summaries or schedule
+concurrent work.
 
 ### Evaluator
 

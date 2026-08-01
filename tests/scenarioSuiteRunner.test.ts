@@ -71,9 +71,15 @@ describe("runScenarioSuite", () => {
           "explain-agentic-harness",
         );
         expect(result).toEqual({
-          suiteId: "core-reliability",
-          runs: [harnessResult],
-        });
+            suiteId: "core-reliability",
+            runs: [harnessResult],
+            summary: {
+              totalRuns: 1,
+              passedRuns: 1,
+              failedRuns: 0,
+              passRate: 1,
+            },
+          });
       });
 
       it("repeats each scenario the requested number of times", async () => {

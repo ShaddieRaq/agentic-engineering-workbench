@@ -417,3 +417,31 @@ fractional execution plans from producing misleading evidence.
 - repeated evidence for each scenario stays adjacent
 - invalid repetition policies fail before scenario execution
 - aggregation and concurrency remain independent additions
+
+---
+
+## Decision 019 — Derive Suite Metrics From Preserved Evidence
+
+Status: Accepted
+
+### Decision
+
+Calculate suite-level total, passed, and failed counts and a pass-rate ratio in
+a pure summarizer. Return the summary alongside the original ordered run
+records. Represent pass rate as `null` when no runs exist.
+
+### Rationale
+
+Metrics should be reproducible from live or persisted evidence without
+rerunning a model. Keeping calculation separate from orchestration avoids
+mixing execution control with reporting logic. Explicit no-evidence semantics
+prevent an empty dataset from appearing equivalent to a measured zero-percent
+pass rate.
+
+### Consequences
+
+- suite metrics can be recalculated during replay or reporting
+- raw run evidence remains available for audit and debugging
+- pass rate is stored as a ratio from zero to one
+- presentation layers may format the ratio as a percentage
+- failure-category summaries remain a separate extension

@@ -3,6 +3,10 @@ import type { ScenarioSuiteDefinition } from "./scenarioSuiteDefinition.js";
 import { resolveScenarioSuite } from "./scenarioSuiteResolver.js";
 import type { HarnessResult } from "../harness/harnessResult.js";
 import { z } from "zod";
+import {
+    summarizeScenarioSuiteRuns,
+    type ScenarioSuiteSummary,
+  } from "./scenarioSuiteSummary.js";
 
 export type ScenarioExecutor = (
     scenario: ScenarioDefinition,
@@ -11,6 +15,7 @@ export type ScenarioExecutor = (
   export interface ScenarioSuiteRunResult {
     suiteId: string;
     runs: HarnessResult[];
+    summary: ScenarioSuiteSummary;
   }
 
   const scenarioSuiteRunOptionsSchema = z
@@ -42,5 +47,6 @@ export type ScenarioExecutor = (
     return {
       suiteId: suite.id,
       runs,
+      summary: summarizeScenarioSuiteRuns(runs),
     };
   }
