@@ -219,12 +219,13 @@ Implemented:
 - auditable GPT-5.4 standard short-context pricing policy
 - per-case baseline-versus-candidate token and estimated-cost comparison
 - explicit insufficient-evidence behavior for missing or unsupported usage
+- explicit baseline and candidate model configuration
+- controlled GPT-5.4 versus GPT-5.4 mini experiment support
 
 Planned:
 
 - compare context strategies
 - compare prompts
-- compare models
 - statistical confidence for repeated-run comparisons
 
 ## Phase 10 — Controlled Tools

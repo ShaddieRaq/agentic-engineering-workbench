@@ -31,14 +31,17 @@ async function main(): Promise<void> {
       definition.candidate.rolePath,
     ),
   ]);
-  const provider = new OpenAIProvider(apiKey);
   const baselineExecutor = createScenarioDatasetExecutor({
-    provider,
+    provider: new OpenAIProvider(apiKey, {
+      model: definition.baseline.model,
+    }),
     role: baselineRole,
     harnessDefinition,
   });
   const candidateExecutor = createScenarioDatasetExecutor({
-    provider,
+    provider: new OpenAIProvider(apiKey, {
+      model: definition.candidate.model,
+    }),
     role: candidateRole,
     harnessDefinition,
   });

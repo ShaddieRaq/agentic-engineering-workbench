@@ -61,3 +61,17 @@ cases and two candidate cases.
 Cost is an estimate derived from persisted token counts and a dated pricing
 policy. Reliability, latency, tokens, and cost remain separate signals in the
 saved experiment artifact.
+
+To compare models, use the same role file for both variants and change only the
+model flags:
+
+```bash
+npm run experiment -- \
+  --experiment model-comparison \
+  --dataset agentic-harness-audiences \
+  --baseline-role roles/audience-aware-coach.md \
+  --candidate-role roles/audience-aware-coach.md \
+  --baseline-model gpt-5.4 \
+  --candidate-model gpt-5.4-mini \
+  --harness technical-coach
+```

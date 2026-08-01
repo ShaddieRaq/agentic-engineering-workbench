@@ -126,6 +126,8 @@ The project currently supports:
 - provider-neutral model and token-usage evidence
 - per-case token and estimated-cost experiment comparisons
 - dated, source-linked GPT-5.4 standard pricing policy
+- explicit baseline and candidate model configuration
+- controlled GPT-5.4 versus GPT-5.4 mini comparisons
 - deterministic baseline-versus-candidate reliability comparison
 - explicit regression, improvement, unchanged, and insufficient-evidence states
 - optional scenario resolution
@@ -233,7 +235,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 47 test files passed
-127 tests passed
+128 tests passed
 ```
 
 This state must be verified before continuing:
@@ -262,8 +264,8 @@ When a scenario exposes an output schema, the CLI passes it through
 ## Immediate Next Step
 
 Run the role-comparison experiment and inspect its separate reliability,
-latency, token, and estimated-cost evidence. Then make model selection an
-explicit experiment variable instead of a provider implementation constant.
+latency, token, and estimated-cost evidence. Then run a controlled model
+comparison using one shared role and inspect the reliability/cost tradeoff.
 
 ## Broader Roadmap
 

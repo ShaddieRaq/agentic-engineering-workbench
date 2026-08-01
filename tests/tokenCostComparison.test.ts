@@ -79,6 +79,26 @@ describe("token cost evidence", () => {
     });
   });
 
+  it("prices GPT-5.4 mini evidence", () => {
+    const summary = summarizeTokenCosts([
+      {
+        model: "gpt-5.4-mini",
+        usage: {
+          inputTokens: 1_000,
+          cachedInputTokens: 0,
+          outputTokens: 100,
+          reasoningTokens: 0,
+          totalTokens: 1_100,
+        },
+      },
+    ]);
+
+    expect(summary.estimatedCostUsd).toBeCloseTo(0.0012);
+    expect(summary.pricingIds).toEqual([
+      "openai-gpt-5.4-mini-standard-2026-08-01",
+    ]);
+  });
+
   it("does not compare incomplete usage evidence", () => {
     const comparison = compareTokenCostSummaries(
       summarizeTokenCosts([null]),

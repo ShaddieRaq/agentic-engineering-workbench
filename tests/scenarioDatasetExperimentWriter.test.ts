@@ -26,8 +26,16 @@ describe("writeScenarioDatasetExperiment", () => {
         id: "test-experiment",
         datasetId: "test-dataset",
         harnessId: "test-harness",
-        baseline: { id: "baseline", rolePath: "baseline.md" },
-        candidate: { id: "candidate", rolePath: "candidate.md" },
+        baseline: {
+          id: "baseline",
+          rolePath: "baseline.md",
+          model: "gpt-5.4",
+        },
+        candidate: {
+          id: "candidate",
+          rolePath: "candidate.md",
+          model: "gpt-5.4",
+        },
         execution: { repetitions: 1, concurrency: 1 },
       },
       baseline: {

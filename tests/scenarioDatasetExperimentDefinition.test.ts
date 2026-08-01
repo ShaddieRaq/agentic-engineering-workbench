@@ -8,10 +8,12 @@ const definition = {
   baseline: {
     id: "baseline",
     rolePath: "roles/technical-coach.md",
+    model: "gpt-5.4",
   },
   candidate: {
     id: "candidate",
     rolePath: "roles/audience-aware-coach.md",
+    model: "gpt-5.4",
   },
   execution: {
     repetitions: 1,

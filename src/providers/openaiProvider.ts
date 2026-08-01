@@ -12,10 +12,17 @@ import { ZodError } from "zod";
 
 export class OpenAIProvider implements AIProvider {
     private readonly client: OpenAI;
-    private readonly model = "gpt-5.4";
+    private readonly model: string;
 
-    constructor(apiKey: string, client?: OpenAI) {
-        this.client = client ?? new OpenAI({ apiKey });
+    constructor(
+        apiKey: string,
+        options: {
+            client?: OpenAI;
+            model?: string;
+        } = {},
+    ) {
+        this.client = options.client ?? new OpenAI({ apiKey });
+        this.model = options.model ?? "gpt-5.4";
     }
 
     private async executeWithFailureTranslation<T>(

@@ -736,3 +736,33 @@ candidate from appearing unconditionally better.
 - reasoning tokens remain visible and are already included in output-token cost
 - experiment comparisons require complete, equally sized usage samples
 - pricing identifiers, source URL, and observation date remain inspectable
+
+---
+
+## Decision 030 — Configure Models at the Experiment Variant Boundary
+
+Status: Accepted
+
+### Decision
+
+Make model ID part of each baseline and candidate experiment variant and inject
+it into a separately configured provider instance. Default both variants to
+`gpt-5.4` for backward compatibility. Support independent model flags so a
+model comparison can hold role, dataset, harness, and execution policy
+constant.
+
+### Rationale
+
+A model is an experimental variable, not an implementation detail of
+`OpenAIProvider`. Variant-level configuration makes the intended difference
+explicit in the persisted experiment definition, while response evidence still
+records the model that actually served each request.
+
+### Consequences
+
+- existing role comparisons retain GPT-5.4 defaults
+- model comparisons can reuse the same experiment workflow
+- baseline and candidate use separate provider instances
+- experiments may change roles, models, or both, so callers remain responsible
+  for changing only one variable when causal attribution matters
+- GPT-5.4 and GPT-5.4 mini have dated standard-pricing policies

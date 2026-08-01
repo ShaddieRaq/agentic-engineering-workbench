@@ -13,6 +13,10 @@ describe("parseExperimentArgs", () => {
         "roles/technical-coach.md",
         "--candidate-role",
         "roles/audience-aware-coach.md",
+        "--baseline-model",
+        "gpt-5.4",
+        "--candidate-model",
+        "gpt-5.4-mini",
         "--repetitions",
         "3",
         "--concurrency",
@@ -25,10 +29,12 @@ describe("parseExperimentArgs", () => {
       baseline: {
         id: "baseline",
         rolePath: "roles/technical-coach.md",
+        model: "gpt-5.4",
       },
       candidate: {
         id: "candidate",
         rolePath: "roles/audience-aware-coach.md",
+        model: "gpt-5.4-mini",
       },
       execution: {
         repetitions: 3,

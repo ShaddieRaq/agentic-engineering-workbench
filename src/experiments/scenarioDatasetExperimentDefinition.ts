@@ -5,6 +5,7 @@ const experimentVariantSchema = z
   .object({
     id: z.string().min(1),
     rolePath: z.string().min(1),
+    model: z.string().min(1).default("gpt-5.4"),
   })
   .strict();
 

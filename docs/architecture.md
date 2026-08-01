@@ -524,6 +524,11 @@ The repository and filesystem are the source of truth.
 
 Core code should not depend directly on one model vendor.
 
+Provider implementations receive model selection as configuration. The actual
+model returned by the provider is preserved in run evidence, so requested and
+observed behavior can be audited without leaking provider fields into the
+harness contract.
+
 ### Explicit Context
 
 The system records exactly what context the model received.

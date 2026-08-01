@@ -54,10 +54,14 @@ export function parseExperimentArgs(
     baseline: {
       id: "baseline",
       rolePath: requiredOption(args, "--baseline-role"),
+      model:
+        optionalOption(args, "--baseline-model") ?? "gpt-5.4",
     },
     candidate: {
       id: "candidate",
       rolePath: requiredOption(args, "--candidate-role"),
+      model:
+        optionalOption(args, "--candidate-model") ?? "gpt-5.4",
     },
     execution,
   });

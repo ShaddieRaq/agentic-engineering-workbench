@@ -41,7 +41,7 @@ describe("OpenAIProvider", () => {
             },
         } as unknown as OpenAI;
 
-        const provider = new OpenAIProvider("test-api-key", client);
+        const provider = new OpenAIProvider("test-api-key", { client });
         const outputSchema = z.object({
             answer: z.string(),
         });
@@ -97,7 +97,7 @@ describe("OpenAIProvider", () => {
             },
         } as unknown as OpenAI;
 
-        const provider = new OpenAIProvider("test-api-key", client);
+        const provider = new OpenAIProvider("test-api-key", { client });
 
         const result = await provider.generate({
             prompt: "Return a structured response.",
@@ -116,7 +116,7 @@ describe("OpenAIProvider", () => {
     it("returns a plain-text provider result", async () => {
         const create = vi.fn().mockResolvedValue({
             output_text: "Plain response",
-            model: "gpt-5.4",
+            model: "gpt-5.4-mini",
             usage: responseUsage,
         });
 
@@ -126,21 +126,27 @@ describe("OpenAIProvider", () => {
             },
         } as unknown as OpenAI;
 
-        const provider = new OpenAIProvider("test-api-key", client);
+        const provider = new OpenAIProvider("test-api-key", {
+            client,
+            model: "gpt-5.4-mini",
+        });
 
         const result = await provider.generate({
             prompt: "Return a plain response.",
         });
 
         expect(create).toHaveBeenCalledWith({
-            model: "gpt-5.4",
+            model: "gpt-5.4-mini",
             input: "Return a plain response.",
         });
         expect(result).toEqual({
             rawOutput: "Plain response",
             parsedOutput: null,
             refusal: null,
-            provider: providerEvidence,
+            provider: {
+                ...providerEvidence,
+                model: "gpt-5.4-mini",
+            },
         });
     });
     it("classifies connection failures as transport errors", async () => {
@@ -156,7 +162,7 @@ describe("OpenAIProvider", () => {
             },
         } as unknown as OpenAI;
 
-        const provider = new OpenAIProvider("test-api-key", client);
+        const provider = new OpenAIProvider("test-api-key", { client });
 
         await expect(
             provider.generate({
@@ -179,7 +185,7 @@ describe("OpenAIProvider", () => {
             },
         } as unknown as OpenAI;
 
-        const provider = new OpenAIProvider("test-api-key", client);
+        const provider = new OpenAIProvider("test-api-key", { client });
 
         await expect(
             provider.generate({

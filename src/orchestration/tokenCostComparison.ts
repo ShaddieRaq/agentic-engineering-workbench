@@ -25,6 +25,22 @@ export const gpt54StandardShortContextPricing: ModelTokenPricing = {
   observedOn: "2026-08-01",
 };
 
+export const gpt54MiniStandardPricing: ModelTokenPricing = {
+  id: "openai-gpt-5.4-mini-standard-2026-08-01",
+  modelPattern: /^gpt-5\.4-mini(?:-\d{4}-\d{2}-\d{2})?$/,
+  maximumInputTokensExclusive: Number.POSITIVE_INFINITY,
+  inputUsdPerMillionTokens: 0.75,
+  cachedInputUsdPerMillionTokens: 0.075,
+  outputUsdPerMillionTokens: 4.5,
+  sourceUrl: "https://developers.openai.com/api/docs/pricing",
+  observedOn: "2026-08-01",
+};
+
+const modelTokenPricingPolicies = [
+  gpt54StandardShortContextPricing,
+  gpt54MiniStandardPricing,
+];
+
 export interface TokenCostSummary {
   runCount: number;
   usageSampleCount: number;
@@ -61,18 +77,18 @@ export interface TokenCostComparison {
 function getPricing(
   evidence: AIProviderEvidence,
 ): ModelTokenPricing | null {
-  const pricing = gpt54StandardShortContextPricing;
-
-  if (
-    !pricing.modelPattern.test(evidence.model) ||
-    evidence.usage === null ||
-    evidence.usage.inputTokens >=
-      pricing.maximumInputTokensExclusive
-  ) {
+  if (evidence.usage === null) {
     return null;
   }
 
-  return pricing;
+  return (
+    modelTokenPricingPolicies.find(
+      (pricing) =>
+        pricing.modelPattern.test(evidence.model) &&
+        evidence.usage!.inputTokens <
+          pricing.maximumInputTokensExclusive,
+    ) ?? null
+  );
 }
 
 function estimateCostUsd(
