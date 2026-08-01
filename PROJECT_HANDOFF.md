@@ -152,6 +152,9 @@ The project currently supports:
 - structured tool-call evidence and failure classification
 - root-bounded `list-files` with traversal, symlink, deny-list, and output-limit policy
 - operator-facing controlled-tool CLI
+- shared canonical repository-path permission resolver
+- bounded UTF-8 `read-file` capability and CLI
+- oversized, binary, invalid-text, traversal, symlink, and denied-path rejection
 
 ## Current Evaluators
 
@@ -233,15 +236,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 10 controlled tools: root-bounded list-files complete
+Phase 10 controlled tools: list-files and read-file complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-51 test files passed
-141 tests passed
+53 test files passed
+150 tests passed
 ```
 
 This state must be verified before continuing:
@@ -269,9 +272,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add a root-bounded `read-file` tool with explicit byte limits, denied paths,
-binary-file rejection, and the shared tool evidence contract. Keep model-driven
-tool selection disconnected until the read-only capability set is complete.
+Add a root-bounded repository text-search tool with query validation, match and
+byte limits, denied-path filtering, deterministic ordering, and structured
+evidence. Keep model-driven tool selection disconnected until the read-only
+capability set is complete.
 
 ## Broader Roadmap
 

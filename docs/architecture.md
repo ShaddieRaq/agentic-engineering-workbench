@@ -223,14 +223,21 @@ schemas, and capability implementation. The controller validates input,
 executes the capability, validates output, and records one `ToolCallEvidence`
 result containing timing, normalized input, output, and classified failure.
 
-The first tool, `list-files`, lists one directory level beneath an
-operator-selected repository root. Its policy:
+The initial tools operate beneath an operator-selected repository root:
+
+- `list-files` lists one directory level with deterministic ordering
+- `read-file` reads one complete UTF-8 text file within a byte limit
+
+Their shared path policy:
 
 - rejects lexical traversal outside the root
 - resolves real paths to prevent symbolic-link escape
 - denies `.git`, `.env`, `node_modules`, and `runs` by default
 - caps output using both request and policy limits
-- sorts entries for deterministic evidence
+
+`read-file` rejects binary, invalid UTF-8, directory, and oversized targets.
+It does not silently truncate source because incomplete code can mislead later
+analysis. `list-files` separately sorts entries for deterministic evidence.
 
 The CLI invokes this boundary directly. Model-driven tool selection is not yet
 connected; permission enforcement is tested independently first.

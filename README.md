@@ -92,3 +92,14 @@ npm run list-files -- --path src --max-entries 20
 The command prints structured tool-call evidence. Paths outside the repository,
 denied paths, invalid inputs, and output-limit behavior are handled by explicit
 policy rather than model judgment.
+
+Read one complete text file through the shared permission boundary:
+
+```bash
+npm run read-file -- \
+  --path src/tools/toolDefinition.ts \
+  --max-bytes 4096
+```
+
+The tool rejects oversized files, binary content, denied paths, traversal, and
+symbolic links that escape the repository.

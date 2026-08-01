@@ -1,13 +1,11 @@
-import { readdir, realpath, stat } from "node:fs/promises";
-import {
-  isAbsolute,
-  relative,
-  resolve,
-  sep,
-} from "node:path";
+import { readdir, stat } from "node:fs/promises";
+import { relative, resolve } from "node:path";
 import { z } from "zod";
 import type { ToolDefinition } from "./toolDefinition.js";
-import { ToolPermissionError } from "./toolPermissionError.js";
+import {
+  deniedSegmentsFor,
+  resolveAllowedRepositoryPath,
+} from "./repositoryPathPolicy.js";
 
 export const listFilesInputSchema = z
   .object({
@@ -44,17 +42,6 @@ export interface ListFilesToolOptions {
   deniedPathSegments?: string[];
 }
 
-function isWithinRoot(root: string, target: string): boolean {
-  const relativePath = relative(root, target);
-
-  return (
-    relativePath === "" ||
-    (!relativePath.startsWith(`..${sep}`) &&
-      relativePath !== ".." &&
-      !isAbsolute(relativePath))
-  );
-}
-
 function entryType(entry: {
   isFile(): boolean;
   isDirectory(): boolean;
@@ -70,9 +57,7 @@ export function createListFilesTool(
   options: ListFilesToolOptions,
 ): ToolDefinition<ListFilesInput, ListFilesOutput> {
   const maximumEntries = options.maximumEntries ?? 100;
-  const deniedPathSegments = new Set(
-    options.deniedPathSegments ?? [".git", ".env", "node_modules", "runs"],
-  );
+  const deniedPathSegments = deniedSegmentsFor(options);
 
   if (!Number.isInteger(maximumEntries) || maximumEntries < 1) {
     throw new Error("maximumEntries must be a positive integer.");
@@ -85,37 +70,8 @@ export function createListFilesTool(
     inputSchema: listFilesInputSchema,
     outputSchema: listFilesOutputSchema,
     async execute(input): Promise<ListFilesOutput> {
-      const allowedRoot = await realpath(options.allowedRoot);
-      const lexicalTarget = resolve(allowedRoot, input.path);
-
-      if (!isWithinRoot(allowedRoot, lexicalTarget)) {
-        throw new ToolPermissionError(
-          "Requested path is outside the allowed root.",
-        );
-      }
-
-      const requestedSegments = relative(
-        allowedRoot,
-        lexicalTarget,
-      ).split(sep);
-
-      if (
-        requestedSegments.some((segment) =>
-          deniedPathSegments.has(segment),
-        )
-      ) {
-        throw new ToolPermissionError(
-          "Requested path is denied by tool policy.",
-        );
-      }
-
-      const target = await realpath(lexicalTarget);
-
-      if (!isWithinRoot(allowedRoot, target)) {
-        throw new ToolPermissionError(
-          "Requested path resolves outside the allowed root.",
-        );
-      }
+      const { allowedRoot, target } =
+        await resolveAllowedRepositoryPath(options, input.path);
 
       const targetStats = await stat(target);
 

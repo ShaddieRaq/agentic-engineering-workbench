@@ -827,3 +827,35 @@ validation, failure classification, timing, and evidence behavior.
 - direct traversal and symbolic-link escape are denied
 - sensitive and high-volume repository paths are hidden by default
 - the model currently cannot select or invoke tools
+
+---
+
+## Decision 033 — Centralize Repository Path Policy and Reject Partial Reads
+
+Status: Accepted
+
+### Decision
+
+Use one repository-path resolver for all filesystem tools. It canonicalizes the
+application-selected root, performs lexical containment and deny-list checks,
+resolves the requested real path, and checks containment again. Implement
+`read-file` as a complete UTF-8 read bounded by the lower of request and
+application byte limits. Reject oversized or binary content instead of
+returning a partial file.
+
+### Rationale
+
+Duplicated path checks can drift and create inconsistent permissions. A shared
+resolver makes traversal and symbolic-link policy uniform. Silent truncation is
+reasonable for a directory listing but dangerous for source content: omitted
+code can change the meaning of a file and lead an agent to unsupported
+conclusions.
+
+### Consequences
+
+- filesystem tools share the same containment and deny-list behavior
+- the application limit always overrides a larger requested limit
+- file size is checked before content is loaded
+- invalid UTF-8 and null-byte content are denied
+- callers receive explicit failure evidence when a complete safe read is not
+  possible

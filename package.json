@@ -9,6 +9,7 @@
     "dataset": "tsx src/runDataset.ts",
     "experiment": "tsx src/runExperiment.ts",
     "list-files": "tsx src/runListFilesTool.ts",
+    "read-file": "tsx src/runReadFileTool.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

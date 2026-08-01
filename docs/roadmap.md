@@ -245,10 +245,14 @@ Implemented:
 - denied-path and bounded-output policies
 - deterministic entry ordering
 - operator-facing `list-files` CLI
+- shared canonical repository-path permission resolver
+- root-bounded UTF-8 `read-file` tool
+- request and application byte limits
+- oversized, binary, and invalid-text rejection
+- operator-facing `read-file` CLI
 
 Remaining safe tools:
 
-- read files
 - search repository text
 - inspect package metadata
 - inspect Git diff
