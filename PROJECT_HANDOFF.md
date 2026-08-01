@@ -119,6 +119,9 @@ The project currently supports:
 - per-case dataset reliability metrics
 - executable dataset CLI backed by `SimpleHarness`
 - aggregate case-linked dataset evidence persistence
+- validated baseline-versus-candidate experiment definitions
+- executable controlled role-comparison experiments
+- persisted baseline, candidate, and per-case comparison evidence
 - deterministic baseline-versus-candidate reliability comparison
 - explicit regression, improvement, unchanged, and insufficient-evidence states
 - optional scenario resolution
@@ -218,15 +221,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 9 executable dataset workflow
+Phase 9 executable baseline-versus-candidate role experiment
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-41 test files passed
-111 tests passed
+45 test files passed
+117 tests passed
 ```
 
 This state must be verified before continuing:
@@ -254,10 +257,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Run the registered dataset once with sequential defaults and inspect its
-aggregate evidence artifact. Then define a validated reliability-experiment
-contract separating baseline and candidate configurations from measured
-evidence.
+Run the registered role-comparison experiment with sequential defaults and
+inspect its aggregate baseline, candidate, and comparison evidence. Then add
+latency aggregation to the experiment result.
 
 ## Broader Roadmap
 

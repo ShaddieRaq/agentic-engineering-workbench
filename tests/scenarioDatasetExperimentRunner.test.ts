@@ -1,0 +1,82 @@
+import { describe, expect, it } from "vitest";
+import { createScenarioDatasetExecutor } from "../src/datasets/createScenarioDatasetExecutor.js";
+import { getScenarioDatasetDefinition } from "../src/datasets/scenarioDatasetRegistry.js";
+import { runScenarioDatasetExperiment } from "../src/experiments/scenarioDatasetExperimentRunner.js";
+import { getHarnessDefinition } from "../src/harnesses/harnessRegistry.js";
+import { FakeProvider } from "../src/providers/fakeProvider.js";
+
+const definition = {
+  id: "test-experiment",
+  datasetId: "agentic-harness-audiences",
+  harnessId: "basic-reliability",
+  baseline: {
+    id: "baseline",
+    rolePath: "roles/baseline.md",
+  },
+  candidate: {
+    id: "candidate",
+    rolePath: "roles/candidate.md",
+  },
+  execution: {
+    repetitions: 1,
+    concurrency: 1,
+  },
+};
+
+describe("runScenarioDatasetExperiment", () => {
+  it("compares baseline and candidate evidence by case", async () => {
+    const dataset = getScenarioDatasetDefinition(
+      "agentic-harness-audiences",
+    );
+    const harnessDefinition = getHarnessDefinition(
+      "basic-reliability",
+    );
+    const role = {
+      id: "test-role",
+      instructions: "Follow the task.",
+    };
+    const baselineExecutor = createScenarioDatasetExecutor({
+      provider: new FakeProvider("Invalid output"),
+      role,
+      harnessDefinition,
+    });
+    const candidateExecutor = createScenarioDatasetExecutor({
+      provider: new FakeProvider(
+        JSON.stringify({
+          definition: "An agentic harness controls an AI run.",
+          responsibilities: ["Build prompts", "Evaluate output"],
+          modelBoundary: "The model generates the proposed output.",
+          practicalExample: "Test support answers before release.",
+        }),
+      ),
+      role,
+      harnessDefinition,
+    });
+
+    const result = await runScenarioDatasetExperiment(
+      definition,
+      dataset,
+      baselineExecutor,
+      candidateExecutor,
+    );
+
+    expect(result.baseline.runs).toHaveLength(2);
+    expect(result.candidate.runs).toHaveLength(2);
+    expect(result.comparisons).toEqual([
+      {
+        datasetCaseId: "beginner",
+        baselinePassRate: 0,
+        candidatePassRate: 1,
+        passRateDelta: 1,
+        classification: "improved",
+      },
+      {
+        datasetCaseId: "staff-engineer",
+        baselinePassRate: 0,
+        candidatePassRate: 1,
+        passRateDelta: 1,
+        classification: "improved",
+      },
+    ]);
+  });
+});

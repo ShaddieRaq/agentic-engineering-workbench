@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const executionOptionsSchema = z
+export const executionOptionsSchema = z
   .object({
     repetitions: z.number().int().positive().default(1),
     concurrency: z.number().int().positive().default(1),

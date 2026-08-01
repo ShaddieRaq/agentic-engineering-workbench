@@ -79,6 +79,17 @@ The aggregate artifact retains dataset case IDs, complete `HarnessResult`
 evidence, and case summaries together. This prevents persistence from losing
 the relationship between a run and the dataset input that produced it.
 
+Reliability experiments run the same registered dataset twice through separate
+baseline and candidate role configurations. The harness, scenario evaluation
+policy, provider, repetition count, and concurrency limit remain fixed. A pure
+comparison maps matching case summaries to improved, regressed, unchanged, or
+insufficient-evidence classifications.
+
+The experiment artifact contains the validated definition, complete baseline
+and candidate dataset results, per-case comparisons, and completion time. The
+exact loaded role instructions also remain embedded in every `HarnessResult`,
+so evidence does not depend only on mutable file paths.
+
 ## Main Components
 
 ### AI Provider

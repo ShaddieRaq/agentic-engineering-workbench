@@ -37,3 +37,21 @@ npm run dataset -- \
 
 This example makes six model calls: two dataset cases repeated three times.
 Use one repetition and one concurrent call while validating your setup.
+
+## Run a Baseline-versus-Candidate Experiment
+
+The experiment command holds the dataset, scenario policy, harness, model, and
+execution policy constant while changing the role instructions. It persists
+both evidence sets and prints the observed reliability change for every case.
+
+```bash
+npm run experiment -- \
+  --experiment audience-role-comparison \
+  --dataset agentic-harness-audiences \
+  --baseline-role roles/technical-coach.md \
+  --candidate-role roles/audience-aware-coach.md \
+  --harness technical-coach
+```
+
+With default execution settings, this makes four model calls: two baseline
+cases and two candidate cases.

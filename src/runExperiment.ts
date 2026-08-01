@@ -1,0 +1,72 @@
+import "dotenv/config";
+import { getFileId } from "./cli/getFileId.js";
+import { parseExperimentArgs } from "./cli/parseExperimentArgs.js";
+import { createScenarioDatasetExecutor } from "./datasets/createScenarioDatasetExecutor.js";
+import { getScenarioDatasetDefinition } from "./datasets/scenarioDatasetRegistry.js";
+import { runScenarioDatasetExperiment } from "./experiments/scenarioDatasetExperimentRunner.js";
+import { writeScenarioDatasetExperiment } from "./experiments/scenarioDatasetExperimentWriter.js";
+import { loadRole } from "./harness/roleLoader.js";
+import { getHarnessDefinition } from "./harnesses/harnessRegistry.js";
+import { OpenAIProvider } from "./providers/openaiProvider.js";
+
+async function main(): Promise<void> {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is missing from .env");
+  }
+
+  const definition = parseExperimentArgs(process.argv.slice(2));
+  const dataset = getScenarioDatasetDefinition(definition.datasetId);
+  const harnessDefinition = getHarnessDefinition(
+    definition.harnessId,
+  );
+  const [baselineRole, candidateRole] = await Promise.all([
+    loadRole(
+      getFileId(definition.baseline.rolePath),
+      definition.baseline.rolePath,
+    ),
+    loadRole(
+      getFileId(definition.candidate.rolePath),
+      definition.candidate.rolePath,
+    ),
+  ]);
+  const provider = new OpenAIProvider(apiKey);
+  const baselineExecutor = createScenarioDatasetExecutor({
+    provider,
+    role: baselineRole,
+    harnessDefinition,
+  });
+  const candidateExecutor = createScenarioDatasetExecutor({
+    provider,
+    role: candidateRole,
+    harnessDefinition,
+  });
+  const result = await runScenarioDatasetExperiment(
+    definition,
+    dataset,
+    baselineExecutor,
+    candidateExecutor,
+  );
+  const runFilePath = await writeScenarioDatasetExperiment(result);
+
+  console.log(`Experiment: ${definition.id}`);
+  console.log(`Dataset: ${definition.datasetId}`);
+  console.log(`Evidence saved: ${runFilePath}`);
+
+  for (const comparison of result.comparisons) {
+    const delta =
+      comparison.passRateDelta === null
+        ? "n/a"
+        : `${(comparison.passRateDelta * 100).toFixed(0)} points`;
+
+    console.log(
+      `Case [${comparison.datasetCaseId}]: ${comparison.classification} (${delta})`,
+    );
+  }
+}
+
+main().catch((error: unknown) => {
+  console.error("Experiment failed:", error);
+  process.exit(1);
+});

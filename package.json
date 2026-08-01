@@ -7,6 +7,7 @@
     "start": "tsx src/index.ts",
     "agent": "tsx src/index.ts",
     "dataset": "tsx src/runDataset.ts",
+    "experiment": "tsx src/runExperiment.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

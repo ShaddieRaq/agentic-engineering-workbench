@@ -644,3 +644,33 @@ for later replay and baseline-versus-candidate comparison.
 - repetition and concurrency remain runtime validated
 - one artifact preserves case identity, run evidence, and summaries
 - the original single-run CLI remains backward compatible
+
+---
+
+## Decision 027 — Compare One Controlled Configuration Variable at a Time
+
+Status: Accepted
+
+### Decision
+
+Define a reliability experiment as one registered dataset, one harness, one
+execution policy, and distinct baseline and candidate role configurations. Run
+the baseline and candidate sequentially, preserve both complete dataset
+results, and compare matching case pass rates.
+
+### Rationale
+
+A useful experiment needs stable inputs and evaluation policy. Changing roles,
+harness evaluators, models, and execution settings simultaneously would make an
+observed reliability difference difficult to attribute. Role instructions are
+the first controlled variable because they already flow directly into every
+prompt and require no provider-specific behavior.
+
+### Consequences
+
+- baseline and candidate use identical cases and quality contracts
+- exact role instructions remain preserved inside run evidence
+- comparisons are reported per stable dataset case ID
+- the artifact distinguishes configuration from measured evidence
+- model, context-strategy, latency, token, and cost comparisons remain future
+  experiment extensions

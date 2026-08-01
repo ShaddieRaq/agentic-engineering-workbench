@@ -208,6 +208,10 @@ Implemented:
 - executable dataset CLI using registered datasets, roles, and harnesses
 - production dataset executor adapter backed by `SimpleHarness`
 - aggregate dataset evidence persistence with case identity and summaries
+- Zod-validated baseline-versus-candidate experiment definitions
+- controlled role-instruction comparison over one shared dataset and harness
+- complete baseline and candidate evidence persistence
+- per-case reliability comparison in the experiment CLI
 
 Planned:
 
