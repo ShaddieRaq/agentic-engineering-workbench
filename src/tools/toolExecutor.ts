@@ -2,10 +2,12 @@ import { randomUUID } from "node:crypto";
 import { ZodError } from "zod";
 import type { ToolDefinition } from "./toolDefinition.js";
 import { ToolPermissionError } from "./toolPermissionError.js";
+import { ToolTimeoutError } from "./toolTimeoutError.js";
 
 export type ToolFailureCategory =
   | "validation"
   | "permission"
+  | "timeout"
   | "execution";
 
 export interface ToolFailure {
@@ -45,6 +47,8 @@ export async function executeTool<TInput, TOutput>(
         category:
           error instanceof ToolPermissionError
             ? "permission"
+            : error instanceof ToolTimeoutError
+              ? "timeout"
             : "execution",
         message:
           error instanceof Error ? error.message : String(error),

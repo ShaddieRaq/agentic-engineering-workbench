@@ -227,6 +227,7 @@ The initial tools operate beneath an operator-selected repository root:
 
 - `list-files` lists one directory level with deterministic ordering
 - `read-file` reads one complete UTF-8 text file within a byte limit
+- `search-text` recursively searches UTF-8 files for a literal query
 
 Their shared path policy:
 
@@ -238,6 +239,12 @@ Their shared path policy:
 `read-file` rejects binary, invalid UTF-8, directory, and oversized targets.
 It does not silently truncate source because incomplete code can mislead later
 analysis. `list-files` separately sorts entries for deterministic evidence.
+
+`search-text` skips symbolic links, denied paths, binary files, and oversized
+files. It bounds files inspected, matches returned, output bytes, preview size,
+and execution time. Results are ordered by sorted traversal and include path,
+line, column, and preview evidence. Queries never pass through a shell or
+regular-expression engine.
 
 The CLI invokes this boundary directly. Model-driven tool selection is not yet
 connected; permission enforcement is tested independently first.

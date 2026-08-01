@@ -155,6 +155,9 @@ The project currently supports:
 - shared canonical repository-path permission resolver
 - bounded UTF-8 `read-file` capability and CLI
 - oversized, binary, invalid-text, traversal, symlink, and denied-path rejection
+- bounded literal `search-text` capability and CLI
+- deterministic path, line, column, and preview search evidence
+- validation, permission, timeout, and execution tool-failure categories
 
 ## Current Evaluators
 
@@ -236,15 +239,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 10 controlled tools: list-files and read-file complete
+Phase 10 controlled tools: list-files, read-file, and search-text complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-53 test files passed
-150 tests passed
+55 test files passed
+158 tests passed
 ```
 
 This state must be verified before continuing:
@@ -272,10 +275,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add a root-bounded repository text-search tool with query validation, match and
-byte limits, denied-path filtering, deterministic ordering, and structured
-evidence. Keep model-driven tool selection disconnected until the read-only
-capability set is complete.
+Add read-only package-metadata inspection through the shared tool contract.
+Validate `package.json`, expose only useful project/script/dependency metadata,
+and preserve bounded evidence without returning arbitrary package fields.
 
 ## Broader Roadmap
 

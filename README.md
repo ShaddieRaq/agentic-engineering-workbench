@@ -103,3 +103,15 @@ npm run read-file -- \
 
 The tool rejects oversized files, binary content, denied paths, traversal, and
 symbolic links that escape the repository.
+
+Search repository text without passing the query through a shell:
+
+```bash
+npm run search-text -- \
+  --query HarnessResult \
+  --path src \
+  --case-sensitive \
+  --max-matches 10
+```
+
+Each match includes its repository path, line, column, and bounded preview.

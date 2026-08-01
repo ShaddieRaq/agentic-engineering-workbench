@@ -859,3 +859,34 @@ conclusions.
 - invalid UTF-8 and null-byte content are denied
 - callers receive explicit failure evidence when a complete safe read is not
   possible
+
+---
+
+## Decision 034 — Search Literal Text In-Process With Layered Limits
+
+Status: Accepted
+
+### Decision
+
+Implement repository search in TypeScript using literal, single-line matching.
+Traverse entries in sorted order without following symbolic links. Apply
+independent policy limits for files inspected, individual file bytes, matches,
+aggregate output bytes, preview length, and elapsed time. Classify deadline
+failures separately as `timeout` evidence.
+
+### Rationale
+
+Shelling out would introduce platform dependency and create an unnecessary
+command-injection boundary. User-provided regular expressions can also consume
+unbounded CPU. Literal in-process matching is sufficient for repository context
+discovery and keeps behavior explicit. Layered limits prevent any one control
+from becoming the sole defense against excessive context or runtime.
+
+### Consequences
+
+- queries cannot execute shell syntax
+- search behavior is deterministic and case sensitivity is explicit
+- binary, oversized, denied, and symlinked files are skipped
+- matches cite repository path, line, column, and bounded preview
+- match-limit exhaustion returns partial evidence marked `truncated`
+- deadline exhaustion returns a classified failure without partial output

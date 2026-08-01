@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { executeTool } from "../src/tools/toolExecutor.js";
+import { ToolTimeoutError } from "../src/tools/toolTimeoutError.js";
 
 describe("executeTool", () => {
   it("records normalized input defaults", async () => {
@@ -39,6 +40,26 @@ describe("executeTool", () => {
       output: null,
       failure: { category: "execution" },
       succeeded: false,
+    });
+  });
+
+  it("classifies a tool deadline as a timeout failure", async () => {
+    const evidence = await executeTool(
+      {
+        id: "slow-tool",
+        description: "Exceed a deadline.",
+        inputSchema: z.object({}).strict(),
+        outputSchema: z.string(),
+        async execute() {
+          throw new ToolTimeoutError("Tool exceeded its deadline.");
+        },
+      },
+      {},
+    );
+
+    expect(evidence.failure).toEqual({
+      category: "timeout",
+      message: "Tool exceeded its deadline.",
     });
   });
 });

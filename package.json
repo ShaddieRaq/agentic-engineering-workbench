@@ -10,6 +10,7 @@
     "experiment": "tsx src/runExperiment.ts",
     "list-files": "tsx src/runListFilesTool.ts",
     "read-file": "tsx src/runReadFileTool.ts",
+    "search-text": "tsx src/runSearchTextTool.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

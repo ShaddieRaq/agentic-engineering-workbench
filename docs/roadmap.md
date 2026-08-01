@@ -250,10 +250,14 @@ Implemented:
 - request and application byte limits
 - oversized, binary, and invalid-text rejection
 - operator-facing `read-file` CLI
+- root-bounded literal `search-text` tool
+- file, match, preview, output-byte, and deadline limits
+- deterministic path, line, column, and preview evidence
+- explicit timeout failure classification
+- operator-facing `search-text` CLI
 
 Remaining safe tools:
 
-- search repository text
 - inspect package metadata
 - inspect Git diff
 
