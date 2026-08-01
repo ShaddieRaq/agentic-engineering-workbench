@@ -229,7 +229,7 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 9 reliability, latency, token, and cost experiments
+Phase 9 reliability experiments complete; Phase 10 controlled tools next
 ```
 
 Verified test state:
@@ -265,9 +265,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Run the role-comparison experiment and inspect its separate reliability,
-confidence, latency, token, and estimated-cost evidence. Then add another
-dataset or compare a controlled prompt/context strategy.
+Begin Phase 10 with one read-only, root-bounded repository inspection tool.
+Define its input/output schema, permission policy, output limit, evidence
+contract, and deterministic tests before connecting it to model-driven tool
+selection.
 
 ## Broader Roadmap
 

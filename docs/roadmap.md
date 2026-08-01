@@ -201,7 +201,7 @@ Implemented:
 
 ## Phase 9 — Reliability Experiments
 
-Status: In progress
+Status: Complete foundation
 
 Implemented:
 
@@ -224,7 +224,7 @@ Implemented:
 - per-case Wilson 95% reliability confidence intervals
 - explicit interval-overlap relationships without significance claims
 
-Planned:
+Future extensions:
 
 - compare context strategies
 - compare prompts
