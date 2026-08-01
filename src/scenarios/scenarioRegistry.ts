@@ -1,8 +1,11 @@
 import type { ScenarioDefinition } from "./scenarioDefinition.js";
 import { explainAgenticHarnessScenario } from "./explainAgenticHarnessScenario.js";
+import { adversarialInstructionDefenseScenario } from "./adversarialInstructionDefenseScenario.js";
 
 const scenarios: Record<string, ScenarioDefinition> = {
     [explainAgenticHarnessScenario.id]: explainAgenticHarnessScenario,
+    [adversarialInstructionDefenseScenario.id]:
+        adversarialInstructionDefenseScenario,
 };
 
 export function getScenarioDefinition(id: string): ScenarioDefinition {

@@ -8,6 +8,19 @@ export const scenarioDatasetCaseSchema = z
     scenarioId: z.string().min(1),
     task: taskSpecSchema,
     context: z.array(contextItemSchema),
+    adversarial: z
+      .object({
+        attackId: z.string().min(1),
+        category: z.enum([
+          "prompt-injection",
+          "conflicting-instructions",
+          "tool-misuse",
+          "data-exfiltration",
+        ]),
+        expectedDefenses: z.array(z.string().min(1)).min(1),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 

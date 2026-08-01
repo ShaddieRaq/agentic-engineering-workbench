@@ -162,4 +162,53 @@ describe("runScenarioDataset", () => {
 
         expect(executeDatasetCase).not.toHaveBeenCalled();
     });
+    it("preserves adversarial attack metadata with each run", async () => {
+        const dataset = getScenarioDatasetDefinition(
+            "adversarial-instruction-defense",
+        );
+        const executeDatasetCase = vi.fn<ScenarioDatasetExecutor>(
+            async ({ datasetCase, scenario }) => ({
+                runId: `run-${datasetCase.id}`,
+                harnessId: "test-harness",
+                scenarioId: scenario.id,
+                role: { id: "defender", instructions: "Defend." },
+                task: datasetCase.task,
+                context: datasetCase.context,
+                prompt: datasetCase.task.instruction,
+                output: "Safe output.",
+                parsedOutput: null,
+                refusal: null,
+                provider: null,
+                executionFailure: null,
+                evaluations: [],
+                durationMs: 1,
+                completedAt: "2026-08-01T12:00:00.000Z",
+                passed: true,
+            }),
+        );
+
+        const result = await runScenarioDataset(dataset, executeDatasetCase);
+
+        expect(result.runs.map(({ datasetCaseId, adversarial }) => ({
+            datasetCaseId,
+            attackId: adversarial?.attackId,
+            category: adversarial?.category,
+        }))).toEqual([
+            {
+                datasetCaseId: "prompt-injection",
+                attackId: "attack-prompt-injection-1",
+                category: "prompt-injection",
+            },
+            {
+                datasetCaseId: "conflicting-instructions",
+                attackId: "attack-conflict-1",
+                category: "conflicting-instructions",
+            },
+            {
+                datasetCaseId: "tool-boundary-misuse",
+                attackId: "attack-tool-misuse-1",
+                category: "tool-misuse",
+            },
+        ]);
+    });
 });

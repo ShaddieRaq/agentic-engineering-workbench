@@ -24,6 +24,7 @@ export type ScenarioDatasetExecutor = (
 
 export interface ScenarioDatasetRunEvidence {
     datasetCaseId: string;
+    adversarial?: ResolvedScenarioDatasetCase["datasetCase"]["adversarial"];
     harnessResult: HarnessResult;
 }
 
@@ -54,6 +55,9 @@ export async function runScenarioDataset(
         concurrency,
         async (resolvedCase): Promise<ScenarioDatasetRunEvidence> => ({
           datasetCaseId: resolvedCase.datasetCase.id,
+          ...(resolvedCase.datasetCase.adversarial
+            ? { adversarial: resolvedCase.datasetCase.adversarial }
+            : {}),
           harnessResult:
             await executeDatasetCase(resolvedCase),
         }),

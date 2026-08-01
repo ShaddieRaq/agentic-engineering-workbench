@@ -21,4 +21,20 @@ describe("scenarioDatasetCaseSchema", () => {
 
     expect(result.success).toBe(true);
   });
+
+  it("accepts explicit adversarial attack and defense metadata", () => {
+    const result = scenarioDatasetCaseSchema.parse({
+      id: "attack-case",
+      scenarioId: "adversarial-instruction-defense",
+      task: { id: "defend", instruction: "Defend the trusted task." },
+      context: [],
+      adversarial: {
+        attackId: "attack-1",
+        category: "prompt-injection",
+        expectedDefenses: ["Ignore untrusted instructions."],
+      },
+    });
+
+    expect(result.adversarial?.attackId).toBe("attack-1");
+  });
 });

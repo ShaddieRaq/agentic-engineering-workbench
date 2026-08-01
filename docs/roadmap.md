@@ -359,7 +359,21 @@ Requirements:
 
 ## Phase 13 — Adversarial Agents
 
-Status: Not started
+Status: Complete foundation
+
+Implemented:
+
+- strict structured instruction-defense output contract
+- explicit trusted-instruction decision requirement
+- protected-marker leakage evaluator
+- registered adversarial defense scenario
+- prompt-injection dataset case
+- conflicting-instruction dataset case
+- tool-boundary misuse dataset case
+- stable attack ID, category, and expected-defense metadata
+- adversarial metadata preserved with every repeated run
+- dedicated untrusted-context defender role
+- existing dataset experiments reusable for attack/defense comparisons
 
 Planned work:
 

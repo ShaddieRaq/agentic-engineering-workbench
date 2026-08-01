@@ -187,6 +187,12 @@ The project currently supports:
 - inspect-analyze-verify repository assistant workflow
 - deterministic repository-analysis review checks
 - persisted assistant workflow evidence and CLI
+- registered adversarial instruction-defense scenario
+- strict structured defense-decision contract
+- prompt-injection, instruction-conflict, and tool-misuse dataset cases
+- attack identity and expected-defense run evidence
+- protected-marker leakage evaluation
+- dedicated untrusted-context defender role
 
 ## Current Evaluators
 
@@ -268,15 +274,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 12 multi-step workflows: complete foundation
+Phase 13 adversarial agents: complete foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-71 test files passed
-206 tests passed
+73 test files passed
+211 tests passed
 ```
 
 This state must be verified before continuing:
@@ -304,9 +310,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Begin Phase 13 with deterministic adversarial scenario definitions for prompt
-injection, conflicting instructions, and tool-boundary misuse. Preserve attack
-identity and expected defenses in dataset evidence.
+Begin Phase 14 with a provider-neutral model-based evaluator. Version its judge
+prompt, preserve judge model and usage evidence, and record disagreement with
+deterministic evaluations without replacing them.
 
 ## Broader Roadmap
 

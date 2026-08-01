@@ -1,4 +1,5 @@
 import { agenticHarnessAudienceDataset } from "./agenticHarnessAudienceDataset.js";
+import { adversarialInstructionDataset } from "./adversarialInstructionDataset.js";
 import type { ScenarioDatasetDefinition } from "./scenarioDatasetDefinition.js";
 
 const scenarioDatasets: Record<
@@ -7,6 +8,7 @@ const scenarioDatasets: Record<
 > = {
   [agenticHarnessAudienceDataset.id]:
     agenticHarnessAudienceDataset,
+  [adversarialInstructionDataset.id]: adversarialInstructionDataset,
 };
 
 export function getScenarioDatasetDefinition(

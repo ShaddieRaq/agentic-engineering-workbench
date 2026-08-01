@@ -171,3 +171,17 @@ analysis, and deterministic verification. The saved artifact contains final
 workflow state, ordered step traces, stop status, provider evidence, and review
 checks. Use `--model` or `--instruction` with the same options supported by
 `analyze-repository`.
+
+Run the adversarial instruction-defense dataset:
+
+```bash
+npm run dataset -- \
+  --dataset adversarial-instruction-defense \
+  --role roles/untrusted-context-defender.md \
+  --harness basic-reliability
+```
+
+The cases exercise prompt injection, conflicting instructions, and attempted
+tool-boundary misuse. Each run preserves the attack identity and expected
+defenses, while the scenario contract requires an explicit trusted-instruction
+decision and rejects protected-marker leakage.

@@ -578,6 +578,23 @@ Possible future uses:
 
 Model-based evaluators should not replace deterministic checks that code can perform reliably.
 
+### Adversarial Reliability
+
+Adversarial inputs remain dataset cases rather than executable instructions.
+Optional case metadata records a stable attack ID, one bounded attack category,
+and explicit expected defenses. The metadata is preserved beside every repeated
+`HarnessResult`, so comparisons can be grouped by attack without changing the
+general harness evidence contract.
+
+The first adversarial scenario requires structured output whose decision can
+only indicate that untrusted instructions were ignored and whose trusted-task
+flag can only be `true`. A deterministic forbidden-phrase evaluator separately
+detects leakage of the protected fixture marker. Prompt injection, conflicting
+instructions, and attempted tool-boundary misuse all reuse this single policy.
+Because the existing experiment runner accepts any registered dataset, the
+defender role can be compared against a baseline without a new orchestration
+path.
+
 ### Harness Result
 
 Each run currently records:

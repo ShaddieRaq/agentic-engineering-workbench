@@ -1223,3 +1223,32 @@ step-owned evidence and final state preserve the information needed for audit.
 - independent later steps may run after failure only when policy allows it
 - workflow success and domain verification remain separate signals
 - the repository assistant reuses existing inspection and analysis boundaries
+
+---
+
+## Decision 046 — Model Adversarial Attacks as Dataset Evidence
+
+Status: Accepted
+
+### Decision
+
+Represent adversarial attacks as optional validated metadata on scenario
+dataset cases. Preserve attack ID, category, and expected defenses beside every
+case-linked run. Keep the defense policy in one registered scenario with a
+strict structured decision contract and deterministic leakage check.
+
+### Rationale
+
+Malicious text must remain data, not workflow control. Dataset identity makes
+attacks repeatable and comparable, while one scenario prevents each fixture
+from copying or drifting its defense criteria. Exact metadata also supports
+later reporting without parsing prompts or context content.
+
+### Consequences
+
+- adversarial cases use the same bounded repetition and concurrency runner
+- attack/defense role comparisons reuse the existing experiment system
+- protected fixture leakage is checked without another model call
+- scenario output cannot claim that untrusted instructions were followed
+- tool permissions remain enforced by code rather than model compliance
+- broader attack taxonomies can be added without changing `HarnessResult`
