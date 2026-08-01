@@ -672,5 +672,33 @@ prompt and require no provider-specific behavior.
 - exact role instructions remain preserved inside run evidence
 - comparisons are reported per stable dataset case ID
 - the artifact distinguishes configuration from measured evidence
-- model, context-strategy, latency, token, and cost comparisons remain future
+- model, context-strategy, token, and cost comparisons remain future
   experiment extensions
+
+---
+
+## Decision 028 — Keep Correctness and Latency as Separate Signals
+
+Status: Accepted
+
+### Decision
+
+Summarize latency per dataset case with sample count, average, minimum, and
+maximum duration. Compare candidate average duration against baseline average
+duration, but store latency comparisons separately from reliability
+comparisons.
+
+### Rationale
+
+A faster response can still be incorrect, and a more reliable response can be
+slower. Combining these properties into one score would conceal the tradeoff
+and make release decisions harder to audit. Preserving both source summaries
+also allows later reporting to present the evidence without recalculation.
+
+### Consequences
+
+- negative latency deltas consistently mean the candidate was faster
+- missing samples produce insufficient evidence rather than a zero duration
+- experiment artifacts expose reliability and latency independently
+- observed latency direction does not imply statistical significance
+- token usage and cost remain separate future evidence signals

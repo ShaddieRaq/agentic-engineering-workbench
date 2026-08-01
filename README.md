@@ -42,7 +42,8 @@ Use one repetition and one concurrent call while validating your setup.
 
 The experiment command holds the dataset, scenario policy, harness, model, and
 execution policy constant while changing the role instructions. It persists
-both evidence sets and prints the observed reliability change for every case.
+both evidence sets and prints the observed reliability and average-latency
+change for every case.
 
 ```bash
 npm run experiment -- \

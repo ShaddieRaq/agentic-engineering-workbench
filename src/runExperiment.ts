@@ -54,7 +54,7 @@ async function main(): Promise<void> {
   console.log(`Dataset: ${definition.datasetId}`);
   console.log(`Evidence saved: ${runFilePath}`);
 
-  for (const comparison of result.comparisons) {
+  for (const comparison of result.reliabilityComparisons) {
     const delta =
       comparison.passRateDelta === null
         ? "n/a"
@@ -62,6 +62,17 @@ async function main(): Promise<void> {
 
     console.log(
       `Case [${comparison.datasetCaseId}]: ${comparison.classification} (${delta})`,
+    );
+  }
+
+  for (const comparison of result.latencyComparisons) {
+    const delta =
+      comparison.averageDurationDeltaMs === null
+        ? "n/a"
+        : `${comparison.averageDurationDeltaMs >= 0 ? "+" : ""}${comparison.averageDurationDeltaMs.toFixed(0)} ms average`;
+
+    console.log(
+      `Latency [${comparison.datasetCaseId}]: ${comparison.classification} (${delta})`,
     );
   }
 }

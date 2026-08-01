@@ -90,6 +90,12 @@ and candidate dataset results, per-case comparisons, and completion time. The
 exact loaded role instructions also remain embedded in every `HarnessResult`,
 so evidence does not depend only on mutable file paths.
 
+Correctness and latency remain separate comparison signals. Per-case latency
+evidence records sample count, average, minimum, and maximum duration for each
+variant. Candidate-minus-baseline average duration is classified as faster,
+slower, unchanged, or insufficient evidence. These are observed timings, not
+claims of statistical significance.
+
 ## Main Components
 
 ### AI Provider

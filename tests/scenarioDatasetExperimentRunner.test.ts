@@ -62,7 +62,7 @@ describe("runScenarioDatasetExperiment", () => {
 
     expect(result.baseline.runs).toHaveLength(2);
     expect(result.candidate.runs).toHaveLength(2);
-    expect(result.comparisons).toEqual([
+    expect(result.reliabilityComparisons).toEqual([
       {
         datasetCaseId: "beginner",
         baselinePassRate: 0,
@@ -78,5 +78,14 @@ describe("runScenarioDatasetExperiment", () => {
         classification: "improved",
       },
     ]);
+    expect(result.latencyComparisons).toHaveLength(2);
+
+    for (const comparison of result.latencyComparisons) {
+      expect(comparison.baseline.sampleCount).toBe(1);
+      expect(comparison.candidate.sampleCount).toBe(1);
+      expect(comparison.averageDurationDeltaMs).toEqual(
+        expect.any(Number),
+      );
+    }
   });
 });

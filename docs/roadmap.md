@@ -212,6 +212,8 @@ Implemented:
 - controlled role-instruction comparison over one shared dataset and harness
 - complete baseline and candidate evidence persistence
 - per-case reliability comparison in the experiment CLI
+- per-case latency sample count, average, minimum, and maximum
+- observed candidate-versus-baseline average-latency comparison
 
 Planned:
 
@@ -219,7 +221,6 @@ Planned:
 - compare prompts
 - compare models
 - repeatability measurement
-- latency comparison
 - token and cost tracking
 - baseline versus candidate runs
 

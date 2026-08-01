@@ -8,6 +8,11 @@ import {
   compareReliabilitySummaries,
   type ReliabilityComparison,
 } from "../orchestration/reliabilityComparison.js";
+import {
+  compareLatencySummaries,
+  summarizeLatencies,
+  type LatencyComparison,
+} from "../orchestration/latencyComparison.js";
 import type { ScenarioDatasetExperimentDefinition } from "./scenarioDatasetExperimentDefinition.js";
 
 export interface ScenarioDatasetCaseComparison
@@ -15,12 +20,27 @@ export interface ScenarioDatasetCaseComparison
   datasetCaseId: string;
 }
 
+export interface ScenarioDatasetCaseLatencyComparison
+  extends LatencyComparison {
+  datasetCaseId: string;
+}
+
 export interface ScenarioDatasetExperimentResult {
   definition: ScenarioDatasetExperimentDefinition;
   baseline: ScenarioDatasetRunResult;
   candidate: ScenarioDatasetRunResult;
-  comparisons: ScenarioDatasetCaseComparison[];
+  reliabilityComparisons: ScenarioDatasetCaseComparison[];
+  latencyComparisons: ScenarioDatasetCaseLatencyComparison[];
   completedAt: string;
+}
+
+function durationsForCase(
+  result: ScenarioDatasetRunResult,
+  datasetCaseId: string,
+): number[] {
+  return result.runs
+    .filter((run) => run.datasetCaseId === datasetCaseId)
+    .map((run) => run.harnessResult.durationMs);
 }
 
 export async function runScenarioDatasetExperiment(
@@ -51,7 +71,7 @@ export async function runScenarioDatasetExperiment(
       summary,
     ]),
   );
-  const comparisons = baseline.caseSummaries.map(
+  const reliabilityComparisons = baseline.caseSummaries.map(
     (baselineSummary): ScenarioDatasetCaseComparison => {
       const candidateSummary = candidateSummaries.get(
         baselineSummary.datasetCaseId,
@@ -72,12 +92,26 @@ export async function runScenarioDatasetExperiment(
       };
     },
   );
+  const latencyComparisons = baseline.caseSummaries.map(
+    ({ datasetCaseId }): ScenarioDatasetCaseLatencyComparison => ({
+      datasetCaseId,
+      ...compareLatencySummaries(
+        summarizeLatencies(
+          durationsForCase(baseline, datasetCaseId),
+        ),
+        summarizeLatencies(
+          durationsForCase(candidate, datasetCaseId),
+        ),
+      ),
+    }),
+  );
 
   return {
     definition,
     baseline,
     candidate,
-    comparisons,
+    reliabilityComparisons,
+    latencyComparisons,
     completedAt: new Date().toISOString(),
   };
 }
