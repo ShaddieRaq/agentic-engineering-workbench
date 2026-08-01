@@ -249,6 +249,11 @@ passes each resolved case to an injected executor sequentially. Each returned
 This preserves dataset identity without changing the reusable individual-run
 contract. Unknown scenario references prevent every case from executing.
 
+Dataset execution uses the same runtime-validated repetition policy as suite
+execution. Repeated runs remain case-major, keeping observations for one input
+adjacent. A pure dataset summarizer groups the preserved evidence by case ID and
+derives total, passed, and failed counts plus a pass-rate ratio for each case.
+
 ### Scenario Suite Definition
 
 A scenario suite definition groups registered scenario IDs for collective
@@ -284,10 +289,11 @@ execution when reference resolution fails. Each executor invocation returns a
 }
 ```
 
-The runner accepts a runtime-validated repetition count. Repetitions must be a
-positive integer and default to one, preserving the original single-run
-behavior. Execution remains sequential and scenario-major, so repeated results
-for the same scenario remain adjacent in the returned evidence.
+The runner accepts the shared runtime-validated repetition policy. Repetitions
+must be a positive integer and default to one, preserving the original
+single-run behavior. Execution remains sequential and scenario-major, so
+repeated results for the same scenario remain adjacent in the returned
+evidence.
 
 After execution, pure suite summarizers derive total, passed, and failed run
 counts, a pass-rate ratio, and deterministic failure counts from the preserved

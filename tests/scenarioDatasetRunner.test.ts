@@ -5,7 +5,7 @@ import type { ResolvedScenarioDatasetCase } from "../src/datasets/scenarioDatase
 import { runScenarioDataset, type ScenarioDatasetExecutor, } from "../src/datasets/scenarioDatasetRunner.js";
 
 describe("runScenarioDataset", () => {
-  it("executes every case and preserves case identity", async () => {
+  it("repeats every case and preserves case identity", async () => {
     const dataset = getScenarioDatasetDefinition(
       "agentic-harness-audiences",
     );
@@ -39,24 +39,51 @@ describe("runScenarioDataset", () => {
     const result = await runScenarioDataset(
       dataset,
       executeDatasetCase,
+      {
+        repetitions: 2,
+      },
     );
 
-    expect(executeDatasetCase).toHaveBeenCalledTimes(2);
+    expect(executeDatasetCase).toHaveBeenCalledTimes(4);
     expect(
-      result.runs.map(({ datasetCaseId, harnessResult }) => ({
-        datasetCaseId,
-        runId: harnessResult.runId,
-      })),
-    ).toEqual([
-      {
-        datasetCaseId: "beginner",
-        runId: "run-beginner",
-      },
-      {
-        datasetCaseId: "staff-engineer",
-        runId: "run-staff-engineer",
-      },
-    ]);
+        result.runs.map(({ datasetCaseId, harnessResult }) => ({
+          datasetCaseId,
+          runId: harnessResult.runId,
+        })),
+      ).toEqual([
+        {
+          datasetCaseId: "beginner",
+          runId: "run-beginner",
+        },
+        {
+          datasetCaseId: "beginner",
+          runId: "run-beginner",
+        },
+        {
+          datasetCaseId: "staff-engineer",
+          runId: "run-staff-engineer",
+        },
+        {
+          datasetCaseId: "staff-engineer",
+          runId: "run-staff-engineer",
+        },
+      ]);
+      expect(result.caseSummaries).toEqual([
+        {
+          datasetCaseId: "beginner",
+          totalRuns: 2,
+          passedRuns: 2,
+          failedRuns: 0,
+          passRate: 1,
+        },
+        {
+          datasetCaseId: "staff-engineer",
+          totalRuns: 2,
+          passedRuns: 2,
+          failedRuns: 0,
+          passRate: 1,
+        },
+      ]);
   });
   it("executes nothing when dataset resolution fails", async () => {
     const executeDatasetCase = vi.fn<ScenarioDatasetExecutor>(

@@ -2,7 +2,10 @@ import type { ScenarioDefinition } from "../scenarios/scenarioDefinition.js";
 import type { ScenarioSuiteDefinition } from "./scenarioSuiteDefinition.js";
 import { resolveScenarioSuite } from "./scenarioSuiteResolver.js";
 import type { HarnessResult } from "../harness/harnessResult.js";
-import { z } from "zod";
+import {
+    parseRepetitionOptions,
+    type RepetitionOptions,
+  } from "../orchestration/repetitionPolicy.js";
 import {
     summarizeScenarioSuiteFailures,
     summarizeScenarioSuiteRuns,
@@ -21,15 +24,7 @@ export type ScenarioExecutor = (
     failureSummary: ScenarioSuiteFailureSummary;
   }
 
-  const scenarioSuiteRunOptionsSchema = z
-    .object({
-      repetitions: z.number().int().positive().default(1),
-    })
-    .strict();
-
-  export type ScenarioSuiteRunOptions = z.input<
-    typeof scenarioSuiteRunOptionsSchema
-  >;
+  export type ScenarioSuiteRunOptions = RepetitionOptions;
 
   export async function runScenarioSuite(
     suite: ScenarioSuiteDefinition,
@@ -37,7 +32,7 @@ export type ScenarioExecutor = (
     options: ScenarioSuiteRunOptions = {},
   ): Promise<ScenarioSuiteRunResult> {
 
-    const { repetitions } = scenarioSuiteRunOptionsSchema.parse(options);
+    const { repetitions } = parseRepetitionOptions(options);
     const scenarios = resolveScenarioSuite(suite);
     const runs: HarnessResult[] = [];
 

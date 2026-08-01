@@ -112,6 +112,9 @@ The project currently supports:
 - injected resolved-case execution behavior
 - dataset case identity preserved alongside complete run evidence
 - dataset preflight rejection before partial execution
+- shared suite and dataset repetition policy
+- case-major repeated dataset execution
+- per-case dataset reliability metrics
 - optional scenario resolution
 - harness and scenario evaluator composition
 - scenario-specific Zod output contracts
@@ -209,15 +212,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 8 scenario dataset execution
+Phase 8 repeated datasets and per-case metrics
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-34 test files passed
-89 tests passed
+36 test files passed
+95 tests passed
 ```
 
 This state must be verified before continuing:
@@ -245,8 +248,8 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add repeated dataset execution and derive per-case reliability metrics without
-discarding individual run evidence. Defer concurrency and report presentation.
+Add deterministic baseline-versus-candidate regression comparison using
+preserved summary evidence. Defer concurrency and report presentation.
 
 ## Broader Roadmap
 

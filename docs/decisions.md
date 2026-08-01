@@ -527,3 +527,30 @@ than inside the harness contract.
 - dataset policy references fail before partial execution
 - execution remains testable without live providers
 - repetition and per-case aggregation remain separate extensions
+
+---
+
+## Decision 023 — Share Repetition Policy and Derive Per-Case Metrics
+
+Status: Accepted
+
+### Decision
+
+Use one runtime-validated repetition policy for suite and dataset runners.
+Execute dataset repetitions sequentially in case-major order and derive
+per-case reliability metrics from the preserved case-linked run evidence.
+
+### Rationale
+
+Repetition is workflow-control policy, not a property of one orchestrator.
+Centralizing it prevents suite and dataset execution from accepting different
+configurations. Dataset-wide metrics can hide weak inputs, so reliability must
+also be visible for each stable case ID.
+
+### Consequences
+
+- zero, negative, and fractional repetition counts fail consistently
+- existing callers retain a default of one execution
+- repeated case evidence stays adjacent and inspectable
+- weak cases remain visible even when aggregate results look healthy
+- individual `HarnessResult` records remain unchanged

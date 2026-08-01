@@ -189,10 +189,13 @@ Implemented:
 - injected resolved-case executor
 - dataset and case identity preserved with each `HarnessResult`
 - preflight rejection before any dataset case executes
+- shared runtime-validated repetition policy across suite and dataset runners
+- case-major repeated dataset execution
+- pure per-case reliability summarization
+- per-case total, passed, failed, and pass-rate metrics
 
 Still needed:
 
-- repeated dataset runs and per-case reliability metrics
 - regression comparison
 - configurable concurrency
 
