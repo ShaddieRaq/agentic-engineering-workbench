@@ -50,6 +50,35 @@ Run writer
 runs/run-<uuid>.json
 ```
 
+Dataset execution uses a separate CLI entry point:
+
+```text
+Dataset CLI arguments
+    |
+    v
+Dataset registry ------> Scenario resolution
+    |
+    v
+Dataset executor adapter
+    |
+    +------> Role + harness definition + AIProvider
+    |
+    v
+ScenarioDatasetRunner
+    |
+    +------> repeated, bounded-concurrency SimpleHarness runs
+    |
+    v
+ScenarioDatasetRunResult
+    |
+    v
+runs/dataset-run-<uuid>.json
+```
+
+The aggregate artifact retains dataset case IDs, complete `HarnessResult`
+evidence, and case summaries together. This prevents persistence from losing
+the relationship between a run and the dataset input that produced it.
+
 ## Main Components
 
 ### AI Provider

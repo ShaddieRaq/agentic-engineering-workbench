@@ -201,7 +201,13 @@ Implemented:
 
 ## Phase 9 — Reliability Experiments
 
-Status: Not started
+Status: In progress
+
+Implemented:
+
+- executable dataset CLI using registered datasets, roles, and harnesses
+- production dataset executor adapter backed by `SimpleHarness`
+- aggregate dataset evidence persistence with case identity and summaries
 
 Planned:
 

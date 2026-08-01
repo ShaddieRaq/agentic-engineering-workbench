@@ -613,3 +613,34 @@ because network timing changed.
 - active work never exceeds the configured concurrency limit
 - returned evidence follows execution-plan order rather than completion order
 - runner-specific evidence wrappers remain independent of scheduling
+
+---
+
+## Decision 026 — Expose Dataset Execution Through a Separate CLI
+
+Status: Accepted
+
+### Decision
+
+Add a dedicated dataset command that assembles a registered dataset, role,
+harness definition, and provider through a reusable dataset executor adapter.
+Persist the complete `ScenarioDatasetRunResult` as one aggregate artifact.
+
+### Rationale
+
+The existing CLI is optimized for one file-backed task and context selection.
+Dataset execution has different inputs and produces case-linked aggregate
+evidence. A separate entry point keeps both command contracts explicit while
+reusing the same `SimpleHarness` execution path.
+
+Persisting only individual `HarnessResult` objects would discard dataset case
+identity and summaries. The aggregate result is the evidence boundary needed
+for later replay and baseline-versus-candidate comparison.
+
+### Consequences
+
+- registered datasets can be run against the live OpenAI provider
+- unit tests use `FakeProvider` through the same executor adapter
+- repetition and concurrency remain runtime validated
+- one artifact preserves case identity, run evidence, and summaries
+- the original single-run CLI remains backward compatible

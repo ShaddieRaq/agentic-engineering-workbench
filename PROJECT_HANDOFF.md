@@ -117,6 +117,8 @@ The project currently supports:
 - shared suite and dataset execution policy
 - case-major repeated dataset execution
 - per-case dataset reliability metrics
+- executable dataset CLI backed by `SimpleHarness`
+- aggregate case-linked dataset evidence persistence
 - deterministic baseline-versus-candidate reliability comparison
 - explicit regression, improvement, unchanged, and insufficient-evidence states
 - optional scenario resolution
@@ -216,15 +218,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 8 configurable concurrency and deterministic evidence ordering
+Phase 9 executable dataset workflow
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-38 test files passed
-105 tests passed
+41 test files passed
+111 tests passed
 ```
 
 This state must be verified before continuing:
@@ -252,8 +254,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Begin Phase 9 by defining a validated reliability-experiment contract that
-separates baseline and candidate configurations from their measured evidence.
+Run the registered dataset once with sequential defaults and inspect its
+aggregate evidence artifact. Then define a validated reliability-experiment
+contract separating baseline and candidate configurations from measured
+evidence.
 
 ## Broader Roadmap
 
