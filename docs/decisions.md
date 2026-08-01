@@ -500,3 +500,30 @@ allows the same evidence set to compare prompts and providers later.
 - empty datasets and duplicate case IDs are rejected
 - unknown scenario references fail during resolution
 - dataset execution must preserve case identity separately from run identity
+
+---
+
+## Decision 022 — Preserve Dataset Case Identity Outside Harness Results
+
+Status: Accepted
+
+### Decision
+
+Execute resolved dataset cases through an injected executor and wrap each
+returned `HarnessResult` with its dataset case ID. Resolve the complete dataset
+before any executor invocation.
+
+### Rationale
+
+`HarnessResult` describes one reusable model run and should not depend on every
+orchestration layer that may consume it. Dataset identity is still required for
+case-level comparison and replay, so it belongs in dataset-run evidence rather
+than inside the harness contract.
+
+### Consequences
+
+- individual harness results remain reusable outside datasets
+- every dataset run can be traced to its source case
+- dataset policy references fail before partial execution
+- execution remains testable without live providers
+- repetition and per-case aggregation remain separate extensions

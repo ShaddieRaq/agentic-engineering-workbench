@@ -108,6 +108,10 @@ The project currently supports:
 - a scenario dataset registry
 - dataset-to-scenario policy resolution
 - registered audience-specific agentic-harness inputs
+- sequential scenario dataset execution
+- injected resolved-case execution behavior
+- dataset case identity preserved alongside complete run evidence
+- dataset preflight rejection before partial execution
 - optional scenario resolution
 - harness and scenario evaluator composition
 - scenario-specific Zod output contracts
@@ -205,15 +209,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 8 scenario dataset foundation
+Phase 8 scenario dataset execution
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-33 test files passed
-87 tests passed
+34 test files passed
+89 tests passed
 ```
 
 This state must be verified before continuing:
@@ -241,8 +245,8 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Execute resolved dataset cases while preserving dataset and case identity with
-each `HarnessResult`. Defer concurrency and report presentation.
+Add repeated dataset execution and derive per-case reliability metrics without
+discarding individual run evidence. Defer concurrency and report presentation.
 
 ## Broader Roadmap
 

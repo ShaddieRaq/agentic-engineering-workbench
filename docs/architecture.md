@@ -235,6 +235,20 @@ scenario registry and rejects unknown policy references before execution.
 The registered `agentic-harness-audiences` dataset currently exercises the
 `explain-agentic-harness` policy with beginner and staff-engineer inputs.
 
+The scenario-dataset runner resolves the entire dataset before execution and
+passes each resolved case to an injected executor sequentially. Each returned
+`HarnessResult` is wrapped with its stable dataset case ID:
+
+```ts
+{
+  datasetCaseId,
+  harnessResult
+}
+```
+
+This preserves dataset identity without changing the reusable individual-run
+contract. Unknown scenario references prevent every case from executing.
+
 ### Scenario Suite Definition
 
 A scenario suite definition groups registered scenario IDs for collective

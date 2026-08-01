@@ -185,10 +185,14 @@ Implemented:
 - registered `agentic-harness-audiences` dataset
 - dataset-to-scenario policy resolution
 - rejection of unknown scenario policy references
+- sequential dataset-case execution
+- injected resolved-case executor
+- dataset and case identity preserved with each `HarnessResult`
+- preflight rejection before any dataset case executes
 
 Still needed:
 
-- dataset case execution and case-level evidence
+- repeated dataset runs and per-case reliability metrics
 - regression comparison
 - configurable concurrency
 
