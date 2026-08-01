@@ -175,6 +175,8 @@ The project currently supports:
 - pre-provider context-evidence integrity validation
 - injected repository-analysis provider runner
 - unified inspection, request, provider, refusal, failure, and timing evidence
+- persisted repository-analysis artifacts
+- live `analyze-repository` CLI with model and instruction configuration
 
 ## Current Evaluators
 
@@ -256,15 +258,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 11 local engineering assistant: provider execution boundary complete
+Phase 11 local engineering assistant: live repository analysis available
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-65 test files passed
-188 tests passed
+67 test files passed
+191 tests passed
 ```
 
 This state must be verified before continuing:
@@ -292,9 +294,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add persistence and an operator-facing live repository-analysis CLI. Assemble
-inspection and provider configuration at the composition root, save the complete
-analysis artifact under `runs/`, and print a concise structured summary.
+Run the first live repository analysis and inspect its persisted evidence. Then
+add deterministic citation validation so every reported evidence path must come
+from the assembled context before the analysis is considered successful.
 
 ## Broader Roadmap
 

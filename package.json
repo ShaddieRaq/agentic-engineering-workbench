@@ -14,6 +14,7 @@
     "inspect-package": "tsx src/runInspectPackageTool.ts",
     "inspect-git-diff": "tsx src/runInspectGitDiffTool.ts",
     "inspect-repository": "tsx src/runRepositoryInspection.ts",
+    "analyze-repository": "tsx src/runRepositoryAnalysis.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

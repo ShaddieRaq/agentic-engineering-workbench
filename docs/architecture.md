@@ -311,6 +311,14 @@ preserved separately from execution failure. Known transport and parsing
 failures are translated through the provider-neutral error categories, and
 provider exceptions do not reject the analysis run.
 
+The live `analyze-repository` composition root loads `.env`, creates the
+controlled inspection tools, runs inspection and context assembly, configures
+`OpenAIProvider`, executes analysis, and persists the complete result under
+`runs/analysis-run-<id>.json`. It defaults to `gpt-5.4-mini`, accepts an explicit
+model and instruction, and prints only a concise operational summary. Full
+prompts, source content, structured output, refusals, usage, and failures remain
+in the ignored evidence artifact.
+
 ### Harness Definition
 
 A harness definition contains reusable execution or evaluation policy.

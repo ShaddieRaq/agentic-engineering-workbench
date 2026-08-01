@@ -299,6 +299,10 @@ Implemented:
 - injected provider execution for repository analysis
 - unified inspection, request, response, usage, and timing evidence
 - distinct success, refusal, and classified provider-failure states
+- persisted complete repository-analysis artifacts
+- live `analyze-repository` composition root and CLI
+- economical default model with explicit model override
+- concise terminal summary separated from full run evidence
 
 Initial use cases:
 

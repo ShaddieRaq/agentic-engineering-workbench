@@ -147,3 +147,13 @@ It also selects a small set of observed orientation files and records why each
 is a context candidate. Selected files are read in priority order under one
 aggregate byte budget, with accepted and rejected candidates recorded
 explicitly. File content is retained once in the corresponding read evidence.
+
+Run a live structured repository analysis:
+
+```bash
+npm run analyze-repository
+```
+
+The command defaults to `gpt-5.4-mini`, saves the complete artifact under
+`runs/`, and prints a concise summary. Use `--model gpt-5.4` to override the
+model or `--instruction "..."` to supply a specific analysis task.

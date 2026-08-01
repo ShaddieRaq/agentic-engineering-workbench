@@ -1103,3 +1103,34 @@ the runner provider-neutral.
 - unsuccessful runs remain serializable and debuggable
 - live provider construction and artifact persistence remain composition-root
   responsibilities
+
+---
+
+## Decision 042 — Persist Full Analysis Evidence and Print a Concise Summary
+
+Status: Accepted
+
+### Decision
+
+Add an `analyze-repository` composition root that assembles controlled tools,
+inspection, context, an `OpenAIProvider`, analysis execution, and artifact
+persistence. Default live analysis to `gpt-5.4-mini`, allow explicit model and
+instruction overrides, persist the complete result under ignored `runs/`, and
+print only a concise terminal summary.
+
+### Rationale
+
+Operators need quick status without flooding the terminal with source files and
+prompts, while debugging and evaluation require the complete evidence chain.
+Keeping those presentation needs separate avoids either losing evidence or
+making routine commands unusable. A lower-cost default is appropriate for
+iterative repository inspection and remains overridable for higher-capability
+analysis.
+
+### Consequences
+
+- live analysis uses the same tested provider-neutral runner
+- complete prompts and context remain available in persisted artifacts
+- terminal output reports status, model, context usage, path, and finding counts
+- `.env` and `runs/` remain excluded from version control
+- choosing another model or task does not change workflow implementation
