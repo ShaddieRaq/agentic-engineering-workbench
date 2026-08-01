@@ -173,6 +173,8 @@ The project currently supports:
 - provider-neutral repository-analysis request builder
 - structured citation-bearing repository-analysis output contract
 - pre-provider context-evidence integrity validation
+- injected repository-analysis provider runner
+- unified inspection, request, provider, refusal, failure, and timing evidence
 
 ## Current Evaluators
 
@@ -254,15 +256,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 11 local engineering assistant: structured model request contract complete
+Phase 11 local engineering assistant: provider execution boundary complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-64 test files passed
-185 tests passed
+65 test files passed
+188 tests passed
 ```
 
 This state must be verified before continuing:
@@ -290,9 +292,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Execute the repository-analysis request through an injected `AIProvider` and
-preserve raw, parsed, refusal, provider, workflow, and context evidence in one
-analysis result. Test with a deterministic provider before enabling the live CLI.
+Add persistence and an operator-facing live repository-analysis CLI. Assemble
+inspection and provider configuration at the composition root, save the complete
+analysis artifact under `runs/`, and print a concise structured summary.
 
 ## Broader Roadmap
 

@@ -296,6 +296,9 @@ Implemented:
 - strict structured repository-analysis output contract
 - required evidence-path citations for analysis claims
 - pre-provider rejection of broken context-to-read linkage
+- injected provider execution for repository analysis
+- unified inspection, request, response, usage, and timing evidence
+- distinct success, refusal, and classified provider-failure states
 
 Initial use cases:
 

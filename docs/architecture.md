@@ -303,6 +303,14 @@ rationales, and file content. The associated strict Zod output contract requires
 an overview plus citation-bearing architecture components, entry points, risks,
 and test recommendations. Request construction does not execute a provider.
 
+The repository-analysis runner accepts an injected `AIProvider`, builds the
+validated request, and returns one result containing the complete inspection
+workflow, serializable request evidence, raw and parsed output, refusal,
+provider usage, classified provider failure, timing, and status. A refusal is
+preserved separately from execution failure. Known transport and parsing
+failures are translated through the provider-neutral error categories, and
+provider exceptions do not reject the analysis run.
+
 ### Harness Definition
 
 A harness definition contains reusable execution or evaluation policy.

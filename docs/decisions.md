@@ -1072,3 +1072,34 @@ an incorrect source label.
 - structured analysis claims carry source-path fields
 - citation correctness remains a separate evaluation concern
 - provider execution and its evidence are added by a later workflow step
+
+---
+
+## Decision 041 — Preserve Provider Outcomes Inside the Analysis Run
+
+Status: Accepted
+
+### Decision
+
+Execute repository-analysis requests through an injected `AIProvider` and
+return one analysis result containing the complete inspection workflow,
+serializable request evidence, raw and parsed output, refusal, provider usage,
+classified execution failure, timing, and status. Catch provider failures
+inside the runner rather than rejecting the run.
+
+### Rationale
+
+A provider failure is evidence about an attempted workflow, not a reason to
+discard the inspection and prompt that led to it. Refusals and transport errors
+also require different operator responses, so they must not collapse into one
+generic failure state. Provider injection keeps unit tests deterministic and
+the runner provider-neutral.
+
+### Consequences
+
+- every model attempt remains traceable to its exact inspection and prompt
+- provider refusals remain distinct from execution failures
+- known transport and parsing failures preserve their neutral category
+- unsuccessful runs remain serializable and debuggable
+- live provider construction and artifact persistence remain composition-root
+  responsibilities
