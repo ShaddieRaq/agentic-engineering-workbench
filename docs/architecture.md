@@ -327,6 +327,14 @@ An otherwise valid model response is unsuccessful when it cites context that
 was not assembled, and the CLI reports the evaluation failure separately from
 provider failure.
 
+Git inspection also returns explicit tracked and untracked path lists under the
+same aggregate output limit as the patch. The context selector keeps
+`AGENTS.md` first, then adds changed files in deterministic path order before
+the remaining orientation files. Duplicate paths retain their change-analysis
+rationale. Changed paths are still read through the shared permission boundary;
+deleted, denied, binary, oversized, or otherwise unreadable files remain
+visible as rejected context rather than bypassing tool policy.
+
 ### Harness Definition
 
 A harness definition contains reusable execution or evaluation policy.

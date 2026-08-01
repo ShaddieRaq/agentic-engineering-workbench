@@ -274,7 +274,7 @@ Requirements:
 
 ## Phase 11 — Local Engineering Assistant
 
-Status: In progress
+Status: Complete foundation
 
 Implemented:
 
@@ -307,6 +307,10 @@ Implemented:
 - exact comparison against assembled context sources
 - available, cited, and invalid path evidence
 - citation evaluation included in overall analysis status
+- explicit tracked and untracked working-tree path evidence
+- changed-file context prioritized immediately after repository instructions
+- deterministic deduplication between change and orientation context
+- change-inspection completeness included in context-selection evidence
 
 Initial use cases:
 
@@ -389,8 +393,7 @@ Planned:
 
 ## Near-Term Priorities
 
-1. Define a structured output contract for one scenario.
-2. Extend provider support for structured output.
-3. Preserve both raw and parsed model output.
-4. Record schema-validation failures as run evidence.
-5. Begin scenario suites and repeated-run reliability measurement.
+1. Define a reusable multi-step workflow state and trace contract.
+2. Add explicit step limits and stop conditions.
+3. Compose repository analysis with a deterministic verification step.
+4. Preserve partial workflow evidence when one step fails.

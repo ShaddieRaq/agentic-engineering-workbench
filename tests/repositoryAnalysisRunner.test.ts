@@ -38,6 +38,7 @@ function inspection(): RepositoryInspectionWorkflowResult {
     contextSelection: {
       selectionId: "repository-orientation",
       sourceToolCallId: "files-1",
+      changeToolCallId: "changes-1",
       candidates: [
         {
           path: "README.md",

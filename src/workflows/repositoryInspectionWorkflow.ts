@@ -129,7 +129,10 @@ export async function runRepositoryInspectionWorkflow(
     { stepId: "repository-files", evidence: fileEvidence },
     { stepId: "git-changes", evidence: changeEvidence },
   ];
-  const contextSelection = selectRepositoryContext(fileEvidence);
+  const contextSelection = selectRepositoryContext(
+    fileEvidence,
+    changeEvidence,
+  );
   const contextAssembly = await loadRepositoryContext(
     contextSelection,
     tools.contextFiles,

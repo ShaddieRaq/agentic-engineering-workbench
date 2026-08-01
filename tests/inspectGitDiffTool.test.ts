@@ -12,6 +12,7 @@ describe("inspect-git-diff tool", () => {
     const runGit = vi
       .fn<GitDiffRunner>()
       .mockResolvedValueOnce(Buffer.from(diff))
+      .mockResolvedValueOnce(Buffer.from("src/a.ts\0"))
       .mockResolvedValueOnce(
         Buffer.from("src/new.ts\0.env\0runs/output.json\0"),
       );
@@ -41,6 +42,20 @@ describe("inspect-git-diff tool", () => {
     expect(runGit).toHaveBeenNthCalledWith(2, {
       cwd: process.cwd(),
       args: [
+        "diff",
+        "--no-ext-diff",
+        "--no-textconv",
+        "--name-only",
+        "-z",
+        "--diff-filter=ACMRTUXB",
+        "--",
+      ],
+      timeoutMs: 5_000,
+      maximumBytes: 1_000,
+    });
+    expect(runGit).toHaveBeenNthCalledWith(3, {
+      cwd: process.cwd(),
+      args: [
         "ls-files",
         "--others",
         "--exclude-standard",
@@ -57,6 +72,7 @@ describe("inspect-git-diff tool", () => {
         diff,
         sizeBytes: Buffer.byteLength(diff),
         empty: false,
+        trackedPaths: ["src/a.ts"],
         untrackedPaths: ["src/new.ts"],
       },
       failure: null,
@@ -80,6 +96,7 @@ describe("inspect-git-diff tool", () => {
       diff: "",
       sizeBytes: 0,
       empty: true,
+      trackedPaths: [],
       untrackedPaths: [],
     });
   });
@@ -107,6 +124,7 @@ describe("inspect-git-diff tool", () => {
     const runGit = vi
       .fn<GitDiffRunner>()
       .mockResolvedValueOnce(Buffer.from("large"))
+      .mockResolvedValueOnce(Buffer.from("changed.ts\0"))
       .mockResolvedValueOnce(Buffer.from("new.ts\0"));
     const evidence = await executeTool(
       createInspectGitDiffTool({

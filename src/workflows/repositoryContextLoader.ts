@@ -70,7 +70,7 @@ export async function loadRepositoryContext(
 
     const evidence = await executeTool(readFileTool, {
       path: candidate.path,
-      maxBytes: Math.min(remainingBytes, 32_768),
+      maxBytes: 32_768,
     });
     reads.push({ candidate, evidence });
 

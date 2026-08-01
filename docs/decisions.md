@@ -1163,3 +1163,33 @@ matching is transparent and avoids silently treating aliases as equivalent.
   distinct states
 - the CLI reports failed citation evaluation separately
 - semantic support within a correctly cited file remains a future evaluator
+
+---
+
+## Decision 044 — Select Changed Files From Structured Git Evidence
+
+Status: Accepted
+
+### Decision
+
+Expose tracked and untracked working-tree paths as structured output from the
+bounded Git inspection tool. Keep repository instructions first, then
+prioritize changed paths before remaining orientation context. Resolve duplicate
+paths deterministically and read every selected path through the existing
+permission and byte-budget boundary.
+
+### Rationale
+
+Patch text is presentation evidence, not a stable path-selection API. Parsing
+it inside the context selector would couple workflow policy to Git patch syntax
+and make quoted or renamed paths fragile. Explicit path evidence keeps the
+selector pure while the controlled tool remains responsible for Git behavior.
+
+### Consequences
+
+- diff-review analysis can cite modified implementation and test files
+- repository instructions remain the highest-priority context
+- tracked deletions are excluded from read candidates
+- denied and unreadable changed files cannot bypass `read-file` policy
+- duplicate change and orientation paths are loaded only once
+- failed Git inspection marks context selection incomplete

@@ -20,6 +20,7 @@ export const inspectGitDiffOutputSchema = z
     diff: z.string(),
     sizeBytes: z.number().int().nonnegative(),
     empty: z.boolean(),
+    trackedPaths: z.array(z.string().min(1)),
     untrackedPaths: z.array(z.string().min(1)),
   })
   .strict();
@@ -148,6 +149,28 @@ export function createInspectGitDiffTool(
         maximumBytes: byteLimit,
       });
 
+      const changedPathArgs = [
+        "diff",
+        "--no-ext-diff",
+        "--no-textconv",
+        "--name-only",
+        "-z",
+        "--diff-filter=ACMRTUXB",
+      ];
+
+      if (input.mode === "staged") {
+        changedPathArgs.push("--cached");
+      }
+
+      changedPathArgs.push("--");
+
+      const trackedPathOutput = await runner({
+        cwd: allowedRoot,
+        args: changedPathArgs,
+        timeoutMs,
+        maximumBytes: byteLimit,
+      });
+
       const untrackedOutput = input.mode === "working-tree"
         ? await runner({
             cwd: allowedRoot,
@@ -163,13 +186,21 @@ export function createInspectGitDiffTool(
           })
         : Buffer.alloc(0);
 
-      if (output.byteLength + untrackedOutput.byteLength > byteLimit) {
+      if (
+        output.byteLength +
+          trackedPathOutput.byteLength +
+          untrackedOutput.byteLength >
+        byteLimit
+      ) {
         throw new ToolPermissionError(
           `Git change evidence exceeds the ${byteLimit}-byte limit.`,
         );
       }
 
       const diff = new TextDecoder("utf-8", { fatal: true }).decode(output);
+      const trackedPathText = new TextDecoder("utf-8", {
+        fatal: true,
+      }).decode(trackedPathOutput);
       const untrackedText = new TextDecoder("utf-8", { fatal: true }).decode(
         untrackedOutput,
       );
@@ -181,7 +212,7 @@ export function createInspectGitDiffTool(
               deniedPathSegments: options.deniedPathSegments,
             },
       );
-      const untrackedPaths = untrackedText
+      const filterAllowedPaths = (text: string): string[] => text
         .split("\0")
         .filter(Boolean)
         .filter((path) =>
@@ -190,12 +221,15 @@ export function createInspectGitDiffTool(
           ),
         )
         .sort((left, right) => left.localeCompare(right));
+      const trackedPaths = filterAllowedPaths(trackedPathText);
+      const untrackedPaths = filterAllowedPaths(untrackedText);
 
       return {
         mode: input.mode,
         diff,
         sizeBytes: output.byteLength,
-        empty: output.byteLength === 0 && untrackedPaths.length === 0,
+        empty: trackedPaths.length === 0 && untrackedPaths.length === 0,
+        trackedPaths,
         untrackedPaths,
       };
     },

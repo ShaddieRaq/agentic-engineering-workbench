@@ -179,6 +179,9 @@ The project currently supports:
 - live `analyze-repository` CLI with model and instruction configuration
 - deterministic repository-analysis citation evaluation
 - exact available, cited, and invalid context-path evidence
+- tracked and untracked working-tree path evidence
+- deterministic change-aware context selection
+- changed-file priority after repository instructions
 
 ## Current Evaluators
 
@@ -260,7 +263,7 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 11 local engineering assistant: grounded live repository analysis available
+Phase 11 local engineering assistant: complete foundation
 ```
 
 Verified test state:
@@ -268,7 +271,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 68 test files passed
-194 tests passed
+196 tests passed
 ```
 
 This state must be verified before continuing:
@@ -296,9 +299,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add change-aware context selection. When Git evidence contains modified or
-untracked paths, prioritize safely readable changed files alongside orientation
-context so diff-review analysis can cite implementation evidence.
+Begin Phase 12 with a provider-neutral multi-step workflow state and trace
+contract. Add explicit step limits, stop conditions, and partial-failure
+evidence before composing model-driven steps.
 
 ## Broader Roadmap
 

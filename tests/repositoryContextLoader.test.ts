@@ -11,6 +11,7 @@ function selection(paths: string[]): RepositoryContextSelection {
   return {
     selectionId: "repository-orientation",
     sourceToolCallId: "files-1",
+    changeToolCallId: "changes-1",
     candidates: paths.map((path, index) => ({
       path,
       priority: index + 1,
@@ -87,6 +88,24 @@ describe("loadRepositoryContext", () => {
       },
     ]);
     expect(result.complete).toBe(false);
+  });
+
+  it("classifies a readable file larger than the remaining budget as excluded", async () => {
+    const result = await loadRepositoryContext(
+      selection(["first.md", "second.md"]),
+      readTool({ "first.md": "1234", "second.md": "5678" }),
+      6,
+    );
+
+    expect(result.items.map(({ source }) => source)).toEqual(["first.md"]);
+    expect(result.reads).toHaveLength(2);
+    expect(result.rejectedCandidates).toMatchObject([
+      {
+        candidate: { path: "second.md" },
+        reason: "budget-exhausted",
+        failure: null,
+      },
+    ]);
   });
 
   it("preserves failed read evidence and continues with later candidates", async () => {

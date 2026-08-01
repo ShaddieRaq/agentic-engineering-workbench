@@ -85,6 +85,7 @@ function createTools(
         diff: "",
         sizeBytes: 0,
         empty: true,
+        trackedPaths: [],
         untrackedPaths: [],
       },
     ),

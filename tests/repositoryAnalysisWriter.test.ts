@@ -28,6 +28,7 @@ describe("writeRepositoryAnalysis", () => {
         contextSelection: {
           selectionId: "repository-orientation",
           sourceToolCallId: "files-1",
+          changeToolCallId: "changes-1",
           candidates: [],
           complete: true,
         },

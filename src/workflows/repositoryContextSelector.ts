@@ -1,4 +1,5 @@
 import type { ListFilesOutput } from "../tools/listFilesTool.js";
+import type { InspectGitDiffOutput } from "../tools/inspectGitDiffTool.js";
 import type { ToolCallEvidence } from "../tools/toolExecutor.js";
 
 export interface RepositoryContextCandidate {
@@ -10,6 +11,7 @@ export interface RepositoryContextCandidate {
 export interface RepositoryContextSelection {
   selectionId: "repository-orientation";
   sourceToolCallId: string;
+  changeToolCallId: string;
   candidates: RepositoryContextCandidate[];
   complete: boolean;
 }
@@ -44,6 +46,7 @@ const orientationPolicy: RepositoryContextCandidate[] = [
 
 export function selectRepositoryContext(
   fileEvidence: ToolCallEvidence<ListFilesOutput>,
+  changeEvidence: ToolCallEvidence<InspectGitDiffOutput>,
 ): RepositoryContextSelection {
   const observedFiles = new Set(
     (fileEvidence.output?.entries ?? [])
@@ -51,14 +54,60 @@ export function selectRepositoryContext(
       .map((entry) => entry.path),
   );
 
+  const observedOrientation = orientationPolicy.filter((candidate) =>
+    observedFiles.has(candidate.path),
+  );
+  const agentInstructions = observedOrientation.filter(
+    ({ path }) => path === "AGENTS.md",
+  );
+  const changedCandidates = changeEvidence.succeeded && changeEvidence.output
+    ? [
+        ...changeEvidence.output.trackedPaths.map((path) => ({
+          path,
+          priority: 0,
+          rationale: "Tracked working-tree file selected for change analysis.",
+        })),
+        ...changeEvidence.output.untrackedPaths.map((path) => ({
+          path,
+          priority: 0,
+          rationale: "Untracked working-tree file selected for change analysis.",
+        })),
+      ]
+    : [];
+  const selectedPaths = new Set(agentInstructions.map(({ path }) => path));
+  const uniqueChangedCandidates = changedCandidates.filter(({ path }) => {
+    if (selectedPaths.has(path)) {
+      return false;
+    }
+
+    selectedPaths.add(path);
+    return true;
+  });
+  const remainingOrientation = observedOrientation.filter(({ path }) => {
+    if (selectedPaths.has(path)) {
+      return false;
+    }
+
+    selectedPaths.add(path);
+    return true;
+  });
+  const candidates = [
+    ...agentInstructions,
+    ...uniqueChangedCandidates,
+    ...remainingOrientation,
+  ].map((candidate, index) => ({
+    ...candidate,
+    priority: index + 1,
+  }));
+
   return {
     selectionId: "repository-orientation",
     sourceToolCallId: fileEvidence.toolCallId,
-    candidates: orientationPolicy.filter((candidate) =>
-      observedFiles.has(candidate.path),
-    ),
+    changeToolCallId: changeEvidence.toolCallId,
+    candidates,
     complete:
       fileEvidence.succeeded &&
-      fileEvidence.output?.truncated === false,
+      fileEvidence.output?.truncated === false &&
+      changeEvidence.succeeded,
   };
 }
