@@ -228,6 +228,7 @@ The initial tools operate beneath an operator-selected repository root:
 - `list-files` lists one directory level with deterministic ordering
 - `read-file` reads one complete UTF-8 text file within a byte limit
 - `search-text` recursively searches UTF-8 files for a literal query
+- `inspect-package` returns selected project, script, and dependency metadata
 
 Their shared path policy:
 
@@ -245,6 +246,12 @@ files. It bounds files inspected, matches returned, output bytes, preview size,
 and execution time. Results are ordered by sorted traversal and include path,
 line, column, and preview evidence. Queries never pass through a shell or
 regular-expression engine.
+
+`inspect-package` composes the bounded `read-file` capability rather than
+creating another filesystem permission path. It accepts only files named
+`package.json`, validates the parsed manifest, and returns only project
+identity, module type, scripts, and dependency maps. Arbitrary manifest fields
+are intentionally omitted from tool evidence.
 
 The CLI invokes this boundary directly. Model-driven tool selection is not yet
 connected; permission enforcement is tested independently first.

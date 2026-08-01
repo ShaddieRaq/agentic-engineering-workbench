@@ -255,10 +255,12 @@ Implemented:
 - deterministic path, line, column, and preview evidence
 - explicit timeout failure classification
 - operator-facing `search-text` CLI
+- bounded `inspect-package` tool composed from the safe reader
+- validated project identity, scripts, and dependency metadata
+- operator-facing `inspect-package` CLI
 
 Remaining safe tools:
 
-- inspect package metadata
 - inspect Git diff
 
 Requirements:

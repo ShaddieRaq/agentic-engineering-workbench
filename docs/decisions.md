@@ -890,3 +890,33 @@ from becoming the sole defense against excessive context or runtime.
 - matches cite repository path, line, column, and bounded preview
 - match-limit exhaustion returns partial evidence marked `truncated`
 - deadline exhaustion returns a classified failure without partial output
+
+---
+
+## Decision 035 — Compose Semantic Inspection Tools From Safe Capabilities
+
+Status: Accepted
+
+### Decision
+
+Implement `inspect-package` by composing the existing bounded `read-file`
+capability. Restrict targets to files named `package.json`, validate the parsed
+manifest, and return only project identity, module type, scripts, and dependency
+maps in stable key order.
+
+### Rationale
+
+A semantic tool should not duplicate filesystem authorization or expose every
+field merely because the source document contains it. Reusing the safe reader
+keeps traversal, symbolic-link, denied-path, binary, and byte-limit behavior
+consistent. Selecting the output fields minimizes context and makes the tool's
+information boundary explicit.
+
+### Consequences
+
+- package inspection inherits the shared repository permission policy
+- malformed JSON is recorded as an execution failure
+- schema-invalid package metadata is rejected before it becomes evidence
+- arbitrary manifest fields are omitted
+- the tool records one semantic `inspect-package` call rather than leaking an
+  internal nested read operation

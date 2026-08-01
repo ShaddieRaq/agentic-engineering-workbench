@@ -157,6 +157,8 @@ The project currently supports:
 - oversized, binary, invalid-text, traversal, symlink, and denied-path rejection
 - bounded literal `search-text` capability and CLI
 - deterministic path, line, column, and preview search evidence
+- bounded `inspect-package` capability and CLI
+- validated, deliberately minimized package metadata evidence
 - validation, permission, timeout, and execution tool-failure categories
 
 ## Current Evaluators
@@ -239,15 +241,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 10 controlled tools: list-files, read-file, and search-text complete
+Phase 10 controlled tools: list-files, read-file, search-text, and inspect-package complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-55 test files passed
-158 tests passed
+57 test files passed
+165 tests passed
 ```
 
 This state must be verified before continuing:
@@ -275,9 +277,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add read-only package-metadata inspection through the shared tool contract.
-Validate `package.json`, expose only useful project/script/dependency metadata,
-and preserve bounded evidence without returning arbitrary package fields.
+Add read-only Git-diff inspection through the shared tool contract. Preserve
+bounded, structured change evidence without exposing shell execution to the
+tool caller.
 
 ## Broader Roadmap
 

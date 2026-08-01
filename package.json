@@ -11,6 +11,7 @@
     "list-files": "tsx src/runListFilesTool.ts",
     "read-file": "tsx src/runReadFileTool.ts",
     "search-text": "tsx src/runSearchTextTool.ts",
+    "inspect-package": "tsx src/runInspectPackageTool.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

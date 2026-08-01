@@ -115,3 +115,12 @@ npm run search-text -- \
 ```
 
 Each match includes its repository path, line, column, and bounded preview.
+
+Inspect selected `package.json` metadata through the bounded reader:
+
+```bash
+npm run inspect-package
+```
+
+The command returns project identity, module type, scripts, and dependency
+maps. Other manifest fields are not included in the evidence.
