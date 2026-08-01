@@ -766,3 +766,33 @@ records the model that actually served each request.
 - experiments may change roles, models, or both, so callers remain responsible
   for changing only one variable when causal attribution matters
 - GPT-5.4 and GPT-5.4 mini have dated standard-pricing policies
+
+---
+
+## Decision 031 — Report Reliability Uncertainty Without Significance Claims
+
+Status: Accepted
+
+### Decision
+
+Calculate a Wilson 95% confidence interval from each case's passed and total
+run counts. Persist baseline and candidate intervals and classify only their
+geometric relationship: overlapping, candidate above, baseline above, or
+insufficient evidence.
+
+### Rationale
+
+Raw pass rates conceal sample size. Five passes out of five and five hundred
+passes out of five hundred both display as 100%, but they carry very different
+uncertainty. Wilson intervals behave sensibly for small samples and boundary
+rates without requiring a statistical dependency. Non-overlapping intervals
+are useful evidence, but the workbench should not mislabel them as a formal
+hypothesis test.
+
+### Consequences
+
+- experiment artifacts expose sample uncertainty per dataset case
+- empty samples produce explicit insufficient evidence
+- small perfect samples retain appropriately wide intervals
+- pass-rate direction and confidence-interval relationship remain separate
+- formal significance tests and experiment power analysis remain future work

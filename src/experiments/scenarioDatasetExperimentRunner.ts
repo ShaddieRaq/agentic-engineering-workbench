@@ -19,6 +19,10 @@ import {
   summarizeTokenCosts,
   type TokenCostComparison,
 } from "../orchestration/tokenCostComparison.js";
+import {
+  compareReliabilityConfidence,
+  type ReliabilityConfidenceComparison,
+} from "../orchestration/reliabilityConfidence.js";
 
 export interface ScenarioDatasetCaseComparison
   extends ReliabilityComparison {
@@ -35,6 +39,11 @@ export interface ScenarioDatasetCaseTokenCostComparison
   datasetCaseId: string;
 }
 
+export interface ScenarioDatasetCaseConfidenceComparison
+  extends ReliabilityConfidenceComparison {
+  datasetCaseId: string;
+}
+
 export interface ScenarioDatasetExperimentResult {
   definition: ScenarioDatasetExperimentDefinition;
   baseline: ScenarioDatasetRunResult;
@@ -42,6 +51,7 @@ export interface ScenarioDatasetExperimentResult {
   reliabilityComparisons: ScenarioDatasetCaseComparison[];
   latencyComparisons: ScenarioDatasetCaseLatencyComparison[];
   tokenCostComparisons: ScenarioDatasetCaseTokenCostComparison[];
+  confidenceComparisons: ScenarioDatasetCaseConfidenceComparison[];
   completedAt: string;
 }
 
@@ -138,6 +148,27 @@ export async function runScenarioDatasetExperiment(
       ),
     }),
   );
+  const confidenceComparisons = baseline.caseSummaries.map(
+    (baselineSummary): ScenarioDatasetCaseConfidenceComparison => {
+      const candidateSummary = candidateSummaries.get(
+        baselineSummary.datasetCaseId,
+      );
+
+      if (!candidateSummary) {
+        throw new Error(
+          `Candidate evidence is missing case: ${baselineSummary.datasetCaseId}`,
+        );
+      }
+
+      return {
+        datasetCaseId: baselineSummary.datasetCaseId,
+        ...compareReliabilityConfidence(
+          baselineSummary,
+          candidateSummary,
+        ),
+      };
+    },
+  );
 
   return {
     definition,
@@ -146,6 +177,7 @@ export async function runScenarioDatasetExperiment(
     reliabilityComparisons,
     latencyComparisons,
     tokenCostComparisons,
+    confidenceComparisons,
     completedAt: new Date().toISOString(),
   };
 }

@@ -68,6 +68,19 @@ async function main(): Promise<void> {
     );
   }
 
+  for (const comparison of result.confidenceComparisons) {
+    const formatInterval = (
+      interval: typeof comparison.baseline,
+    ): string =>
+      interval
+        ? `${(interval.lowerBound * 100).toFixed(0)}%-${(interval.upperBound * 100).toFixed(0)}%`
+        : "n/a";
+
+    console.log(
+      `Confidence [${comparison.datasetCaseId}]: ${comparison.relationship} (baseline ${formatInterval(comparison.baseline)}, candidate ${formatInterval(comparison.candidate)})`,
+    );
+  }
+
   for (const comparison of result.latencyComparisons) {
     const delta =
       comparison.averageDurationDeltaMs === null

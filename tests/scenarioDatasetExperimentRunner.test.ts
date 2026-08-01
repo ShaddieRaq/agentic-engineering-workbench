@@ -110,6 +110,7 @@ describe("runScenarioDatasetExperiment", () => {
     }
 
     expect(result.tokenCostComparisons).toHaveLength(2);
+    expect(result.confidenceComparisons).toHaveLength(2);
 
     for (const comparison of result.tokenCostComparisons) {
       expect(comparison).toMatchObject({

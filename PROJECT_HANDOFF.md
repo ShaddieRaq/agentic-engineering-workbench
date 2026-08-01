@@ -128,6 +128,8 @@ The project currently supports:
 - dated, source-linked GPT-5.4 standard pricing policy
 - explicit baseline and candidate model configuration
 - controlled GPT-5.4 versus GPT-5.4 mini comparisons
+- per-case Wilson 95% reliability confidence intervals
+- explicit confidence-interval relationship evidence
 - deterministic baseline-versus-candidate reliability comparison
 - explicit regression, improvement, unchanged, and insufficient-evidence states
 - optional scenario resolution
@@ -234,8 +236,8 @@ Verified test state:
 
 ```text
 npm run typecheck passed
-47 test files passed
-128 tests passed
+48 test files passed
+132 tests passed
 ```
 
 This state must be verified before continuing:
@@ -264,8 +266,8 @@ When a scenario exposes an output schema, the CLI passes it through
 ## Immediate Next Step
 
 Run the role-comparison experiment and inspect its separate reliability,
-latency, token, and estimated-cost evidence. Then run a controlled model
-comparison using one shared role and inspect the reliability/cost tradeoff.
+confidence, latency, token, and estimated-cost evidence. Then add another
+dataset or compare a controlled prompt/context strategy.
 
 ## Broader Roadmap
 

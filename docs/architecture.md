@@ -465,6 +465,10 @@ reasoning, and total-token usage when the provider supplies it.
 `executionFailure` records provider transport, parsing, or unknown
 failures and forces the overall run result to fail.
 
+Experiment artifacts preserve observed pass-rate comparisons and Wilson 95%
+confidence intervals separately. The interval relationship describes whether
+the ranges overlap; it is not labeled as statistical significance.
+
 ### Registry
 
 Registries resolve reusable definitions by ID.

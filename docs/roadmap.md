@@ -221,12 +221,14 @@ Implemented:
 - explicit insufficient-evidence behavior for missing or unsupported usage
 - explicit baseline and candidate model configuration
 - controlled GPT-5.4 versus GPT-5.4 mini experiment support
+- per-case Wilson 95% reliability confidence intervals
+- explicit interval-overlap relationships without significance claims
 
 Planned:
 
 - compare context strategies
 - compare prompts
-- statistical confidence for repeated-run comparisons
+- formal significance tests and experiment power guidance
 
 ## Phase 10 — Controlled Tools
 

@@ -62,6 +62,10 @@ Cost is an estimate derived from persisted token counts and a dated pricing
 policy. Reliability, latency, tokens, and cost remain separate signals in the
 saved experiment artifact.
 
+Repeated experiments also print Wilson 95% intervals for each observed pass
+rate. These intervals communicate sample uncertainty; overlap is not presented
+as proof that two configurations are equivalent.
+
 To compare models, use the same role file for both variants and change only the
 model flags:
 
