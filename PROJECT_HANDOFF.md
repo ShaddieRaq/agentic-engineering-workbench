@@ -193,6 +193,11 @@ The project currently supports:
 - attack identity and expected-defense run evidence
 - protected-marker leakage evaluation
 - dedicated untrusted-context defender role
+- strict structured model-judge output contract
+- versioned asynchronous model-based evaluator runner
+- judge provider, usage, cost, latency, and failure evidence
+- deterministic-versus-model disagreement evidence
+- explicit uncertain-judgment semantics
 
 ## Current Evaluators
 
@@ -274,15 +279,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 13 adversarial agents: complete foundation
+Phase 14 model-based evaluation: complete foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-73 test files passed
-211 tests passed
+74 test files passed
+215 tests passed
 ```
 
 This state must be verified before continuing:
@@ -310,9 +315,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Begin Phase 14 with a provider-neutral model-based evaluator. Version its judge
-prompt, preserve judge model and usage evidence, and record disagreement with
-deterministic evaluations without replacing them.
+Begin Phase 15 with runtime-validated persisted-run loading, deterministic
+replay from saved inputs, and summary reports that combine run outcomes,
+failures, usage, and optional model-judge evidence.
 
 ## Broader Roadmap
 

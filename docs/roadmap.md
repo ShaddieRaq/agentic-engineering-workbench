@@ -388,7 +388,21 @@ Planned work:
 
 ## Phase 14 — Model-Based Evaluation
 
-Status: Not started
+Status: Complete foundation
+
+Implemented:
+
+- strict structured judge output contract
+- pass, fail, and uncertain verdicts
+- bounded zero-to-100 judge score
+- criterion-level judgment evidence
+- versioned evaluator prompt identity
+- provider-neutral asynchronous judge runner
+- provider refusal and classified failure preservation
+- judge model, token usage, latency, and estimated-cost evidence
+- explicit deterministic-versus-model disagreement record
+- uncertain verdicts excluded from forced disagreement claims
+- deterministic evaluations remain unchanged and primary
 
 Possible uses:
 

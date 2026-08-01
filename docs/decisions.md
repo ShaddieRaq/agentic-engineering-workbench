@@ -1252,3 +1252,34 @@ later reporting without parsing prompts or context content.
 - scenario output cannot claim that untrusted instructions were followed
 - tool permissions remain enforced by code rather than model compliance
 - broader attack taxonomies can be added without changing `HarnessResult`
+
+---
+
+## Decision 047 — Keep Model Judgment Beside Deterministic Evaluation
+
+Status: Accepted
+
+### Decision
+
+Run model-based evaluation asynchronously over a completed `HarnessResult`
+through an injected provider. Version the judge prompt, require structured
+criterion evidence, and preserve raw output, parsed verdict, refusal, provider
+failure, usage, cost, latency, and deterministic disagreement. Do not modify
+the original deterministic evaluations or pass result.
+
+### Rationale
+
+Nuanced quality judgments are nondeterministic and can fail independently of
+the subject run. Folding them into the synchronous evaluator interface would
+turn every harness unit test into an API workflow and conceal whether a failure
+came from subject execution or judging. Parallel evidence keeps both signals
+auditable.
+
+### Consequences
+
+- deterministic checks remain cheap and authoritative for explicit contracts
+- judge prompts and models can be compared as versioned configurations
+- uncertain verdicts do not imply agreement or disagreement
+- judge cost and latency remain visible as separate operational signals
+- provider failures preserve the subject run and its original outcome
+- reporting may expose disagreement without collapsing it into one score

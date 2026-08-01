@@ -578,6 +578,19 @@ Possible future uses:
 
 Model-based evaluators should not replace deterministic checks that code can perform reliably.
 
+The model-based evaluator is a separate asynchronous runner over a completed
+`HarnessResult`. It sends the task, subject output, deterministic evaluation
+evidence, and an explicit criterion list through an injected `AIProvider` using
+a strict judge schema. Its evidence includes evaluator and prompt versions,
+raw and parsed judgment, refusal, classified provider failure, model and token
+usage, estimated cost, and latency.
+
+A disagreement record compares the preserved deterministic outcome with a
+model pass or fail verdict. An uncertain judge verdict produces no forced
+agreement classification. The judge never mutates the original evaluations or
+the harness pass result; downstream reporting decides how much weight to give
+this additional signal.
+
 ### Adversarial Reliability
 
 Adversarial inputs remain dataset cases rather than executable instructions.
