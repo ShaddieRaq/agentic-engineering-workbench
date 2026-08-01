@@ -308,6 +308,18 @@ alongside the unmodified run records.
 
 The runner does not yet schedule concurrent work.
 
+### Reliability Comparison
+
+Reliability comparison is a pure orchestration function over pass-rate
+summaries. It preserves baseline and candidate rates, calculates candidate
+minus baseline, and classifies the observed direction as improved, regressed,
+unchanged, or insufficient evidence.
+
+The comparison contract is structurally compatible with suite and dataset-case
+summaries. A negative delta is an observed regression, not a claim of
+statistical significance. Significance analysis and confidence intervals remain
+future reliability-experiment concerns.
+
 ### Evaluator
 
 An evaluator checks a property of the run.

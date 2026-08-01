@@ -115,6 +115,8 @@ The project currently supports:
 - shared suite and dataset repetition policy
 - case-major repeated dataset execution
 - per-case dataset reliability metrics
+- deterministic baseline-versus-candidate reliability comparison
+- explicit regression, improvement, unchanged, and insufficient-evidence states
 - optional scenario resolution
 - harness and scenario evaluator composition
 - scenario-specific Zod output contracts
@@ -212,15 +214,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 8 repeated datasets and per-case metrics
+Phase 8 reliability regression comparison
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-36 test files passed
-95 tests passed
+37 test files passed
+100 tests passed
 ```
 
 This state must be verified before continuing:
@@ -248,8 +250,8 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add deterministic baseline-versus-candidate regression comparison using
-preserved summary evidence. Defer concurrency and report presentation.
+Add runtime-validated configurable concurrency while preserving deterministic
+evidence ordering. Defer report presentation.
 
 ## Broader Roadmap
 

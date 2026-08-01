@@ -554,3 +554,29 @@ also be visible for each stable case ID.
 - repeated case evidence stays adjacent and inspectable
 - weak cases remain visible even when aggregate results look healthy
 - individual `HarnessResult` records remain unchanged
+
+---
+
+## Decision 024 — Classify Observed Pass-Rate Change Without Overclaiming
+
+Status: Accepted
+
+### Decision
+
+Compare candidate pass rate against baseline pass rate with candidate minus
+baseline as the delta. Classify the observed direction as improved, regressed,
+unchanged, or insufficient evidence when either rate is absent.
+
+### Rationale
+
+The same deterministic comparison should work for suite summaries, dataset-case
+summaries, and future replayed evidence. A directional rate change is useful for
+regression gates, but small samples do not establish statistical significance.
+
+### Consequences
+
+- negative deltas consistently mean observed regression
+- missing evidence cannot masquerade as improvement or regression
+- comparison remains independent of model execution
+- baseline and candidate rates remain inspectable with the delta
+- confidence intervals and statistical significance remain future work

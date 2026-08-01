@@ -193,10 +193,12 @@ Implemented:
 - case-major repeated dataset execution
 - pure per-case reliability summarization
 - per-case total, passed, failed, and pass-rate metrics
+- pure baseline-versus-candidate pass-rate comparison
+- explicit improved, regressed, unchanged, and insufficient-evidence states
+- preserved baseline, candidate, and delta evidence
 
 Still needed:
 
-- regression comparison
 - configurable concurrency
 
 ## Phase 9 — Reliability Experiments
