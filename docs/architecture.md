@@ -229,6 +229,7 @@ The initial tools operate beneath an operator-selected repository root:
 - `read-file` reads one complete UTF-8 text file within a byte limit
 - `search-text` recursively searches UTF-8 files for a literal query
 - `inspect-package` returns selected project, script, and dependency metadata
+- `inspect-git-diff` returns a bounded tracked patch plus untracked paths
 
 Their shared path policy:
 
@@ -252,6 +253,13 @@ creating another filesystem permission path. It accepts only files named
 `package.json`, validates the parsed manifest, and returns only project
 identity, module type, scripts, and dependency maps. Arbitrary manifest fields
 are intentionally omitted from tool evidence.
+
+`inspect-git-diff` invokes Git with application-owned argument lists for either
+working-tree or staged changes. The caller may select only the mode, context
+line count, and requested byte limit. External diff drivers, text conversion,
+and color output are disabled. Working-tree evidence also uses a separate fixed
+Git query to report untracked paths without reading their contents. Diff and
+path evidence share one aggregate byte limit and deadline policy.
 
 The CLI invokes this boundary directly. Model-driven tool selection is not yet
 connected; permission enforcement is tested independently first.

@@ -920,3 +920,34 @@ information boundary explicit.
 - arbitrary manifest fields are omitted
 - the tool records one semantic `inspect-package` call rather than leaking an
   internal nested read operation
+
+---
+
+## Decision 036 — Inspect Git Changes Through Fixed Read-Only Invocations
+
+Status: Accepted
+
+### Decision
+
+Implement `inspect-git-diff` with application-owned `git diff` and `git
+ls-files` argument lists. Allow the caller to select only working-tree versus
+staged mode, context-line count, and a requested byte limit. Disable external
+diff drivers, text conversion, and color output. Report untracked paths for
+working-tree inspection without reading their contents.
+
+### Rationale
+
+Change review needs evidence that includes tracked patches and awareness of
+untracked files. Exposing a shell command or arbitrary Git arguments would turn
+a read-only inspection capability into an uncontrolled execution boundary.
+Returning only the tracked diff would also create false confidence when new
+files are part of the change.
+
+### Consequences
+
+- tool callers cannot choose Git subcommands or arbitrary flags
+- working-tree evidence distinguishes tracked diff content from untracked paths
+- staged inspection excludes untracked files by definition
+- output size and execution time are bounded by application policy
+- external diff and text-conversion hooks cannot execute
+- untracked file contents require a separate permitted read operation

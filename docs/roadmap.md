@@ -232,7 +232,7 @@ Future extensions:
 
 ## Phase 10 — Controlled Tools
 
-Status: In progress
+Status: Complete
 
 Implemented:
 
@@ -258,10 +258,10 @@ Implemented:
 - bounded `inspect-package` tool composed from the safe reader
 - validated project identity, scripts, and dependency metadata
 - operator-facing `inspect-package` CLI
-
-Remaining safe tools:
-
-- inspect Git diff
+- bounded working-tree and staged `inspect-git-diff` tool
+- fixed Git argument policy with external diff behavior disabled
+- explicit untracked-path evidence without untracked-content reads
+- operator-facing `inspect-git-diff` CLI
 
 Requirements:
 

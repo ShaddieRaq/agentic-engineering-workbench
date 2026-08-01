@@ -124,3 +124,13 @@ npm run inspect-package
 
 The command returns project identity, module type, scripts, and dependency
 maps. Other manifest fields are not included in the evidence.
+
+Inspect bounded working-tree change evidence:
+
+```bash
+npm run inspect-git-diff -- --context-lines 3
+```
+
+Use `--mode staged` for the index. The caller cannot supply Git commands or
+arbitrary flags. Working-tree output includes untracked paths but does not read
+their contents.

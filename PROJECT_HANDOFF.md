@@ -159,6 +159,8 @@ The project currently supports:
 - deterministic path, line, column, and preview search evidence
 - bounded `inspect-package` capability and CLI
 - validated, deliberately minimized package metadata evidence
+- bounded working-tree and staged `inspect-git-diff` capability and CLI
+- fixed Git invocation policy and explicit untracked-path evidence
 - validation, permission, timeout, and execution tool-failure categories
 
 ## Current Evaluators
@@ -241,15 +243,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 10 controlled tools: list-files, read-file, search-text, and inspect-package complete
+Phase 10 controlled tools complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-57 test files passed
-165 tests passed
+59 test files passed
+173 tests passed
 ```
 
 This state must be verified before continuing:
@@ -277,9 +279,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add read-only Git-diff inspection through the shared tool contract. Preserve
-bounded, structured change evidence without exposing shell execution to the
-tool caller.
+Begin Phase 11 by composing the controlled tools into one explicit local
+engineering-assistant workflow. Keep tool selection and workflow state
+inspectable before introducing model-directed tool choice.
 
 ## Broader Roadmap
 

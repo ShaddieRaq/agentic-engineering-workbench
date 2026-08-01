@@ -12,6 +12,7 @@
     "read-file": "tsx src/runReadFileTool.ts",
     "search-text": "tsx src/runSearchTextTool.ts",
     "inspect-package": "tsx src/runInspectPackageTool.ts",
+    "inspect-git-diff": "tsx src/runInspectGitDiffTool.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
