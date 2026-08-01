@@ -12,6 +12,10 @@ import {
   listFilesInputSchema,
   listFilesOutputSchema,
 } from "../src/tools/listFilesTool.js";
+import {
+  readFileInputSchema,
+  readFileOutputSchema,
+} from "../src/tools/readFileTool.js";
 import type { ToolDefinition } from "../src/tools/toolDefinition.js";
 import {
   runRepositoryInspectionWorkflow,
@@ -84,6 +88,16 @@ function createTools(
         untrackedPaths: [],
       },
     ),
+    contextFiles: tool(
+      "contextFiles",
+      readFileInputSchema,
+      readFileOutputSchema,
+      {
+        path: "README.md",
+        content: "Repository context.",
+        sizeBytes: 19,
+      },
+    ),
   };
 }
 
@@ -98,6 +112,8 @@ describe("runRepositoryInspectionWorkflow", () => {
       "packageMetadata",
       "repositoryFiles",
       "gitChanges",
+      "contextFiles",
+      "contextFiles",
     ]);
     expect(result.workflowId).toBe("repository-inspection");
     expect(result.steps.map((step) => step.stepId)).toEqual([
@@ -111,6 +127,9 @@ describe("runRepositoryInspectionWorkflow", () => {
       "package.json",
     ]);
     expect(result.contextSelection.complete).toBe(true);
+    expect(result.contextAssembly.items).toHaveLength(2);
+    expect(result.contextAssembly.totalBytes).toBe(38);
+    expect(result.contextAssembly.complete).toBe(true);
     expect(result.succeeded).toBe(true);
     expect(result.durationMs).toBeGreaterThanOrEqual(0);
     expect(new Date(result.completedAt).toString()).not.toBe("Invalid Date");
@@ -126,6 +145,8 @@ describe("runRepositoryInspectionWorkflow", () => {
       "packageMetadata",
       "repositoryFiles",
       "gitChanges",
+      "contextFiles",
+      "contextFiles",
     ]);
     expect(result.steps[0]?.evidence.failure).toMatchObject({
       category: "execution",

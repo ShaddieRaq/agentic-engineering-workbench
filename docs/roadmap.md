@@ -288,6 +288,10 @@ Implemented:
 - observed-file-only candidate policy
 - per-candidate priority and rationale evidence
 - explicit incomplete-selection state for failed or truncated listings
+- priority-ordered bounded context loading through `read-file`
+- per-file and aggregate byte budgets
+- accepted and rejected candidate evidence
+- single-copy content evidence linked by tool-call ID
 
 Initial use cases:
 

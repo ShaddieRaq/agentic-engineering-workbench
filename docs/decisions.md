@@ -1012,3 +1012,32 @@ reject candidates without losing the original reasoning.
 - incomplete discovery remains visible instead of appearing comprehensive
 - file contents remain outside the workflow until a separate permitted read
 - later model prompts can cite why each context item was included
+
+---
+
+## Decision 039 — Assemble Context Under an Aggregate Budget Without Duplication
+
+Status: Accepted
+
+### Decision
+
+Read selected repository candidates in priority order through `read-file` with
+a per-file limit and one aggregate byte limit. Preserve every read call, accepted
+item, and rejected candidate. Store file content only in read tool-call evidence;
+accepted context items reference that evidence by tool-call ID.
+
+### Rationale
+
+Individually safe reads can still create an unbounded combined prompt. An
+aggregate budget makes total context growth explicit. Rejections must remain
+visible so omitted context cannot be mistaken for absence. Duplicating content
+inside both read evidence and assembled items increases persisted evidence and
+model context without adding information.
+
+### Consequences
+
+- higher-priority candidates consume the context budget first
+- budget exhaustion and read failure remain distinct outcomes
+- a failed read does not prevent later smaller candidates from being attempted
+- accepted items are traceable to the exact tool call containing their content
+- persisted workflow evidence contains one copy of each loaded file

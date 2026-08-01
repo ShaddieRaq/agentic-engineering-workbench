@@ -11,6 +11,11 @@ import {
   createListFilesTool,
   type ListFilesOutput,
 } from "../tools/listFilesTool.js";
+import {
+  createReadFileTool,
+  type ReadFileInput,
+  type ReadFileOutput,
+} from "../tools/readFileTool.js";
 import type { ToolDefinition } from "../tools/toolDefinition.js";
 import {
   executeTool,
@@ -20,6 +25,10 @@ import {
   selectRepositoryContext,
   type RepositoryContextSelection,
 } from "./repositoryContextSelector.js";
+import {
+  loadRepositoryContext,
+  type RepositoryContextAssembly,
+} from "./repositoryContextLoader.js";
 
 export interface RepositoryInspectionTools {
   packageMetadata: ToolDefinition<
@@ -38,6 +47,7 @@ export interface RepositoryInspectionTools {
     },
     InspectGitDiffOutput
   >;
+  contextFiles: ToolDefinition<ReadFileInput, ReadFileOutput>;
 }
 
 export type RepositoryInspectionStep =
@@ -59,6 +69,7 @@ export interface RepositoryInspectionWorkflowResult {
   workflowId: "repository-inspection";
   steps: RepositoryInspectionStep[];
   contextSelection: RepositoryContextSelection;
+  contextAssembly: RepositoryContextAssembly;
   succeeded: boolean;
   durationMs: number;
   completedAt: string;
@@ -89,6 +100,10 @@ export function createRepositoryInspectionTools(
       maximumBytes: options.maximumDiffBytes ?? 65_536,
       timeoutMs: options.gitTimeoutMs ?? 5_000,
     }),
+    contextFiles: createReadFileTool({
+      allowedRoot: options.allowedRoot,
+      maximumBytes: 32_768,
+    }),
   };
 }
 
@@ -114,13 +129,23 @@ export async function runRepositoryInspectionWorkflow(
     { stepId: "repository-files", evidence: fileEvidence },
     { stepId: "git-changes", evidence: changeEvidence },
   ];
+  const contextSelection = selectRepositoryContext(fileEvidence);
+  const contextAssembly = await loadRepositoryContext(
+    contextSelection,
+    tools.contextFiles,
+  );
 
   return {
     workflowRunId: randomUUID(),
     workflowId: "repository-inspection",
     steps,
-    contextSelection: selectRepositoryContext(fileEvidence),
-    succeeded: steps.every((step) => step.evidence.succeeded),
+    contextSelection,
+    contextAssembly,
+    succeeded:
+      steps.every((step) => step.evidence.succeeded) &&
+      contextAssembly.rejectedCandidates.every(
+        ({ reason }) => reason === "budget-exhausted",
+      ),
     durationMs: performance.now() - startedAt,
     completedAt: new Date().toISOString(),
   };

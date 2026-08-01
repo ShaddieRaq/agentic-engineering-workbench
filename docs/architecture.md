@@ -287,6 +287,14 @@ rationale, and the selection records the source tool-call ID. A failed or
 truncated listing marks the selection incomplete; it never causes paths to be
 invented. Selection does not read file contents.
 
+The context loader then reads selected candidates in priority order through the
+bounded `read-file` tool. It applies a 32,768-byte per-file limit and a 65,536-
+byte aggregate context limit. Accepted items record source, priority, rationale,
+size, and the owning read tool-call ID. File content remains stored once in that
+tool-call evidence. Budget exclusions and read failures are preserved as
+separate rejected-candidate reasons, and later candidates may still be tried
+after a read failure.
+
 ### Harness Definition
 
 A harness definition contains reusable execution or evaluation policy.

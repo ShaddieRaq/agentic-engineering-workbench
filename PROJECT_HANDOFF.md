@@ -167,6 +167,9 @@ The project currently supports:
 - workflow identity, timing, status, and continue-on-failure collection
 - deterministic observed-file-only context selection
 - context-candidate priority, rationale, and completeness evidence
+- bounded priority-ordered repository context loading
+- per-file and aggregate context byte limits
+- accepted, rejected, and tool-call-linked context evidence
 
 ## Current Evaluators
 
@@ -248,15 +251,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 11 local engineering assistant: deterministic context selection complete
+Phase 11 local engineering assistant: bounded context assembly complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-61 test files passed
-178 tests passed
+62 test files passed
+181 tests passed
 ```
 
 This state must be verified before continuing:
@@ -284,9 +287,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Read the selected repository-orientation candidates through the bounded
-`read-file` tool. Apply an aggregate context budget and preserve accepted and
-rejected candidate evidence before any model call.
+Build a provider-neutral repository-analysis request from the assembled context
+and define a structured analysis output contract. Keep model execution separate
+from inspection and context assembly.
 
 ## Broader Roadmap
 
