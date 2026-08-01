@@ -4,7 +4,9 @@ import { resolveScenarioSuite } from "./scenarioSuiteResolver.js";
 import type { HarnessResult } from "../harness/harnessResult.js";
 import { z } from "zod";
 import {
+    summarizeScenarioSuiteFailures,
     summarizeScenarioSuiteRuns,
+    type ScenarioSuiteFailureSummary,
     type ScenarioSuiteSummary,
   } from "./scenarioSuiteSummary.js";
 
@@ -16,6 +18,7 @@ export type ScenarioExecutor = (
     suiteId: string;
     runs: HarnessResult[];
     summary: ScenarioSuiteSummary;
+    failureSummary: ScenarioSuiteFailureSummary;
   }
 
   const scenarioSuiteRunOptionsSchema = z
@@ -45,8 +48,9 @@ export type ScenarioExecutor = (
     }
 
     return {
-      suiteId: suite.id,
-      runs,
-      summary: summarizeScenarioSuiteRuns(runs),
-    };
+        suiteId: suite.id,
+        runs,
+        summary: summarizeScenarioSuiteRuns(runs),
+        failureSummary: summarizeScenarioSuiteFailures(runs),
+      };
   }

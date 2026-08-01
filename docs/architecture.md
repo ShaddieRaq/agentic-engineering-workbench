@@ -250,14 +250,18 @@ positive integer and default to one, preserving the original single-run
 behavior. Execution remains sequential and scenario-major, so repeated results
 for the same scenario remain adjacent in the returned evidence.
 
-After execution, a pure suite summarizer derives total, passed, and failed run
-counts plus a pass-rate ratio from the preserved evidence. A pass rate is
-`null` when there are no runs, distinguishing absent evidence from a measured
-zero-percent result. The runner returns this summary alongside the unmodified
-run records.
+After execution, pure suite summarizers derive total, passed, and failed run
+counts, a pass-rate ratio, and deterministic failure counts from the preserved
+evidence. A pass rate is `null` when there are no runs, distinguishing absent
+evidence from a measured zero-percent result.
 
-The runner does not yet produce failure-category summaries or schedule
-concurrent work.
+Outcome metrics and diagnostics remain separate. Execution failures are counted
+by provider-neutral category, while failed evaluations are counted by evaluator
+ID. A run may contribute several failure reasons, so these diagnostic counts do
+not need to equal the number of failed runs. The runner returns both summaries
+alongside the unmodified run records.
+
+The runner does not yet schedule concurrent work.
 
 ### Evaluator
 

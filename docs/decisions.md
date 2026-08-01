@@ -445,3 +445,30 @@ pass rate.
 - pass rate is stored as a ratio from zero to one
 - presentation layers may format the ratio as a percentage
 - failure-category summaries remain a separate extension
+
+---
+
+## Decision 020 — Separate Failure Outcomes From Failure Reasons
+
+Status: Accepted
+
+### Decision
+
+Return suite outcome metrics and diagnostic failure summaries as separate
+fields. Count execution failures by provider-neutral category and failed
+evaluations by evaluator ID.
+
+### Rationale
+
+A failed run answers whether an observation met its contract. Failure-reason
+counts answer why it failed. One run can contain a provider failure and several
+failed evaluations, so combining these measurements would create misleading
+totals.
+
+### Consequences
+
+- provider and quality failures remain distinguishable
+- repeated evaluator failures reveal recurring contract violations
+- diagnostic counts may exceed the number of failed runs
+- original messages and run evidence remain available for investigation
+- summary calculation remains deterministic and replayable

@@ -176,11 +176,13 @@ Implemented:
 - pure suite-evidence summarization
 - total, passed, and failed run counts
 - suite pass-rate ratio with explicit no-evidence semantics
+- provider execution-failure counts by category
+- evaluator-failure counts by evaluator ID
+- separate outcome and diagnostic summaries
 
 Still needed:
 
 - scenario datasets
-- failure summaries
 - regression comparison
 - configurable concurrency
 

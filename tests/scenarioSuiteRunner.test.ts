@@ -79,6 +79,14 @@ describe("runScenarioSuite", () => {
               failedRuns: 0,
               passRate: 1,
             },
+            failureSummary: {
+              executionFailures: {
+                transport: 0,
+                parsing: 0,
+                unknown: 0,
+              },
+              evaluatorFailures: {},
+            },
           });
       });
 
