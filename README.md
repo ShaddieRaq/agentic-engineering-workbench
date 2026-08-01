@@ -134,3 +134,12 @@ npm run inspect-git-diff -- --context-lines 3
 Use `--mode staged` for the index. The caller cannot supply Git commands or
 arbitrary flags. Working-tree output includes untracked paths but does not read
 their contents.
+
+Run the first explicit local-engineering workflow:
+
+```bash
+npm run inspect-repository
+```
+
+The workflow collects package metadata, the top-level repository shape, and
+current Git changes into one result while retaining each tool call's evidence.

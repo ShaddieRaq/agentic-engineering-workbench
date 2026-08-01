@@ -162,6 +162,9 @@ The project currently supports:
 - bounded working-tree and staged `inspect-git-diff` capability and CLI
 - fixed Git invocation policy and explicit untracked-path evidence
 - validation, permission, timeout, and execution tool-failure categories
+- explicit repository-inspection workflow and CLI
+- ordered package, repository-shape, and Git-change evidence
+- workflow identity, timing, status, and continue-on-failure collection
 
 ## Current Evaluators
 
@@ -243,15 +246,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 10 controlled tools complete
+Phase 11 local engineering assistant: explicit repository inspection complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-59 test files passed
-173 tests passed
+60 test files passed
+175 tests passed
 ```
 
 This state must be verified before continuing:
@@ -279,9 +282,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Begin Phase 11 by composing the controlled tools into one explicit local
-engineering-assistant workflow. Keep tool selection and workflow state
-inspectable before introducing model-directed tool choice.
+Add a deterministic context-selection step that derives relevant source-file
+candidates from repository-inspection evidence before any model call. Preserve
+the selection rationale as workflow evidence.
 
 ## Broader Roadmap
 

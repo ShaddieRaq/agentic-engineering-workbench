@@ -264,6 +264,22 @@ path evidence share one aggregate byte limit and deadline policy.
 The CLI invokes this boundary directly. Model-driven tool selection is not yet
 connected; permission enforcement is tested independently first.
 
+### Repository Inspection Workflow
+
+The first local-engineering workflow composes three controlled tools in an
+application-owned sequence:
+
+```text
+inspect-package -> list-files -> inspect-git-diff
+```
+
+Every step retains its complete `ToolCallEvidence`. The workflow adds a stable
+workflow ID, unique run ID, total duration, completion time, and overall status.
+Because these read-only inspections are independent, later steps still run if
+an earlier step fails; the workflow status remains failed while preserving the
+other available evidence. The model does not yet choose tools or control this
+sequence.
+
 ### Harness Definition
 
 A harness definition contains reusable execution or evaluation policy.

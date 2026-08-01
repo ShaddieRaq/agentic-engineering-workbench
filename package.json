@@ -13,6 +13,7 @@
     "search-text": "tsx src/runSearchTextTool.ts",
     "inspect-package": "tsx src/runInspectPackageTool.ts",
     "inspect-git-diff": "tsx src/runInspectGitDiffTool.ts",
+    "inspect-repository": "tsx src/runRepositoryInspection.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

@@ -274,7 +274,16 @@ Requirements:
 
 ## Phase 11 — Local Engineering Assistant
 
-Status: Not started
+Status: In progress
+
+Implemented:
+
+- explicit repository-inspection workflow
+- application-owned package, file-list, and Git-change step order
+- complete per-step tool-call evidence
+- continue-on-failure collection for independent read-only inspections
+- workflow run identity, timing, and overall status
+- operator-facing `inspect-repository` CLI
 
 Initial use cases:
 

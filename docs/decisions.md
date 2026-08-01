@@ -951,3 +951,34 @@ files are part of the change.
 - output size and execution time are bounded by application policy
 - external diff and text-conversion hooks cannot execute
 - untracked file contents require a separate permitted read operation
+
+---
+
+## Decision 037 — Establish Explicit Workflows Before Model-Directed Tools
+
+Status: Accepted
+
+### Decision
+
+Begin the local engineering assistant with an application-owned repository
+inspection sequence: inspect package metadata, list the repository root, then
+inspect working-tree changes. Preserve each complete tool-call record inside a
+workflow result with its own identity, timing, completion time, and status.
+Continue independent read-only inspections after a step failure while marking
+the workflow unsuccessful.
+
+### Rationale
+
+Tool calling and multi-step execution are separate control problems. A fixed
+workflow makes ordering, failure policy, and evidence propagation testable
+before a probabilistic model is permitted to choose actions. Independent
+inspection failures should not discard other context that may explain the
+failure or still support diagnosis.
+
+### Consequences
+
+- workflow control remains deterministic and application-owned
+- every step retains validation, permission, timeout, and execution evidence
+- one failed step does not erase other independent inspection results
+- overall success requires every configured step to succeed
+- model-directed tool choice remains a later, separately tested boundary
