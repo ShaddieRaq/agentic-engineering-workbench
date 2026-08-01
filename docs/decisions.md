@@ -1041,3 +1041,34 @@ model context without adding information.
 - a failed read does not prevent later smaller candidates from being attempted
 - accepted items are traceable to the exact tool call containing their content
 - persisted workflow evidence contains one copy of each loaded file
+
+---
+
+## Decision 040 — Validate the Model Handoff as a Separate Workflow Boundary
+
+Status: Accepted
+
+### Decision
+
+Build a provider-neutral repository-analysis request from assembled context in
+a pure function. Resolve every accepted context item to matching successful
+read evidence before creating the prompt. Use a strict structured output schema
+whose architecture, entry-point, risk, and test claims require evidence-path
+citations. Do not execute a provider inside request construction.
+
+### Rationale
+
+Inspection, context selection, prompt construction, and model execution are
+different failure boundaries. Separating request construction makes the exact
+model input inspectable and testable without API calls. Tool-call linkage
+validation prevents stale or mismatched content from entering the prompt under
+an incorrect source label.
+
+### Consequences
+
+- request tests remain deterministic and provider-neutral
+- broken context references fail before consuming model tokens
+- prompts disclose incomplete context and rejected candidates
+- structured analysis claims carry source-path fields
+- citation correctness remains a separate evaluation concern
+- provider execution and its evidence are added by a later workflow step

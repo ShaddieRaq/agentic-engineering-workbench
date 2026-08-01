@@ -295,6 +295,14 @@ tool-call evidence. Budget exclusions and read failures are preserved as
 separate rejected-candidate reasons, and later candidates may still be tried
 after a read failure.
 
+A pure repository-analysis request builder resolves accepted context items back
+to their successful read evidence and fails on missing, mismatched, or failed
+links. It creates a provider-neutral `AIProviderRequest` containing context
+completeness, byte usage, rejected candidates, source labels, selection
+rationales, and file content. The associated strict Zod output contract requires
+an overview plus citation-bearing architecture components, entry points, risks,
+and test recommendations. Request construction does not execute a provider.
+
 ### Harness Definition
 
 A harness definition contains reusable execution or evaluation policy.

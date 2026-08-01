@@ -170,6 +170,9 @@ The project currently supports:
 - bounded priority-ordered repository context loading
 - per-file and aggregate context byte limits
 - accepted, rejected, and tool-call-linked context evidence
+- provider-neutral repository-analysis request builder
+- structured citation-bearing repository-analysis output contract
+- pre-provider context-evidence integrity validation
 
 ## Current Evaluators
 
@@ -251,15 +254,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 11 local engineering assistant: bounded context assembly complete
+Phase 11 local engineering assistant: structured model request contract complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-62 test files passed
-181 tests passed
+64 test files passed
+185 tests passed
 ```
 
 This state must be verified before continuing:
@@ -287,9 +290,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Build a provider-neutral repository-analysis request from the assembled context
-and define a structured analysis output contract. Keep model execution separate
-from inspection and context assembly.
+Execute the repository-analysis request through an injected `AIProvider` and
+preserve raw, parsed, refusal, provider, workflow, and context evidence in one
+analysis result. Test with a deterministic provider before enabling the live CLI.
 
 ## Broader Roadmap
 

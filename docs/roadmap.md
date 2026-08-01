@@ -292,6 +292,10 @@ Implemented:
 - per-file and aggregate byte budgets
 - accepted and rejected candidate evidence
 - single-copy content evidence linked by tool-call ID
+- provider-neutral repository-analysis request construction
+- strict structured repository-analysis output contract
+- required evidence-path citations for analysis claims
+- pre-provider rejection of broken context-to-read linkage
 
 Initial use cases:
 
