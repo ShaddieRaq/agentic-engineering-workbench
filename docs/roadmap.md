@@ -324,7 +324,22 @@ Initial use cases:
 
 ## Phase 12 — Multi-Step Workflows
 
-Status: Not started
+Status: Complete foundation
+
+Implemented:
+
+- reusable validated multi-step workflow definitions
+- schema-validated initial state and successful transitions
+- unique ordered step IDs
+- explicit positive-integer step limits
+- successful stop conditions with recorded reasons
+- fail-fast or continue-on-failure policy
+- execution and state-validation failure evidence
+- versioned state transitions without repeated state snapshots
+- repository assistant composition: inspect, analyze, verify
+- deterministic provider, structure, and citation review checks
+- persisted assistant workflow artifacts
+- operator-facing `assist-repository` CLI
 
 Possible patterns:
 

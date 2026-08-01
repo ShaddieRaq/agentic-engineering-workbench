@@ -182,6 +182,11 @@ The project currently supports:
 - tracked and untracked working-tree path evidence
 - deterministic change-aware context selection
 - changed-file priority after repository instructions
+- reusable schema-validated multi-step workflow runner
+- explicit step limits, stop reasons, and partial-failure traces
+- inspect-analyze-verify repository assistant workflow
+- deterministic repository-analysis review checks
+- persisted assistant workflow evidence and CLI
 
 ## Current Evaluators
 
@@ -263,15 +268,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 11 local engineering assistant: complete foundation
+Phase 12 multi-step workflows: complete foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-68 test files passed
-196 tests passed
+71 test files passed
+206 tests passed
 ```
 
 This state must be verified before continuing:
@@ -299,9 +304,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Begin Phase 12 with a provider-neutral multi-step workflow state and trace
-contract. Add explicit step limits, stop conditions, and partial-failure
-evidence before composing model-driven steps.
+Begin Phase 13 with deterministic adversarial scenario definitions for prompt
+injection, conflicting instructions, and tool-boundary misuse. Preserve attack
+identity and expected defenses in dataset evidence.
 
 ## Broader Roadmap
 

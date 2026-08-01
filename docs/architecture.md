@@ -335,6 +335,32 @@ rationale. Changed paths are still read through the shared permission boundary;
 deleted, denied, binary, oversized, or otherwise unreadable files remain
 visible as rejected context rather than bypassing tool policy.
 
+### Multi-Step Workflow
+
+The reusable multi-step runner accepts a workflow definition containing a
+state schema and unique ordered steps. Initial state and every successful state
+transition are runtime validated. Each trace step records its index, state
+version before and after execution, bounded evidence chosen by the step,
+timing, stop reason, and classified execution or validation failure. Full state
+is retained once at the workflow result boundary rather than copied into every
+trace event.
+
+Execution defaults to fail-fast, but workflows may continue independent later
+steps while preserving earlier failure evidence. A positive-integer maximum
+step count is enforced before scheduling, and reaching it produces an explicit
+unsuccessful `step-limit` status.
+
+The first production composition has three application-owned steps:
+
+```text
+inspect -> analyze -> verify
+```
+
+Inspection uses the controlled repository tools, analysis uses the injected
+provider-neutral request runner, and verification deterministically checks
+provider execution, structured output, and citation grounding. Its complete
+state and step trace are persisted under `runs/assistant-run-<id>.json`.
+
 ### Harness Definition
 
 A harness definition contains reusable execution or evaluation policy.

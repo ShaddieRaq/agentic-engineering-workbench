@@ -1193,3 +1193,33 @@ selector pure while the controlled tool remains responsible for Git behavior.
 - denied and unreadable changed files cannot bypass `read-file` policy
 - duplicate change and orientation paths are loaded only once
 - failed Git inspection marks context selection incomplete
+
+---
+
+## Decision 045 — Version Workflow State Without Duplicating Snapshots
+
+Status: Accepted
+
+### Decision
+
+Run multi-step workflows through a generic state schema, unique ordered steps,
+an explicit maximum-step policy, and optional continue-on-failure behavior.
+Validate initial and transitioned state at runtime. Preserve final state once
+and record state-version transitions, step evidence, timing, stop reasons, and
+classified failures in the trace.
+
+### Rationale
+
+Agent workflows need inspectable control flow, but embedding complete state
+before and after every step would multiply repository context and model output
+inside persisted artifacts. Version references retain transition order while
+step-owned evidence and final state preserve the information needed for audit.
+
+### Consequences
+
+- invalid state transitions fail without replacing the last valid state
+- step exceptions become workflow evidence rather than rejected promises
+- explicit stop conditions remain distinct from failures and step limits
+- independent later steps may run after failure only when policy allows it
+- workflow success and domain verification remain separate signals
+- the repository assistant reuses existing inspection and analysis boundaries

@@ -159,3 +159,15 @@ The command defaults to `gpt-5.4-mini`, saves the complete artifact under
 model or `--instruction "..."` to supply a specific analysis task.
 Structured findings count as successful only when every evidence path exactly
 matches a file that was loaded into the analysis context.
+
+Run the bounded multi-step repository assistant:
+
+```bash
+npm run assist-repository
+```
+
+This workflow performs three explicit steps: controlled inspection, structured
+analysis, and deterministic verification. The saved artifact contains final
+workflow state, ordered step traces, stop status, provider evidence, and review
+checks. Use `--model` or `--instruction` with the same options supported by
+`analyze-repository`.
