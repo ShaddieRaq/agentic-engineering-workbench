@@ -422,21 +422,30 @@ Requirements:
 
 ## Phase 15 — Reporting and Replay
 
-Status: Not started
+Status: Complete foundation
 
-Planned:
+Implemented:
 
-- run summaries
-- scenario-suite reports
-- pass-rate trends
-- failure classification
-- replay from saved inputs
-- prompt/model comparison
+- strict runtime validation for persisted harness runs
+- root-bounded and size-bounded run loading
+- accepted and rejected source-artifact evidence
+- deterministic aggregate outcome, latency, failure, model, usage, and cost summaries
+- optional model-judgment and disagreement summaries
+- replay from saved role, task, context, harness, and scenario inputs
+- replay outcome and evaluator-policy comparison
+- replay and report artifact persistence
+- operator-facing `report` and `replay` commands
+
+Possible extensions:
+
+- time-windowed pass-rate trends
+- combined suite and dataset report views
+- HTML or Markdown rendering
 - optional LangSmith or other trace export
 
 ## Near-Term Priorities
 
-1. Define a reusable multi-step workflow state and trace contract.
-2. Add explicit step limits and stop conditions.
-3. Compose repository analysis with a deterministic verification step.
-4. Preserve partial workflow evidence when one step fails.
+1. Use the completed workbench on real projects and collect operator feedback.
+2. Add narrowly scoped tools only when a concrete workflow requires them.
+3. Expand adversarial and model-judge datasets from observed failures.
+4. Add report trends after enough comparable run history exists.

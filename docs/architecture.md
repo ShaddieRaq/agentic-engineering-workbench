@@ -641,6 +641,23 @@ reasoning, and total-token usage when the provider supplies it.
 `executionFailure` records provider transport, parsing, or unknown
 failures and forces the overall run result to fail.
 
+### Reporting and Replay
+
+Persisted-run loading is a separate trust boundary. A report accepts only files
+that resolve inside the configured runs root, remain under the byte limit, and
+match the current strict `HarnessResult` schema. Batch discovery records both
+accepted paths and rejected artifact reasons so mixed historical evidence does
+not crash the report or silently contaminate its metrics.
+
+Report calculation is deterministic and operates only on validated runs. It
+summarizes outcomes, latency, classified execution and evaluator failures,
+models, token usage, estimated cost, and optional model-judge disagreement.
+
+Replay reconstructs execution from the saved role, task, context, harness ID,
+and scenario ID. The provider call is new, while the original input and policy
+remain explicit. Replay evidence preserves both complete runs and compares the
+outcome plus evaluator policy; it does not overwrite the source artifact.
+
 Experiment artifacts preserve observed pass-rate comparisons and Wilson 95%
 confidence intervals separately. The interval relationship describes whether
 the ranges overlap; it is not labeled as statistical significance.

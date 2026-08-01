@@ -3,6 +3,41 @@ import type { TaskSpec } from "./taskSpec.js";
 import type { ContextItem } from "./contextItem.js";
 import type { EvaluationResult } from "../evaluations/evaluationResult.js";
 import type { AIProviderEvidence } from "../providers/aiProvider.js";
+import { z } from "zod";
+import { roleSpecSchema } from "./roleSpec.js";
+import { taskSpecSchema } from "./taskSpec.js";
+import { contextItemSchema } from "./contextItem.js";
+import { evaluationResultSchema } from "../evaluations/evaluationResult.js";
+import { aiProviderEvidenceSchema } from "../providers/aiProvider.js";
+
+export const executionFailureSchema = z
+  .object({
+    stage: z.literal("provider"),
+    category: z.enum(["transport", "parsing", "unknown"]),
+    message: z.string().min(1),
+  })
+  .strict();
+
+export const harnessResultSchema = z
+  .object({
+    runId: z.string().min(1),
+    harnessId: z.string().min(1),
+    scenarioId: z.string().min(1).nullable(),
+    role: roleSpecSchema,
+    task: taskSpecSchema,
+    context: z.array(contextItemSchema),
+    prompt: z.string(),
+    output: z.string(),
+    parsedOutput: z.json().nullable(),
+    refusal: z.string().nullable(),
+    provider: aiProviderEvidenceSchema.nullable(),
+    executionFailure: executionFailureSchema.nullable(),
+    evaluations: z.array(evaluationResultSchema),
+    durationMs: z.number().nonnegative(),
+    completedAt: z.string().min(1),
+    passed: z.boolean(),
+  })
+  .strict();
 
 export type ExecutionFailureCategory =
     | "transport"

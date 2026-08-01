@@ -1283,3 +1283,35 @@ auditable.
 - judge cost and latency remain visible as separate operational signals
 - provider failures preserve the subject run and its original outcome
 - reporting may expose disagreement without collapsing it into one score
+
+---
+
+## Decision 048 — Validate Report Sources and Preserve Replay Lineage
+
+Status: Accepted
+
+### Decision
+
+Load report inputs through a root-bounded, size-bounded, strict current
+`HarnessResult` contract. During batch discovery, preserve accepted paths and
+rejected artifact reasons instead of failing the entire report or silently
+coercing historical shapes. Replay a validated source run from its saved role,
+task, context, harness, and scenario, then persist the source, new run, and
+comparison together.
+
+### Rationale
+
+The local `runs/` directory can contain individual runs, aggregate artifacts,
+and historical schemas. Filename conventions alone are insufficient evidence
+that a file belongs in current reliability metrics. Replay also needs explicit
+lineage so a new probabilistic result cannot be confused with or overwrite the
+original observation.
+
+### Consequences
+
+- aggregate metrics include only current runtime-validated harness runs
+- incompatible evidence remains visible as rejected source metadata
+- historical artifacts do not prevent reports over current evidence
+- replay requires a registered harness and any recorded scenario policy
+- model changes are explicit while saved input remains fixed
+- reports and replays create new immutable evidence artifacts

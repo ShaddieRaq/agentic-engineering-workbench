@@ -1,22 +1,30 @@
-import type { ZodType } from "zod";
+import { z, type ZodType } from "zod";
+
+export const aiProviderUsageSchema = z
+  .object({
+    inputTokens: z.number().int().nonnegative(),
+    cachedInputTokens: z.number().int().nonnegative(),
+    outputTokens: z.number().int().nonnegative(),
+    reasoningTokens: z.number().int().nonnegative(),
+    totalTokens: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export const aiProviderEvidenceSchema = z
+  .object({
+    model: z.string().min(1),
+    usage: aiProviderUsageSchema.nullable(),
+  })
+  .strict();
 
 export interface AIProviderRequest<TOutput = unknown> {
     prompt: string;
     outputSchema?: ZodType<TOutput>;
 }
 
-export interface AIProviderUsage {
-    inputTokens: number;
-    cachedInputTokens: number;
-    outputTokens: number;
-    reasoningTokens: number;
-    totalTokens: number;
-}
+export type AIProviderUsage = z.infer<typeof aiProviderUsageSchema>;
 
-export interface AIProviderEvidence {
-    model: string;
-    usage: AIProviderUsage | null;
-}
+export type AIProviderEvidence = z.infer<typeof aiProviderEvidenceSchema>;
 
 export interface AIProviderResult<TOutput = unknown> {
     rawOutput: string;

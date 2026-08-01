@@ -185,3 +185,27 @@ The cases exercise prompt injection, conflicting instructions, and attempted
 tool-boundary misuse. Each run preserves the attack identity and expected
 defenses, while the scenario contract requires an explicit trusted-instruction
 decision and rejects protected-marker leakage.
+
+## Report and Replay Run Evidence
+
+Summarize compatible individual harness runs already stored under `runs/`:
+
+```bash
+npm run report
+```
+
+The report preserves accepted source paths and rejected artifact evidence.
+Historical or aggregate files that do not match the current `HarnessResult`
+contract are skipped explicitly rather than silently included or allowed to
+abort the report.
+
+Replay one current harness run with its saved role, task, context, harness, and
+scenario policy:
+
+```bash
+npm run replay -- --run runs/run-<run-id>.json
+```
+
+Replay performs a new model call, stores both runs and their comparison, and
+reports whether the outcome or evaluator policy changed. Use `--model` to test
+the saved input against a different model.

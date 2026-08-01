@@ -16,6 +16,8 @@
     "inspect-repository": "tsx src/runRepositoryInspection.ts",
     "analyze-repository": "tsx src/runRepositoryAnalysis.ts",
     "assist-repository": "tsx src/runRepositoryAssistant.ts",
+    "replay": "tsx src/runReplay.ts",
+    "report": "tsx src/runReport.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

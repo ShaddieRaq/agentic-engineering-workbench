@@ -170,6 +170,13 @@ The project currently supports:
 - bounded priority-ordered repository context loading
 - per-file and aggregate context byte limits
 - accepted, rejected, and tool-call-linked context evidence
+- runtime-validated, root-bounded persisted harness-run loading
+- evidence-aware batch discovery across mixed historical run artifacts
+- deterministic run outcome, latency, failure, model, usage, and cost reports
+- optional model-judge and disagreement report summaries
+- replay from saved role, task, context, harness, and scenario inputs
+- replay outcome and evaluator-policy comparison
+- persisted report and replay evidence
 - provider-neutral repository-analysis request builder
 - structured citation-bearing repository-analysis output contract
 - pre-provider context-evidence integrity validation
@@ -279,15 +286,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 14 model-based evaluation: complete foundation
+Phase 15 reporting and replay: complete foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-74 test files passed
-215 tests passed
+78 test files passed
+226 tests passed
 ```
 
 This state must be verified before continuing:
@@ -315,9 +322,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Begin Phase 15 with runtime-validated persisted-run loading, deterministic
-replay from saved inputs, and summary reports that combine run outcomes,
-failures, usage, and optional model-judge evidence.
+Use the completed foundation on real repositories and agent workflows. Let
+observed operator friction and failure evidence determine the next targeted
+capability instead of adding infrastructure speculatively.
 
 ## Broader Roadmap
 
