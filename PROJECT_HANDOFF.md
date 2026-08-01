@@ -93,12 +93,14 @@ The project currently supports:
 - Zod-validated scenario-suite definitions
 - a scenario-suite registry
 - scenario-suite reference resolution
-- sequential scenario-suite execution
+- bounded-concurrency scenario-suite execution
 - injected scenario execution behavior
 - preflight rejection before partial suite execution
 - suite-run result collection preserving ordered `HarnessResult` evidence
 - runtime-validated repeated scenario execution
 - scenario-major ordering of repeated run evidence
+- shared runtime-validated repetition and concurrency policy
+- deterministic evidence ordering across concurrent completion
 - pure suite evidence summarization
 - suite-level total, passed, failed, and pass-rate metrics
 - suite execution-failure counts by provider-neutral category
@@ -108,11 +110,11 @@ The project currently supports:
 - a scenario dataset registry
 - dataset-to-scenario policy resolution
 - registered audience-specific agentic-harness inputs
-- sequential scenario dataset execution
+- bounded-concurrency scenario dataset execution
 - injected resolved-case execution behavior
 - dataset case identity preserved alongside complete run evidence
 - dataset preflight rejection before partial execution
-- shared suite and dataset repetition policy
+- shared suite and dataset execution policy
 - case-major repeated dataset execution
 - per-case dataset reliability metrics
 - deterministic baseline-versus-candidate reliability comparison
@@ -214,15 +216,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 8 reliability regression comparison
+Phase 8 configurable concurrency and deterministic evidence ordering
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-37 test files passed
-100 tests passed
+38 test files passed
+105 tests passed
 ```
 
 This state must be verified before continuing:
@@ -250,8 +252,8 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add runtime-validated configurable concurrency while preserving deterministic
-evidence ordering. Defer report presentation.
+Begin Phase 9 by defining a validated reliability-experiment contract that
+separates baseline and candidate configurations from their measured evidence.
 
 ## Broader Roadmap
 

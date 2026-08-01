@@ -2,10 +2,11 @@ import type { ScenarioDefinition } from "../scenarios/scenarioDefinition.js";
 import type { ScenarioSuiteDefinition } from "./scenarioSuiteDefinition.js";
 import { resolveScenarioSuite } from "./scenarioSuiteResolver.js";
 import type { HarnessResult } from "../harness/harnessResult.js";
+import { mapWithConcurrency } from "../orchestration/mapWithConcurrency.js";
 import {
-    parseRepetitionOptions,
-    type RepetitionOptions,
-  } from "../orchestration/repetitionPolicy.js";
+    parseExecutionOptions,
+    type ExecutionOptions,
+  } from "../orchestration/executionPolicy.js";
 import {
     summarizeScenarioSuiteFailures,
     summarizeScenarioSuiteRuns,
@@ -24,7 +25,7 @@ export type ScenarioExecutor = (
     failureSummary: ScenarioSuiteFailureSummary;
   }
 
-  export type ScenarioSuiteRunOptions = RepetitionOptions;
+  export type ScenarioSuiteRunOptions = ExecutionOptions;
 
   export async function runScenarioSuite(
     suite: ScenarioSuiteDefinition,
@@ -32,15 +33,18 @@ export type ScenarioExecutor = (
     options: ScenarioSuiteRunOptions = {},
   ): Promise<ScenarioSuiteRunResult> {
 
-    const { repetitions } = parseRepetitionOptions(options);
+    const { repetitions, concurrency } =
+    parseExecutionOptions(options);
     const scenarios = resolveScenarioSuite(suite);
-    const runs: HarnessResult[] = [];
-
-    for (const scenario of scenarios) {
-      for (let repetition = 0; repetition < repetitions; repetition += 1) {
-        runs.push(await executeScenario(scenario));
-      }
-    }
+    const executionPlan = scenarios.flatMap((scenario) =>
+        Array.from({ length: repetitions }, () => scenario),
+      );
+    
+      const runs = await mapWithConcurrency(
+        executionPlan,
+        concurrency,
+        executeScenario,
+      );
 
     return {
         suiteId: suite.id,

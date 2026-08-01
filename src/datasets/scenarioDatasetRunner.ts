@@ -1,21 +1,22 @@
 import type { HarnessResult } from "../harness/harnessResult.js";
 import type { ScenarioDatasetDefinition } from "./scenarioDatasetDefinition.js";
+import { mapWithConcurrency } from "../orchestration/mapWithConcurrency.js";
 import {
     resolveScenarioDataset,
     type ResolvedScenarioDatasetCase,
 } from "./scenarioDatasetResolver.js";
 
 import {
-    parseRepetitionOptions,
-    type RepetitionOptions,
-} from "../orchestration/repetitionPolicy.js";
+    parseExecutionOptions,
+    type ExecutionOptions,
+} from "../orchestration/executionPolicy.js";
 
 import {
     summarizeScenarioDatasetCases,
     type ScenarioDatasetCaseSummary,
-  } from "./scenarioDatasetSummary.js";
+} from "./scenarioDatasetSummary.js";
 
-export type ScenarioDatasetRunOptions = RepetitionOptions;
+export type ScenarioDatasetRunOptions = ExecutionOptions;
 
 export type ScenarioDatasetExecutor = (
     resolvedCase: ResolvedScenarioDatasetCase,
@@ -30,31 +31,37 @@ export interface ScenarioDatasetRunResult {
     datasetId: string;
     runs: ScenarioDatasetRunEvidence[];
     caseSummaries: ScenarioDatasetCaseSummary[];
-  }
+}
 
 export async function runScenarioDataset(
     dataset: ScenarioDatasetDefinition,
     executeDatasetCase: ScenarioDatasetExecutor,
     options: ScenarioDatasetRunOptions = {},
-  ): Promise<ScenarioDatasetRunResult> {
-    const { repetitions } = parseRepetitionOptions(options);
+): Promise<ScenarioDatasetRunResult> {
+    const { repetitions, concurrency } =
+    parseExecutionOptions(options);
     const resolvedCases = resolveScenarioDataset(dataset);
-    const runs: ScenarioDatasetRunEvidence[] = [];
-
-    for (const resolvedCase of resolvedCases) {
-        for (let repetition = 0; repetition < repetitions; repetition += 1) {
-          const harnessResult = await executeDatasetCase(resolvedCase);
+    const executionPlan = resolvedCases.flatMap(
+        (resolvedCase) =>
+          Array.from(
+            { length: repetitions },
+            () => resolvedCase,
+          ),
+      );
     
-          runs.push({
-            datasetCaseId: resolvedCase.datasetCase.id,
-            harnessResult,
-          });
-        }
-      }
+      const runs = await mapWithConcurrency(
+        executionPlan,
+        concurrency,
+        async (resolvedCase): Promise<ScenarioDatasetRunEvidence> => ({
+          datasetCaseId: resolvedCase.datasetCase.id,
+          harnessResult:
+            await executeDatasetCase(resolvedCase),
+        }),
+      );
 
-      return {
+    return {
         datasetId: dataset.id,
         runs,
         caseSummaries: summarizeScenarioDatasetCases(runs),
-      };
+    };
 }

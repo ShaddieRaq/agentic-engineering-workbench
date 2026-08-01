@@ -7,6 +7,16 @@ import {
 import type { HarnessResult } from "../src/harness/harnessResult.js";
 import type { ScenarioDefinition } from "../src/scenarios/scenarioDefinition.js";
 
+function createDeferred() {
+    let resolve!: () => void;
+
+    const promise = new Promise<void>((complete) => {
+      resolve = complete;
+    });
+
+    return { promise, resolve };
+  }
+
 const harnessResult: HarnessResult = {
     runId: "run-1",
     harnessId: "test-harness",
@@ -128,4 +138,49 @@ describe("runScenarioSuite", () => {
           expect(executeScenario).not.toHaveBeenCalled();
         },
       );
+      it("limits concurrent scenario execution", async () => {
+        const suite = getScenarioSuiteDefinition("core-reliability");
+        const releases = [
+          createDeferred(),
+          createDeferred(),
+          createDeferred(),
+        ];
+        const started: number[] = [];
+        let invocationCount = 0;
+    
+        const executeScenario = vi.fn(
+          async (_scenario: ScenarioDefinition): Promise<HarnessResult> => {
+            const invocation = invocationCount;
+            invocationCount += 1;
+            started.push(invocation + 1);
+    
+            await releases[invocation]!.promise;
+    
+            return {
+              ...harnessResult,
+              runId: `run-${invocation + 1}`,
+            };
+          },
+        );
+    
+        const resultPromise = runScenarioSuite(suite, executeScenario, {
+          repetitions: 3,
+          concurrency: 2,
+        });
+    
+        const startedBeforeRelease = [...started];
+    
+        for (const release of releases) {
+          release.resolve();
+        }
+    
+        const result = await resultPromise;
+    
+        expect(startedBeforeRelease).toEqual([1, 2]);
+        expect(result.runs.map((run) => run.runId)).toEqual([
+          "run-1",
+          "run-2",
+          "run-3",
+        ]);
+      });
 });

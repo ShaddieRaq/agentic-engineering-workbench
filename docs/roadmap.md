@@ -156,7 +156,7 @@ Implemented:
 
 ## Phase 8 — Scenario Suites
 
-Status: In progress
+Status: Complete
 
 Implemented:
 
@@ -166,13 +166,13 @@ Implemented:
 - scenario-suite registry
 - suite-to-scenario reference resolution
 - rejection of unknown scenario references
-- sequential scenario-suite runner
+- bounded-concurrency scenario-suite runner
 - injected scenario executor
 - preflight resolution before any scenario executes
 - collected `HarnessResult` evidence in suite order
 - suite-run result contract containing the suite ID and run records
-- runtime-validated positive-integer repetition policy
-- sequential repeated runs with scenario-major evidence ordering
+- shared runtime-validated repetition and concurrency policy
+- repeated runs with deterministic scenario-major evidence ordering
 - pure suite-evidence summarization
 - total, passed, and failed run counts
 - suite pass-rate ratio with explicit no-evidence semantics
@@ -185,21 +185,19 @@ Implemented:
 - registered `agentic-harness-audiences` dataset
 - dataset-to-scenario policy resolution
 - rejection of unknown scenario policy references
-- sequential dataset-case execution
+- bounded-concurrency dataset-case execution
 - injected resolved-case executor
 - dataset and case identity preserved with each `HarnessResult`
 - preflight rejection before any dataset case executes
-- shared runtime-validated repetition policy across suite and dataset runners
+- shared execution policy across suite and dataset runners
 - case-major repeated dataset execution
 - pure per-case reliability summarization
 - per-case total, passed, failed, and pass-rate metrics
 - pure baseline-versus-candidate pass-rate comparison
 - explicit improved, regressed, unchanged, and insufficient-evidence states
 - preserved baseline, candidate, and delta evidence
-
-Still needed:
-
-- configurable concurrency
+- positive-integer concurrency limits with a sequential default
+- ordered concurrent mapping that preserves execution-plan evidence order
 
 ## Phase 9 — Reliability Experiments
 

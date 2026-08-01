@@ -235,9 +235,10 @@ scenario registry and rejects unknown policy references before execution.
 The registered `agentic-harness-audiences` dataset currently exercises the
 `explain-agentic-harness` policy with beginner and staff-engineer inputs.
 
-The scenario-dataset runner resolves the entire dataset before execution and
-passes each resolved case to an injected executor sequentially. Each returned
-`HarnessResult` is wrapped with its stable dataset case ID:
+The scenario-dataset runner resolves the entire dataset before execution,
+expands a case-major execution plan, and passes resolved cases to an injected
+executor with bounded concurrency. Each returned `HarnessResult` is wrapped
+with its stable dataset case ID:
 
 ```ts
 {
@@ -249,10 +250,12 @@ passes each resolved case to an injected executor sequentially. Each returned
 This preserves dataset identity without changing the reusable individual-run
 contract. Unknown scenario references prevent every case from executing.
 
-Dataset execution uses the same runtime-validated repetition policy as suite
-execution. Repeated runs remain case-major, keeping observations for one input
-adjacent. A pure dataset summarizer groups the preserved evidence by case ID and
-derives total, passed, and failed counts plus a pass-rate ratio for each case.
+Dataset execution uses the same runtime-validated execution policy as suite
+execution. Repetition and concurrency must be positive integers and both
+default to one. Work may complete out of order, but returned evidence remains
+case-major, keeping observations for one input adjacent. A pure dataset
+summarizer groups the preserved evidence by case ID and derives total, passed,
+and failed counts plus a pass-rate ratio for each case.
 
 ### Scenario Suite Definition
 
@@ -276,11 +279,12 @@ The suite registry resolves suites by ID. The suite resolver expands each
 scenario ID through the scenario registry and rejects unknown references before
 execution begins.
 
-The scenario-suite runner resolves the complete suite before execution, then
-awaits an injected scenario executor once for each scenario. This keeps suite
-ordering separate from harness and provider behavior and prevents partial
-execution when reference resolution fails. Each executor invocation returns a
-`HarnessResult`, and the runner preserves those results in suite order:
+The scenario-suite runner resolves the complete suite before execution, builds
+a scenario-major execution plan, then invokes an injected scenario executor
+with bounded concurrency. This keeps suite ordering separate from harness and
+provider behavior and prevents partial execution when reference resolution
+fails. Each executor invocation returns a `HarnessResult`, and the runner
+preserves those results in execution-plan order:
 
 ```ts
 {
@@ -289,11 +293,11 @@ execution when reference resolution fails. Each executor invocation returns a
 }
 ```
 
-The runner accepts the shared runtime-validated repetition policy. Repetitions
-must be a positive integer and default to one, preserving the original
-single-run behavior. Execution remains sequential and scenario-major, so
-repeated results for the same scenario remain adjacent in the returned
-evidence.
+The runner accepts the shared runtime-validated execution policy. Repetitions
+and concurrency must be positive integers and default to one, preserving the
+original single-run, sequential behavior for existing callers. Configured work
+may finish out of order, but repeated results remain scenario-major and
+adjacent in the returned evidence.
 
 After execution, pure suite summarizers derive total, passed, and failed run
 counts, a pass-rate ratio, and deterministic failure counts from the preserved
@@ -306,7 +310,9 @@ ID. A run may contribute several failure reasons, so these diagnostic counts do
 not need to equal the number of failed runs. The runner returns both summaries
 alongside the unmodified run records.
 
-The runner does not yet schedule concurrent work.
+The shared ordered-concurrency mapper uses a bounded worker pool and stores each
+result at its original execution-plan index. Suite and dataset runners therefore
+share scheduling behavior without coupling their evidence contracts.
 
 ### Reliability Comparison
 

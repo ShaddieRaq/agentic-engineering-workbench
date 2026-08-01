@@ -580,3 +580,36 @@ regression gates, but small samples do not establish statistical significance.
 - comparison remains independent of model execution
 - baseline and candidate rates remain inspectable with the delta
 - confidence intervals and statistical significance remain future work
+
+---
+
+## Decision 025 — Bound Concurrency Without Reordering Evidence
+
+Status: Accepted
+
+### Decision
+
+Use one runtime-validated execution policy for suite and dataset runners.
+Repetition and concurrency are positive integers that default to one. Expand a
+stable scenario-major or case-major execution plan before scheduling work, run
+that plan through a bounded worker pool, and store results by plan index rather
+than completion order.
+
+This decision supersedes the sequential-only execution constraints recorded in
+Decisions 016, 018, and 023 while preserving their default behavior.
+
+### Rationale
+
+Provider calls are independent and can benefit from parallel execution, but
+completion order is nondeterministic. Evidence ordering must remain stable so
+persisted runs, summaries, comparisons, and debugging do not change merely
+because network timing changed.
+
+### Consequences
+
+- existing callers remain sequential by default
+- invalid concurrency fails before execution begins
+- suite and dataset runners share scheduling policy and implementation
+- active work never exceeds the configured concurrency limit
+- returned evidence follows execution-plan order rather than completion order
+- runner-specific evidence wrappers remain independent of scheduling
