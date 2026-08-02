@@ -11,7 +11,9 @@ A local TypeScript project for learning and experimenting with:
 
 ## Current Goal
 
-Build a small local AI harness that uses the OpenAI API, loads controlled context, produces structured output, and records evidence from each run.
+Provide a local agent platform where complete, versioned agents can be discovered,
+run, verified, inspected, and extended. The model remains one replaceable part
+inside explicit contracts, permissions, workflows, assessment, and evidence.
 
 ## Working Rules
 
@@ -19,6 +21,27 @@ Build a small local AI harness that uses the OpenAI API, loads controlled contex
 - Keep company information and credentials out of the repository.
 - Prefer visible evidence: code, tests, logs, and reports.
 - Start with one orchestrator rather than multiple autonomous agents.
+
+## Open the Agent Workbench
+
+Build and start the loopback-only web console:
+
+```bash
+npm run web
+```
+
+Then open [http://127.0.0.1:4173](http://127.0.0.1:4173). The console provides:
+
+- a visual agent lifecycle and catalog overview
+- complete manifests, permissions, workflows, datasets, and schemas
+- schema-guided agent input with an optional raw JSON mode
+- live operation progress for runs and verification
+- filtered, runtime-validated persisted evidence
+- a visual authoring guide and safe agent scaffold command
+
+The catalog and existing evidence remain available without an API key. Live
+runs and verification require `OPENAI_API_KEY` in the local `.env` file. The
+server binds only to `127.0.0.1` and rejects non-loopback browser origins.
 
 ## Run a Reliability Dataset
 
@@ -243,3 +266,14 @@ npm run agents -- test change-risk-reviewer \
 
 Agent tests also make live calls. Each dataset case must meet the pass-rate
 threshold recorded in the agent manifest.
+
+Create the source-controlled starting structure for a new learning agent:
+
+```bash
+npm run agents -- scaffold my-first-agent
+```
+
+The scaffold writes an experimental agent module, smoke dataset, unit test, and
+authoring README without overwriting existing paths. Registration remains an
+explicit code review step; the browser never creates or executes arbitrary
+agent code.

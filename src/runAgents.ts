@@ -1,15 +1,11 @@
 import "dotenv/config";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { AgentApplicationService } from "./agents/agentApplicationService.js";
 import { assertAgentCatalogValid } from "./agents/agentCatalogValidator.js";
-import { buildAgentCatalogReport } from "./agents/agentCatalogReport.js";
-import { verifyAgentDataset } from "./agents/agentVerification.js";
-import { getAgentDatasetDefinition } from "./agents/datasets/agentDatasetRegistry.js";
-import { runAgentDataset } from "./agents/datasets/agentDatasetRunner.js";
-import { writeAgentDatasetRun } from "./agents/datasets/agentDatasetWriter.js";
+import { scaffoldAgent } from "./agents/agentScaffolder.js";
 import { platformAgentRegistry } from "./agents/platformAgentRegistry.js";
-import { runAgent } from "./agents/agentRunner.js";
-import { writeAgentRun } from "./agents/agentRunWriter.js";
+import { FileArtifactStore } from "./artifacts/fileArtifactStore.js";
 import { parseAgentArgs } from "./cli/parseAgentArgs.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { createPlatformToolRegistry } from "./tools/toolRegistry.js";
@@ -22,9 +18,20 @@ async function readInput(path: string | null): Promise<unknown> {
 async function main(): Promise<void> {
   const args = parseAgentArgs(process.argv.slice(2));
   const tools = createPlatformToolRegistry(process.cwd());
+  const apiKey = process.env.OPENAI_API_KEY;
+  const service = new AgentApplicationService(
+    platformAgentRegistry,
+    tools,
+    new FileArtifactStore(),
+    process.cwd(),
+    (model) => {
+      if (!apiKey) throw new Error("OPENAI_API_KEY is missing from .env");
+      return new OpenAIProvider(apiKey, { model });
+    },
+  );
 
   if (args.command === "list") {
-    for (const manifest of platformAgentRegistry.list()) {
+    for (const manifest of service.listAgents()) {
       console.log(
         `${manifest.id}\t${manifest.version}\t${manifest.status}\t${manifest.description}`,
       );
@@ -34,7 +41,7 @@ async function main(): Promise<void> {
 
   if (args.command === "describe") {
     console.log(
-      JSON.stringify(platformAgentRegistry.get(args.agentId).manifest, null, 2),
+      JSON.stringify(service.describeAgent(args.agentId).manifest, null, 2),
     );
     return;
   }
@@ -49,20 +56,21 @@ async function main(): Promise<void> {
 
   if (args.command === "inventory") {
     console.log(
-      JSON.stringify(buildAgentCatalogReport(platformAgentRegistry, tools), null, 2),
+      JSON.stringify(service.inventory(), null, 2),
     );
     return;
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is missing from .env");
+  if (args.command === "scaffold") {
+    const result = await scaffoldAgent(args.agentId);
+    console.log(`Agent scaffold created: ${result.agentId}`);
+    for (const path of result.createdPaths) console.log(`Created: ${path}`);
+    for (const step of result.nextSteps) console.log(`Next: ${step}`);
+    return;
   }
 
   const registration = platformAgentRegistry.get(args.agentId);
   const model = args.model ?? registration.manifest.defaultModel;
-  const provider = new OpenAIProvider(apiKey, { model });
 
   if (args.command === "test") {
     const datasetIds = registration.manifest.verification.datasetIds;
@@ -72,30 +80,18 @@ async function main(): Promise<void> {
     }
 
     let passed = true;
+    const results = await service.verify({
+      agentId: args.agentId,
+      repetitions: args.repetitions,
+      concurrency: args.concurrency,
+      model,
+    });
 
-    for (const datasetId of datasetIds) {
-      const dataset = getAgentDatasetDefinition(datasetId);
-      const result = await runAgentDataset(
-        dataset,
-        platformAgentRegistry,
-        (agentId, input) =>
-          runAgent(agentId, input, {
-            agents: platformAgentRegistry,
-            tools,
-            provider,
-            workspaceRoot: process.cwd(),
-            model,
-          }),
-        {
-          repetitions: args.repetitions,
-          concurrency: args.concurrency,
-        },
-      );
-      const verification = verifyAgentDataset(registration.manifest, result);
-      const evidencePath = await writeAgentDatasetRun(result);
+    for (const item of results) {
+      const { datasetRun: result, verification, artifactPath: evidencePath } = item;
       passed = passed && verification.passed;
 
-      console.log(`Dataset: ${datasetId}`);
+      console.log(`Dataset: ${result.datasetId}`);
       console.log(`Verification: ${verification.passed ? "passed" : "failed"}`);
       console.log(`Evidence saved: ${evidencePath}`);
 
@@ -110,14 +106,11 @@ async function main(): Promise<void> {
     return;
   }
 
-  const result = await runAgent(args.agentId, await readInput(args.inputPath), {
-    agents: platformAgentRegistry,
-    tools,
-    provider,
-    workspaceRoot: process.cwd(),
+  const { run: result, artifactPath: evidencePath } = await service.run({
+    agentId: args.agentId,
+    input: await readInput(args.inputPath),
     model,
   });
-  const evidencePath = await writeAgentRun(result);
 
   console.log(`Agent: ${result.agentId}@${result.agentVersion}`);
   console.log(`Status: ${result.succeeded ? "succeeded" : "failed"}`);

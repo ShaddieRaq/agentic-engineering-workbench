@@ -2,6 +2,7 @@ export type AgentCliArgs =
   | { command: "list" }
   | { command: "validate" }
   | { command: "inventory" }
+  | { command: "scaffold"; agentId: string }
   | { command: "describe"; agentId: string }
   | {
       command: "run";
@@ -56,6 +57,10 @@ export function parseAgentArgs(args: string[]): AgentCliArgs {
     return { command, agentId: positional(args, 1, "agent ID") };
   }
 
+  if (command === "scaffold") {
+    return { command, agentId: positional(args, 1, "agent ID") };
+  }
+
   if (command === "run") {
     return {
       command,
@@ -87,6 +92,6 @@ export function parseAgentArgs(args: string[]): AgentCliArgs {
   }
 
   throw new Error(
-    "Expected one of: list, describe <agent-id>, inventory, validate, run <agent-id>, test <agent-id>.",
+    "Expected one of: list, describe <agent-id>, inventory, validate, scaffold <agent-id>, run <agent-id>, test <agent-id>.",
   );
 }

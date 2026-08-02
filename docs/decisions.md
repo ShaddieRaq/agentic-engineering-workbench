@@ -1429,3 +1429,128 @@ packaging adds release complexity without improving the local workflow.
 - the catalog is the connection point rather than directory scanning
 - package extraction remains possible through registration exports
 - scaling decisions follow concrete organizational or security pressure
+
+---
+
+## Decision 053 — Add a Local Visual Control Plane
+
+Status: Accepted
+
+### Decision
+
+Add a React console served by a loopback Fastify process. Use it to discover,
+run, verify, and inspect registered agents while keeping the CLI as a supported
+adapter over the same application services.
+
+### Rationale
+
+The platform has enough agent, workflow, permission, dataset, and evidence
+structure that a visual representation materially improves understanding and
+daily use. Reimplementing behavior in the UI would create a second runtime.
+
+### Consequences
+
+- browser and CLI results use the same registered agent runner
+- the console can remain read-only when no API key is configured
+- remote hosting and authentication remain outside the current boundary
+- the browser improves visibility without becoming the source of agent code
+
+---
+
+## Decision 054 — Persist Agent Evidence Through a Runtime-Validated Store
+
+Status: Accepted
+
+### Decision
+
+Place `FileArtifactStore` behind an `ArtifactStore` interface. Validate current
+agent artifacts on both write and read, bound file size and identifiers, and
+surface incompatible evidence as explicit rejections.
+
+### Rationale
+
+The filesystem already provides transparent, portable evidence. A store
+interface removes persistence details from application services and preserves
+a future database boundary without adding one prematurely.
+
+### Consequences
+
+- historical files cannot silently enter current console views
+- listing and filtering do not require parsing UI-specific conventions
+- immutable JSON remains easy to debug and version externally
+- database migration is possible when operational evidence warrants it
+
+---
+
+## Decision 055 — Model Interactive Work as Background Operations
+
+Status: Accepted
+
+### Decision
+
+Accept live runs and verification as in-memory operations with queued, running,
+completed, and failed states plus ordered lifecycle events. Expose snapshots by
+polling and events by server-sent streams.
+
+### Rationale
+
+Provider and dataset execution outlive an ordinary HTTP request from the
+operator's perspective. Explicit operations make orchestration and progress
+visible without introducing a queue, worker service, or database.
+
+### Consequences
+
+- terminal execution evidence is persisted separately from ephemeral progress
+- process restarts discard operation status but not completed run artifacts
+- cancellation is deferred until provider and workflow abort semantics exist
+- a durable queue remains a future deployment concern
+
+---
+
+## Decision 056 — Keep the Web Console Loopback-Only
+
+Status: Accepted
+
+### Decision
+
+Bind the server to `127.0.0.1`, reject non-loopback hostnames and origins,
+constrain request bodies, apply browser security headers, and expose only fixed
+registered operations.
+
+### Rationale
+
+The console can initiate paid model calls and expose repository evidence. It is
+designed for one local operator, so remote access would require authentication,
+authorization, secret handling, and a broader threat model.
+
+### Consequences
+
+- the current server must not be treated as a remotely deployable product
+- arbitrary shell commands and executable browser-authored code are excluded
+- local catalog inspection remains available without model credentials
+- future hosting requires a new explicit security decision
+
+---
+
+## Decision 057 — Keep Agent Authoring Code-First With a Safe Scaffold
+
+Status: Accepted
+
+### Decision
+
+Generate a typed experimental agent package from the CLI, refuse overwrites,
+and require explicit source registration. Use the console to explain agent
+anatomy but not to save or execute arbitrary new agent implementations.
+
+### Rationale
+
+Agent behavior includes contracts, permissions, orchestration, and assessment;
+it deserves type checking, tests, review, and source control. A scaffold removes
+boilerplate while retaining those engineering controls.
+
+### Consequences
+
+- new agents begin with a manifest, schemas, dataset, and test
+- registration changes stay visible in code review
+- the console can later offer configuration editors only for safely bounded data
+- separately packaged agents remain compatible with the registration boundary

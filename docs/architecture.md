@@ -806,3 +806,60 @@ Most tests should use `FakeProvider`.
 ### Small Components
 
 Providers, loaders, evaluators, registries, and persistence remain separate.
+
+## Local Agent Operations Console
+
+The CLI and web console share one application boundary rather than duplicating
+agent behavior:
+
+```text
+CLI commands ----------------------+
+                                   |
+React console -> loopback Fastify -+-> AgentApplicationService
+                                          |
+                                          +-> immutable AgentRegistry
+                                          +-> permission-filtered ToolRegistry
+                                          +-> provider-neutral AgentRunner
+                                          +-> agent dataset verification
+                                          +-> FileArtifactStore
+```
+
+`AgentApplicationService` owns catalog description, execution, verification,
+and artifact persistence. Entry points translate operator input into service
+requests; they do not implement alternate agent runtimes.
+
+The Fastify API exposes read-only catalog and artifact operations without model
+credentials. Run and verification requests become in-memory background
+operations with ordered lifecycle events. The API supports polling and
+server-sent event streams while preserving one terminal operation snapshot.
+
+The React client is a static Vite build served by the same loopback process. It
+uses only fixed local routes, renders Zod-derived JSON schemas as guided forms,
+and requires a deliberate disclosure before showing complete raw evidence.
+
+### Artifact Persistence
+
+The filesystem remains the source of truth. `FileArtifactStore` adapts current
+agent-run and agent-dataset-run schemas to immutable JSON files under `runs/`.
+Reads are filename constrained, byte bounded, runtime validated, filterable,
+and explicit about rejected historical or incompatible artifacts. A database
+is deferred until query scale, concurrent writers, or deployment requires it.
+
+### Web Security Boundary
+
+The console is a local control plane, not a remotely hosted application. It:
+
+- binds to `127.0.0.1`
+- rejects non-loopback hostnames and browser origins
+- applies a strict content security policy and response hardening headers
+- limits JSON request bodies
+- exposes only registered agent and artifact operations
+- never accepts shell commands or browser-authored executable agent code
+
+### Agent Authoring Boundary
+
+Agent definitions remain reviewed TypeScript products. The scaffold command
+creates a safe experimental package structure with contracts, executor,
+assessment, dataset, and test. The author then explicitly registers the module.
+This keeps visual learning and operations convenient without replacing source
+control, type checking, or runtime validation.

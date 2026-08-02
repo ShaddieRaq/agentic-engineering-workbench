@@ -215,6 +215,14 @@ The project currently supports:
 - version-matched agent datasets, verification gates, and persisted test evidence
 - a registered Change Risk Reviewer agent with exact repository-path citations
 - active, experimental, deprecated, and retired agent lifecycle enforcement
+- a shared application service used by agent CLI and HTTP entry points
+- runtime-validated filesystem persistence for agent and verification artifacts
+- a loopback-only Fastify API with asynchronous operation lifecycle evidence
+- a React/Vite agent operations console
+- visual catalog, manifest, permission, workflow, dataset, and contract inspection
+- schema-guided live runs and product-level verification
+- filtered evidence browsing with deliberate raw-artifact disclosure
+- a safe no-overwrite agent package scaffold command
 
 ## Current Evaluators
 
@@ -296,15 +304,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 23 registered agent platform: complete foundation
+Phase 29 local agent operations console: complete foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-92 test files passed
-261 tests passed
+97 test files passed
+271 tests passed
 ```
 
 This state must be verified before continuing:
@@ -332,15 +340,16 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Use the Repository Assistant and Change Risk Reviewer on real repositories.
-Convert false positives, missed risks, context gaps, and operator friction into
-versioned agent-dataset cases before registering a third production agent.
+Open the local console with `npm run web`, inspect and run both registered
+agents, then scaffold one practical learning agent with
+`npm run agents -- scaffold <agent-id>`. Convert false positives, missed risks,
+context gaps, and operator friction into versioned agent-dataset cases.
 
 ## Broader Roadmap
 
-1. Collect real usage evidence for both registered agents.
-2. Expand their datasets from observed failures and edge cases.
-3. Add release gates that consume persisted agent verification evidence.
-4. Improve shared context selection only where evidence shows a gap.
-5. Extract agents into packages only when independent ownership or deployment
-   creates a demonstrated need.
+1. Use the visual console to collect real evidence for both registered agents.
+2. Scaffold and register one practical learning agent.
+3. Expand datasets from observed failures and edge cases.
+4. Add release gates that consume persisted agent verification evidence.
+5. Extract agents or replace filesystem persistence only when demonstrated
+   ownership, deployment, permission, or query requirements demand it.

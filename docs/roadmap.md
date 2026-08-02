@@ -550,9 +550,79 @@ Implemented:
 - isolated `src/agents/<agent-id>` packages
 - future extraction boundary for separately owned packages
 
+## Phase 24 — Shared Agent Application Services
+
+Status: Complete
+
+Implemented:
+
+- one service for catalog description, runs, verification, and persistence
+- CLI and HTTP adapters sharing the same execution behavior
+- provider factory and artifact-store injection for deterministic testing
+
+## Phase 25 — Validated Artifact Store
+
+Status: Complete
+
+Implemented:
+
+- immutable filesystem-backed agent artifacts
+- current-schema validation on write and read
+- bounded loading, query filters, deterministic ordering, and rejection evidence
+- compatibility adapters for the existing agent writers
+
+## Phase 26 — Loopback Agent API
+
+Status: Complete
+
+Implemented:
+
+- Fastify catalog, description, artifact, run, and verification endpoints
+- asynchronous operation snapshots and ordered lifecycle events
+- polling and server-sent event access
+- loopback host/origin enforcement, body limits, and browser security headers
+
+## Phase 27 — Visual Agent Console
+
+Status: Complete foundation
+
+Implemented:
+
+- React and Vite local console
+- platform health, lifecycle overview, and agent catalog
+- manifest, permission, workflow, dataset, and schema inspection
+- guided schema-derived input plus raw JSON mode
+- run and verification lifecycle traces
+- filtered evidence inventory and deliberate raw-artifact disclosure
+
+## Phase 28 — Agent Authoring Scaffold
+
+Status: Complete foundation
+
+Implemented:
+
+- validated kebab-case agent IDs
+- no-overwrite generation of agent, dataset, test, and README files
+- experimental manifest, typed contracts, executor, assessment, and smoke case
+- explicit registration retained as a reviewed source-code step
+
+## Phase 29 — Web Console Verification and Hardening
+
+Status: Complete foundation
+
+Implemented:
+
+- component tests for the visual catalog
+- injected HTTP tests for read-only, run, persistence, and origin boundaries
+- full TypeScript checking for server and browser projects
+- production build and local server smoke verification
+- dependency audit with no known vulnerabilities
+
 ## Current Priorities
 
-1. Use both agents on real repositories and collect concrete failure evidence.
-2. Refine prompts, datasets, and thresholds from observed behavior.
-3. Add another agent only for a demonstrated practical workflow.
-4. Extract packages only when ownership, deployment, or permission boundaries require it.
+1. Use the console to inspect and run both existing agents.
+2. Scaffold one learning agent around a practical personal workflow.
+3. Convert observed failures into versioned dataset cases.
+4. Add browser end-to-end coverage only after the interaction surface changes.
+5. Introduce a database, authentication, or remote deployment only when a
+   concrete operating requirement justifies those boundaries.

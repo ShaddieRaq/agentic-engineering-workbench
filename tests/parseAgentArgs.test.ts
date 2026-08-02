@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { parseAgentArgs } from "../src/cli/parseAgentArgs.js";
 
 describe("parseAgentArgs", () => {
+  it("parses an agent scaffold command", () => {
+    expect(parseAgentArgs(["scaffold", "my-first-agent"])).toEqual({
+      command: "scaffold",
+      agentId: "my-first-agent",
+    });
+  });
   it("parses metadata commands without execution configuration", () => {
     expect(parseAgentArgs(["list"])).toEqual({ command: "list" });
     expect(parseAgentArgs(["validate"])).toEqual({ command: "validate" });
