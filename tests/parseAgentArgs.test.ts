@@ -27,12 +27,15 @@ describe("parseAgentArgs", () => {
         "input.json",
         "--model",
         "test-model",
+        "--workspace",
+        "sample-project",
       ]),
     ).toEqual({
       command: "run",
       agentId: "repository-assistant",
       inputPath: "input.json",
       model: "test-model",
+      workspaceId: "sample-project",
     });
   });
 
@@ -52,6 +55,7 @@ describe("parseAgentArgs", () => {
       repetitions: 3,
       concurrency: 2,
       model: null,
+      workspaceId: null,
     });
   });
 

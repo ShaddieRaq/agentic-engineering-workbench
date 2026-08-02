@@ -12,6 +12,7 @@ export interface ArtifactReference {
 export interface ArtifactSummary extends ArtifactReference {
   agentId: string;
   agentVersion: string;
+  workspaceId: string | null;
   completedAt: string;
   succeeded: boolean | null;
 }
@@ -19,6 +20,7 @@ export interface ArtifactSummary extends ArtifactReference {
 export interface ArtifactQuery {
   kind?: ArtifactKind;
   agentId?: string;
+  workspaceId?: string;
   succeeded?: boolean;
   limit?: number;
 }

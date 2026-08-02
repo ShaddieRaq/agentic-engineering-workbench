@@ -37,11 +37,44 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173). The console provides:
 - schema-guided agent input with an optional raw JSON mode
 - live operation progress for runs and verification
 - filtered, runtime-validated persisted evidence
+- persistent registration and selection of local project workspaces
+- inspectable tool contracts and their consuming agents
 - a visual authoring guide and safe agent scaffold command
 
 The catalog and existing evidence remain available without an API key. Live
 runs and verification require `OPENAI_API_KEY` in the local `.env` file. The
 server binds only to `127.0.0.1` and rejects non-loopback browser origins.
+
+## Register a Local Project
+
+Register a project once, then select it from the console workspace switcher:
+
+```bash
+npm run workspaces -- add /absolute/path/to/project \
+  --id my-project \
+  --name "My Project"
+```
+
+Workspace metadata is stored locally under `.workbench/` and is not committed.
+Tools are reconstructed for the selected project root, so their existing path,
+symlink, deny-list, and output limits continue to apply.
+
+## Run the Documentation Auditor
+
+Start the console with `npm run web`, select a workspace, open
+**Documentation Auditor**, and run it. The agent inventories the project,
+reads a bounded selection of documentation and implementation files, and
+returns evidence-linked findings without changing the project.
+
+The same operation is available from the CLI:
+
+```bash
+npm run agents -- run documentation-auditor --workspace my-project
+```
+
+The agent requires an OpenAI API key for a live run. Its complete inspection,
+prompt, provider response, assessment, and workspace identity are persisted as
+run evidence.
 
 ## Run a Reliability Dataset
 

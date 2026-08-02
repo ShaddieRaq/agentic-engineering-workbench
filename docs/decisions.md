@@ -1554,3 +1554,75 @@ boilerplate while retaining those engineering controls.
 - registration changes stay visible in code review
 - the console can later offer configuration editors only for safely bounded data
 - separately packaged agents remain compatible with the registration boundary
+
+---
+
+## Decision 058 — Resolve Workspaces Before Constructing Tools
+
+Status: Accepted
+
+### Decision
+
+Persist named local workspace roots separately from agent definitions. Resolve
+the selected workspace before every run and construct a fresh tool registry
+whose permission boundary is that workspace root.
+
+### Rationale
+
+Agents should be reusable products rather than copies embedded in every target
+repository. Tool permissions, however, must be scoped to the project selected
+for that execution.
+
+### Consequences
+
+- one registered agent can operate on many local projects
+- run evidence records workspace identity
+- workspace registration does not grant capabilities beyond registered tools
+- unavailable or unknown workspaces fail before model execution
+
+---
+
+## Decision 059 — Inventory Paths Before Reading Content
+
+Status: Accepted
+
+### Decision
+
+Use a bounded, content-free file inventory as the first discovery operation for
+repository agents. Select context from that evidence and read only the chosen
+files through the existing bounded reader.
+
+### Rationale
+
+Separating discovery from content access makes context selection visible,
+limits unnecessary disclosure, and avoids spending context budget on arbitrary
+directory traversal.
+
+### Consequences
+
+- inventory output is deterministic and bounded
+- symlink, traversal, deny-list, depth, and size policy remains explicit
+- agents must justify and preserve their context-selection evidence
+
+---
+
+## Decision 060 — Require Grounded Documentation Findings
+
+Status: Accepted
+
+### Decision
+
+Accept Documentation Auditor findings only when every cited repository path was
+included in the bounded read evidence for that run.
+
+### Rationale
+
+A structured response is not sufficient proof of grounding. Citation validation
+connects conclusions to observable project evidence and turns unsupported model
+claims into explicit unsuccessful runs.
+
+### Consequences
+
+- the auditor remains read-only and provider-neutral
+- unsupported citations fail assessment even if the JSON schema is valid
+- full inventory, reads, prompt, provider output, and assessment are retained

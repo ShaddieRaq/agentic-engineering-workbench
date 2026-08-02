@@ -21,6 +21,7 @@ export const agentRunResultSchema = z
       .object({
         model: z.string().min(1),
         permittedToolIds: z.array(z.string().min(1)),
+        workspaceId: z.string().min(1).optional(),
       })
       .strict(),
     warnings: z.array(z.string().min(1)),

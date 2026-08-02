@@ -618,11 +618,54 @@ Implemented:
 - production build and local server smoke verification
 - dependency audit with no known vulnerabilities
 
+## Phase 30 — Local Workspace Registry
+
+Status: Complete foundation
+
+Implemented:
+
+- versioned filesystem-backed workspace registration
+- built-in workbench workspace plus add, list, resolve, and remove operations
+- CLI and web workspace management
+- workspace-scoped tool construction and artifact identity
+
+## Phase 31 — Bounded File Inventory
+
+Status: Complete foundation
+
+Implemented:
+
+- deterministic repository file inventory without reading file contents
+- extension, file-count, depth, permission, symlink, and output limits
+- platform tool registration and visible tool contracts in the console
+
+## Phase 32 — Documentation Auditor
+
+Status: Complete foundation
+
+Implemented:
+
+- reusable read-only documentation audit agent
+- balanced documentation and implementation context selection
+- structured findings, coverage gaps, and prioritized actions
+- evidence-path validation and complete persisted audit evidence
+
+## Phase 33 — Workspace and Tool Console
+
+Status: Complete foundation
+
+Implemented:
+
+- persistent workspace selection across console views
+- workspace-scoped agent run and verification controls
+- workspace-filtered artifact inventory
+- tool catalog, schemas, descriptions, and agent-consumer visibility
+
 ## Current Priorities
 
-1. Use the console to inspect and run both existing agents.
-2. Scaffold one learning agent around a practical personal workflow.
-3. Convert observed failures into versioned dataset cases.
-4. Add browser end-to-end coverage only after the interaction surface changes.
+1. Register a real local project and run the Documentation Auditor against it.
+2. Convert useful and incorrect audit findings into versioned dataset cases.
+3. Build a second practical agent using the same workspace and tool boundary.
+4. Add browser end-to-end coverage after real usage stabilizes the workflow.
 5. Introduce a database, authentication, or remote deployment only when a
    concrete operating requirement justifies those boundaries.

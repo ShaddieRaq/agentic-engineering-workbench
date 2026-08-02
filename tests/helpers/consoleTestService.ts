@@ -8,6 +8,7 @@ import { defineAgent } from "../../src/agents/agentRegistration.js";
 import { FileArtifactStore } from "../../src/artifacts/fileArtifactStore.js";
 import { FakeProvider } from "../../src/providers/fakeProvider.js";
 import { ToolRegistry } from "../../src/tools/toolRegistry.js";
+import { FileWorkspaceStore } from "../../src/workspaces/fileWorkspaceStore.js";
 
 export const consoleTestAgent = defineAgent({
   manifest: {
@@ -34,9 +35,9 @@ export async function createConsoleTestService(apiKeyConfigured = true) {
     directory,
     service: new AgentApplicationService(
       new AgentRegistry([consoleTestAgent]),
-      new ToolRegistry([]),
       new FileArtifactStore(directory),
-      directory,
+      new FileWorkspaceStore(join(directory, ".workbench", "workspaces.json"), directory),
+      () => new ToolRegistry([]),
       () => {
         if (!apiKeyConfigured) throw new Error("Provider unavailable.");
         return new FakeProvider("unused");

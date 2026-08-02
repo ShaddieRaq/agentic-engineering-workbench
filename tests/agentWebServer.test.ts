@@ -1,3 +1,4 @@
+import { mkdtemp } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { buildAgentWebServer } from "../src/web/agentWebServer.js";
 import { createConsoleTestService } from "./helpers/consoleTestService.js";
@@ -19,6 +20,7 @@ describe("agent web server", () => {
 
     const health = await app.inject({ method: "GET", url: "/api/health" });
     const agent = await app.inject({ method: "GET", url: "/api/agents/console-test-agent" });
+    const tools = await app.inject({ method: "GET", url: "/api/tools" });
 
     expect(health.statusCode).toBe(200);
     expect(health.json()).toMatchObject({ apiKeyConfigured: false, catalogValid: true });
@@ -26,29 +28,51 @@ describe("agent web server", () => {
       manifest: { id: "console-test-agent" },
       inputSchema: { type: "object" },
     });
+    expect(tools.json()).toEqual({ tools: [] });
     await app.close();
   });
 
   it("executes through the shared service and exposes persisted operation evidence", async () => {
-    const { service } = await createConsoleTestService();
+    const { service, directory } = await createConsoleTestService();
+    const project = await service.workspaces.add({
+      id: "sample-project",
+      name: "Sample Project",
+      rootPath: await mkdtemp(`${directory}/project-`),
+    });
     const app = await buildAgentWebServer({ service, apiKeyConfigured: true });
     const response = await app.inject({
       method: "POST",
       url: "/api/agents/console-test-agent/runs",
-      payload: { input: { instruction: "Run from HTTP." } },
+      payload: { input: { instruction: "Run from HTTP." }, workspaceId: project.id },
     });
 
     expect(response.statusCode).toBe(202);
     const completed = await waitForCompletion(app, response.json().operationId);
     expect(completed).toMatchObject({
       status: "completed",
-      result: { run: { output: { answer: "Run from HTTP." } } },
+      result: { run: { configuration: { workspaceId: "sample-project" }, output: { answer: "Run from HTTP." } } },
     });
     const artifact = await app.inject({
       method: "GET",
       url: `/api/artifacts/${completed.result.artifactId}`,
     });
     expect(artifact.json()).toMatchObject({ kind: "agent-run" });
+    await app.close();
+  });
+
+  it("registers and removes local workspace boundaries", async () => {
+    const { service, directory } = await createConsoleTestService();
+    const projectRoot = await mkdtemp(`${directory}/project-`);
+    const app = await buildAgentWebServer({ service, apiKeyConfigured: false });
+    const added = await app.inject({
+      method: "POST",
+      url: "/api/workspaces",
+      payload: { id: "external-project", name: "External Project", rootPath: projectRoot },
+    });
+    expect(added.statusCode).toBe(201);
+    expect((await app.inject({ method: "GET", url: "/api/workspaces" })).json().workspaces)
+      .toEqual(expect.arrayContaining([expect.objectContaining({ id: "external-project" })]));
+    expect((await app.inject({ method: "DELETE", url: "/api/workspaces/external-project" })).statusCode).toBe(204);
     await app.close();
   });
 

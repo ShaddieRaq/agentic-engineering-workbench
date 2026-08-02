@@ -10,6 +10,7 @@
     "web": "npm run web:build && tsx src/runWeb.ts",
     "web:build": "vite build --config web/vite.config.ts",
     "web:client": "vite --config web/vite.config.ts --host 127.0.0.1",
+    "workspaces": "tsx src/runWorkspaces.ts",
     "dataset": "tsx src/runDataset.ts",
     "experiment": "tsx src/runExperiment.ts",
     "list-files": "tsx src/runListFilesTool.ts",

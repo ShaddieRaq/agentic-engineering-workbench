@@ -30,6 +30,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .sidebar nav a:hover { color: #fff; background: var(--surface); }
 .sidebar nav a.active { color: var(--accent); background: #17231c; box-shadow: inset 2px 0 var(--accent); }
 .sidebar-note { margin-top: auto; color: var(--muted); font: 12px DM Mono, monospace; display: flex; align-items: center; gap: 9px; }
+.workspace-switcher { display: grid; gap: 7px; margin-top: 24px; color: var(--muted); font-size: 10px; }
+.workspace-switcher select { padding: 8px; font-size: 11px; }
 .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px rgba(184, 242, 105, .1); }
 
 main { width: min(1320px, 100%); padding: 44px clamp(24px, 5vw, 72px) 80px; overflow: hidden; }
@@ -149,6 +151,12 @@ tbody tr:last-child td { border-bottom: 0; }
 .scaffold-panel h2 { margin-bottom: 4px; }
 .scaffold-panel pre { display: inline-block; color: var(--accent); }
 .scaffold-panel p { color: var(--muted); line-height: 1.65; }
+.workspace-list { display: grid; gap: 12px; }
+.workspace-list article { display: flex; justify-content: space-between; gap: 18px; align-items: center; }
+.workspace-list h2 { margin: 7px 0; font-size: 19px; }
+.workspace-actions { display: flex; gap: 8px; }
+.selected-workspace { border-color: var(--accent-2); box-shadow: inset 3px 0 var(--accent-2); }
+.danger-button { border: 1px solid rgba(255, 143, 125, .35); border-radius: 9px; padding: 9px 12px; color: var(--danger); background: transparent; cursor: pointer; }
 
 @media (max-width: 900px) {
   .app-shell { grid-template-columns: 1fr; }
@@ -156,6 +164,7 @@ tbody tr:last-child td { border-bottom: 0; }
   .brand { min-width: 170px; }
   .sidebar nav { display: flex; margin: 0 0 0 24px; }
   .sidebar-note { display: none; }
+  .workspace-switcher { min-width: 190px; margin: 0 0 0 18px; }
   main { padding-top: 30px; }
   .lifecycle-strip { grid-template-columns: repeat(4, 1fr); }
   .metric-grid { grid-template-columns: repeat(2, 1fr); }

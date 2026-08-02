@@ -6,15 +6,20 @@ import { FileArtifactStore } from "./artifacts/fileArtifactStore.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { createPlatformToolRegistry } from "./tools/toolRegistry.js";
 import { buildAgentWebServer } from "./web/agentWebServer.js";
+import { FileWorkspaceStore } from "./workspaces/fileWorkspaceStore.js";
 
 async function main(): Promise<void> {
   const workspaceRoot = process.cwd();
   const apiKey = process.env.OPENAI_API_KEY;
+  const workspaces = new FileWorkspaceStore(
+    resolve(workspaceRoot, ".workbench", "workspaces.json"),
+    workspaceRoot,
+  );
   const service = new AgentApplicationService(
     platformAgentRegistry,
-    createPlatformToolRegistry(workspaceRoot),
     new FileArtifactStore(resolve(workspaceRoot, "runs")),
-    workspaceRoot,
+    workspaces,
+    createPlatformToolRegistry,
     (model) => {
       if (!apiKey) throw new Error("OPENAI_API_KEY is missing from .env");
       return new OpenAIProvider(apiKey, { model });

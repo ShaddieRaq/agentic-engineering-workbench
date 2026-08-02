@@ -2,6 +2,7 @@ import { type FormEvent, useMemo, useState } from "react";
 import { api, type AgentManifest, type JsonSchema, type Operation, type VerificationEvidence } from "./api.js";
 import { useOperation } from "./hooks.js";
 import { LocalLink as Link } from "./router.js";
+import { useWorkspace } from "./workspace.js";
 
 export function StatusBadge({ value }: { value: string }) {
   return <span className={`status status-${value}`}>{value.replaceAll("-", " ")}</span>;
@@ -79,6 +80,7 @@ export function OperationTrace({ operation }: { operation: Operation }) {
 }
 
 export function RunAgentPanel({ agent, schema }: { agent: AgentManifest; schema: JsonSchema }) {
+  const { selectedWorkspaceId } = useWorkspace();
   const initial = useMemo(() => defaultInput(schema), [schema]);
   const [fields, setFields] = useState(initial);
   const [rawInput, setRawInput] = useState(JSON.stringify(initial, null, 2));
@@ -94,7 +96,7 @@ export function RunAgentPanel({ agent, schema }: { agent: AgentManifest; schema:
       const parsed: unknown = inputMode === "json" ? JSON.parse(rawInput) : fields;
       const started = await api<Operation>(`/api/agents/${agent.id}/runs`, {
         method: "POST",
-        body: JSON.stringify({ input: parsed, model }),
+        body: JSON.stringify({ input: parsed, model, workspaceId: selectedWorkspaceId }),
       });
       setOperationId(started.operationId);
       setError(null);
@@ -124,7 +126,7 @@ export function RunAgentPanel({ agent, schema }: { agent: AgentManifest; schema:
           </label>
         )) : <label>Validated JSON input<textarea rows={12} value={rawInput} onChange={(event) => setRawInput(event.target.value)} spellCheck={false} /></label>}
         {error && <ErrorNotice message={error} />}
-        <button className="button" type="submit" disabled={operation.data?.status === "running"}>Run agent</button>
+        <button className="button" type="submit" disabled={!selectedWorkspaceId || operation.data?.status === "running"}>Run agent</button>
       </form>
       {operation.data ? <OperationTrace operation={operation.data} /> : (
         <div className="concept-card">

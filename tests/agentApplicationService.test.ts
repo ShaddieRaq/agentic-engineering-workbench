@@ -15,4 +15,10 @@ describe("AgentApplicationService", () => {
     expect(result.run.output).toEqual({ answer: "Explain the platform." });
     expect((await service.artifacts.load(result.artifactId)).kind).toBe("agent-run");
   });
+
+  it("describes registered tool contracts and consumers", async () => {
+    const { service } = await createConsoleTestService();
+    expect(service.listTools()).toEqual([]);
+    expect(() => service.describeTool("unknown-tool")).toThrow("Unknown tool");
+  });
 });

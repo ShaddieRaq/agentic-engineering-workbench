@@ -8,6 +8,10 @@ const workflows: Record<string, WorkflowDescriptor> = {
     id: "change-risk-review",
     description: "Inspect repository changes and produce a grounded risk review.",
   },
+  "documentation-audit": {
+    id: "documentation-audit",
+    description: "Inventory repository files, assemble bounded documentation context, and produce a citation-validated audit.",
+  },
   "repository-assistant": {
     id: "repository-assistant",
     description: "Inspect, analyze, and verify a local repository.",

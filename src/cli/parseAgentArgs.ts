@@ -9,6 +9,7 @@ export type AgentCliArgs =
       agentId: string;
       inputPath: string | null;
       model: string | null;
+      workspaceId: string | null;
     }
   | {
       command: "test";
@@ -16,6 +17,7 @@ export type AgentCliArgs =
       repetitions: number;
       concurrency: number;
       model: string | null;
+      workspaceId: string | null;
     };
 
 function positional(args: string[], index: number, label: string): string {
@@ -67,6 +69,7 @@ export function parseAgentArgs(args: string[]): AgentCliArgs {
       agentId: positional(args, 1, "agent ID"),
       inputPath: option(args, "--input"),
       model: option(args, "--model"),
+      workspaceId: option(args, "--workspace"),
     };
   }
 
@@ -88,6 +91,7 @@ export function parseAgentArgs(args: string[]): AgentCliArgs {
       repetitions,
       concurrency,
       model: option(args, "--model"),
+      workspaceId: option(args, "--workspace"),
     };
   }
 

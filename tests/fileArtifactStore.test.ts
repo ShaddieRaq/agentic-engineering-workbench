@@ -38,15 +38,16 @@ describe("FileArtifactStore", () => {
       tools: new ToolRegistry([]),
       provider: new FakeProvider("unused"),
       workspaceRoot: directory,
+      workspaceId: "artifact-workspace",
     });
 
     const reference = await store.saveAgentRun(run);
-    const listed = await store.list({ agentId: "artifact-agent", succeeded: true });
+    const listed = await store.list({ agentId: "artifact-agent", workspaceId: "artifact-workspace", succeeded: true });
     const loaded = await store.load(reference.id);
 
     expect(listed.rejected).toEqual([]);
     expect(listed.artifacts).toEqual([
-      expect.objectContaining({ id: run.agentRunId, kind: "agent-run", succeeded: true }),
+      expect.objectContaining({ id: run.agentRunId, kind: "agent-run", workspaceId: "artifact-workspace", succeeded: true }),
     ]);
     expect(loaded).toEqual({ kind: "agent-run", artifact: run });
   });

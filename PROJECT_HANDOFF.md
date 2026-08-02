@@ -170,6 +170,13 @@ The project currently supports:
 - bounded priority-ordered repository context loading
 - per-file and aggregate context byte limits
 - accepted, rejected, and tool-call-linked context evidence
+- persistent local workspace registration and resolution
+- workspace-scoped tool construction and run evidence
+- bounded content-free repository file inventory
+- a read-only, evidence-grounded Documentation Auditor agent
+- balanced documentation and implementation context selection
+- a web workspace switcher and workspace-filtered artifact inventory
+- a visual tool catalog with contracts and consuming agents
 - runtime-validated, root-bounded persisted harness-run loading
 - evidence-aware batch discovery across mixed historical run artifacts
 - deterministic run outcome, latency, failure, model, usage, and cost reports
@@ -304,15 +311,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 29 local agent operations console: complete foundation
+Phase 33 workspace-scoped Documentation Auditor: complete foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-97 test files passed
-271 tests passed
+101 test files passed
+280 tests passed
 ```
 
 This state must be verified before continuing:
@@ -340,16 +347,15 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Open the local console with `npm run web`, inspect and run both registered
-agents, then scaffold one practical learning agent with
-`npm run agents -- scaffold <agent-id>`. Convert false positives, missed risks,
+Register a real local project, select it in the console, and run the
+Documentation Auditor. Convert useful findings, false positives, missed risks,
 context gaps, and operator friction into versioned agent-dataset cases.
 
 ## Broader Roadmap
 
-1. Use the visual console to collect real evidence for both registered agents.
-2. Scaffold and register one practical learning agent.
-3. Expand datasets from observed failures and edge cases.
+1. Use the Documentation Auditor on real local projects.
+2. Expand its dataset from observed failures and edge cases.
+3. Build a second workspace-scoped practical agent.
 4. Add release gates that consume persisted agent verification evidence.
 5. Extract agents or replace filesystem persistence only when demonstrated
    ownership, deployment, permission, or query requirements demand it.

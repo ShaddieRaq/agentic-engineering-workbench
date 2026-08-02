@@ -863,3 +863,35 @@ creates a safe experimental package structure with contracts, executor,
 assessment, dataset, and test. The author then explicitly registers the module.
 This keeps visual learning and operations convenient without replacing source
 control, type checking, or runtime validation.
+
+## Workspace Resolution
+
+The platform registry describes reusable agents, but each execution resolves a
+separate local workspace. `FileWorkspaceStore` persists only workspace identity
+and an absolute root path. Before a run, `AgentApplicationService` resolves the
+selected workspace and constructs a fresh root-bounded `ToolRegistry` for it.
+
+This separates reusable agent code from the projects it operates on. One agent
+can therefore run against many registered repositories without copying agent
+implementations or weakening tool permissions. Persisted run artifacts record
+the workspace ID so evidence remains attributable.
+
+## Documentation Auditor Flow
+
+```text
+registered workspace
+        |
+        v
+bounded file inventory -> balanced context selection -> bounded file reads
+        |                                                   |
+        +---------------- evidence -------------------------+
+                                                            v
+                                              structured model analysis
+                                                            |
+                                                            v
+                                   citation validation + persisted evidence
+```
+
+The auditor is read-only. It receives only `file-inventory` and `read-file`,
+balances documentation and implementation context under an aggregate byte
+budget, and accepts findings only when their cited paths were actually read.

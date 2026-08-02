@@ -11,6 +11,7 @@ const runRequestSchema = z
   .object({
     input: z.json().default({}),
     model: z.string().min(1).optional(),
+    workspaceId: z.string().min(1).optional(),
   })
   .strict();
 
@@ -19,6 +20,15 @@ const verificationRequestSchema = z
     repetitions: z.number().int().positive().default(1),
     concurrency: z.number().int().positive().max(10).default(1),
     model: z.string().min(1).optional(),
+    workspaceId: z.string().min(1).optional(),
+  })
+  .strict();
+
+const addWorkspaceRequestSchema = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().min(1).optional(),
+    rootPath: z.string().min(1),
   })
   .strict();
 
@@ -78,7 +88,37 @@ export async function buildAgentWebServer(
   }));
 
   app.get("/api/catalog", async () => options.service.inventory());
+  app.get("/api/workspaces", async () => ({ workspaces: await options.service.workspaces.list() }));
+  app.post("/api/workspaces", async (request, reply) => {
+    const parsed = addWorkspaceRequestSchema.safeParse(request.body);
+    if (!parsed.success) return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+    try {
+      return reply.code(201).send(await options.service.workspaces.add({
+        id: parsed.data.id,
+        rootPath: parsed.data.rootPath,
+        ...(parsed.data.name ? { name: parsed.data.name } : {}),
+      }));
+    } catch (error: unknown) {
+      return reply.code(409).send({ error: errorMessage(error) });
+    }
+  });
+  app.delete<{ Params: { workspaceId: string } }>("/api/workspaces/:workspaceId", async (request, reply) => {
+    try {
+      await options.service.workspaces.remove(request.params.workspaceId);
+      return reply.code(204).send();
+    } catch (error: unknown) {
+      return reply.code(409).send({ error: errorMessage(error) });
+    }
+  });
   app.get("/api/agents", async () => ({ agents: options.service.listAgents() }));
+  app.get("/api/tools", async () => ({ tools: options.service.listTools() }));
+  app.get<{ Params: { toolId: string } }>("/api/tools/:toolId", async (request, reply) => {
+    try {
+      return options.service.describeTool(request.params.toolId);
+    } catch (error: unknown) {
+      return reply.code(404).send({ error: errorMessage(error) });
+    }
+  });
   app.get<{ Params: { agentId: string } }>("/api/agents/:agentId", async (request, reply) => {
     try {
       return options.service.describeAgent(request.params.agentId);
@@ -87,7 +127,7 @@ export async function buildAgentWebServer(
     }
   });
 
-  app.get<{ Querystring: { kind?: string; agentId?: string; succeeded?: string; limit?: string } }>(
+  app.get<{ Querystring: { kind?: string; agentId?: string; workspaceId?: string; succeeded?: string; limit?: string } }>(
     "/api/artifacts",
     async (request, reply) => {
       const kind = request.query.kind;
@@ -114,6 +154,7 @@ export async function buildAgentWebServer(
       const artifactQuery: ArtifactQuery = {
         ...(artifactKind ? { kind: artifactKind } : {}),
         ...(request.query.agentId ? { agentId: request.query.agentId } : {}),
+        ...(request.query.workspaceId ? { workspaceId: request.query.workspaceId } : {}),
         ...(succeeded === undefined ? {} : { succeeded }),
         ...(limit === undefined ? {} : { limit }),
       };
@@ -157,6 +198,7 @@ export async function buildAgentWebServer(
           agentId: request.params.agentId,
           input: parsed.data.input,
           ...(parsed.data.model ? { model: parsed.data.model } : {}),
+          ...(parsed.data.workspaceId ? { workspaceId: parsed.data.workspaceId } : {}),
         });
         emit("output", result.run.failure?.stage === "output" ? "Output contract validation failed." : "Output contract evaluated.");
         emit("assessment", result.run.assessment?.message ?? "No goal assessment was produced.");
@@ -193,6 +235,7 @@ export async function buildAgentWebServer(
             repetitions: parsed.data.repetitions,
             concurrency: parsed.data.concurrency,
             ...(parsed.data.model ? { model: parsed.data.model } : {}),
+            ...(parsed.data.workspaceId ? { workspaceId: parsed.data.workspaceId } : {}),
           });
           emit("persistence", `${result.length} verification artifact(s) saved.`);
           return result;

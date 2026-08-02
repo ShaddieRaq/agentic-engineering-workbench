@@ -48,8 +48,28 @@ export interface ArtifactSummary {
   path: string;
   agentId: string;
   agentVersion: string;
+  workspaceId: string | null;
   completedAt: string;
   succeeded: boolean | null;
+}
+
+export interface WorkspaceDefinition {
+  id: string;
+  name: string;
+  rootPath: string;
+  addedAt: string;
+  builtIn: boolean;
+}
+
+export interface ToolSummary {
+  id: string;
+  description: string;
+  consumerAgentIds: string[];
+}
+
+export interface ToolDescription extends ToolSummary {
+  inputSchema: JsonSchema;
+  outputSchema: JsonSchema;
 }
 
 export interface ArtifactList {
@@ -97,9 +117,10 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       ...init?.headers,
     },
   });
-  const body = await response.json() as T | { error?: string };
+  const text = await response.text();
+  const body = (text ? JSON.parse(text) : undefined) as T | { error?: string } | undefined;
   if (!response.ok) {
-    throw new Error((body as { error?: string }).error ?? `Request failed: ${response.status}`);
+    throw new Error((body as { error?: string } | undefined)?.error ?? `Request failed: ${response.status}`);
   }
   return body as T;
 }

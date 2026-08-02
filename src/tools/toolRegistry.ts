@@ -1,4 +1,5 @@
 import { createInspectGitDiffTool } from "./inspectGitDiffTool.js";
+import { createFileInventoryTool } from "./fileInventoryTool.js";
 import { createInspectPackageTool } from "./inspectPackageTool.js";
 import { createListFilesTool } from "./listFilesTool.js";
 import { createReadFileTool } from "./readFileTool.js";
@@ -47,6 +48,7 @@ export function createPlatformToolRegistry(
   allowedRoot: string,
 ): ToolRegistry {
   return new ToolRegistry([
+    createFileInventoryTool({ allowedRoot }),
     createInspectGitDiffTool({ allowedRoot }),
     createInspectPackageTool({ allowedRoot }),
     createListFilesTool({ allowedRoot }),

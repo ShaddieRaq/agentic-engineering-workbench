@@ -43,18 +43,23 @@ function summary(
       path,
       agentId: run.agentId,
       agentVersion: run.agentVersion,
+      workspaceId: run.configuration.workspaceId ?? null,
       completedAt: run.completedAt,
       succeeded: run.succeeded,
     };
   }
 
   const dataset = artifact as AgentDatasetRunResult;
+  const workspaceIds = new Set(
+    dataset.runs.map(({ agentRun }) => agentRun.configuration.workspaceId).filter((id): id is string => Boolean(id)),
+  );
   return {
     id: dataset.datasetRunId,
     kind,
     path,
     agentId: dataset.agentId,
     agentVersion: dataset.agentVersion,
+    workspaceId: workspaceIds.size === 1 ? [...workspaceIds][0]! : null,
     completedAt: dataset.completedAt,
     succeeded: dataset.caseSummaries.every(({ failedRuns }) => failedRuns === 0),
   };
@@ -114,6 +119,7 @@ export class FileArtifactStore implements ArtifactStore {
         const stored = await this.#read(path, identified.kind);
         const item = summary(identified.kind, path, stored.artifact);
         if (query.agentId && item.agentId !== query.agentId) continue;
+        if (query.workspaceId && item.workspaceId !== query.workspaceId) continue;
         if (query.succeeded !== undefined && item.succeeded !== query.succeeded) continue;
         artifacts.push(item);
       } catch (error: unknown) {

@@ -9,6 +9,7 @@ import { FileArtifactStore } from "./artifacts/fileArtifactStore.js";
 import { parseAgentArgs } from "./cli/parseAgentArgs.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { createPlatformToolRegistry } from "./tools/toolRegistry.js";
+import { FileWorkspaceStore } from "./workspaces/fileWorkspaceStore.js";
 
 async function readInput(path: string | null): Promise<unknown> {
   if (path === null) return {};
@@ -17,13 +18,18 @@ async function readInput(path: string | null): Promise<unknown> {
 
 async function main(): Promise<void> {
   const args = parseAgentArgs(process.argv.slice(2));
-  const tools = createPlatformToolRegistry(process.cwd());
+  const workspaceRoot = process.cwd();
+  const workspaces = new FileWorkspaceStore(
+    resolve(workspaceRoot, ".workbench", "workspaces.json"),
+    workspaceRoot,
+  );
+  const tools = createPlatformToolRegistry(workspaceRoot);
   const apiKey = process.env.OPENAI_API_KEY;
   const service = new AgentApplicationService(
     platformAgentRegistry,
-    tools,
     new FileArtifactStore(),
-    process.cwd(),
+    workspaces,
+    createPlatformToolRegistry,
     (model) => {
       if (!apiKey) throw new Error("OPENAI_API_KEY is missing from .env");
       return new OpenAIProvider(apiKey, { model });
@@ -85,6 +91,7 @@ async function main(): Promise<void> {
       repetitions: args.repetitions,
       concurrency: args.concurrency,
       model,
+      ...(args.workspaceId ? { workspaceId: args.workspaceId } : {}),
     });
 
     for (const item of results) {
@@ -110,6 +117,7 @@ async function main(): Promise<void> {
     agentId: args.agentId,
     input: await readInput(args.inputPath),
     model,
+    ...(args.workspaceId ? { workspaceId: args.workspaceId } : {}),
   });
 
   console.log(`Agent: ${result.agentId}@${result.agentVersion}`);

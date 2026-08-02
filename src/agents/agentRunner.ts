@@ -14,6 +14,7 @@ export interface AgentRunnerOptions {
   tools: ToolRegistry;
   provider: AIProvider;
   workspaceRoot: string;
+  workspaceId?: string;
   model?: string;
 }
 
@@ -138,6 +139,7 @@ export async function runAgent(
     configuration: {
       model,
       permittedToolIds: permittedTools.ids(),
+      ...(options.workspaceId ? { workspaceId: options.workspaceId } : {}),
     },
     warnings,
     output: output as z.infer<ReturnType<typeof z.json>> | null,
