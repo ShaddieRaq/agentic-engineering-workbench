@@ -57,6 +57,32 @@ describe("agent web server", () => {
       url: `/api/artifacts/${completed.result.artifactId}`,
     });
     expect(artifact.json()).toMatchObject({ kind: "agent-run" });
+    const presentation = await app.inject({
+      method: "GET",
+      url: `/api/artifacts/${completed.result.artifactId}/presentation`,
+    });
+    expect(presentation.json()).toMatchObject({
+      presentationKind: "generic",
+      agentId: "console-test-agent",
+    });
+    const exported = await app.inject({
+      method: "GET",
+      url: `/api/artifacts/${completed.result.artifactId}/export?format=markdown`,
+    });
+    expect(exported.statusCode).toBe(200);
+    expect(exported.headers["content-disposition"]).toContain("attachment");
+    expect(exported.body).toContain("# Console Test Agent Run");
+    const raw = await app.inject({
+      method: "GET",
+      url: `/api/artifacts/${completed.result.artifactId}/raw`,
+    });
+    expect(raw.statusCode).toBe(200);
+    expect(raw.headers["content-disposition"]).toContain("raw.json");
+    expect(JSON.parse(raw.body)).toMatchObject({ agentId: "console-test-agent" });
+    expect((await app.inject({
+      method: "GET",
+      url: `/api/artifacts/${completed.result.artifactId}/export?format=html`,
+    })).statusCode).toBe(400);
     await app.close();
   });
 

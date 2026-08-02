@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { ArtifactStore } from "../artifacts/artifactStore.js";
 import type { AIProvider } from "../providers/aiProvider.js";
+import { exportArtifactPresentation } from "../presentation/artifactExporter.js";
+import { getArtifactSource, presentArtifact } from "../presentation/artifactPresenter.js";
 import type { ToolRegistry } from "../tools/toolRegistry.js";
 import type { FileWorkspaceStore } from "../workspaces/fileWorkspaceStore.js";
 import { buildAgentCatalogReport } from "./agentCatalogReport.js";
@@ -105,6 +107,29 @@ export class AgentApplicationService {
 
   inventory() {
     return buildAgentCatalogReport(this.agents, this.tools);
+  }
+
+  async presentArtifact(artifactId: string) {
+    return presentArtifact(artifactId, await this.artifacts.load(artifactId));
+  }
+
+  async exportArtifact(artifactId: string, format: "json" | "markdown") {
+    return exportArtifactPresentation(await this.presentArtifact(artifactId), format);
+  }
+
+  async exportRawArtifact(artifactId: string) {
+    const stored = await this.artifacts.load(artifactId);
+    return {
+      mediaType: "application/json; charset=utf-8" as const,
+      fileName: `${stored.kind}-${artifactId}-raw.json`,
+      content: `${JSON.stringify(stored.artifact, null, 2)}\n`,
+    };
+  }
+
+  async getArtifactSource(artifactId: string, path: string) {
+    const source = getArtifactSource(await this.artifacts.load(artifactId), path);
+    if (!source) throw new Error(`Saved source is not available: ${path}`);
+    return source;
   }
 
   async run(request: RunAgentRequest): Promise<RunAgentResponse> {

@@ -109,6 +109,59 @@ export interface VerificationEvidence {
   };
 }
 
+export interface ArtifactPresentation {
+  artifactId: string;
+  artifactKind: "agent-run" | "agent-dataset-run";
+  presentationKind: "generic" | "documentation-audit";
+  title: string;
+  agentId: string;
+  agentVersion: string;
+  workspaceId: string | null;
+  succeeded: boolean | null;
+  assessment: string | null;
+  overview: string | null;
+  completedAt: string;
+  durationMs: number | null;
+  metrics: Array<{ id: string; label: string; value: string; detail: string | null }>;
+  findings: Array<{
+    title: string;
+    category: "stale" | "missing" | "inconsistent" | "accurate";
+    severity: "low" | "medium" | "high";
+    explanation: string;
+    evidencePaths: string[];
+    recommendation: string;
+  }>;
+  coverageGaps: Array<{ area: string; reason: string; evidencePaths: string[] }>;
+  prioritizedActions: string[];
+  sources: Array<{ path: string; sizeBytes: number; rationale: string; toolCallId: string }>;
+  timeline: Array<{
+    id: string;
+    label: string;
+    status: "completed" | "warning" | "failed" | "skipped";
+    detail: string;
+    durationMs: number | null;
+  }>;
+  usage: {
+    model: string;
+    inputTokens: number;
+    cachedInputTokens: number;
+    outputTokens: number;
+    reasoningTokens: number;
+    totalTokens: number;
+    estimatedCostUsd: number | null;
+    pricingIds: string[];
+  } | null;
+  warnings: string[];
+}
+
+export interface ArtifactSourceSnapshot {
+  path: string;
+  content: string;
+  sizeBytes: number;
+  rationale: string;
+  toolCallId: string;
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,

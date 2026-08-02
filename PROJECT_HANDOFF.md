@@ -177,6 +177,11 @@ The project currently supports:
 - balanced documentation and implementation context selection
 - a web workspace switcher and workspace-filtered artifact inventory
 - a visual tool catalog with contracts and consuming agents
+- a runtime-validated artifact presentation boundary
+- a specialized visual Documentation Auditor report
+- deterministic metrics, findings, actions, coverage, timeline, and usage views
+- citation inspection from exact persisted context snapshots
+- Markdown, presentation JSON, and raw-evidence artifact downloads
 - runtime-validated, root-bounded persisted harness-run loading
 - evidence-aware batch discovery across mixed historical run artifacts
 - deterministic run outcome, latency, failure, model, usage, and cost reports
@@ -311,15 +316,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 33 workspace-scoped Documentation Auditor: complete foundation
+Phase 34 evidence presentation and export: complete foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-101 test files passed
-280 tests passed
+102 test files passed
+284 tests passed
 ```
 
 This state must be verified before continuing:
@@ -347,9 +352,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Register a real local project, select it in the console, and run the
-Documentation Auditor. Convert useful findings, false positives, missed risks,
-context gaps, and operator friction into versioned agent-dataset cases.
+Use the visual report on real Documentation Auditor evidence. Convert useful
+findings, false positives, missed risks, context gaps, and operator friction
+into versioned agent-dataset cases before expanding specialized presentations
+to the other registered agents.
 
 ## Broader Roadmap
 

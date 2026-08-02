@@ -895,3 +895,21 @@ bounded file inventory -> balanced context selection -> bounded file reads
 The auditor is read-only. It receives only `file-inventory` and `read-file`,
 balances documentation and implementation context under an aggregate byte
 budget, and accepts findings only when their cited paths were actually read.
+
+## Artifact Presentation and Export
+
+Persisted artifacts remain the source of truth. A deterministic presentation
+layer projects validated artifacts into a smaller UI contract containing
+identity, metrics, findings, actions, sources, timeline, usage, and warnings.
+Agent-specific projectors may enrich that contract; incompatible specialized
+evidence falls back to a generic presentation with an explicit warning.
+
+The Documentation Auditor projector deliberately removes source content from
+the ordinary presentation and report exports. Citation selection retrieves the
+exact saved context snapshot through a separate endpoint after deliberate user
+interaction. It never re-reads the current workspace, which prevents a changed
+file from being confused with evidence observed during the original run.
+
+Markdown and JSON reports are generated from the presentation contract. A
+separate raw-evidence download preserves the complete runtime-validated
+artifact for debugging and automation.

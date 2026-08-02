@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { api, type AgentDescription, type AgentManifest, type ArtifactList, type Health, type Operation, type ToolDescription, type ToolSummary } from "./api.js";
+import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type Health, type Operation, type ToolDescription, type ToolSummary } from "./api.js";
+import { ArtifactPresentationView } from "./artifactPresentation.js";
 import { AgentCard, EmptyState, ErrorNotice, Loading, OperationTrace, RunAgentPanel, StatusBadge } from "./components.js";
 import { useOperation, useResource } from "./hooks.js";
 import { LocalLink as Link, LocalNavLink as NavLink, usePathname } from "./router.js";
@@ -140,13 +141,10 @@ function RunsPage() {
 function RunDetailPage() {
   const artifactId = usePathname().split("/")[2];
   const resource = useResource<{ kind: string; artifact: unknown }>(artifactId ? `/api/artifacts/${artifactId}` : null);
-  if (resource.loading) return <Loading />;
-  if (resource.error || !resource.data) return <ErrorNotice message={resource.error ?? "Artifact not found"} />;
-  const artifact = resource.data.artifact as Record<string, unknown>;
-  const identity = String(artifact.agentId ?? "unknown agent");
-  const version = String(artifact.agentVersion ?? "unknown");
-  const completedAt = String(artifact.completedAt ?? "unknown");
-  return <><PageHeader eyebrow={resource.data.kind} title={`Evidence ${artifactId?.slice(0, 8)}`}><StatusBadge value={artifact.succeeded === false ? "failed" : "completed"} /></PageHeader><section className="metric-grid evidence-metrics"><div><span>Agent</span><strong className="metric-word">{identity}</strong></div><div><span>Version</span><strong className="metric-word">{version}</strong></div><div><span>Completed</span><strong className="metric-word">{completedAt === "unknown" ? completedAt : new Date(completedAt).toLocaleString()}</strong></div><div><span>Contract</span><strong className="metric-word">Validated</strong></div></section><details className="panel evidence-details"><summary>Reveal complete raw evidence</summary><p>Full inputs, outputs, assessment, configuration, and timing are shown below for deliberate inspection.</p><pre className="evidence-json">{JSON.stringify(resource.data.artifact, null, 2)}</pre></details></>;
+  const presentation = useResource<ArtifactPresentation>(artifactId ? `/api/artifacts/${artifactId}/presentation` : null);
+  if (resource.loading || presentation.loading) return <Loading />;
+  if (resource.error || presentation.error || !resource.data || !presentation.data) return <ErrorNotice message={resource.error ?? presentation.error ?? "Artifact not found"} />;
+  return <ArtifactPresentationView presentation={presentation.data} rawArtifact={resource.data.artifact} />;
 }
 
 function VerificationPage() {

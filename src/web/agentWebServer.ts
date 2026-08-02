@@ -163,6 +163,62 @@ export async function buildAgentWebServer(
   );
 
   app.get<{ Params: { artifactId: string } }>(
+    "/api/artifacts/:artifactId/presentation",
+    async (request, reply) => {
+      try {
+        return await options.service.presentArtifact(request.params.artifactId);
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+    },
+  );
+
+  app.get<{ Params: { artifactId: string }; Querystring: { format?: string } }>(
+    "/api/artifacts/:artifactId/export",
+    async (request, reply) => {
+      if (request.query.format !== "json" && request.query.format !== "markdown") {
+        return reply.code(400).send({ error: "format must be json or markdown." });
+      }
+      try {
+        const exported = await options.service.exportArtifact(request.params.artifactId, request.query.format);
+        return reply
+          .header("content-type", exported.mediaType)
+          .header("content-disposition", `attachment; filename="${exported.fileName}"`)
+          .send(exported.content);
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+    },
+  );
+
+  app.get<{ Params: { artifactId: string } }>(
+    "/api/artifacts/:artifactId/raw",
+    async (request, reply) => {
+      try {
+        const exported = await options.service.exportRawArtifact(request.params.artifactId);
+        return reply
+          .header("content-type", exported.mediaType)
+          .header("content-disposition", `attachment; filename="${exported.fileName}"`)
+          .send(exported.content);
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+    },
+  );
+
+  app.get<{ Params: { artifactId: string }; Querystring: { path?: string } }>(
+    "/api/artifacts/:artifactId/source",
+    async (request, reply) => {
+      if (!request.query.path) return reply.code(400).send({ error: "path is required." });
+      try {
+        return await options.service.getArtifactSource(request.params.artifactId, request.query.path);
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+    },
+  );
+
+  app.get<{ Params: { artifactId: string } }>(
     "/api/artifacts/:artifactId",
     async (request, reply) => {
       try {

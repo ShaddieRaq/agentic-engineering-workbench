@@ -661,11 +661,26 @@ Implemented:
 - workspace-filtered artifact inventory
 - tool catalog, schemas, descriptions, and agent-consumer visibility
 
+## Phase 34 — Evidence Presentation and Export
+
+Status: Complete foundation
+
+Implemented:
+
+- runtime-validated, provider-neutral artifact presentation contract
+- specialized Documentation Auditor evidence projection with generic fallback
+- visual audit metrics, findings, recommendations, actions, and coverage gaps
+- execution timeline, model usage, token counts, timing, and estimated cost
+- deliberate citation inspection from persisted source snapshots
+- Markdown, presentation JSON, and complete raw-evidence downloads
+- presentation, export, HTTP, and React component coverage
+
 ## Current Priorities
 
-1. Register a real local project and run the Documentation Auditor against it.
+1. Use the visual report on real Documentation Auditor artifacts.
 2. Convert useful and incorrect audit findings into versioned dataset cases.
-3. Build a second practical agent using the same workspace and tool boundary.
+3. Add specialized presenters for the other registered agents when their raw
+   evidence demonstrates which views are genuinely useful.
 4. Add browser end-to-end coverage after real usage stabilizes the workflow.
 5. Introduce a database, authentication, or remote deployment only when a
    concrete operating requirement justifies those boundaries.

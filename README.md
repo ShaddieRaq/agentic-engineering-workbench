@@ -76,6 +76,12 @@ The agent requires an OpenAI API key for a live run. Its complete inspection,
 prompt, provider response, assessment, and workspace identity are persisted as
 run evidence.
 
+Open the saved run from **Evidence** to view a structured audit report. The
+report presents severity-ranked findings, recommendations, validated citation
+paths, saved source snapshots, execution stages, model usage, timing, and cost
+estimates where pricing evidence is available. It can be downloaded as
+Markdown, presentation JSON, or complete raw evidence.
+
 ## Run a Reliability Dataset
 
 The dataset command executes every registered case through the selected role,

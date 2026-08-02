@@ -1626,3 +1626,55 @@ claims into explicit unsuccessful runs.
 - the auditor remains read-only and provider-neutral
 - unsupported citations fail assessment even if the JSON schema is valid
 - full inventory, reads, prompt, provider output, and assessment are retained
+
+---
+
+## Decision 061 — Project Persisted Evidence Into UI Contracts
+
+Status: Accepted
+
+### Decision
+
+Render and export artifacts through a runtime-validated presentation contract.
+Keep agent-specific projection in deterministic backend code, provide a generic
+fallback, and retain the complete raw artifact as the source of truth.
+
+### Rationale
+
+Directly traversing arbitrary agent output in React would couple the console to
+private evidence shapes and make historical compatibility difficult. A stable
+presentation boundary lets multiple agents expose useful views without
+weakening artifact validation or duplicating workflow logic in the browser.
+
+### Consequences
+
+- presentation does not alter or replace persisted evidence
+- malformed specialized evidence falls back visibly instead of crashing views
+- report exports contain presentation evidence rather than hidden source text
+- new agents can add projectors without changing the generic run page
+
+---
+
+## Decision 062 — Inspect Saved Citations Without Re-reading Workspaces
+
+Status: Accepted
+
+### Decision
+
+Exclude source content from ordinary presentations and report exports. Reveal
+an exact saved context item only after the operator selects one of the cited
+paths. Do not read the current filesystem to satisfy artifact citation views.
+
+### Rationale
+
+Repository files may change after a run. Re-reading them would display new
+content as though it supported an older conclusion. Separating source metadata
+from deliberate snapshot disclosure also limits accidental exposure in routine
+reports.
+
+### Consequences
+
+- citations remain tied to the model's actual context snapshot
+- normal Markdown and JSON reports do not embed repository source content
+- complete raw evidence remains deliberately downloadable
+- source availability is limited to context persisted with that artifact
