@@ -445,7 +445,114 @@ Possible extensions:
 
 ## Near-Term Priorities
 
-1. Use the completed workbench on real projects and collect operator feedback.
-2. Add narrowly scoped tools only when a concrete workflow requires them.
-3. Expand adversarial and model-judge datasets from observed failures.
-4. Add report trends after enough comparable run history exists.
+The original 15-phase workbench roadmap is complete. The following roadmap
+turns that foundation into a catalog of complete agent products.
+
+## Phase 16 — Agent Contracts
+
+Status: Complete
+
+Implemented:
+
+- strict serializable `AgentManifest`
+- stable IDs, semantic versions, lifecycle status, owner, tags, and model defaults
+- explicit component, permission, and verification references
+- typed input and output schemas
+- typed registration helper with optional domain assessment
+
+## Phase 17 — Agent Catalog and Resolution
+
+Status: Complete
+
+Implemented:
+
+- immutable deterministic agent registry
+- duplicate and unknown agent rejection
+- tool and workflow catalogs
+- enumeration for existing component registries
+- preflight validation of every component and permission reference
+- catalog-wide validation evidence
+
+## Phase 18 — Unified Agent Runtime
+
+Status: Complete
+
+Implemented:
+
+- provider-neutral shared `AgentRunner`
+- platform-supplied workspace, provider, and permitted tool subset
+- JSON and agent-specific input/output validation
+- separate runtime-contract and agent-goal assessment
+- catalog, input, execution, output, and evaluation failure evidence
+- agent ID, version, manifest snapshot, and SHA-256 manifest identity
+- model, permissions, lifecycle warnings, timing, and status evidence
+- strict persisted `agent-run` artifacts
+
+## Phase 19 — Agent Catalog CLI
+
+Status: Complete
+
+Implemented:
+
+- `agents list`, `describe`, `validate`, and `inventory`
+- `agents run` with optional JSON input and model override
+- metadata operations without API credentials
+- existing specialized commands preserved for compatibility
+
+## Phase 20 — Repository Assistant Agent
+
+Status: Complete
+
+Implemented:
+
+- first active registered agent product
+- existing inspect, analyze, and verify workflow reused
+- explicit read-only repository permissions
+- structured input, output, workflow evidence, and domain assessment
+
+## Phase 21 — Agent Reliability Datasets
+
+Status: Complete foundation
+
+Implemented:
+
+- JSON-validated agent datasets and stable case identity
+- case-major repeated bounded-concurrency execution
+- per-case pass-rate summaries
+- manifest-owned datasets and minimum pass-rate gates
+- rejection of evidence from another agent version
+- strict aggregate persistence and `agents test` command
+
+## Phase 22 — Change Risk Reviewer Agent
+
+Status: Complete foundation
+
+Implemented:
+
+- second independently versioned agent product
+- current-change repository inspection
+- structured risk, finding, missing-test, and release recommendation contract
+- exact citations against assembled repository evidence
+- provider, refusal, usage, failure, and inspection evidence
+- registered smoke dataset and 100% per-case gate
+- offline end-to-end test through the shared agent platform
+
+## Phase 23 — Lifecycle and Scale Boundaries
+
+Status: Complete foundation
+
+Implemented:
+
+- experimental, active, deprecated, and retired states
+- deprecated-run warnings and retired-agent rejection
+- deterministic versioned catalog inventory
+- manifest fingerprints and version-matched verification
+- isolated `src/agents/<agent-id>` packages
+- future extraction boundary for separately owned packages
+
+## Current Priorities
+
+1. Use both agents on real repositories and collect concrete failure evidence.
+2. Refine prompts, datasets, and thresholds from observed behavior.
+3. Add another agent only for a demonstrated practical workflow.
+4. Extract packages only when ownership, deployment, or permission boundaries require it.

@@ -361,6 +361,55 @@ provider-neutral request runner, and verification deterministically checks
 provider execution, structured output, and citation grounding. Its complete
 state and step trace are persisted under `runs/assistant-run-<id>.json`.
 
+### Registered Agent Platform
+
+The agent layer assembles existing components into named products. A harness
+supplies reusable execution and evaluation policy; an agent owns a purpose,
+input/output contract, workflow, permissions, defaults, and reliability
+requirements.
+
+Each registration has two boundaries:
+
+```text
+AgentManifest          Typed registration
+-------------          ------------------
+identity               input schema
+version                output schema
+lifecycle              executor
+component references   domain assessment
+tool permissions
+verification policy
+```
+
+The manifest is serializable catalog data. Executable functions and schemas
+remain in the typed registration. The immutable registry rejects duplicate IDs
+and lists manifests deterministically. Catalog validation resolves every
+workflow, harness, scenario, dataset, and tool reference before execution.
+
+The shared runner limits the tool catalog to the manifest allowlist, validates
+JSON and agent-specific input, executes with an injected provider, validates
+output, and separately evaluates whether the agent achieved its goal. The
+result records agent identity and version, manifest snapshot and digest, model,
+permitted tools, lifecycle warnings, output, assessment, failure, and timing.
+
+Definitions live in source control and executions remain ephemeral. Deprecated
+agents may execute with warnings; retired agents cannot execute. Verification
+evidence must match the current agent version.
+
+Current registered products:
+
+- `repository-assistant`: inspect, analyze, and verify repository architecture
+- `change-risk-reviewer`: review changes for grounded risk and missing tests
+
+Agent datasets contain stable JSON inputs for one complete agent. They reuse
+the shared repetition and bounded-concurrency policy, preserve case-major
+evidence, calculate per-case pass rates, and apply the manifest threshold.
+
+Agents currently live under `src/agents/<agent-id>`. Static imports keep loading
+explicit and auditable. The manifest and registration contracts form the later
+extraction boundary for separate packages; dynamic plugins and a database
+catalog are not required at the current local-first scale.
+
 ### Harness Definition
 
 A harness definition contains reusable execution or evaluation policy.
@@ -566,9 +615,7 @@ Deterministic evaluators are:
 
 A model-based evaluator asks another model to judge a result.
 
-This is not implemented yet.
-
-Possible future uses:
+Current uses and possible extensions include:
 
 - technical correctness
 - completeness
@@ -670,6 +717,12 @@ Current registries:
 
 - harness registry
 - scenario registry
+- scenario dataset registry
+- scenario suite registry
+- tool registry
+- workflow registry
+- agent dataset registry
+- agent registry
 
 Registries prevent selection logic from being spread throughout the application.
 

@@ -1,7 +1,6 @@
 import type { AIProviderRequest } from "../providers/aiProvider.js";
-import type { ReadFileOutput } from "../tools/readFileTool.js";
-import type { ToolCallEvidence } from "../tools/toolExecutor.js";
 import type { RepositoryContextAssembly } from "./repositoryContextLoader.js";
+import { buildRepositoryContextPromptEvidence } from "./repositoryContextPrompt.js";
 import {
   repositoryAnalysisOutputSchema,
   type RepositoryAnalysisOutput,
@@ -13,14 +12,6 @@ const defaultInstruction = [
   "and recommend tests that would provide useful confidence.",
 ].join(" ");
 
-function readEvidenceById(
-  assembly: RepositoryContextAssembly,
-): Map<string, ToolCallEvidence<ReadFileOutput>> {
-  return new Map(
-    assembly.reads.map(({ evidence }) => [evidence.toolCallId, evidence]),
-  );
-}
-
 export function buildRepositoryAnalysisRequest(
   assembly: RepositoryContextAssembly,
   instruction = defaultInstruction,
@@ -29,36 +20,8 @@ export function buildRepositoryAnalysisRequest(
     throw new Error("Repository analysis instruction must not be empty.");
   }
 
-  if (assembly.items.length === 0) {
-    throw new Error("Repository analysis requires at least one context item.");
-  }
-
-  const evidenceById = readEvidenceById(assembly);
-  const contextSections = assembly.items.map((item) => {
-    const evidence = evidenceById.get(item.toolCallId);
-
-    if (
-      evidence?.succeeded !== true ||
-      evidence.output === null ||
-      evidence.output.path !== item.source ||
-      evidence.output.sizeBytes !== item.sizeBytes
-    ) {
-      throw new Error(
-        `Context item ${item.source} does not reference matching successful read evidence.`,
-      );
-    }
-
-    return [
-      `Source: ${item.source}`,
-      `Selection rationale: ${item.rationale}`,
-      evidence.output.content,
-    ].join("\n");
-  });
-  const rejectedSummary = assembly.rejectedCandidates.length === 0
-    ? "None."
-    : assembly.rejectedCandidates
-        .map(({ candidate, reason }) => `${candidate.path}: ${reason}`)
-        .join("\n");
+  const { contextSections, rejectedSummary } =
+    buildRepositoryContextPromptEvidence(assembly);
 
   return {
     prompt: [

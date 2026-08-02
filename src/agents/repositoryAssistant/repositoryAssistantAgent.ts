@@ -76,8 +76,8 @@ export const repositoryAssistantAgent = defineAgent({
       ],
     },
     verification: {
-      datasetIds: [],
-      minimumPassRate: null,
+      datasetIds: ["repository-assistant-smoke"],
+      minimumPassRate: 1,
     },
   },
   inputSchema: repositoryAssistantAgentInputSchema,
@@ -112,6 +112,14 @@ export const repositoryAssistantAgent = defineAgent({
       stopReason: result.stopReason,
       overview: result.state.analysis?.parsedOutput?.overview ?? null,
       workflowEvidence: result as unknown as z.infer<ReturnType<typeof z.json>>,
+    };
+  },
+  assess(output) {
+    return {
+      passed: output.succeeded,
+      message: output.succeeded
+        ? "Repository assistant workflow completed and passed verification."
+        : `Repository assistant did not pass verification: ${output.stopReason}`,
     };
   },
 });

@@ -205,6 +205,16 @@ The project currently supports:
 - judge provider, usage, cost, latency, and failure evidence
 - deterministic-versus-model disagreement evidence
 - explicit uncertain-judgment semantics
+- strict, serializable agent manifests separated from typed executable registrations
+- an immutable platform agent catalog with startup preflight validation
+- platform-supplied providers, workspace boundaries, and least-privilege tool subsets
+- versioned agent-run evidence with manifest digests and lifecycle status
+- separate runtime-validity and goal-assessment outcomes
+- operator commands to list, describe, validate, inventory, run, and test agents
+- a registered Repository Assistant agent
+- version-matched agent datasets, verification gates, and persisted test evidence
+- a registered Change Risk Reviewer agent with exact repository-path citations
+- active, experimental, deprecated, and retired agent lifecycle enforcement
 
 ## Current Evaluators
 
@@ -286,15 +296,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 15 reporting and replay: complete foundation
+Phase 23 registered agent platform: complete foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-78 test files passed
-226 tests passed
+92 test files passed
+261 tests passed
 ```
 
 This state must be verified before continuing:
@@ -322,16 +332,15 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Use the completed foundation on real repositories and agent workflows. Let
-observed operator friction and failure evidence determine the next targeted
-capability instead of adding infrastructure speculatively.
+Use the Repository Assistant and Change Risk Reviewer on real repositories.
+Convert false positives, missed risks, context gaps, and operator friction into
+versioned agent-dataset cases before registering a third production agent.
 
 ## Broader Roadmap
 
-1. Add scenario suites and repeated runs.
-2. Compare prompts, providers, and context strategies.
-3. Add controlled tools.
-4. Add multi-step workflows.
-5. Add adversarial scenarios.
-6. Add model-based evaluators where deterministic checks are insufficient.
-7. Generate reliability reports.
+1. Collect real usage evidence for both registered agents.
+2. Expand their datasets from observed failures and edge cases.
+3. Add release gates that consume persisted agent verification evidence.
+4. Improve shared context selection only where evidence shows a gap.
+5. Extract agents into packages only when independent ownership or deployment
+   creates a demonstrated need.

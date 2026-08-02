@@ -209,3 +209,37 @@ npm run replay -- --run runs/run-<run-id>.json
 Replay performs a new model call, stores both runs and their comparison, and
 reports whether the outcome or evaluator policy changed. Use `--model` to test
 the saved input against a different model.
+
+## Manage Registered Agents
+
+The workbench now includes a first-class local agent catalog. Catalog commands
+do not require an API key:
+
+```bash
+npm run agents -- list
+npm run agents -- describe repository-assistant
+npm run agents -- validate
+npm run agents -- inventory
+```
+
+Run either registered agent with its default input:
+
+```bash
+npm run agents -- run repository-assistant
+npm run agents -- run change-risk-reviewer
+```
+
+These commands make a live provider call and save a versioned `agent-run`
+artifact. Supply `--input input.json` for agent-specific input or `--model` for
+an explicit model override.
+
+Execute an agent's registered reliability datasets:
+
+```bash
+npm run agents -- test change-risk-reviewer \
+  --repetitions 3 \
+  --concurrency 2
+```
+
+Agent tests also make live calls. Each dataset case must meet the pass-rate
+threshold recorded in the agent manifest.

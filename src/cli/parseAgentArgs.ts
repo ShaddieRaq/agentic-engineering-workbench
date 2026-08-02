@@ -1,11 +1,19 @@
 export type AgentCliArgs =
   | { command: "list" }
   | { command: "validate" }
+  | { command: "inventory" }
   | { command: "describe"; agentId: string }
   | {
       command: "run";
       agentId: string;
       inputPath: string | null;
+      model: string | null;
+    }
+  | {
+      command: "test";
+      agentId: string;
+      repetitions: number;
+      concurrency: number;
       model: string | null;
     };
 
@@ -36,7 +44,11 @@ function option(args: string[], name: string): string | null {
 export function parseAgentArgs(args: string[]): AgentCliArgs {
   const command = args[0];
 
-  if (command === "list" || command === "validate") {
+  if (
+    command === "list" ||
+    command === "validate" ||
+    command === "inventory"
+  ) {
     return { command };
   }
 
@@ -53,7 +65,28 @@ export function parseAgentArgs(args: string[]): AgentCliArgs {
     };
   }
 
+  if (command === "test") {
+    const repetitions = Number(option(args, "--repetitions") ?? 1);
+    const concurrency = Number(option(args, "--concurrency") ?? 1);
+
+    if (!Number.isInteger(repetitions) || repetitions < 1) {
+      throw new Error("--repetitions must be a positive integer.");
+    }
+
+    if (!Number.isInteger(concurrency) || concurrency < 1) {
+      throw new Error("--concurrency must be a positive integer.");
+    }
+
+    return {
+      command,
+      agentId: positional(args, 1, "agent ID"),
+      repetitions,
+      concurrency,
+      model: option(args, "--model"),
+    };
+  }
+
   throw new Error(
-    "Expected one of: list, describe <agent-id>, validate, run <agent-id>.",
+    "Expected one of: list, describe <agent-id>, inventory, validate, run <agent-id>, test <agent-id>.",
   );
 }

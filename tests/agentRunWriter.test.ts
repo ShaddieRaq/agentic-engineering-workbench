@@ -44,7 +44,12 @@ describe("writeAgentRun", () => {
       },
       input: {},
       configuration: { model: "test-model", permittedToolIds: [] },
+      warnings: [],
       output: {},
+      assessment: {
+        passed: true,
+        message: "Agent output satisfied its runtime contract.",
+      },
       failure: null,
       succeeded: true,
       durationMs: 1,

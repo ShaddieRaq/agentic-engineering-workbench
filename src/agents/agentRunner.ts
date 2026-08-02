@@ -37,15 +37,26 @@ export async function runAgent(
   const { manifest } = registration;
   const model = options.model ?? manifest.defaultModel;
   const permittedTools = options.tools.subset(manifest.permissions.toolIds);
-  let input: unknown = rawInput;
+  const serializedInput = z.json().safeParse(rawInput);
+  let input: unknown = serializedInput.success ? serializedInput.data : null;
   let output: unknown = null;
+  let assessment: AgentRunResult["assessment"] = null;
   let failure: AgentRunFailure | null = null;
+  const warnings = manifest.status === "deprecated"
+    ? [`Agent ${agentId}@${manifest.version} is deprecated.`]
+    : [];
   const catalogIssues = validateAgentCatalog(
     options.agents,
     options.tools,
   ).filter((issue) => issue.agentId === agentId);
 
-  if (manifest.status === "retired") {
+  if (!serializedInput.success) {
+    failure = {
+      stage: "input",
+      category: "validation",
+      message: "Agent input must be JSON-serializable.",
+    };
+  } else if (manifest.status === "retired") {
     failure = {
       stage: "catalog",
       category: "validation",
@@ -58,7 +69,7 @@ export async function runAgent(
       message: catalogIssues.map(({ message }) => message).join(" "),
     };
   } else {
-    const parsedInput = registration.inputSchema.safeParse(rawInput);
+    const parsedInput = registration.inputSchema.safeParse(input);
 
     if (!parsedInput.success) {
       failure = {
@@ -86,7 +97,26 @@ export async function runAgent(
             message: validationMessage(parsedOutput.error),
           };
         } else {
-          output = parsedOutput.data;
+          const serializedOutput = z.json().safeParse(parsedOutput.data);
+
+          if (!serializedOutput.success) {
+            failure = {
+              stage: "output",
+              category: "validation",
+              message: "Agent output must be JSON-serializable.",
+            };
+          } else {
+            output = serializedOutput.data;
+            assessment = registration.assess(output);
+
+            if (!assessment.passed) {
+              failure = {
+                stage: "evaluation",
+                category: "evaluation",
+                message: assessment.message,
+              };
+            }
+          }
         }
       } catch (error: unknown) {
         failure = {
@@ -109,7 +139,9 @@ export async function runAgent(
       model,
       permittedToolIds: permittedTools.ids(),
     },
+    warnings,
     output: output as z.infer<ReturnType<typeof z.json>> | null,
+    assessment,
     failure,
     succeeded: failure === null,
     durationMs: performance.now() - startedAt,

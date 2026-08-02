@@ -4,12 +4,14 @@ import { listScenarioDefinitions } from "../scenarios/scenarioRegistry.js";
 import type { ToolRegistry } from "../tools/toolRegistry.js";
 import { listWorkflowDescriptors } from "../workflows/workflowRegistry.js";
 import type { AgentRegistry } from "./agentRegistry.js";
+import { listAgentDatasetDefinitions } from "./datasets/agentDatasetRegistry.js";
 
 export type AgentComponentType =
   | "workflow"
   | "harness"
   | "scenario"
   | "dataset"
+  | "agent-dataset"
   | "tool";
 
 export interface AgentCatalogValidationIssue {
@@ -45,6 +47,9 @@ export function validateAgentCatalog(
   const datasetIds = new Set(
     listScenarioDatasetDefinitions().map(({ id }) => id),
   );
+  const agentDatasetIds = new Set(
+    listAgentDatasetDefinitions().map(({ id }) => id),
+  );
   const toolIds = new Set(tools.ids());
 
   return agents.list().flatMap((manifest) => [
@@ -69,11 +74,14 @@ export function validateAgentCatalog(
     ...missingReferences(
       manifest.id,
       "dataset",
-      [
-        ...manifest.components.datasetIds,
-        ...manifest.verification.datasetIds,
-      ],
+      manifest.components.datasetIds,
       datasetIds,
+    ),
+    ...missingReferences(
+      manifest.id,
+      "agent-dataset",
+      manifest.verification.datasetIds,
+      agentDatasetIds,
     ),
     ...missingReferences(
       manifest.id,

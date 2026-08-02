@@ -27,12 +27,15 @@ const tools = new ToolRegistry([
   },
 ]);
 
-function manifest(workflowId = "repository-assistant") {
+function manifest(
+  workflowId = "repository-assistant",
+  status: "active" | "deprecated" = "active",
+) {
   return {
     id: "test-agent",
     name: "Test Agent",
     version: "1.2.3",
-    status: "active" as const,
+    status,
     description: "Test agent execution.",
     owner: "tests",
     tags: [],
@@ -53,11 +56,12 @@ function registration(
     answer: input.instruction,
   })),
   workflowId = "repository-assistant",
+  status: "active" | "deprecated" = "active",
 ) {
   return {
     execute,
     definition: defineAgent({
-      manifest: manifest(workflowId),
+      manifest: manifest(workflowId, status),
       inputSchema: z.object({ instruction: z.string().min(1) }).strict(),
       outputSchema: z.object({ answer: z.string().min(1) }).strict(),
       async execute(input, services) {
@@ -93,7 +97,12 @@ describe("runAgent", () => {
         model: "default-model",
         permittedToolIds: ["read-file"],
       },
+      warnings: [],
       output: { answer: "Review this." },
+      assessment: {
+        passed: true,
+        message: "Agent output satisfied its runtime contract.",
+      },
       failure: null,
       succeeded: true,
     });
@@ -143,5 +152,39 @@ describe("runAgent", () => {
       stage: "output",
       category: "validation",
     });
+  });
+
+  it("records a warning when a deprecated agent still executes", async () => {
+    const registered = registration(
+      undefined,
+      "repository-assistant",
+      "deprecated",
+    );
+    const result = await runAgent(
+      "test-agent",
+      { instruction: "Review this." },
+      options(registered.definition),
+    );
+
+    expect(result.succeeded).toBe(true);
+    expect(result.warnings).toEqual([
+      "Agent test-agent@1.2.3 is deprecated.",
+    ]);
+  });
+
+  it("rejects non-JSON input before agent-specific validation", async () => {
+    const registered = registration();
+    const result = await runAgent(
+      "test-agent",
+      { value: 1n },
+      options(registered.definition),
+    );
+
+    expect(result.input).toBeNull();
+    expect(result.failure).toMatchObject({
+      stage: "input",
+      message: "Agent input must be JSON-serializable.",
+    });
+    expect(registered.execute).not.toHaveBeenCalled();
   });
 });

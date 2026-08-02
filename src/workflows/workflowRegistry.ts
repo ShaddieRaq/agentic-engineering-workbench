@@ -4,6 +4,10 @@ export interface WorkflowDescriptor {
 }
 
 const workflows: Record<string, WorkflowDescriptor> = {
+  "change-risk-review": {
+    id: "change-risk-review",
+    description: "Inspect repository changes and produce a grounded risk review.",
+  },
   "repository-assistant": {
     id: "repository-assistant",
     description: "Inspect, analyze, and verify a local repository.",

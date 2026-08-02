@@ -2,6 +2,11 @@ import "dotenv/config";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { assertAgentCatalogValid } from "./agents/agentCatalogValidator.js";
+import { buildAgentCatalogReport } from "./agents/agentCatalogReport.js";
+import { verifyAgentDataset } from "./agents/agentVerification.js";
+import { getAgentDatasetDefinition } from "./agents/datasets/agentDatasetRegistry.js";
+import { runAgentDataset } from "./agents/datasets/agentDatasetRunner.js";
+import { writeAgentDatasetRun } from "./agents/datasets/agentDatasetWriter.js";
 import { platformAgentRegistry } from "./agents/platformAgentRegistry.js";
 import { runAgent } from "./agents/agentRunner.js";
 import { writeAgentRun } from "./agents/agentRunWriter.js";
@@ -42,6 +47,13 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (args.command === "inventory") {
+    console.log(
+      JSON.stringify(buildAgentCatalogReport(platformAgentRegistry, tools), null, 2),
+    );
+    return;
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
@@ -50,10 +62,58 @@ async function main(): Promise<void> {
 
   const registration = platformAgentRegistry.get(args.agentId);
   const model = args.model ?? registration.manifest.defaultModel;
+  const provider = new OpenAIProvider(apiKey, { model });
+
+  if (args.command === "test") {
+    const datasetIds = registration.manifest.verification.datasetIds;
+
+    if (datasetIds.length === 0) {
+      throw new Error(`Agent ${args.agentId} has no verification datasets.`);
+    }
+
+    let passed = true;
+
+    for (const datasetId of datasetIds) {
+      const dataset = getAgentDatasetDefinition(datasetId);
+      const result = await runAgentDataset(
+        dataset,
+        platformAgentRegistry,
+        (agentId, input) =>
+          runAgent(agentId, input, {
+            agents: platformAgentRegistry,
+            tools,
+            provider,
+            workspaceRoot: process.cwd(),
+            model,
+          }),
+        {
+          repetitions: args.repetitions,
+          concurrency: args.concurrency,
+        },
+      );
+      const verification = verifyAgentDataset(registration.manifest, result);
+      const evidencePath = await writeAgentDatasetRun(result);
+      passed = passed && verification.passed;
+
+      console.log(`Dataset: ${datasetId}`);
+      console.log(`Verification: ${verification.passed ? "passed" : "failed"}`);
+      console.log(`Evidence saved: ${evidencePath}`);
+
+      for (const summary of result.caseSummaries) {
+        console.log(
+          `Case [${summary.datasetCaseId}]: ${summary.passedRuns}/${summary.totalRuns} passed`,
+        );
+      }
+    }
+
+    if (!passed) process.exitCode = 1;
+    return;
+  }
+
   const result = await runAgent(args.agentId, await readInput(args.inputPath), {
     agents: platformAgentRegistry,
     tools,
-    provider: new OpenAIProvider(apiKey, { model }),
+    provider,
     workspaceRoot: process.cwd(),
     model,
   });

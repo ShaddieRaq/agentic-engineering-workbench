@@ -1315,3 +1315,117 @@ original observation.
 - replay requires a registered harness and any recorded scenario policy
 - model changes are explicit while saved input remains fixed
 - reports and replays create new immutable evidence artifacts
+
+---
+
+## Decision 049 — Separate Agent Manifests From Typed Registrations
+
+Status: Accepted
+
+### Decision
+
+Represent each agent with a strict serializable manifest and a typed runtime
+registration. The manifest owns identity, semantic version, lifecycle,
+ownership, component references, tool permissions, defaults, and verification
+policy. The registration owns schemas, execution, and domain assessment. Store
+registrations in an immutable statically imported catalog.
+
+### Rationale
+
+Existing components did not identify which combinations form one maintained
+agent product. Serializable manifests make the catalog inspectable, while typed
+registrations support custom workflows without pretending functions are
+configuration. Static imports keep loading explicit at the current local scale.
+
+### Consequences
+
+- agents have one discoverable product identity and version
+- manifests can be listed and validated without provider credentials
+- duplicate IDs and unresolved references fail before execution
+- custom agent code remains type checked and runtime validated
+- the contract supports later extraction into npm packages
+
+---
+
+## Decision 050 — Supply Agent Capabilities Through One Shared Runner
+
+Status: Accepted
+
+### Decision
+
+Execute every agent through a provider-neutral runner. The platform supplies
+the workspace, provider, and only manifest-allowed tools. Validate JSON and
+agent-specific input and output, then assess domain success separately from
+runtime validity. Preserve manifest lineage, configuration, warnings, output,
+assessment, failure, and timing in one run envelope.
+
+### Rationale
+
+Schema-valid output may still represent an unsuccessful workflow. Tool names
+are not permissions unless runtime services actually filter the catalog. A
+shared runner prevents agents from inventing inconsistent validation, failure,
+permission, and evidence behavior.
+
+### Consequences
+
+- runtime success and agent-goal success remain distinguishable
+- undeclared tools are absent from agent execution services
+- retired agents cannot run and deprecated runs retain warnings
+- non-JSON inputs and outputs cannot enter persisted evidence
+- every run carries reproducible definition lineage
+
+---
+
+## Decision 051 — Verify Complete Agents With Versioned Agent Datasets
+
+Status: Accepted
+
+### Decision
+
+Define agent datasets as stable JSON inputs referencing one agent. Execute
+cases through the shared runner with existing repetition and concurrency
+policy. Preserve case identity and complete agent-run evidence, calculate
+per-case pass rates, apply the manifest threshold, and reject evidence from
+another agent version.
+
+### Rationale
+
+Scenario datasets test task policy, but workflow agents also contain tools,
+context selection, orchestration, and domain verification. The catalog needs
+evidence about the complete product. Version matching prevents old evidence
+from silently approving changed behavior.
+
+### Consequences
+
+- agents own repeatable product-level regression cases
+- gates measure assessed outcomes rather than execution alone
+- concurrent completion cannot reorder case evidence
+- live verification cost remains explicit through repetitions
+- datasets should expand from observed failures
+
+---
+
+## Decision 052 — Prove the Platform With Two Agents Before Externalizing It
+
+Status: Accepted
+
+### Decision
+
+Keep agent packages under `src/agents` and prove the model with the Repository
+Assistant and Change Risk Reviewer. Do not add dynamic discovery, a database,
+a web control plane, or separate packages until ownership, deployment, or
+permission needs demonstrate that boundary.
+
+### Rationale
+
+One migrated agent could hide an abstraction designed around itself. A second
+agent with a distinct contract and dataset demonstrates reuse. Premature
+packaging adds release complexity without improving the local workflow.
+
+### Consequences
+
+- the repository can support many isolated agent folders
+- shared platform capabilities remain local and reusable
+- the catalog is the connection point rather than directory scanning
+- package extraction remains possible through registration exports
+- scaling decisions follow concrete organizational or security pressure
