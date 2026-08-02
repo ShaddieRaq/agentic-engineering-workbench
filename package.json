@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "agent": "tsx src/index.ts",
+    "agents": "tsx src/runAgents.ts",
     "dataset": "tsx src/runDataset.ts",
     "experiment": "tsx src/runExperiment.ts",
     "list-files": "tsx src/runListFilesTool.ts",

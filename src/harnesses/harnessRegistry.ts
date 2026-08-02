@@ -16,3 +16,9 @@ export function getHarnessDefinition(id: string): HarnessDefinition {
 
   return definition;
 }
+
+export function listHarnessDefinitions(): HarnessDefinition[] {
+  return Object.values(harnesses).sort((left, right) =>
+    left.id.localeCompare(right.id),
+  );
+}

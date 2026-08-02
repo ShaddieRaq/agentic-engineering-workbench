@@ -19,3 +19,9 @@ export function getScenarioSuiteDefinition(
 
   return suite;
 }
+
+export function listScenarioSuiteDefinitions(): ScenarioSuiteDefinition[] {
+  return Object.values(scenarioSuites).sort((left, right) =>
+    left.id.localeCompare(right.id),
+  );
+}

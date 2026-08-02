@@ -22,3 +22,9 @@ export function getScenarioDatasetDefinition(
 
   return dataset;
 }
+
+export function listScenarioDatasetDefinitions(): ScenarioDatasetDefinition[] {
+  return Object.values(scenarioDatasets).sort((left, right) =>
+    left.id.localeCompare(right.id),
+  );
+}

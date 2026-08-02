@@ -23,3 +23,9 @@ export function findScenarioDefinition(
 ): ScenarioDefinition | undefined {
     return scenarios[id];
 }
+
+export function listScenarioDefinitions(): ScenarioDefinition[] {
+    return Object.values(scenarios).sort((left, right) =>
+        left.id.localeCompare(right.id),
+    );
+}
