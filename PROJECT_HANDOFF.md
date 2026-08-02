@@ -241,6 +241,8 @@ The project currently supports:
   verification commands, and security notes
 - deterministic generated-path, side-effect, completeness, and verification
   policy checks
+- generated tool files may use safe camelCase names under `src/tools/` and
+  `tests/` without an artificial `Tool` filename suffix
 
 ## Current Evaluators
 
@@ -330,7 +332,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 104 test files passed
-290 tests passed
+291 tests passed
 ```
 
 This state must be verified before continuing:

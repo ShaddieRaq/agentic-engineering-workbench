@@ -68,6 +68,24 @@ describe("evaluateToolProposal", () => {
     });
   });
 
+  it("accepts safe camelCase filenames without a Tool suffix", () => {
+    const proposal = safeProposal();
+    proposal.files = [
+      {
+        path: "src/tools/dependencyVersionAuditor.ts",
+        purpose: "Bounded dependency-version audit implementation.",
+        content: "export const dependencyVersionAuditor = true;",
+      },
+      {
+        path: "tests/dependencyVersionAuditor.test.ts",
+        purpose: "Dependency-version audit boundary tests.",
+        content: "it('tests the auditor', () => {});",
+      },
+    ];
+
+    expect(evaluateToolProposal(proposal, false).passed).toBe(true);
+  });
+
   it("rejects unapproved side effects and unsafe generated paths", () => {
     const proposal = safeProposal();
     proposal.contract = {

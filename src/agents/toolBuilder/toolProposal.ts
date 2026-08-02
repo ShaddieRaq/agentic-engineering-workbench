@@ -105,8 +105,8 @@ function isSafeGeneratedPath(path: string): boolean {
   }
 
   return (
-    /^src\/tools\/[A-Za-z0-9]+Tool\.ts$/.test(path) ||
-    /^tests\/[A-Za-z0-9]+Tool\.test\.ts$/.test(path)
+    /^src\/tools\/[A-Za-z0-9]+\.ts$/.test(path) ||
+    /^tests\/[A-Za-z0-9]+\.test\.ts$/.test(path)
   );
 }
 
