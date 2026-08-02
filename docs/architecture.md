@@ -837,7 +837,9 @@ server-sent event streams while preserving one terminal operation snapshot.
 
 The React client is a static Vite build served by the same loopback process. It
 uses only fixed local routes, renders Zod-derived JSON schemas as guided forms,
-and requires a deliberate disclosure before showing complete raw evidence.
+normalizes string-array fields from one item per line, omits blank optional
+fields, and requires a deliberate disclosure before showing complete raw
+evidence.
 
 ### Artifact Persistence
 

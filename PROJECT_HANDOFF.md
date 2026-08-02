@@ -232,7 +232,8 @@ The project currently supports:
 - a loopback-only Fastify API with asynchronous operation lifecycle evidence
 - a React/Vite agent operations console
 - visual catalog, manifest, permission, workflow, dataset, and contract inspection
-- schema-guided live runs and product-level verification
+- schema-guided live runs, including string-array inputs and omitted blank
+  optional fields, plus product-level verification
 - filtered evidence browsing with deliberate raw-artifact disclosure
 - a safe no-overwrite agent package scaffold command
 - an experimental no-write Tool Builder agent
@@ -329,7 +330,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 104 test files passed
-289 tests passed
+290 tests passed
 ```
 
 This state must be verified before continuing:

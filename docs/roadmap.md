@@ -591,7 +591,8 @@ Implemented:
 - React and Vite local console
 - platform health, lifecycle overview, and agent catalog
 - manifest, permission, workflow, dataset, and schema inspection
-- guided schema-derived input plus raw JSON mode
+- guided schema-derived input, including one-item-per-line string arrays and
+  omission of blank optional fields, plus raw JSON mode
 - run and verification lifecycle traces
 - filtered evidence inventory and deliberate raw-artifact disclosure
 

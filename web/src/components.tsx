@@ -39,9 +39,43 @@ function defaultInput(schema: JsonSchema): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(schema.properties ?? {}).map(([name, property]) => [
       name,
-      property.default ?? (property.type === "boolean" ? false : property.type === "number" ? 0 : ""),
+      property.default ?? (
+        property.type === "boolean"
+          ? false
+          : property.type === "number" || property.type === "integer"
+            ? 0
+            : property.type === "array"
+              ? []
+              : ""
+      ),
     ]),
   );
+}
+
+function guidedInput(
+  fields: Record<string, unknown>,
+  schema: JsonSchema,
+): Record<string, unknown> {
+  const required = new Set(schema.required ?? []);
+
+  return Object.fromEntries(
+    Object.entries(fields).filter(
+      ([name, value]) => required.has(name) || value !== "",
+    ),
+  );
+}
+
+function stringArrayValue(value: unknown): string {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string").join("\n")
+    : "";
+}
+
+function parseStringArray(value: string): string[] {
+  return value
+    .split("\n")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
 }
 
 export function OperationTrace({ operation }: { operation: Operation }) {
@@ -93,7 +127,9 @@ export function RunAgentPanel({ agent, schema }: { agent: AgentManifest; schema:
   async function submit(event: FormEvent) {
     event.preventDefault();
     try {
-      const parsed: unknown = inputMode === "json" ? JSON.parse(rawInput) : fields;
+      const parsed: unknown = inputMode === "json"
+        ? JSON.parse(rawInput)
+        : guidedInput(fields, schema);
       const started = await api<Operation>(`/api/agents/${agent.id}/runs`, {
         method: "POST",
         body: JSON.stringify({ input: parsed, model, workspaceId: selectedWorkspaceId }),
@@ -118,6 +154,20 @@ export function RunAgentPanel({ agent, schema }: { agent: AgentManifest; schema:
           <label key={name}>{property.title ?? name}{property.description && <small>{property.description}</small>}
             {property.type === "boolean" ? (
               <select value={String(Boolean(fields[name]))} onChange={(event) => setFields((current) => ({ ...current, [name]: event.target.value === "true" }))}><option value="true">true</option><option value="false">false</option></select>
+            ) : property.type === "array" && property.items?.type === "string" ? (
+              <>
+                <textarea
+                  rows={4}
+                  value={stringArrayValue(fields[name])}
+                  onChange={(event) => setFields((current) => ({
+                    ...current,
+                    [name]: parseStringArray(event.target.value),
+                  }))}
+                />
+                <small>
+                  Enter one item per line{typeof property.maxItems === "number" ? ` (up to ${property.maxItems})` : ""}.
+                </small>
+              </>
             ) : property.type === "number" || property.type === "integer" ? (
               <input type="number" value={String(fields[name] ?? "")} onChange={(event) => setFields((current) => ({ ...current, [name]: Number(event.target.value) }))} />
             ) : (
