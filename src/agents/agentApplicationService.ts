@@ -1,10 +1,11 @@
 import { z } from "zod";
-import type { ArtifactStore } from "../artifacts/artifactStore.js";
+import type { ArtifactQuery, ArtifactStore } from "../artifacts/artifactStore.js";
 import type { AIProvider } from "../providers/aiProvider.js";
 import { exportArtifactPresentation } from "../presentation/artifactExporter.js";
 import { getArtifactSource, presentArtifact } from "../presentation/artifactPresenter.js";
 import type { ToolRegistry } from "../tools/toolRegistry.js";
 import type { FileWorkspaceStore } from "../workspaces/fileWorkspaceStore.js";
+import { parseExecutionOptions } from "../orchestration/executionPolicy.js";
 import { buildAgentCatalogReport } from "./agentCatalogReport.js";
 import type { AgentManifest } from "./agentManifest.js";
 import type { AgentRegistry } from "./agentRegistry.js";
@@ -16,6 +17,15 @@ import {
   runAgentDataset,
   type AgentDatasetRunResult,
 } from "./datasets/agentDatasetRunner.js";
+import {
+  createAgentEvaluationExperiment,
+  type AgentEvaluationExperiment,
+} from "./evaluations/agentEvaluationExperiment.js";
+import {
+  buildAgentEvaluationView,
+  compareAgentEvaluationViews,
+  findEvaluationCase,
+} from "./evaluations/agentEvaluationView.js";
 
 export type ProviderFactory = (model: string) => AIProvider;
 export type ToolRegistryFactory = (workspaceRoot: string) => ToolRegistry;
@@ -44,6 +54,13 @@ export interface VerifyAgentRequest {
 export interface AgentVerificationEvidence {
   datasetRun: AgentDatasetRunResult;
   verification: AgentVerificationResult;
+  artifactId: string;
+  artifactPath: string;
+}
+
+export interface AgentEvaluationEvidence {
+  experiment: AgentEvaluationExperiment;
+  datasets: AgentVerificationEvidence[];
   artifactId: string;
   artifactPath: string;
 }
@@ -132,6 +149,50 @@ export class AgentApplicationService {
     return source;
   }
 
+  async listEvaluations(query: Omit<ArtifactQuery, "kind" | "succeeded"> = {}) {
+    const listed = await this.artifacts.list({ ...query, kind: "agent-evaluation" });
+    const experiments: AgentEvaluationExperiment[] = [];
+    const rejected = [...listed.rejected];
+    for (const summary of listed.artifacts) {
+      try {
+        const stored = await this.artifacts.load(summary.id);
+        if (stored.kind !== "agent-evaluation") {
+          throw new Error("Artifact is not an evaluation experiment.");
+        }
+        experiments.push(stored.artifact);
+      } catch (error: unknown) {
+        rejected.push({
+          path: summary.path,
+          reason: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    return { experiments, rejected };
+  }
+
+  async getEvaluation(experimentId: string) {
+    const stored = await this.artifacts.load(experimentId);
+    if (stored.kind !== "agent-evaluation") {
+      throw new Error(`Artifact ${experimentId} is not an evaluation experiment.`);
+    }
+    return buildAgentEvaluationView(stored.artifact, (id) => this.artifacts.load(id));
+  }
+
+  async compareEvaluations(baselineId: string, candidateId: string) {
+    return compareAgentEvaluationViews(
+      await this.getEvaluation(baselineId),
+      await this.getEvaluation(candidateId),
+    );
+  }
+
+  async getEvaluationCase(experimentId: string, datasetId: string, datasetCaseId: string) {
+    return findEvaluationCase(
+      await this.getEvaluation(experimentId),
+      datasetId,
+      datasetCaseId,
+    );
+  }
+
   async run(request: RunAgentRequest): Promise<RunAgentResponse> {
     const registration = this.agents.get(request.agentId);
     const model = request.model ?? registration.manifest.defaultModel;
@@ -151,12 +212,16 @@ export class AgentApplicationService {
 
   async verify(
     request: VerifyAgentRequest,
-  ): Promise<AgentVerificationEvidence[]> {
+  ): Promise<AgentEvaluationEvidence> {
     const registration = this.agents.get(request.agentId);
     const model = request.model ?? registration.manifest.defaultModel;
     const workspace = await this.workspaces.get(request.workspaceId ?? this.workspaces.defaultWorkspace.id);
     const tools = this.toolFactory(workspace.rootPath);
     const provider = this.providerFactory(model);
+    const execution = parseExecutionOptions({
+      repetitions: request.repetitions,
+      concurrency: request.concurrency,
+    });
     const evidence: AgentVerificationEvidence[] = [];
 
     for (const datasetId of registration.manifest.verification.datasetIds) {
@@ -174,8 +239,8 @@ export class AgentApplicationService {
             model,
           }),
         {
-          repetitions: request.repetitions,
-          concurrency: request.concurrency,
+          repetitions: execution.repetitions,
+          concurrency: execution.concurrency,
         },
       );
       const verification = verifyAgentDataset(registration.manifest, datasetRun);
@@ -188,6 +253,25 @@ export class AgentApplicationService {
       });
     }
 
-    return evidence;
+    const experiment = createAgentEvaluationExperiment({
+      agentId: registration.manifest.id,
+      agentVersion: registration.manifest.version,
+      workspaceId: workspace.id,
+      model,
+      repetitions: execution.repetitions,
+      concurrency: execution.concurrency,
+      datasets: evidence.map(({ datasetRun, verification, artifactId }) => ({
+        datasetRun,
+        verification,
+        artifactId,
+      })),
+    });
+    const reference = await this.artifacts.saveAgentEvaluation(experiment);
+    return {
+      experiment,
+      datasets: evidence,
+      artifactId: reference.id,
+      artifactPath: reference.path,
+    };
   }
 }

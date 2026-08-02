@@ -47,7 +47,7 @@ export interface JsonSchema {
 
 export interface ArtifactSummary {
   id: string;
-  kind: "agent-run" | "agent-dataset-run";
+  kind: "agent-run" | "agent-dataset-run" | "agent-evaluation";
   path: string;
   agentId: string;
   agentVersion: string;
@@ -112,9 +112,109 @@ export interface VerificationEvidence {
   };
 }
 
+export interface EvaluationExperiment {
+  experimentId: string;
+  agentId: string;
+  agentVersion: string;
+  workspaceId: string;
+  model: string;
+  execution: { repetitions: number; concurrency: number };
+  datasets: Array<{
+    datasetId: string;
+    datasetRunArtifactId: string;
+    verification: VerificationEvidence["verification"];
+    totalCases: number;
+    passedCases: number;
+    failedCases: number;
+    totalRuns: number;
+    passedRuns: number;
+    failedRuns: number;
+    passRate: number | null;
+  }>;
+  summary: {
+    totalDatasets: number;
+    passedDatasets: number;
+    failedDatasets: number;
+    totalCases: number;
+    passedCases: number;
+    failedCases: number;
+    totalRuns: number;
+    passedRuns: number;
+    failedRuns: number;
+    passRate: number | null;
+  };
+  passed: boolean;
+  completedAt: string;
+}
+
+export interface EvaluationList {
+  experiments: EvaluationExperiment[];
+  rejected: Array<{ path: string; reason: string }>;
+}
+
+export interface EvaluationTrial {
+  agentRunId: string;
+  succeeded: boolean;
+  input: unknown;
+  output: unknown | null;
+  assessment: { passed: boolean; message: string } | null;
+  failure: { stage: string; category: string; message: string } | null;
+  durationMs: number;
+  completedAt: string;
+}
+
+export interface EvaluationCase {
+  datasetId: string;
+  datasetCaseId: string;
+  totalRuns: number;
+  passedRuns: number;
+  failedRuns: number;
+  passRate: number | null;
+  minimumPassRate: number | null;
+  passed: boolean;
+  input: unknown;
+  trials: EvaluationTrial[];
+}
+
+export interface EvaluationView {
+  experiment: EvaluationExperiment;
+  datasets: Array<{
+    datasetId: string;
+    passed: boolean;
+    minimumPassRate: number | null;
+    cases: EvaluationCase[];
+  }>;
+}
+
+export interface EvaluationComparison {
+  baseline: Pick<EvaluationExperiment, "experimentId" | "agentId" | "agentVersion" | "model" | "completedAt">;
+  candidate: Pick<EvaluationExperiment, "experimentId" | "agentId" | "agentVersion" | "model" | "completedAt">;
+  summary: {
+    improvedCases: number;
+    regressedCases: number;
+    unchangedCases: number;
+    insufficientEvidenceCases: number;
+  };
+  cases: Array<{
+    datasetId: string;
+    datasetCaseId: string;
+    baselinePassRate: number | null;
+    candidatePassRate: number | null;
+    passRateDelta: number | null;
+    classification: "improved" | "regressed" | "unchanged" | "insufficient-evidence";
+  }>;
+}
+
+export interface AgentEvaluationEvidence {
+  experiment: EvaluationExperiment;
+  datasets: VerificationEvidence[];
+  artifactId: string;
+  artifactPath: string;
+}
+
 export interface ArtifactPresentation {
   artifactId: string;
-  artifactKind: "agent-run" | "agent-dataset-run";
+  artifactKind: "agent-run" | "agent-dataset-run" | "agent-evaluation";
   presentationKind: "generic" | "documentation-audit";
   title: string;
   agentId: string;

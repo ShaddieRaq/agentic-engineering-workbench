@@ -827,8 +827,9 @@ React console -> loopback Fastify -+-> AgentApplicationService
 ```
 
 `AgentApplicationService` owns catalog description, execution, verification,
-and artifact persistence. Entry points translate operator input into service
-requests; they do not implement alternate agent runtimes.
+evaluation experiment assembly and comparison, and artifact persistence. Entry
+points translate operator input into service requests; they do not implement
+alternate agent runtimes.
 
 The Fastify API exposes read-only catalog and artifact operations without model
 credentials. Run and verification requests become in-memory background
@@ -844,10 +845,30 @@ evidence.
 ### Artifact Persistence
 
 The filesystem remains the source of truth. `FileArtifactStore` adapts current
-agent-run and agent-dataset-run schemas to immutable JSON files under `runs/`.
-Reads are filename constrained, byte bounded, runtime validated, filterable,
-and explicit about rejected historical or incompatible artifacts. A database
-is deferred until query scale, concurrent writers, or deployment requires it.
+agent-run, agent-dataset-run, and agent-evaluation schemas to immutable JSON
+files under `runs/`. Reads are filename constrained, byte bounded, runtime
+validated, filterable, and explicit about rejected historical or incompatible
+artifacts. A database is deferred until query scale, concurrent writers, or
+deployment requires it.
+
+### Evaluation Studio
+
+Evaluation experiments are compact immutable indexes over complete dataset-run
+artifacts. They freeze the agent version, workspace, model, execution policy,
+aggregate outcome, and referenced dataset artifact IDs without duplicating raw
+prompts, outputs, or assessments.
+
+The presentation layer resolves those references into this hierarchy:
+
+```text
+agent -> version -> experiment -> dataset case -> repeated trial -> trace
+```
+
+Comparisons align baseline and candidate evidence by stable dataset and case
+IDs, then report improved, regressed, unchanged, or insufficient-evidence
+observations. Case drill-down exposes the exact saved input, structured output,
+assessment, failure, and duration for every trial. The UI may download a
+reviewable dataset-case draft, but it cannot mutate versioned evaluation policy.
 
 ### Web Security Boundary
 

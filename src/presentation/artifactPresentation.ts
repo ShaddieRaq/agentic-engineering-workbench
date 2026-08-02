@@ -44,7 +44,7 @@ export const presentationUsageSchema = z.object({
 
 export const artifactPresentationSchema = z.object({
   artifactId: z.string().min(1),
-  artifactKind: z.enum(["agent-run", "agent-dataset-run"]),
+  artifactKind: z.enum(["agent-run", "agent-dataset-run", "agent-evaluation"]),
   presentationKind: z.enum(["generic", "documentation-audit"]),
   title: z.string().min(1),
   agentId: z.string().min(1),

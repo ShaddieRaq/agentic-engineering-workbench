@@ -2,6 +2,8 @@ import { mkdtemp } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { buildAgentWebServer } from "../src/web/agentWebServer.js";
 import { createConsoleTestService } from "./helpers/consoleTestService.js";
+import { createAgentEvaluationExperiment } from "../src/agents/evaluations/agentEvaluationExperiment.js";
+import { evaluationDatasetRun, evaluationVerification } from "./helpers/evaluationFixture.js";
 
 async function waitForCompletion(app: Awaited<ReturnType<typeof buildAgentWebServer>>, id: string) {
   for (let attempt = 0; attempt < 20; attempt += 1) {
@@ -111,6 +113,46 @@ describe("agent web server", () => {
       headers: { origin: "https://example.com" },
     });
     expect(response.statusCode).toBe(403);
+    await app.close();
+  });
+
+  it("exposes evaluation history, case evidence, comparison, and a regression-case draft", async () => {
+    const { service } = await createConsoleTestService();
+    const saveEvaluation = async (id: string, outcomes: boolean[]) => {
+      const datasetRun = evaluationDatasetRun(`${id}-dataset`, outcomes);
+      const datasetReference = await service.artifacts.saveAgentDatasetRun(datasetRun);
+      const experiment = createAgentEvaluationExperiment({
+        experimentId: id,
+        agentId: datasetRun.agentId,
+        agentVersion: datasetRun.agentVersion,
+        workspaceId: "fixture-workspace",
+        model: "fake-model",
+        repetitions: outcomes.length,
+        concurrency: 1,
+        datasets: [{ datasetRun, verification: evaluationVerification(datasetRun), artifactId: datasetReference.id }],
+      });
+      await service.artifacts.saveAgentEvaluation(experiment);
+      return experiment;
+    };
+    await saveEvaluation("baseline-evaluation", [true, true]);
+    await saveEvaluation("candidate-evaluation", [true, false]);
+    const app = await buildAgentWebServer({ service, apiKeyConfigured: false });
+
+    const history = await app.inject({ method: "GET", url: "/api/evaluations?agentId=evaluation-agent" });
+    const detail = await app.inject({ method: "GET", url: "/api/evaluations/candidate-evaluation" });
+    const datasetCase = await app.inject({ method: "GET", url: "/api/evaluations/candidate-evaluation/cases/evaluation-dataset/checkout-timeout" });
+    const comparison = await app.inject({ method: "GET", url: "/api/evaluations/compare?baselineId=baseline-evaluation&candidateId=candidate-evaluation" });
+    const draft = await app.inject({ method: "GET", url: "/api/evaluations/candidate-evaluation/cases/evaluation-dataset/checkout-timeout/draft" });
+
+    expect(history.json().experiments).toHaveLength(2);
+    expect(detail.json()).toMatchObject({ experiment: { experimentId: "candidate-evaluation" } });
+    expect(datasetCase.json()).toMatchObject({ datasetCaseId: "checkout-timeout", totalRuns: 2 });
+    expect(comparison.json()).toMatchObject({ summary: { regressedCases: 1 } });
+    expect(draft.headers["content-disposition"]).toContain("dataset-case.json");
+    expect(JSON.parse(draft.body)).toEqual({
+      id: "checkout-timeout",
+      input: { failureLog: "Timeout waiting for checkout." },
+    });
     await app.close();
   });
 });

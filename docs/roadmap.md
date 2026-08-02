@@ -719,12 +719,37 @@ Implemented:
 - traversal, malformed-manifest, symlink, truncation, and registration tests
 - platform registry integration and automatic Tools-page contract discovery
 
+## Phase 37 — Evaluation Studio
+
+Status: Complete foundation
+
+Implemented:
+
+- runtime-validated immutable evaluation experiment artifacts
+- compact references to complete dataset evidence without raw-evidence copying
+- frozen agent version, workspace, model, repetitions, and concurrency
+- aggregate reliability, dataset case grids, and repeated-trial inspection
+- trial-level input, output, assessment, failure, and timing evidence
+- evaluation history filtered by workspace and agent
+- aligned baseline-versus-candidate case comparison with explicit improved,
+  regressed, unchanged, and insufficient-evidence states
+- downloadable dataset-case drafts for reviewed regression promotion
+- application-service, HTTP API, presentation, persistence, and React coverage
+
+Deferred deliberately:
+
+- browser-side mutation of versioned datasets
+- collaborative annotations and approvals
+- production telemetry ingestion
+- remote artifact storage and authentication
+
 ## Current Priorities
 
-1. Run the dependency-version auditor through a purpose-built agent workflow.
-2. Convert wrong dispositions, weak contracts, unsafe code, and missed edge
-   cases into versioned verification cases.
-3. Add an isolated compile-and-test boundary for approved proposals.
-4. Require explicit review before any generated patch reaches a workspace.
-5. Introduce a database, authentication, or remote deployment only when a
+1. Run existing agents through Evaluation Studio experiments and inspect every
+   weak, failed, or unstable case.
+2. Promote reviewed failures into versioned datasets.
+3. Build a sanitized Playwright Failure Triage corpus and agent.
+4. Add an isolated compile-and-test boundary for approved proposals.
+5. Export proven agents into Claude Code and other runner-specific packages.
+6. Introduce a database, authentication, or remote deployment only when a
    concrete operating requirement justifies those boundaries.

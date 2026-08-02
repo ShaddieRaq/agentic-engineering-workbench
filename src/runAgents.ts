@@ -86,7 +86,7 @@ async function main(): Promise<void> {
     }
 
     let passed = true;
-    const results = await service.verify({
+    const result = await service.verify({
       agentId: args.agentId,
       repetitions: args.repetitions,
       concurrency: args.concurrency,
@@ -94,7 +94,7 @@ async function main(): Promise<void> {
       ...(args.workspaceId ? { workspaceId: args.workspaceId } : {}),
     });
 
-    for (const item of results) {
+    for (const item of result.datasets) {
       const { datasetRun: result, verification, artifactPath: evidencePath } = item;
       passed = passed && verification.passed;
 
@@ -108,6 +108,9 @@ async function main(): Promise<void> {
         );
       }
     }
+
+    console.log(`Experiment: ${result.experiment.experimentId}`);
+    console.log(`Experiment evidence saved: ${result.artifactPath}`);
 
     if (!passed) process.exitCode = 1;
     return;

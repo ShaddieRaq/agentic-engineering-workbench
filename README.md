@@ -45,6 +45,19 @@ The catalog and existing evidence remain available without an API key. Live
 runs and verification require `OPENAI_API_KEY` in the local `.env` file. The
 server binds only to `127.0.0.1` and rejects non-loopback browser origins.
 
+## Use the Evaluation Studio
+
+Open **Evaluation Studio** to run an agent's versioned datasets as a durable
+experiment. Each experiment freezes the agent version, workspace, model, and
+execution policy, then links to the complete dataset-run evidence that produced
+its results.
+
+The Studio provides aggregate reliability, dataset case grids, repeated-trial
+input and output, assessments, failures, timing, and aligned baseline-versus-
+candidate comparisons. A reviewed case can be downloaded as a dataset-case
+draft; dataset authoring remains code-first so browser activity cannot silently
+change an agent's evaluation policy.
+
 ## Register a Local Project
 
 Register a project once, then select it from the console workspace switcher:

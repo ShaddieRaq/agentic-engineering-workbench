@@ -1,14 +1,19 @@
+import { z } from "zod";
 import type { AgentManifest } from "./agentManifest.js";
 import type { AgentDatasetRunResult } from "./datasets/agentDatasetRunner.js";
 
-export interface AgentVerificationResult {
-  agentId: string;
-  agentVersion: string;
-  datasetId: string;
-  minimumPassRate: number | null;
-  passed: boolean;
-  failedCaseIds: string[];
-}
+export const agentVerificationResultSchema = z.object({
+  agentId: z.string().min(1),
+  agentVersion: z.string().min(1),
+  datasetId: z.string().min(1),
+  minimumPassRate: z.number().min(0).max(1).nullable(),
+  passed: z.boolean(),
+  failedCaseIds: z.array(z.string().min(1)),
+}).strict();
+
+export type AgentVerificationResult = z.infer<
+  typeof agentVerificationResultSchema
+>;
 
 export function verifyAgentDataset(
   manifest: AgentManifest,

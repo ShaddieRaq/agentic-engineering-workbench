@@ -1,5 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { api, type AgentManifest, type JsonSchema, type Operation, type VerificationEvidence } from "./api.js";
+import { api, type AgentEvaluationEvidence, type AgentManifest, type JsonSchema, type Operation } from "./api.js";
 import { useOperation } from "./hooks.js";
 import { LocalLink as Link } from "./router.js";
 import { useWorkspace } from "./workspace.js";
@@ -82,9 +82,9 @@ export function OperationTrace({ operation }: { operation: Operation }) {
   const artifactId = operation.kind === "agent-run"
     ? (operation.result as { artifactId?: string } | null)?.artifactId
     : null;
-  const verifications = operation.kind === "agent-verification" && Array.isArray(operation.result)
-    ? operation.result as VerificationEvidence[]
-    : [];
+  const evaluation = operation.kind === "agent-verification" && operation.result && !Array.isArray(operation.result)
+    ? operation.result as AgentEvaluationEvidence
+    : null;
   return (
     <section className="trace-panel" aria-live="polite">
       <div className="section-heading"><h3>Execution lifecycle</h3><StatusBadge value={operation.status} /></div>
@@ -98,13 +98,18 @@ export function OperationTrace({ operation }: { operation: Operation }) {
       </ol>
       {operation.error && <ErrorNotice message={operation.error} />}
       {artifactId && <Link className="button button-secondary" to={`/runs/${artifactId}`}>Inspect persisted evidence</Link>}
-      {verifications.length > 0 && (
+      {evaluation && (
         <div className="verification-results">
-          {verifications.map(({ artifactId: verificationArtifactId, verification }) => (
-            <article key={verificationArtifactId}>
+          <article>
+            <div><strong>Evaluation experiment</strong><small>{evaluation.experiment.summary.passedRuns}/{evaluation.experiment.summary.totalRuns} trials passed across {evaluation.experiment.summary.totalCases} cases</small></div>
+            <StatusBadge value={evaluation.experiment.passed ? "completed" : "failed"} />
+            <Link to={`/evaluations/${evaluation.artifactId}`}>Open Studio →</Link>
+          </article>
+          {evaluation.datasets.map(({ artifactId: datasetArtifactId, verification }) => (
+            <article key={datasetArtifactId}>
               <div><strong>{verification.datasetId}</strong><small>{verification.failedCaseIds.length ? `Failed: ${verification.failedCaseIds.join(", ")}` : "All cases met the policy"}</small></div>
               <StatusBadge value={verification.passed ? "completed" : "failed"} />
-              <Link to={`/runs/${verificationArtifactId}`}>Evidence →</Link>
+              <Link to={`/runs/${datasetArtifactId}`}>Dataset evidence →</Link>
             </article>
           ))}
         </div>

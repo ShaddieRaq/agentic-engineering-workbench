@@ -127,14 +127,87 @@ export async function buildAgentWebServer(
     }
   });
 
+  app.get<{ Querystring: { agentId?: string; workspaceId?: string; limit?: string } }>(
+    "/api/evaluations",
+    async (request, reply) => {
+      const limit = request.query.limit === undefined ? undefined : Number(request.query.limit);
+      if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {
+        return reply.code(400).send({ error: "limit must be a positive integer." });
+      }
+      return options.service.listEvaluations({
+        ...(request.query.agentId ? { agentId: request.query.agentId } : {}),
+        ...(request.query.workspaceId ? { workspaceId: request.query.workspaceId } : {}),
+        ...(limit === undefined ? {} : { limit }),
+      });
+    },
+  );
+  app.get<{ Querystring: { baselineId?: string; candidateId?: string } }>(
+    "/api/evaluations/compare",
+    async (request, reply) => {
+      if (!request.query.baselineId || !request.query.candidateId) {
+        return reply.code(400).send({ error: "baselineId and candidateId are required." });
+      }
+      try {
+        return await options.service.compareEvaluations(
+          request.query.baselineId,
+          request.query.candidateId,
+        );
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+    },
+  );
+  app.get<{ Params: { experimentId: string } }>(
+    "/api/evaluations/:experimentId",
+    async (request, reply) => {
+      try {
+        return await options.service.getEvaluation(request.params.experimentId);
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+    },
+  );
+  app.get<{ Params: { experimentId: string; datasetId: string; caseId: string } }>(
+    "/api/evaluations/:experimentId/cases/:datasetId/:caseId",
+    async (request, reply) => {
+      try {
+        return await options.service.getEvaluationCase(
+          request.params.experimentId,
+          request.params.datasetId,
+          request.params.caseId,
+        );
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+    },
+  );
+  app.get<{ Params: { experimentId: string; datasetId: string; caseId: string } }>(
+    "/api/evaluations/:experimentId/cases/:datasetId/:caseId/draft",
+    async (request, reply) => {
+      try {
+        const datasetCase = await options.service.getEvaluationCase(
+          request.params.experimentId,
+          request.params.datasetId,
+          request.params.caseId,
+        );
+        return reply
+          .header("content-type", "application/json; charset=utf-8")
+          .header("content-disposition", `attachment; filename="${datasetCase.datasetCaseId}-dataset-case.json"`)
+          .send(`${JSON.stringify({ id: datasetCase.datasetCaseId, input: datasetCase.input }, null, 2)}\n`);
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+    },
+  );
+
   app.get<{ Querystring: { kind?: string; agentId?: string; workspaceId?: string; succeeded?: string; limit?: string } }>(
     "/api/artifacts",
     async (request, reply) => {
       const kind = request.query.kind;
-      if (kind && kind !== "agent-run" && kind !== "agent-dataset-run") {
+      if (kind && kind !== "agent-run" && kind !== "agent-dataset-run" && kind !== "agent-evaluation") {
         return reply.code(400).send({ error: "Unsupported artifact kind." });
       }
-      const artifactKind: ArtifactKind | undefined = kind === "agent-run" || kind === "agent-dataset-run"
+      const artifactKind: ArtifactKind | undefined = kind === "agent-run" || kind === "agent-dataset-run" || kind === "agent-evaluation"
         ? kind
         : undefined;
       const succeeded = request.query.succeeded === undefined
@@ -293,7 +366,7 @@ export async function buildAgentWebServer(
             ...(parsed.data.model ? { model: parsed.data.model } : {}),
             ...(parsed.data.workspaceId ? { workspaceId: parsed.data.workspaceId } : {}),
           });
-          emit("persistence", `${result.length} verification artifact(s) saved.`);
+          emit("persistence", `${result.datasets.length} dataset artifact(s) and experiment ${result.artifactId} saved.`);
           return result;
         },
       );

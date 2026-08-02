@@ -36,6 +36,33 @@ export function presentArtifact(artifactId: string, stored: StoredArtifact): Art
       ],
     });
   }
+  if (stored.kind === "agent-evaluation") {
+    const experiment = stored.artifact;
+    return artifactPresentationSchema.parse({
+      artifactId,
+      artifactKind: stored.kind,
+      presentationKind: "generic",
+      title: `${experiment.agentId} Evaluation`,
+      agentId: experiment.agentId,
+      agentVersion: experiment.agentVersion,
+      workspaceId: experiment.workspaceId,
+      succeeded: experiment.passed,
+      assessment: experiment.passed
+        ? "Every dataset met the registered verification policy."
+        : `${experiment.summary.failedCases} case(s) missed the registered threshold.`,
+      overview: `${experiment.summary.passedRuns}/${experiment.summary.totalRuns} trials passed across ${experiment.summary.totalCases} cases.`,
+      completedAt: experiment.completedAt,
+      durationMs: null,
+      metrics: [
+        { id: "datasets", label: "Datasets", value: String(experiment.summary.totalDatasets), detail: null },
+        { id: "cases", label: "Cases", value: String(experiment.summary.totalCases), detail: `${experiment.summary.failedCases} below threshold` },
+        { id: "runs", label: "Trials", value: String(experiment.summary.totalRuns), detail: `${experiment.summary.passedRuns} passed` },
+        { id: "pass-rate", label: "Pass rate", value: experiment.summary.passRate === null ? "No evidence" : `${Math.round(experiment.summary.passRate * 100)}%`, detail: null },
+      ],
+      findings: [], coverageGaps: [], prioritizedActions: [], sources: [], timeline: [], usage: null, warnings: [],
+    });
+  }
+
   const run = stored.artifact;
   return artifactPresentationSchema.parse({
     artifactId,

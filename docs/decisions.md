@@ -1736,3 +1736,35 @@ platform responsible for authorization while preserving reusable tool code.
 - traversal and escaped symbolic links are rejected at the shared path boundary
 - scans are inspectable and deterministically bounded
 - broader filesystem access requires a separate platform policy change
+
+---
+
+## Decision 065 — Persist Evaluations as Immutable Evidence Indexes
+
+Status: Accepted
+
+### Decision
+
+Persist every completed agent verification as an immutable evaluation
+experiment that freezes configuration and references its complete dataset-run
+artifacts. Resolve references for case and trial presentation, and align
+baseline-versus-candidate comparisons by stable dataset and case IDs. Permit
+downloadable dataset-case drafts, but do not mutate versioned datasets from the
+browser.
+
+### Rationale
+
+Individual run reports are useful for debugging but do not answer which agent
+version was tested, against which corpus, under which execution policy, or how
+it compares with a prior configuration. Copying full evidence into another
+artifact would create competing sources of truth. A compact experiment index
+provides durable history and comparison while retaining exact traceability to
+the original evidence.
+
+### Consequences
+
+- evaluation history is reproducible and attributable to frozen configuration
+- raw prompts, outputs, assessments, and failures remain stored once
+- comparisons only claim what aligned observed cases support
+- regression promotion remains an explicit reviewed source-control change
+- older dataset artifacts remain readable but do not appear as experiments

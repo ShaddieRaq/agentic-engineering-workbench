@@ -8,6 +8,10 @@ import {
   agentRunResultSchema,
   type AgentRunResult,
 } from "../agents/agentRunResult.js";
+import {
+  agentEvaluationExperimentSchema,
+  type AgentEvaluationExperiment,
+} from "../agents/evaluations/agentEvaluationExperiment.js";
 import type {
   ArtifactKind,
   ArtifactListResult,
@@ -21,6 +25,11 @@ import type {
 const MAXIMUM_ARTIFACT_BYTES = 8 * 1024 * 1024;
 
 function descriptor(fileName: string): { kind: ArtifactKind; id: string } | null {
+  const evaluationMatch = /^agent-evaluation-([a-zA-Z0-9-]+)\.json$/.exec(fileName);
+  if (evaluationMatch?.[1]) {
+    return { kind: "agent-evaluation", id: evaluationMatch[1] };
+  }
+
   const datasetMatch = /^agent-dataset-run-([a-zA-Z0-9-]+)\.json$/.exec(fileName);
   if (datasetMatch?.[1]) {
     return { kind: "agent-dataset-run", id: datasetMatch[1] };
@@ -33,7 +42,7 @@ function descriptor(fileName: string): { kind: ArtifactKind; id: string } | null
 function summary(
   kind: ArtifactKind,
   path: string,
-  artifact: AgentRunResult | AgentDatasetRunResult,
+  artifact: AgentRunResult | AgentDatasetRunResult | AgentEvaluationExperiment,
 ): ArtifactSummary {
   if (kind === "agent-run") {
     const run = artifact as AgentRunResult;
@@ -46,6 +55,20 @@ function summary(
       workspaceId: run.configuration.workspaceId ?? null,
       completedAt: run.completedAt,
       succeeded: run.succeeded,
+    };
+  }
+
+  if (kind === "agent-evaluation") {
+    const evaluation = artifact as AgentEvaluationExperiment;
+    return {
+      id: evaluation.experimentId,
+      kind,
+      path,
+      agentId: evaluation.agentId,
+      agentVersion: evaluation.agentVersion,
+      workspaceId: evaluation.workspaceId,
+      completedAt: evaluation.completedAt,
+      succeeded: evaluation.passed,
     };
   }
 
@@ -90,6 +113,18 @@ export class FileArtifactStore implements ArtifactStore {
       "agent-dataset-run",
       validated.datasetRunId,
       `agent-dataset-run-${validated.datasetRunId}.json`,
+      validated,
+    );
+  }
+
+  async saveAgentEvaluation(
+    result: AgentEvaluationExperiment,
+  ): Promise<ArtifactReference> {
+    const validated = agentEvaluationExperimentSchema.parse(result);
+    return this.#write(
+      "agent-evaluation",
+      validated.experimentId,
+      `agent-evaluation-${validated.experimentId}.json`,
       validated,
     );
   }
@@ -142,6 +177,7 @@ export class FileArtifactStore implements ArtifactStore {
     for (const [kind, name] of [
       ["agent-run", `agent-run-${id}.json`],
       ["agent-dataset-run", `agent-dataset-run-${id}.json`],
+      ["agent-evaluation", `agent-evaluation-${id}.json`],
     ] as const) {
       try {
         return await this.#read(join(this.#root, name), kind);
@@ -157,7 +193,7 @@ export class FileArtifactStore implements ArtifactStore {
     kind: ArtifactKind,
     id: string,
     fileName: string,
-    artifact: AgentRunResult | AgentDatasetRunResult,
+    artifact: AgentRunResult | AgentDatasetRunResult | AgentEvaluationExperiment,
   ): Promise<ArtifactReference> {
     await mkdir(this.#root, { recursive: true });
     const path = join(this.#root, fileName);
@@ -178,8 +214,12 @@ export class FileArtifactStore implements ArtifactStore {
       throw new Error(`Artifact exceeds ${MAXIMUM_ARTIFACT_BYTES} bytes.`);
     }
     const parsed: unknown = JSON.parse(await readFile(path, "utf8"));
-    return kind === "agent-run"
-      ? { kind, artifact: agentRunResultSchema.parse(parsed) }
-      : { kind, artifact: agentDatasetRunResultSchema.parse(parsed) };
+    if (kind === "agent-run") {
+      return { kind, artifact: agentRunResultSchema.parse(parsed) };
+    }
+    if (kind === "agent-dataset-run") {
+      return { kind, artifact: agentDatasetRunResultSchema.parse(parsed) };
+    }
+    return { kind, artifact: agentEvaluationExperimentSchema.parse(parsed) };
   }
 }

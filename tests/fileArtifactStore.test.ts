@@ -9,6 +9,8 @@ import { runAgent } from "../src/agents/agentRunner.js";
 import { FakeProvider } from "../src/providers/fakeProvider.js";
 import { ToolRegistry } from "../src/tools/toolRegistry.js";
 import { z } from "zod";
+import { createAgentEvaluationExperiment } from "../src/agents/evaluations/agentEvaluationExperiment.js";
+import { evaluationDatasetRun, evaluationVerification } from "./helpers/evaluationFixture.js";
 
 const agent = defineAgent({
   manifest: {
@@ -55,5 +57,30 @@ describe("FileArtifactStore", () => {
   it("rejects unsafe artifact identifiers", async () => {
     const store = new FileArtifactStore(await mkdtemp(join(tmpdir(), "agent-artifacts-")));
     await expect(store.load("../outside")).rejects.toThrow("unsupported characters");
+  });
+
+  it("persists an evaluation as a small immutable index over dataset evidence", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "agent-artifacts-"));
+    const store = new FileArtifactStore(directory);
+    const datasetRun = evaluationDatasetRun("dataset-reference", [true]);
+    await store.saveAgentDatasetRun(datasetRun);
+    const experiment = createAgentEvaluationExperiment({
+      experimentId: "evaluation-reference",
+      agentId: datasetRun.agentId,
+      agentVersion: datasetRun.agentVersion,
+      workspaceId: "fixture-workspace",
+      model: "fake-model",
+      repetitions: 1,
+      concurrency: 1,
+      datasets: [{ datasetRun, verification: evaluationVerification(datasetRun), artifactId: datasetRun.datasetRunId }],
+    });
+
+    const reference = await store.saveAgentEvaluation(experiment);
+
+    expect(reference.kind).toBe("agent-evaluation");
+    expect(await store.load(reference.id)).toEqual({ kind: "agent-evaluation", artifact: experiment });
+    expect((await store.list({ kind: "agent-evaluation" })).artifacts).toEqual([
+      expect.objectContaining({ id: experiment.experimentId, succeeded: true }),
+    ]);
   });
 });

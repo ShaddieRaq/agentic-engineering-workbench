@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type Health, type Operation, type ToolDescription, type ToolSummary } from "./api.js";
+import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type Operation, type ToolDescription, type ToolSummary } from "./api.js";
 import { ArtifactPresentationView } from "./artifactPresentation.js";
 import { AgentCard, EmptyState, ErrorNotice, Loading, OperationTrace, RunAgentPanel, StatusBadge } from "./components.js";
 import { useOperation, useResource } from "./hooks.js";
@@ -18,7 +18,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <NavLink to="/tools">Tools</NavLink>
           <NavLink to="/workspaces">Workspaces</NavLink>
           <NavLink to="/runs">Evidence</NavLink>
-          <NavLink to="/verification">Verification</NavLink>
+          <NavLink to="/evaluations">Evaluation Studio</NavLink>
           <NavLink to="/authoring">Authoring</NavLink>
         </nav>
         <label className="workspace-switcher">Active workspace<select value={selectedWorkspaceId ?? ""} onChange={(event) => selectWorkspace(event.target.value)}>{workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}</select></label>
@@ -147,15 +147,27 @@ function RunDetailPage() {
   return <ArtifactPresentationView presentation={presentation.data} rawArtifact={resource.data.artifact} />;
 }
 
-function VerificationPage() {
-  const { selectedWorkspaceId } = useWorkspace();
+function passRate(value: number | null): string {
+  return value === null ? "No evidence" : `${Math.round(value * 100)}%`;
+}
+
+function EvaluationStudioPage() {
+  const { workspaces, selectedWorkspaceId } = useWorkspace();
   const agents = useResource<{ agents: AgentManifest[] }>("/api/agents");
   const [agentId, setAgentId] = useState("");
+  const [workspaceId, setWorkspaceId] = useState(selectedWorkspaceId ?? "");
   const [repetitions, setRepetitions] = useState(1);
   const [concurrency, setConcurrency] = useState(1);
   const [operationId, setOperationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const operation = useOperation(operationId);
+  useEffect(() => {
+    if (selectedWorkspaceId) setWorkspaceId(selectedWorkspaceId);
+  }, [selectedWorkspaceId]);
+  const query = new URLSearchParams({ limit: "100" });
+  if (agentId) query.set("agentId", agentId);
+  if (workspaceId) query.set("workspaceId", workspaceId);
+  const evaluations = useResource<EvaluationList>(`/api/evaluations?${query.toString()}`);
   async function submit(event: FormEvent) {
     event.preventDefault();
     try {
@@ -163,7 +175,34 @@ function VerificationPage() {
       setOperationId(started.operationId); setError(null);
     } catch (cause: unknown) { setError(cause instanceof Error ? cause.message : String(cause)); }
   }
-  return <><PageHeader eyebrow="Product-level reliability" title="Verification" /><p className="lede">Run every registered case through the complete agent—tools, workflow, model, output contract, and assessment.</p><div className="run-grid"><form className="panel" onSubmit={submit}><label>Agent<select required value={agentId} onChange={(event) => setAgentId(event.target.value)}><option value="">Choose an agent</option>{agents.data?.agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select></label><label>Repetitions<input type="number" min="1" value={repetitions} onChange={(event) => setRepetitions(Number(event.target.value))} /></label><label>Concurrency<input type="number" min="1" max="10" value={concurrency} onChange={(event) => setConcurrency(Number(event.target.value))} /></label>{error && <ErrorNotice message={error} />}<button className="button" type="submit" disabled={!selectedWorkspaceId}>Run verification</button></form>{operation.data ? <OperationTrace operation={operation.data} /> : <div className="concept-card"><span className="concept-index">TEST</span><h3>Reliability belongs to the version</h3><p>Verification evidence is accepted only when its agent ID and version match the current manifest.</p></div>}</div></>;
+  if (evaluations.loading || agents.loading) return <Loading />;
+  if (evaluations.error || agents.error) return <ErrorNotice message={evaluations.error ?? agents.error ?? "Unable to load evaluations."} />;
+  return <><PageHeader eyebrow="Agent reliability laboratory" title="Evaluation Studio" /><p className="lede">Run immutable experiments, inspect every dataset case and trial, and compare agent versions without losing the underlying evidence.</p><div className="run-grid"><form className="panel" onSubmit={submit}><div className="section-heading"><h3>New experiment</h3><span className="eyebrow">Live model calls</span></div><label>Agent<select required value={agentId} onChange={(event) => setAgentId(event.target.value)}><option value="">Choose an agent</option>{agents.data?.agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select></label><label>Repetitions<input type="number" min="1" value={repetitions} onChange={(event) => setRepetitions(Number(event.target.value))} /></label><label>Concurrency<input type="number" min="1" max="10" value={concurrency} onChange={(event) => setConcurrency(Number(event.target.value))} /></label>{error && <ErrorNotice message={error} />}<button className="button" type="submit" disabled={!selectedWorkspaceId}>Run evaluation</button></form>{operation.data ? <OperationTrace operation={operation.data} /> : <div className="concept-card"><span className="concept-index">EVAL</span><h3>A result becomes useful when it can be compared.</h3><p>Each experiment freezes the agent version, workspace, model, execution policy, dataset gates, and links to complete case evidence.</p></div>}</div><section><div className="section-heading"><div><span className="eyebrow">Immutable history</span><h2>Experiments</h2></div></div><div className="filter-bar"><label>Workspace<select value={workspaceId} onChange={(event) => setWorkspaceId(event.target.value)}><option value="">All workspaces</option>{workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}</select></label><label>Agent<select value={agentId} onChange={(event) => setAgentId(event.target.value)}><option value="">All agents</option>{agents.data?.agents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select></label></div><div className="table-wrap"><table><thead><tr><th>Experiment</th><th>Agent version</th><th>Model</th><th>Cases</th><th>Trials</th><th>Pass rate</th><th>Gate</th><th>Completed</th></tr></thead><tbody>{evaluations.data?.experiments.map((experiment) => <tr key={experiment.experimentId}><td><Link to={`/evaluations/${experiment.experimentId}`}>{experiment.experimentId.slice(0, 8)}</Link></td><td>{experiment.agentId}@{experiment.agentVersion}</td><td>{experiment.model}</td><td>{experiment.summary.passedCases}/{experiment.summary.totalCases}</td><td>{experiment.summary.passedRuns}/{experiment.summary.totalRuns}</td><td>{passRate(experiment.summary.passRate)}</td><td><StatusBadge value={experiment.passed ? "completed" : "failed"} /></td><td>{new Date(experiment.completedAt).toLocaleString()}</td></tr>)}</tbody></table></div>{!evaluations.data?.experiments.length && <EmptyState>No evaluation experiments have been recorded for this selection.</EmptyState>}{!!evaluations.data?.rejected.length && <div className="notice"><strong>{evaluations.data.rejected.length} incompatible experiment(s)</strong> were rejected rather than shown as valid evidence.</div>}</section></>;
+}
+
+function EvaluationDetailPage() {
+  const experimentId = usePathname().split("/")[2];
+  const resource = useResource<EvaluationView>(experimentId ? `/api/evaluations/${experimentId}` : null);
+  const history = useResource<EvaluationList>(resource.data ? `/api/evaluations?agentId=${encodeURIComponent(resource.data.experiment.agentId)}&limit=100` : null);
+  const [baselineId, setBaselineId] = useState("");
+  const comparison = useResource<EvaluationComparison>(baselineId && experimentId ? `/api/evaluations/compare?baselineId=${encodeURIComponent(baselineId)}&candidateId=${encodeURIComponent(experimentId)}` : null);
+  if (resource.loading) return <Loading />;
+  if (resource.error || !resource.data) return <ErrorNotice message={resource.error ?? "Evaluation not found."} />;
+  const { experiment, datasets } = resource.data;
+  const alternatives = history.data?.experiments.filter(({ experimentId: id }) => id !== experiment.experimentId) ?? [];
+  return <><PageHeader eyebrow={`${experiment.agentId}@${experiment.agentVersion}`} title={`Evaluation ${experiment.experimentId.slice(0, 8)}`}><StatusBadge value={experiment.passed ? "completed" : "failed"} /></PageHeader><p className="lede">An immutable experiment over {experiment.summary.totalCases} cases and {experiment.summary.totalRuns} trials.</p><section className="metric-grid evidence-metrics"><div><span>Pass rate</span><strong>{passRate(experiment.summary.passRate)}</strong></div><div><span>Cases meeting gate</span><strong>{experiment.summary.passedCases}/{experiment.summary.totalCases}</strong></div><div><span>Trials passed</span><strong>{experiment.summary.passedRuns}/{experiment.summary.totalRuns}</strong></div><div><span>Execution</span><strong className="metric-word">{experiment.execution.repetitions}× · concurrency {experiment.execution.concurrency}</strong></div></section><section className="panel comparison-panel"><div className="section-heading"><div><span className="eyebrow">Version comparison</span><h2>Compare with a baseline</h2></div></div><label>Baseline experiment<select value={baselineId} onChange={(event) => setBaselineId(event.target.value)}><option value="">Choose an earlier experiment</option>{alternatives.map((item) => <option key={item.experimentId} value={item.experimentId}>{item.experimentId.slice(0, 8)} · v{item.agentVersion} · {item.model} · {passRate(item.summary.passRate)}</option>)}</select></label>{comparison.loading && <Loading />}{comparison.error && <ErrorNotice message={comparison.error} />}{comparison.data && <><div className="metric-grid comparison-metrics"><div><span>Improved</span><strong>{comparison.data.summary.improvedCases}</strong></div><div><span>Regressed</span><strong>{comparison.data.summary.regressedCases}</strong></div><div><span>Unchanged</span><strong>{comparison.data.summary.unchangedCases}</strong></div><div><span>Insufficient evidence</span><strong>{comparison.data.summary.insufficientEvidenceCases}</strong></div></div><div className="table-wrap"><table><thead><tr><th>Case</th><th>Baseline</th><th>Candidate</th><th>Delta</th><th>Classification</th></tr></thead><tbody>{comparison.data.cases.map((item) => <tr key={`${item.datasetId}/${item.datasetCaseId}`}><td>{item.datasetId} / {item.datasetCaseId}</td><td>{passRate(item.baselinePassRate)}</td><td>{passRate(item.candidatePassRate)}</td><td>{item.passRateDelta === null ? "—" : `${item.passRateDelta >= 0 ? "+" : ""}${Math.round(item.passRateDelta * 100)} points`}</td><td><StatusBadge value={item.classification} /></td></tr>)}</tbody></table></div></>}</section>{datasets.map((dataset) => <section key={dataset.datasetId}><div className="section-heading"><div><span className="eyebrow">Dataset · threshold {dataset.minimumPassRate === null ? "not gated" : passRate(dataset.minimumPassRate)}</span><h2>{dataset.datasetId}</h2></div><StatusBadge value={dataset.passed ? "completed" : "failed"} /></div><div className="table-wrap"><table><thead><tr><th>Case</th><th>Trials</th><th>Passed</th><th>Pass rate</th><th>Gate</th></tr></thead><tbody>{dataset.cases.map((datasetCase) => <tr key={datasetCase.datasetCaseId}><td><Link to={`/evaluations/${experiment.experimentId}/cases/${encodeURIComponent(dataset.datasetId)}/${encodeURIComponent(datasetCase.datasetCaseId)}`}>{datasetCase.datasetCaseId}</Link></td><td>{datasetCase.totalRuns}</td><td>{datasetCase.passedRuns}</td><td>{passRate(datasetCase.passRate)}</td><td><StatusBadge value={datasetCase.passed ? "completed" : "failed"} /></td></tr>)}</tbody></table></div></section>)}</>;
+}
+
+function EvaluationCasePage() {
+  const parts = usePathname().split("/");
+  const experimentId = parts[2] ? decodeURIComponent(parts[2]) : "";
+  const datasetId = parts[4] ? decodeURIComponent(parts[4]) : "";
+  const caseId = parts[5] ? decodeURIComponent(parts[5]) : "";
+  const resource = useResource<EvaluationCase>(experimentId && datasetId && caseId ? `/api/evaluations/${encodeURIComponent(experimentId)}/cases/${encodeURIComponent(datasetId)}/${encodeURIComponent(caseId)}` : null);
+  if (resource.loading) return <Loading />;
+  if (resource.error || !resource.data) return <ErrorNotice message={resource.error ?? "Evaluation case not found."} />;
+  const datasetCase = resource.data;
+  return <><PageHeader eyebrow={`${datasetCase.datasetId} · ${datasetCase.totalRuns} trial(s)`} title={datasetCase.datasetCaseId}><StatusBadge value={datasetCase.passed ? "completed" : "failed"} /></PageHeader><p className="lede">Expected behavior is encoded by the agent assessment and the dataset’s {datasetCase.minimumPassRate === null ? "ungated" : passRate(datasetCase.minimumPassRate)} reliability threshold.</p><div className="report-actions"><Link className="button button-secondary" to={`/evaluations/${experimentId}`}>← Back to experiment</Link><a className="button button-secondary" href={`/api/evaluations/${encodeURIComponent(experimentId)}/cases/${encodeURIComponent(datasetId)}/${encodeURIComponent(caseId)}/draft`} download>Download regression-case draft</a></div><section className="contract-grid"><div className="panel"><span className="eyebrow">Dataset input</span><pre>{JSON.stringify(datasetCase.input, null, 2)}</pre></div><div className="panel"><span className="eyebrow">Case reliability</span><div className="metric-grid case-metrics"><div><span>Pass rate</span><strong>{passRate(datasetCase.passRate)}</strong></div><div><span>Passed</span><strong>{datasetCase.passedRuns}/{datasetCase.totalRuns}</strong></div></div></div></section><section><div className="section-heading"><div><span className="eyebrow">Complete evidence</span><h2>Trials</h2></div></div><div className="trial-list">{datasetCase.trials.map((trial, index) => <article className="panel" key={trial.agentRunId}><div className="section-heading"><div><span className="eyebrow">Trial {index + 1} · {trial.durationMs.toFixed(0)} ms</span><h3>{trial.agentRunId}</h3></div><StatusBadge value={trial.succeeded ? "completed" : "failed"} /></div><p>{trial.assessment?.message ?? trial.failure?.message ?? "No assessment was recorded."}</p><details><summary>Actual structured output</summary><pre>{JSON.stringify(trial.output, null, 2)}</pre></details>{trial.failure && <div className="notice notice-error">{trial.failure.stage} / {trial.failure.category}: {trial.failure.message}</div>}</article>)}</div></section></>;
 }
 
 function WorkspacesPage() {
@@ -217,7 +256,9 @@ function RoutedContent() {
   else if (/^\/agents\/[^/]+$/.test(pathname)) page = <AgentDetailPage />;
   else if (pathname === "/runs") page = <RunsPage />;
   else if (/^\/runs\/[^/]+$/.test(pathname)) page = <RunDetailPage />;
-  else if (pathname === "/verification") page = <VerificationPage />;
+  else if (pathname === "/evaluations" || pathname === "/verification") page = <EvaluationStudioPage />;
+  else if (/^\/evaluations\/[^/]+\/cases\/[^/]+\/[^/]+$/.test(pathname)) page = <EvaluationCasePage />;
+  else if (/^\/evaluations\/[^/]+$/.test(pathname)) page = <EvaluationDetailPage />;
   else if (pathname === "/authoring") page = <AuthoringPage />;
   else page = <EmptyState>Page not found. <Link to="/">Return home</Link>.</EmptyState>;
   return <Shell>{page}</Shell>;

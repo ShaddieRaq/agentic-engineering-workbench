@@ -164,4 +164,60 @@ describe("agent workbench web interface", () => {
     fireEvent.click(screen.getByRole("button", { name: "README.md" }));
     expect(await screen.findByText("Run npm run old-command.")).toBeInTheDocument();
   });
+
+  it("connects experiment history, comparison, case results, and trial evidence", async () => {
+    const experiment = {
+      experimentId: "candidate-evaluation", agentId: "evaluation-agent", agentVersion: "1.1.0",
+      workspaceId: "workbench", model: "fake-model", execution: { repetitions: 2, concurrency: 1 },
+      datasets: [],
+      summary: { totalDatasets: 1, passedDatasets: 0, failedDatasets: 1, totalCases: 1, passedCases: 0, failedCases: 1, totalRuns: 2, passedRuns: 1, failedRuns: 1, passRate: 0.5 },
+      passed: false, completedAt: "2026-08-02T12:00:02.000Z",
+    };
+    const datasetCase = {
+      datasetId: "triage-dataset", datasetCaseId: "checkout-timeout", totalRuns: 2,
+      passedRuns: 1, failedRuns: 1, passRate: 0.5, minimumPassRate: 1, passed: false,
+      input: { failureLog: "Timeout waiting for checkout." },
+      trials: [{
+        agentRunId: "trial-1", succeeded: false,
+        input: { failureLog: "Timeout waiting for checkout." },
+        output: { classification: "application-defect" },
+        assessment: { passed: false, message: "Expected a test defect." }, failure: null,
+        durationMs: 12, completedAt: "2026-08-02T12:00:01.000Z",
+      }],
+    };
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      let body: unknown = {};
+      if (path.endsWith("/api/workspaces")) {
+        body = { workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] };
+      } else if (path.includes("/api/evaluations/compare?")) {
+        body = {
+          baseline: { experimentId: "baseline-evaluation" }, candidate: { experimentId: "candidate-evaluation" },
+          summary: { improvedCases: 0, regressedCases: 1, unchangedCases: 0, insufficientEvidenceCases: 0 },
+          cases: [{ datasetId: "triage-dataset", datasetCaseId: "checkout-timeout", baselinePassRate: 1, candidatePassRate: 0.5, passRateDelta: -0.5, classification: "regressed" }],
+        };
+      } else if (path.includes("/cases/triage-dataset/checkout-timeout")) {
+        body = datasetCase;
+      } else if (path.endsWith("/api/evaluations/candidate-evaluation")) {
+        body = { experiment, datasets: [{ datasetId: "triage-dataset", passed: false, minimumPassRate: 1, cases: [datasetCase] }] };
+      } else if (path.includes("/api/evaluations?agentId=evaluation-agent")) {
+        body = { experiments: [
+          experiment,
+          { ...experiment, experimentId: "baseline-evaluation", agentVersion: "1.0.0", passed: true, summary: { ...experiment.summary, passedCases: 1, failedCases: 0, passedRuns: 2, failedRuns: 0, passRate: 1 } },
+        ], rejected: [] };
+      }
+      return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+    }));
+
+    window.history.replaceState(null, "", "/evaluations/candidate-evaluation");
+    render(<AppRoutes />);
+
+    expect(await screen.findByRole("heading", { name: "Evaluation candidat" })).toBeInTheDocument();
+    fireEvent.change(await screen.findByLabelText("Baseline experiment"), { target: { value: "baseline-evaluation" } });
+    expect(await screen.findByText("-50 points")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("link", { name: "checkout-timeout" }));
+    expect(window.location.pathname).toContain("/cases/triage-dataset/checkout-timeout");
+    expect(await screen.findByText("Expected a test defect.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Download regression-case draft" })).toBeInTheDocument();
+  });
 });
