@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { describe, expect, it } from "vitest";
-import { ToolRegistry } from "../src/tools/toolRegistry.js";
+import {
+  createPlatformToolRegistry,
+  ToolRegistry,
+} from "../src/tools/toolRegistry.js";
 
 function tool(id: string) {
   return {
@@ -28,6 +31,12 @@ describe("ToolRegistry", () => {
   it("rejects duplicate tool IDs", () => {
     expect(() => new ToolRegistry([tool("same"), tool("same")])).toThrow(
       "Tool IDs must be unique",
+    );
+  });
+
+  it("registers the dependency version auditor in the platform catalog", () => {
+    expect(createPlatformToolRegistry(".").ids()).toContain(
+      "dependency-version-auditor",
     );
   });
 });

@@ -702,9 +702,26 @@ Deferred deliberately:
 - automatic registry modification
 - approval and rollback workflow
 
+## Phase 36 — First Accepted Tool Implementation
+
+Status: Complete foundation
+
+Implemented:
+
+- accepted `dependency-version-auditor` proposal converted into reviewed code
+- workspace-root injection rather than caller-selected permission roots
+- package-manifest-only recursive discovery with denied-directory and symlink
+  exclusion
+- deterministic file-count, byte-count, and depth limits
+- dependency, development, peer, and optional dependency comparison
+- stable version, declaration, section, and path ordering
+- explicit malformed JSON, dependency metadata, and UTF-8 evidence
+- traversal, malformed-manifest, symlink, truncation, and registration tests
+- platform registry integration and automatic Tools-page contract discovery
+
 ## Current Priorities
 
-1. Run Tool Builder on representative real tool requests.
+1. Run the dependency-version auditor through a purpose-built agent workflow.
 2. Convert wrong dispositions, weak contracts, unsafe code, and missed edge
    cases into versioned verification cases.
 3. Add an isolated compile-and-test boundary for approved proposals.

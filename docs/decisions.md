@@ -1711,3 +1711,28 @@ integration.
 - generated paths cannot target arbitrary repository files
 - side effects require affirmative operator authorization
 - installation will require isolated verification, review, and rollback policy
+
+---
+
+## Decision 064 — Inject Tool Permission Roots at Registration
+
+Status: Accepted
+
+### Decision
+
+Construct the dependency-version auditor with the selected workspace root and
+do not accept a replacement permission root in tool input. Permit callers to
+narrow the scan with a repository-relative path and bounded limits only.
+
+### Rationale
+
+A model- or user-supplied permission root would let a valid-looking tool call
+expand its own filesystem authority. Registration-time injection keeps the
+platform responsible for authorization while preserving reusable tool code.
+
+### Consequences
+
+- the same tool can be rebuilt safely for every registered workspace
+- traversal and escaped symbolic links are rejected at the shared path boundary
+- scans are inspectable and deterministically bounded
+- broader filesystem access requires a separate platform policy change

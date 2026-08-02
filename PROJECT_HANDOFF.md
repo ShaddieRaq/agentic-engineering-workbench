@@ -243,6 +243,9 @@ The project currently supports:
   policy checks
 - generated tool files may use safe camelCase names under `src/tools/` and
   `tests/` without an artificial `Tool` filename suffix
+- a registered read-only dependency-version auditor with workspace-root,
+  traversal, symlink, file-count, byte-count, and depth boundaries
+- deterministic dependency-version findings with malformed-manifest evidence
 
 ## Current Evaluators
 
@@ -332,7 +335,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 104 test files passed
-291 tests passed
+296 tests passed
 ```
 
 This state must be verified before continuing:

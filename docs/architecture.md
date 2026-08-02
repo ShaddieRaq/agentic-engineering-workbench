@@ -890,13 +890,28 @@ Tool Builder `0.1.0` has an empty tool allowlist. It cannot inspect a workspace,
 write generated files, add dependencies, or execute commands. A complete
 proposal must contain a bounded tool contract, one implementation file, one
 test file, registry guidance, and explicit verification commands. Generated
-file paths are restricted to new `src/tools/*Tool.ts` and
-`tests/*Tool.test.ts` proposals. Side effects must be explicitly authorized.
+file paths are restricted to safe, flat TypeScript files under `src/tools/`
+and matching Vitest files under `tests/`. Side effects must be explicitly
+authorized.
 
 Clarification and rejection are first-class successful dispositions when no
 installable files are emitted. A later installation workflow must remain a
 separate permission boundary with isolated compilation, tests, and human
 approval.
+
+### Dependency Version Auditor
+
+The first accepted Tool Builder proposal is implemented as the registered
+`dependency-version-auditor`. The application injects its workspace root; its
+input can narrow the scan but cannot replace that permission boundary. The
+tool reads only `package.json`, skips symbolic links and denied directories,
+and applies deterministic file-count, byte-count, and depth limits.
+
+Malformed manifests remain explicit output evidence. Valid declarations from
+dependencies, development dependencies, peer dependencies, and optional
+dependencies are grouped by package and version with stable ordering. The tool
+appears automatically in the console because workspace-scoped platform tool
+registries construct it alongside the existing controlled capabilities.
 
 ## Workspace Resolution
 

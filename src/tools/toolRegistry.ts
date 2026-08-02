@@ -4,6 +4,7 @@ import { createInspectPackageTool } from "./inspectPackageTool.js";
 import { createListFilesTool } from "./listFilesTool.js";
 import { createReadFileTool } from "./readFileTool.js";
 import { createSearchTextTool } from "./searchTextTool.js";
+import { createDependencyVersionAuditorTool } from "./dependencyVersionAuditor.js";
 import type { ToolDefinition } from "./toolDefinition.js";
 import type { AgentToolCatalog } from "../agents/agentRegistration.js";
 
@@ -48,6 +49,7 @@ export function createPlatformToolRegistry(
   allowedRoot: string,
 ): ToolRegistry {
   return new ToolRegistry([
+    createDependencyVersionAuditorTool({ allowedRoot }),
     createFileInventoryTool({ allowedRoot }),
     createInspectGitDiffTool({ allowedRoot }),
     createInspectPackageTool({ allowedRoot }),

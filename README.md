@@ -100,6 +100,13 @@ The saved evidence contains the complete proposed files and deterministic
 policy evaluation. A `needs-clarification` or `reject` disposition is a valid
 successful outcome when the request is incomplete or unsafe.
 
+The first accepted proposal has been implemented as the registered
+`dependency-version-auditor`. Select a workspace and open **Tools** in the web
+console to inspect its input/output contract and confirm that it receives no
+caller-selected filesystem root. It compares dependency declarations across
+bounded `package.json` reads while preserving malformed-file and truncation
+evidence.
+
 ## Run a Reliability Dataset
 
 The dataset command executes every registered case through the selected role,
