@@ -82,6 +82,24 @@ paths, saved source snapshots, execution stages, model usage, timing, and cost
 estimates where pricing evidence is available. It can be downloaded as
 Markdown, presentation JSON, or complete raw evidence.
 
+## Generate a Tool Proposal
+
+Open **Tool Builder** in the web console and describe one bounded capability.
+The experimental agent generates a TypeScript implementation proposal, Zod
+contracts, tests, registration guidance, verification commands, and security
+notes. It cannot write files or run generated code.
+
+Run the included read-only example from the CLI:
+
+```bash
+npm run agents -- run tool-builder \
+  --input examples/tool-builder/read-json.json
+```
+
+The saved evidence contains the complete proposed files and deterministic
+policy evaluation. A `needs-clarification` or `reject` disposition is a valid
+successful outcome when the request is incomplete or unsafe.
+
 ## Run a Reliability Dataset
 
 The dataset command executes every registered case through the selected role,

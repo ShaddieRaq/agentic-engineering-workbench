@@ -11,9 +11,9 @@ describe("buildAgentCatalogReport", () => {
     );
 
     expect(report).toMatchObject({
-      totalAgents: 3,
+      totalAgents: 4,
       statusCounts: {
-        experimental: 0,
+        experimental: 1,
         active: 3,
         deprecated: 0,
         retired: 0,
@@ -25,6 +25,7 @@ describe("buildAgentCatalogReport", () => {
       "change-risk-reviewer@1.0.0",
       "documentation-auditor@1.0.0",
       "repository-assistant@1.0.0",
+      "tool-builder@0.1.0",
     ]);
   });
 });

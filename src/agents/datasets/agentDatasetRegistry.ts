@@ -2,11 +2,13 @@ import type { AgentDatasetDefinition } from "./agentDatasetDefinition.js";
 import { repositoryAssistantDataset } from "./repositoryAssistantDataset.js";
 import { changeRiskReviewerDataset } from "./changeRiskReviewerDataset.js";
 import { documentationAuditorDataset } from "./documentationAuditorDataset.js";
+import { toolBuilderDataset } from "./toolBuilderDataset.js";
 
 const datasets: Record<string, AgentDatasetDefinition> = {
   [changeRiskReviewerDataset.id]: changeRiskReviewerDataset,
   [documentationAuditorDataset.id]: documentationAuditorDataset,
   [repositoryAssistantDataset.id]: repositoryAssistantDataset,
+  [toolBuilderDataset.id]: toolBuilderDataset,
 };
 
 export function getAgentDatasetDefinition(id: string): AgentDatasetDefinition {

@@ -26,6 +26,7 @@ describe("changeRiskReviewerAgent", () => {
       "change-risk-reviewer",
       "documentation-auditor",
       "repository-assistant",
+      "tool-builder",
     ]);
     expect(platformAgentRegistry.get("change-risk-reviewer").manifest)
       .toMatchObject({

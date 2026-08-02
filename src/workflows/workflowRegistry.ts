@@ -16,6 +16,11 @@ const workflows: Record<string, WorkflowDescriptor> = {
     id: "repository-assistant",
     description: "Inspect, analyze, and verify a local repository.",
   },
+  "tool-proposal": {
+    id: "tool-proposal",
+    description:
+      "Generate and deterministically validate a reviewable tool implementation proposal.",
+  },
 };
 
 export function getWorkflowDescriptor(id: string): WorkflowDescriptor {

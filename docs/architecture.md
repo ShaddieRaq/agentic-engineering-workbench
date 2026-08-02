@@ -400,6 +400,8 @@ Current registered products:
 
 - `repository-assistant`: inspect, analyze, and verify repository architecture
 - `change-risk-reviewer`: review changes for grounded risk and missing tests
+- `documentation-auditor`: audit repository documentation with cited evidence
+- `tool-builder`: generate policy-checked tool proposals without installing code
 
 Agent datasets contain stable JSON inputs for one complete agent. They reuse
 the shared repetition and bounded-concurrency policy, preserve case-major
@@ -863,6 +865,36 @@ creates a safe experimental package structure with contracts, executor,
 assessment, dataset, and test. The author then explicitly registers the module.
 This keeps visual learning and operations convenient without replacing source
 control, type checking, or runtime validation.
+
+### Tool Builder Flow
+
+```text
+plain-language capability request
+        |
+        v
+strict structured generation
+        |
+        v
+propose | needs-clarification | reject
+        |
+        v
+deterministic proposal-policy evaluation
+        |
+        v
+persisted agent evidence for review
+```
+
+Tool Builder `0.1.0` has an empty tool allowlist. It cannot inspect a workspace,
+write generated files, add dependencies, or execute commands. A complete
+proposal must contain a bounded tool contract, one implementation file, one
+test file, registry guidance, and explicit verification commands. Generated
+file paths are restricted to new `src/tools/*Tool.ts` and
+`tests/*Tool.test.ts` proposals. Side effects must be explicitly authorized.
+
+Clarification and rejection are first-class successful dispositions when no
+installable files are emitted. A later installation workflow must remain a
+separate permission boundary with isolated compilation, tests, and human
+approval.
 
 ## Workspace Resolution
 

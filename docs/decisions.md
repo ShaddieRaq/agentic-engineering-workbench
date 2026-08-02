@@ -1678,3 +1678,36 @@ reports.
 - normal Markdown and JSON reports do not embed repository source content
 - complete raw evidence remains deliberately downloadable
 - source availability is limited to context persisted with that artifact
+
+---
+
+## Decision 063 — Separate Tool Proposal From Tool Installation
+
+Status: Accepted
+
+### Decision
+
+Introduce Tool Builder first as an experimental, no-tool, no-write agent. It
+may generate only structured implementation proposals containing bounded
+contracts, new tool and test files, registry guidance, verification commands,
+and security notes. Deterministically validate proposal paths, required
+artifacts, side-effect authorization, and disposition completeness. Defer file
+application, dependency installation, compilation, and command execution to a
+separate future workflow.
+
+### Rationale
+
+Generated executable code creates a materially larger permission boundary than
+generated design evidence. Proposal quality and safety decisions need a
+versioned dataset before the platform trusts generated code enough to compile
+or install it. Separating the stages also preserves a human-review point and
+prevents the model from treating successful generation as successful
+integration.
+
+### Consequences
+
+- Tool Builder can be used and evaluated without workspace read or write access
+- safe proposals, clarification requests, and security rejections are explicit
+- generated paths cannot target arbitrary repository files
+- side effects require affirmative operator authorization
+- installation will require isolated verification, review, and rollback policy

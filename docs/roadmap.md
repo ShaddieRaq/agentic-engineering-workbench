@@ -675,12 +675,38 @@ Implemented:
 - Markdown, presentation JSON, and complete raw-evidence downloads
 - presentation, export, HTTP, and React component coverage
 
+## Phase 35 — Tool Builder Proposal Agent
+
+Status: Complete foundation
+
+Implemented:
+
+- experimental registered Tool Builder agent
+- strict safe, clarification, and rejection dispositions
+- structured tool contracts and proposed TypeScript source and test files
+- separate registration guidance rather than generated registry overwrites
+- deterministic generated-path and duplicate-path validation
+- explicit side-effect authorization boundary
+- required targeted tests and typecheck commands
+- provider, refusal, failure, policy, timing, and complete proposal evidence
+- safe, incomplete, and unsafe versioned smoke cases
+- web-console discovery through the existing agent catalog
+- operator-facing example input and CLI command
+
+Deferred deliberately:
+
+- writing proposed files
+- dependency installation
+- compiling or executing generated code
+- automatic registry modification
+- approval and rollback workflow
+
 ## Current Priorities
 
-1. Use the visual report on real Documentation Auditor artifacts.
-2. Convert useful and incorrect audit findings into versioned dataset cases.
-3. Add specialized presenters for the other registered agents when their raw
-   evidence demonstrates which views are genuinely useful.
-4. Add browser end-to-end coverage after real usage stabilizes the workflow.
+1. Run Tool Builder on representative real tool requests.
+2. Convert wrong dispositions, weak contracts, unsafe code, and missed edge
+   cases into versioned verification cases.
+3. Add an isolated compile-and-test boundary for approved proposals.
+4. Require explicit review before any generated patch reaches a workspace.
 5. Introduce a database, authentication, or remote deployment only when a
    concrete operating requirement justifies those boundaries.

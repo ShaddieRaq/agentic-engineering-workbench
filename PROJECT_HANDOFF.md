@@ -235,6 +235,11 @@ The project currently supports:
 - schema-guided live runs and product-level verification
 - filtered evidence browsing with deliberate raw-artifact disclosure
 - a safe no-overwrite agent package scaffold command
+- an experimental no-write Tool Builder agent
+- structured tool contracts, proposed source, tests, registration guidance,
+  verification commands, and security notes
+- deterministic generated-path, side-effect, completeness, and verification
+  policy checks
 
 ## Current Evaluators
 
@@ -316,15 +321,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 34 evidence presentation and export: complete foundation
+Phase 35 tool-builder proposal generation: complete foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-102 test files passed
-284 tests passed
+104 test files passed
+289 tests passed
 ```
 
 This state must be verified before continuing:
@@ -352,16 +357,16 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Use the visual report on real Documentation Auditor evidence. Convert useful
-findings, false positives, missed risks, context gaps, and operator friction
-into versioned agent-dataset cases before expanding specialized presentations
-to the other registered agents.
+Run the experimental Tool Builder against representative safe, ambiguous, and
+unsafe requests. Convert incorrect dispositions, unsafe proposals, missing
+tests, and weak contracts into versioned dataset cases before giving it an
+isolated compile-and-test installation workflow.
 
 ## Broader Roadmap
 
-1. Use the Documentation Auditor on real local projects.
-2. Expand its dataset from observed failures and edge cases.
-3. Build a second workspace-scoped practical agent.
-4. Add release gates that consume persisted agent verification evidence.
+1. Evaluate Tool Builder proposal quality on representative requests.
+2. Expand its dataset from observed failures and unsafe outputs.
+3. Add isolated compilation and tests for approved proposals.
+4. Add explicit human review before installation into source control.
 5. Extract agents or replace filesystem persistence only when demonstrated
    ownership, deployment, permission, or query requirements demand it.

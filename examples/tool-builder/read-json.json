@@ -1,0 +1,9 @@
+{
+  "request": "Create a read-only tool that reads a JSON file under the selected workspace, enforces a byte limit, validates JSON, and returns the parsed value.",
+  "targetToolId": "read-json",
+  "allowSideEffects": false,
+  "additionalConstraints": [
+    "Reuse the shared repository path permission boundary.",
+    "Do not add dependencies."
+  ]
+}
