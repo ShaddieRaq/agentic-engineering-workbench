@@ -120,6 +120,24 @@ caller-selected filesystem root. It compares dependency declarations across
 bounded `package.json` reads while preserving malformed-file and truncation
 evidence.
 
+## Run a Controlled Verification Command
+
+The workbench runner exposes fixed verification actions without accepting an
+arbitrary executable, shell fragment, working directory, or argument list:
+
+```bash
+npm run verify-command -- --command typecheck
+npm run verify-command -- \
+  --command test-file \
+  --test-file tests/toolExecutor.test.ts
+```
+
+The result records the exact application-owned npm arguments, exit code,
+bounded output, duration, timeout or execution failure, restricted environment
+policy, and pass result. This is a controlled local process—not an operating-
+system sandbox—so it should run only against a workspace whose project scripts
+you trust.
+
 ## Run a Reliability Dataset
 
 The dataset command executes every registered case through the selected role,

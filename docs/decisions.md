@@ -1768,3 +1768,36 @@ the original evidence.
 - comparisons only claim what aligned observed cases support
 - regression promotion remains an explicit reviewed source-control change
 - older dataset artifacts remain readable but do not appear as experiments
+
+---
+
+## Decision 066 — Expose Verification as Fixed Actions, Not a Shell
+
+Status: Accepted
+
+### Decision
+
+Add a workspace-scoped verification tool whose caller selects only typecheck,
+the full test suite, or one canonical existing TypeScript test file. Construct
+the npm executable and arguments in application code, use a fixed deadline and
+output ceiling, restrict the child environment, and preserve exit, signal,
+output, truncation, and pass evidence. Do not describe this boundary as an
+operating-system sandbox.
+
+### Rationale
+
+Workflow agents need to validate conclusions, but a general shell would let a
+model expand its own authority and make evaluation behavior difficult to
+reproduce. Fixed actions cover the immediate engineering loop while keeping
+the command surface inspectable. Local project scripts still execute code, so
+honest security terminology is necessary.
+
+### Consequences
+
+- agents cannot supply executables, shell syntax, working directories, or
+  arbitrary arguments
+- targeted tests must already exist inside the selected workspace
+- failed tests remain useful completed evidence rather than tool crashes
+- API credentials are not inherited from the workbench process
+- only trusted workspaces should be verified without stronger isolation
+- Playwright profiles require a later explicit allowlist decision

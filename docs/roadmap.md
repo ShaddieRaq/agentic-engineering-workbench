@@ -743,13 +743,40 @@ Deferred deliberately:
 - production telemetry ingestion
 - remote artifact storage and authentication
 
+## Phase 38 — Controlled Verification Command
+
+Status: Complete foundation
+
+Implemented:
+
+- fixed typecheck, full-test, and targeted-test command identifiers
+- application-owned npm executable and argument construction
+- no caller-selected shell, executable, working directory, environment, or
+  arbitrary arguments
+- canonical existing TypeScript test-file validation within the workspace
+- traversal, symbolic-link escape, denied-path, and non-test-file rejection
+- fixed timeout and bounded combined stdout/stderr capture
+- explicit exit code, signal, truncation, environment, and pass evidence
+- nonzero test outcomes separated from tool-execution failures
+- restricted inherited environment excluding workbench API credentials
+- platform registry, Tools-page discovery, direct CLI, and adversarial tests
+
+Deferred deliberately:
+
+- arbitrary shell execution
+- caller-defined project scripts or arguments
+- Playwright-specific command profiles
+- operating-system or container isolation
+- write-capable patch application
+
 ## Current Priorities
 
-1. Run existing agents through Evaluation Studio experiments and inspect every
-   weak, failed, or unstable case.
-2. Promote reviewed failures into versioned datasets.
-3. Build a sanitized Playwright Failure Triage corpus and agent.
-4. Add an isolated compile-and-test boundary for approved proposals.
-5. Export proven agents into Claude Code and other runner-specific packages.
+1. Define a sanitized Playwright failure evidence contract and dataset.
+2. Build the Playwright Failure Triage agent from bounded inspection and
+   controlled verification capabilities.
+3. Evaluate it in the Studio and promote reviewed failures into its dataset.
+4. Add Playwright-specific verification profiles only when cases demonstrate
+   the exact command policy required.
+5. Export the proven agent into Claude Code and other runner-specific packages.
 6. Introduce a database, authentication, or remote deployment only when a
    concrete operating requirement justifies those boundaries.

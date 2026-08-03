@@ -5,6 +5,7 @@ import { createListFilesTool } from "./listFilesTool.js";
 import { createReadFileTool } from "./readFileTool.js";
 import { createSearchTextTool } from "./searchTextTool.js";
 import { createDependencyVersionAuditorTool } from "./dependencyVersionAuditor.js";
+import { createVerificationCommandTool } from "./verificationCommandTool.js";
 import type { ToolDefinition } from "./toolDefinition.js";
 import type { AgentToolCatalog } from "../agents/agentRegistration.js";
 
@@ -56,5 +57,6 @@ export function createPlatformToolRegistry(
     createListFilesTool({ allowedRoot }),
     createReadFileTool({ allowedRoot }),
     createSearchTextTool({ allowedRoot }),
+    createVerificationCommandTool({ allowedRoot }),
   ]);
 }

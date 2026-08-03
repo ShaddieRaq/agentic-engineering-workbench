@@ -230,6 +230,8 @@ The initial tools operate beneath an operator-selected repository root:
 - `search-text` recursively searches UTF-8 files for a literal query
 - `inspect-package` returns selected project, script, and dependency metadata
 - `inspect-git-diff` returns a bounded tracked patch plus untracked paths
+- `run-verification-command` runs one fixed typecheck, full-test, or targeted-
+  test npm action
 
 Their shared path policy:
 
@@ -261,8 +263,24 @@ and color output are disabled. Working-tree evidence also uses a separate fixed
 Git query to report untracked paths without reading their contents. Diff and
 path evidence share one aggregate byte limit and deadline policy.
 
-The CLI invokes this boundary directly. Model-driven tool selection is not yet
-connected; permission enforcement is tested independently first.
+`run-verification-command` accepts a command identifier rather than command
+text. The application maps it to `npm run typecheck`, `npm test`, or one
+canonical existing `.test`/`.spec` TypeScript path passed after npm's `--`
+separator. It spawns npm without a caller-controlled shell, working directory,
+executable, environment, or argument list. Output, deadline, exit code, signal,
+and domain pass status are explicit evidence. Nonzero test results are valid
+tool executions with `passed: false`; validation, permission, timeout, and
+launch failures remain tool failures.
+
+This is process control, not operating-system isolation. Trusted package
+scripts execute with the local user's filesystem permissions and could load
+their own environment files. The child receives a restricted inherited
+environment that excludes the workbench's API credentials, but stronger
+containment would require a container or operating-system sandbox.
+
+The CLI can invoke these boundaries directly. Registered agents receive only
+the manifest-approved subset and call tools through reviewed orchestration;
+an unconstrained model-driven shell loop remains outside the architecture.
 
 ### Repository Inspection Workflow
 

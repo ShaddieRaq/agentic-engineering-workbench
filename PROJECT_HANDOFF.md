@@ -251,6 +251,11 @@ The project currently supports:
 - aggregate, dataset-case, and repeated-trial Evaluation Studio views
 - aligned baseline-versus-candidate reliability comparisons by stable case ID
 - downloadable regression-case drafts without browser-side dataset mutation
+- a registered controlled verification-command tool with fixed npm actions
+- targeted test-path canonicalization and workspace escape rejection
+- bounded command output, timeout, exit, signal, and pass evidence
+- restricted child-process environment without inherited API credentials
+- explicit controlled-process versus operating-system-sandbox distinction
 
 ## Current Evaluators
 
@@ -332,15 +337,15 @@ schema fields.
 Current milestone:
 
 ```text
-Phase 37 Evaluation Studio: complete foundation
+Phase 38 controlled verification command: complete foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-107 test files passed
-303 tests passed
+109 test files passed
+317 tests passed
 ```
 
 This state must be verified before continuing:
@@ -368,18 +373,19 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Run the existing Documentation Auditor, Repository Assistant, Change Risk
-Reviewer, and Tool Builder through the Evaluation Studio. Inspect weak or
-unstable trials, promote reviewed failures into versioned dataset cases, and
-then assemble the first Playwright Failure Triage evaluation corpus.
+Define the sanitized Playwright failure evidence contract and assemble the
+first Failure Triage agent dataset. The agent can then combine existing bounded
+inspection tools with the controlled verification command and be measured in
+the Evaluation Studio.
 
 ## Broader Roadmap
 
-1. Exercise existing agents through durable Evaluation Studio experiments.
-2. Grow versioned datasets from reviewed failures and unstable outputs.
-3. Build and evaluate the Playwright Failure Triage agent against real,
+1. Define a sanitized Playwright failure evidence contract and dataset.
+2. Build and evaluate the Playwright Failure Triage agent against real,
    sanitized failure evidence.
-4. Add isolated compilation and tests for approved Tool Builder proposals.
-5. Export proven agents to runner-specific packages when ready for use.
-6. Extract agents or replace filesystem persistence only when demonstrated
+3. Exercise existing agents through durable Evaluation Studio experiments.
+4. Grow versioned datasets from reviewed failures and unstable outputs.
+5. Add isolated compilation and tests for approved Tool Builder proposals.
+6. Export proven agents to runner-specific packages when ready for use.
+7. Extract agents or replace filesystem persistence only when demonstrated
    ownership, deployment, permission, or query requirements demand it.

@@ -39,4 +39,10 @@ describe("ToolRegistry", () => {
       "dependency-version-auditor",
     );
   });
+
+  it("registers the controlled verification command", () => {
+    expect(createPlatformToolRegistry(".").ids()).toContain(
+      "run-verification-command",
+    );
+  });
 });

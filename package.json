@@ -18,6 +18,7 @@
     "search-text": "tsx src/runSearchTextTool.ts",
     "inspect-package": "tsx src/runInspectPackageTool.ts",
     "inspect-git-diff": "tsx src/runInspectGitDiffTool.ts",
+    "verify-command": "tsx src/runVerificationCommandTool.ts",
     "inspect-repository": "tsx src/runRepositoryInspection.ts",
     "analyze-repository": "tsx src/runRepositoryAnalysis.ts",
     "assist-repository": "tsx src/runRepositoryAssistant.ts",
