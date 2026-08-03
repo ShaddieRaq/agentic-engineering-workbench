@@ -59,8 +59,8 @@ The current platform already provides:
 
 The remaining boundaries are:
 
-- frozen baseline-versus-candidate execution
-- promotion gates and an auditable decision record
+- comparable provider usage and cost evidence for the cost gate
+- an auditable operator promotion decision record
 
 ## Roles and Responsibilities
 
@@ -427,7 +427,9 @@ Status: Protected evidence boundary complete
 - **Complete:** immutable plan snapshot and digest
 - **Complete:** frozen baseline/candidate execution using baseline graders
 - **Complete:** immutable candidate comparison artifact and evidence references
-- deterministic non-regression and scope gates
+- **Complete:** deterministic completeness, scope, non-regression, protected,
+  improvement, and latency gates
+- **Pending usage evidence:** enforce the configured cost tolerance
 
 Outcome: the workbench can demonstrate whether the candidate improved.
 

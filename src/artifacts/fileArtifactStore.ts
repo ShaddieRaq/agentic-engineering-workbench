@@ -82,7 +82,7 @@ function summary(
       agentVersion: evaluation.plan.subject.agentVersion,
       workspaceId: evaluation.plan.workspaceId,
       completedAt: evaluation.completedAt,
-      succeeded: null,
+      succeeded: evaluation.gates.passed,
     };
   }
 

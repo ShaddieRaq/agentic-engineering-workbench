@@ -22,6 +22,7 @@ const frozenDatasetSchema = z
     purpose: agentDatasetPurposeSchema,
     datasetDigest: z.string().regex(/^[a-f0-9]{64}$/),
     caseIds: z.array(z.string().min(1)).min(1),
+    minimumPassRate: z.number().min(0).max(1).nullable().default(null),
   })
   .strict();
 
@@ -152,6 +153,7 @@ export function createFrozenAgentCandidateEvaluationPlan(input: {
       purpose: dataset.purpose,
       datasetDigest: digestJsonEvidence(dataset),
       caseIds: dataset.cases.map(({ id }) => id),
+      minimumPassRate: baseline.manifest.verification.minimumPassRate,
     })),
   });
   const evidence = agentCandidateEvaluationPlanEvidenceSchema.parse({

@@ -6,6 +6,9 @@ import type {
   AgentCandidateEvaluationExecution,
 } from "../agents/evaluations/agentCandidateEvaluationRunner.js";
 import type {
+  AgentCandidatePromotionGatePolicy,
+} from "../agents/evaluations/agentCandidatePromotionGates.js";
+import type {
   ArtifactReference,
   ArtifactStore,
 } from "./artifactStore.js";
@@ -24,6 +27,7 @@ export async function persistAgentCandidateEvaluation(
   options: {
     candidateEvaluationId?: string;
     completedAt?: string;
+    gatePolicy?: AgentCandidatePromotionGatePolicy;
   } = {},
 ): Promise<PersistedAgentCandidateEvaluation> {
   const datasetRunReferences: ArtifactReference[] = [];

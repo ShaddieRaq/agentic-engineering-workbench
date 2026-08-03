@@ -292,6 +292,10 @@ The project currently supports:
 - immutable candidate-comparison artifacts referencing frozen plan, evaluation,
   and dataset-run evidence
 - candidate-comparison listing, loading, export, and generic presentation
+- deterministic completeness, scope, regression, protected, improvement, and
+  latency promotion gates
+- explicit non-applicable cost evidence when providers expose no usage data
+- gate outcomes embedded in candidate-comparison artifacts and presentations
 
 ## Current Evaluators
 
@@ -379,6 +383,7 @@ Phase 40 Slice B opt-in candidate policies: complete
 Phase 40 Slice C protected evidence boundary: complete foundation
 Phase 40 Slice C frozen comparative execution: complete foundation
 Phase 40 Slice C immutable comparison evidence: complete foundation
+Phase 40 Slice C deterministic promotion gates: complete foundation
 ```
 
 Verified test state:
@@ -414,9 +419,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Continue Slice C of the evidence-driven agent improvement plan with
-deterministic completeness, scope, regression, protected, latency, and cost
-gates over the immutable candidate-comparison artifact.
+Add comparable provider usage evidence to agent runs so the cost promotion gate
+can enforce its configured tolerance. Then begin Slice D with immutable
+operator approve, reject, or revise decisions over candidate comparisons.
 
 ## Broader Roadmap
 

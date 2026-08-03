@@ -81,9 +81,14 @@ export function presentArtifact(artifactId: string, stored: StoredArtifact): Art
       agentId: evaluation.plan.subject.agentId,
       agentVersion: evaluation.plan.subject.agentVersion,
       workspaceId: evaluation.plan.workspaceId,
-      succeeded: null,
+      succeeded: evaluation.gates.passed,
       assessment:
-        `${evaluation.comparison.summary.improvedCases} improved, ${evaluation.comparison.summary.regressedCases} regressed; promotion gates not yet applied.`,
+        evaluation.gates.passed
+          ? "Every automated promotion gate passed or was not applicable; operator approval is still required."
+          : `${
+            evaluation.gates.results.filter(({ status }) => status === "failed")
+              .length
+          } automated promotion gate(s) failed.`,
       overview:
         `Candidate ${evaluation.plan.candidate.candidateId} compared under frozen plan ${evaluation.plan.planId}.`,
       completedAt: evaluation.completedAt,
@@ -107,6 +112,13 @@ export function presentArtifact(artifactId: string, stored: StoredArtifact): Art
           value: String(evaluation.comparison.summary.unchangedCases),
           detail: null,
         },
+        {
+          id: "gates",
+          label: "Promotion gates",
+          value: evaluation.gates.passed ? "Passed" : "Failed",
+          detail:
+            `${evaluation.gates.results.filter(({ status }) => status === "failed").length} failed`,
+        },
       ],
       findings: [],
       coverageGaps: [],
@@ -114,7 +126,12 @@ export function presentArtifact(artifactId: string, stored: StoredArtifact): Art
       sources: [],
       timeline: [],
       usage: null,
-      warnings: ["Promotion gates have not been applied to this comparison."],
+      warnings: [
+        "Automated gates do not promote a candidate without an operator decision.",
+        ...evaluation.gates.results
+          .filter(({ status }) => status === "not-applicable")
+          .map(({ gateId, message }) => `${gateId}: ${message}`),
+      ],
     });
   }
 

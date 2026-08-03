@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { agentCandidateEvaluationPlanEvidenceSchema } from "./agentCandidateEvaluationPlan.js";
+import {
+  agentCandidatePromotionGateEvaluationSchema,
+  evaluateAgentCandidatePromotionGates,
+  type AgentCandidatePromotionGatePolicy,
+} from "./agentCandidatePromotionGates.js";
 import type { AgentCandidateEvaluationExecution } from "./agentCandidateEvaluationRunner.js";
 import { agentEvaluationComparisonSchema } from "./agentEvaluationView.js";
 
@@ -18,6 +23,7 @@ export const agentCandidateEvaluationArtifactSchema = z
     baseline: evaluationReferenceSchema,
     candidate: evaluationReferenceSchema,
     comparison: agentEvaluationComparisonSchema,
+    gates: agentCandidatePromotionGateEvaluationSchema,
     completedAt: z.string().min(1),
   })
   .strict()
@@ -99,6 +105,7 @@ export function createAgentCandidateEvaluationArtifact(
   options: {
     candidateEvaluationId?: string;
     completedAt?: string;
+    gatePolicy?: AgentCandidatePromotionGatePolicy;
   } = {},
 ): AgentCandidateEvaluationArtifact {
   return agentCandidateEvaluationArtifactSchema.parse({
@@ -118,6 +125,10 @@ export function createAgentCandidateEvaluationArtifact(
       ),
     },
     comparison: execution.comparison,
+    gates: evaluateAgentCandidatePromotionGates(
+      execution,
+      options.gatePolicy ?? {},
+    ),
     completedAt: options.completedAt ?? new Date().toISOString(),
   });
 }

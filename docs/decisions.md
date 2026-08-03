@@ -2063,3 +2063,36 @@ without weakening the immutability of existing run and evaluation artifacts.
   the existing artifact boundaries
 - comparison summaries do not imply approval before promotion gates run
 - deterministic promotion gates remain the next control
+
+---
+
+## Decision 075 — Embed Deterministic Promotion Gates in Comparisons
+
+Status: Accepted
+
+### Decision
+
+Evaluate every completed candidate comparison with a fixed set of deterministic
+gates: completeness, scope, regression, protected, improvement, latency, and
+cost. Persist the gate policy and results inside the candidate-comparison
+artifact. Treat any failed gate as a blocked comparison, while allowing
+not-applicable results when protected datasets or cost evidence are absent.
+
+### Rationale
+
+A comparison that only reports pass-rate deltas can hide incomplete evidence,
+frozen-plan drift, protected regressions, or latency inflation. Embedding the
+gates in the comparison artifact makes the promotion boundary inspectable and
+prevents later decision records from inventing a different automated policy.
+
+### Consequences
+
+- completeness requires every planned case and every planned trial on both sides
+- scope verifies plan digest, workspace, model, execution policy, and candidate
+  lineage
+- regression datasets may not regress; protected datasets must meet their
+  frozen threshold without regression
+- at least one non-protected case must improve
+- latency uses mean trial duration and a configured regression ratio
+- cost remains not-applicable until comparable usage evidence exists
+- automated gate passage still requires an explicit operator decision

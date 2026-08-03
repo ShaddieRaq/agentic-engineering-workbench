@@ -11,6 +11,7 @@ import { toolBuilderDataset } from "../src/agents/datasets/toolBuilderDataset.js
 import { createFrozenAgentCandidateEvaluationPlan } from "../src/agents/evaluations/agentCandidateEvaluationPlan.js";
 import { runFrozenAgentCandidateEvaluation } from "../src/agents/evaluations/agentCandidateEvaluationRunner.js";
 import { agentCandidateEvaluationArtifactSchema } from "../src/agents/evaluations/agentCandidateEvaluationArtifact.js";
+import { evaluateAgentCandidatePromotionGates } from "../src/agents/evaluations/agentCandidatePromotionGates.js";
 import { toolBuilderAgent } from "../src/agents/toolBuilder/toolBuilderAgent.js";
 import { FakeProvider } from "../src/providers/fakeProvider.js";
 import { ToolRegistry } from "../src/tools/toolRegistry.js";
@@ -205,6 +206,87 @@ describe("createFrozenAgentCandidateEvaluationPlan", () => {
     expect(result.baseline.datasetRuns[0]?.runs[0]?.agentRun.input).toEqual(
       result.candidate.datasetRuns[0]?.runs[0]?.agentRun.input,
     );
+    const gates = evaluateAgentCandidatePromotionGates(result, {
+      maximumLatencyRegressionRatio: 1_000_000_000,
+    });
+    expect(gates).toMatchObject({
+      passed: true,
+      results: expect.arrayContaining([
+        expect.objectContaining({ gateId: "completeness", status: "passed" }),
+        expect.objectContaining({ gateId: "scope", status: "passed" }),
+        expect.objectContaining({ gateId: "regression", status: "passed" }),
+        expect.objectContaining({
+          gateId: "protected",
+          status: "not-applicable",
+        }),
+        expect.objectContaining({ gateId: "improvement", status: "passed" }),
+        expect.objectContaining({ gateId: "cost", status: "not-applicable" }),
+      ]),
+    });
+
+    const regressed = structuredClone(result);
+    regressed.comparison.cases[0]!.classification = "regressed";
+    expect(
+      evaluateAgentCandidatePromotionGates(regressed).results,
+    ).toContainEqual(
+      expect.objectContaining({ gateId: "regression", status: "failed" }),
+    );
+
+    const incomplete = structuredClone(result);
+    incomplete.comparison.cases.pop();
+    expect(
+      evaluateAgentCandidatePromotionGates(incomplete).results,
+    ).toContainEqual(
+      expect.objectContaining({ gateId: "completeness", status: "failed" }),
+    );
+
+    const scopeDrift = structuredClone(result);
+    delete scopeDrift.candidate.datasetRuns[0]!.runs[0]!.agentRun.candidate;
+    expect(
+      evaluateAgentCandidatePromotionGates(scopeDrift).results,
+    ).toContainEqual(
+      expect.objectContaining({ gateId: "scope", status: "failed" }),
+    );
+
+    const latencyRegression = structuredClone(result);
+    for (const run of latencyRegression.baseline.datasetRuns[0]!.runs) {
+      run.agentRun.durationMs = 1;
+    }
+    for (const run of latencyRegression.candidate.datasetRuns[0]!.runs) {
+      run.agentRun.durationMs = 2;
+    }
+    expect(
+      evaluateAgentCandidatePromotionGates(latencyRegression, {
+        maximumLatencyRegressionRatio: 0,
+      }).results,
+    ).toContainEqual(
+      expect.objectContaining({ gateId: "latency", status: "failed" }),
+    );
+
+    const protectedExecution = structuredClone(result);
+    protectedExecution.plan = {
+      ...protectedExecution.plan,
+      datasets: protectedExecution.plan.datasets.map((plannedDataset) => ({
+        ...plannedDataset,
+        purpose: "protected" as const,
+        minimumPassRate: 1,
+      })),
+    };
+    expect(
+      evaluateAgentCandidatePromotionGates(protectedExecution, {
+        maximumLatencyRegressionRatio: 1_000_000_000,
+      }).results,
+    ).toContainEqual(
+      expect.objectContaining({ gateId: "protected", status: "passed" }),
+    );
+    protectedExecution.comparison.cases[0]!.candidatePassRate = 0;
+    expect(
+      evaluateAgentCandidatePromotionGates(protectedExecution, {
+        maximumLatencyRegressionRatio: 1_000_000_000,
+      }).results,
+    ).toContainEqual(
+      expect.objectContaining({ gateId: "protected", status: "failed" }),
+    );
 
     const store = new FileArtifactStore(
       await mkdtemp(join(tmpdir(), "candidate-evaluation-")),
@@ -212,6 +294,9 @@ describe("createFrozenAgentCandidateEvaluationPlan", () => {
     const persisted = await persistAgentCandidateEvaluation(store, result, {
       candidateEvaluationId: "00000000-0000-4000-8000-000000000020",
       completedAt: "2026-08-03T22:00:00.000Z",
+      gatePolicy: {
+        maximumLatencyRegressionRatio: 1_000_000_000,
+      },
     });
     const loaded = await store.load(persisted.reference.id);
 
@@ -226,12 +311,12 @@ describe("createFrozenAgentCandidateEvaluationPlan", () => {
       expect.objectContaining({
         id: persisted.artifact.candidateEvaluationId,
         agentId: "tool-builder",
-        succeeded: null,
+        succeeded: true,
       }),
     ]);
     expect(presentArtifact(persisted.reference.id, loaded)).toMatchObject({
       artifactKind: "agent-candidate-evaluation",
-      succeeded: null,
+      succeeded: true,
     });
     expect(() =>
       agentCandidateEvaluationArtifactSchema.parse({

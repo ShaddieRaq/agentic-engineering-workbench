@@ -823,9 +823,10 @@ Delivery:
    mutation.
 4. **Complete:** Development, regression, and protected dataset purposes with
    protected evidence withheld from the optimizer.
-5. **In progress:** Frozen baseline-versus-candidate execution and immutable
-   comparison evidence are complete; deterministic regression, scope,
-   completeness, latency, and cost gates remain.
+5. **In progress:** Frozen execution, immutable comparison evidence, and
+   deterministic completeness, scope, regression, protected, improvement, and
+   latency gates are complete. Comparable provider usage evidence remains
+   before the cost tolerance can be enforced.
 6. Immutable approve, reject, or revise decisions in Evaluation Studio.
 7. Linked handoffs to Tool Builder and Change Risk Reviewer when a proposal
    requires capabilities or source changes.
@@ -854,9 +855,9 @@ Deferred deliberately:
 
 ## Current Priorities
 
-1. Add deterministic completeness, scope, regression, and protected gates over
-   immutable candidate-comparison evidence.
-2. Add explicit latency and cost tolerance gates.
+1. Preserve comparable provider usage and cost evidence in agent runs and
+   enforce the candidate cost tolerance.
+2. Add immutable approve, reject, or revise operator decisions.
 3. Complete one local baseline-to-candidate-to-decision workflow.
 4. Exercise Playwright Failure Triage against reviewed real failures after the
    general improvement loop is established.
