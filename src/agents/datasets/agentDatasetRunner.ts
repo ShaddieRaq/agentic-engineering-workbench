@@ -6,6 +6,7 @@ import {
 } from "../../orchestration/executionPolicy.js";
 import { mapWithConcurrency } from "../../orchestration/mapWithConcurrency.js";
 import type { AgentRegistry } from "../agentRegistry.js";
+import type { AgentOutputAssessment } from "../agentRegistration.js";
 import type { AgentRunResult } from "../agentRunResult.js";
 import { agentRunResultSchema } from "../agentRunResult.js";
 import type {
@@ -21,6 +22,8 @@ export type AgentDatasetExecutor = (
 export interface AgentDatasetRunEvidence {
   datasetCaseId: string;
   agentRun: AgentRunResult;
+  expectation?: AgentDatasetCase["expected"] | undefined;
+  caseAssessment?: AgentOutputAssessment | undefined;
 }
 
 export interface AgentDatasetCaseSummary {
@@ -52,6 +55,14 @@ export const agentDatasetRunResultSchema: z.ZodType<AgentDatasetRunResult> = z
         .object({
           datasetCaseId: z.string().min(1),
           agentRun: agentRunResultSchema,
+          expectation: z.json().optional(),
+          caseAssessment: z
+            .object({
+              passed: z.boolean(),
+              message: z.string().min(1),
+            })
+            .strict()
+            .optional(),
         })
         .strict(),
     ),
@@ -77,6 +88,14 @@ export async function runAgentDataset(
   options: ExecutionOptions = {},
 ): Promise<AgentDatasetRunResult> {
   const registration = agents.get(dataset.agentId);
+  if (
+    dataset.cases.some(({ expected }) => expected !== undefined) &&
+    registration.assessDatasetCase === undefined
+  ) {
+    throw new Error(
+      `Agent ${dataset.agentId} does not define dataset-case assessment.`,
+    );
+  }
   const policy = parseExecutionOptions(options);
   const plan = dataset.cases.flatMap((datasetCase) =>
     Array.from({ length: policy.repetitions }, () => datasetCase),
@@ -84,15 +103,47 @@ export async function runAgentDataset(
   const runs = await mapWithConcurrency(
     plan,
     policy.concurrency,
-    async (datasetCase) => ({
-      datasetCaseId: datasetCase.id,
-      agentRun: await execute(dataset.agentId, datasetCase.input),
-    }),
+    async (datasetCase) => {
+      const agentRun = await execute(dataset.agentId, datasetCase.input);
+      let caseAssessment: AgentOutputAssessment | undefined;
+
+      if (
+        datasetCase.expected !== undefined &&
+        registration.assessDatasetCase !== undefined &&
+        agentRun.succeeded &&
+        agentRun.output !== null
+      ) {
+        try {
+          caseAssessment = registration.assessDatasetCase(
+            datasetCase.input,
+            agentRun.output,
+            datasetCase.expected,
+          );
+        } catch (error: unknown) {
+          caseAssessment = {
+            passed: false,
+            message: `Dataset-case assessment failed: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          };
+        }
+      }
+
+      return {
+        datasetCaseId: datasetCase.id,
+        agentRun,
+        ...(datasetCase.expected === undefined
+          ? {}
+          : { expectation: datasetCase.expected }),
+        ...(caseAssessment === undefined ? {} : { caseAssessment }),
+      };
+    },
   );
   const caseSummaries = dataset.cases.map(({ id }) => {
     const caseRuns = runs.filter(({ datasetCaseId }) => datasetCaseId === id);
     const passedRuns = caseRuns.filter(
-      ({ agentRun }) => agentRun.succeeded,
+      ({ agentRun, caseAssessment }) =>
+        agentRun.succeeded && (caseAssessment?.passed ?? true),
     ).length;
 
     return {

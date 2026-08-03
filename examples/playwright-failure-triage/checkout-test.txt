@@ -1,0 +1,8 @@
+Playwright test excerpt from tests/checkout.spec.ts:
+
+test("customer completes checkout", async ({ request }) => {
+  const response = await request.post("/api/checkout", {
+    data: { cartId: "known-cart", paymentToken: "valid-token" },
+  });
+  expect(response.status()).toBe(200);
+});

@@ -36,6 +36,11 @@ export function ArtifactPresentationView({
     }
   }
   const outcome = presentation.succeeded === null ? "active" : presentation.succeeded ? "completed" : "failed";
+  const reportLabel = presentation.presentationKind === "documentation-audit"
+    ? "Audit"
+    : presentation.presentationKind === "playwright-failure-triage"
+      ? "Triage"
+      : "Evidence";
   return <>
     <header className="page-header">
       <div><span className="eyebrow">{presentation.artifactKind} · {presentation.presentationKind}</span><h1>{presentation.title}</h1></div>
@@ -52,10 +57,10 @@ export function ArtifactPresentationView({
       <div><span>Duration</span><strong className="metric-word">{milliseconds(presentation.durationMs)}</strong></div>
       <div><span>Completed</span><strong className="metric-word">{new Date(presentation.completedAt).toLocaleString()}</strong></div>
     </section>
-    {presentation.overview && <section className="hero-panel report-overview"><span className="eyebrow">Audit overview</span><h2>{presentation.overview}</h2>{presentation.assessment && <p>{presentation.assessment}</p>}</section>}
-    {!!presentation.metrics.length && <section><div className="section-heading"><div><span className="eyebrow">Observed evidence</span><h2>Audit metrics</h2></div></div><div className="metric-grid report-metrics">{presentation.metrics.map((metric) => <div key={metric.id}><span>{metric.label}</span><strong>{metric.value}</strong>{metric.detail && <small>{metric.detail}</small>}</div>)}</div></section>}
+    {presentation.overview && <section className="hero-panel report-overview"><span className="eyebrow">{reportLabel} overview</span><h2>{presentation.overview}</h2>{presentation.assessment && <p>{presentation.assessment}</p>}</section>}
+    {!!presentation.metrics.length && <section><div className="section-heading"><div><span className="eyebrow">Observed evidence</span><h2>{reportLabel} metrics</h2></div></div><div className="metric-grid report-metrics">{presentation.metrics.map((metric) => <div key={metric.id}><span>{metric.label}</span><strong>{metric.value}</strong>{metric.detail && <small>{metric.detail}</small>}</div>)}</div></section>}
     {!!presentation.warnings.length && <section className="notice notice-warning"><strong>Evidence warnings</strong><ul>{presentation.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></section>}
-    {!!presentation.findings.length && <section><div className="section-heading"><div><span className="eyebrow">Grounded conclusions</span><h2>Findings</h2></div><span>{presentation.findings.length} total</span></div><div className="finding-list">{presentation.findings.map((finding, index) => <article className={`finding-card severity-${finding.severity}`} key={`${finding.title}-${index}`}><div className="finding-heading"><div><span className="eyebrow">{finding.category}</span><h3>{finding.title}</h3></div><span className={`severity severity-${finding.severity}`}>{finding.severity}</span></div><p>{finding.explanation}</p><div className="recommendation"><strong>Recommendation</strong><p>{finding.recommendation}</p></div><SourceLinks paths={finding.evidencePaths} onSelect={(path) => void inspectSource(path)} /></article>)}</div></section>}
+    {!!presentation.findings.length && <section><div className="section-heading"><div><span className="eyebrow">Grounded conclusions</span><h2>Findings</h2></div><span>{presentation.findings.length} total</span></div><div className="finding-list">{presentation.findings.map((finding, index) => <article className={`finding-card severity-${finding.severity}`} key={`${finding.title}-${index}`}><div className="finding-heading"><div><span className="eyebrow">{finding.category}</span><h3>{finding.title}</h3></div><span className={`severity severity-${finding.severity}`}>{presentation.presentationKind === "playwright-failure-triage" ? `${finding.severity} confidence` : finding.severity}</span></div><p>{finding.explanation}</p><div className="recommendation"><strong>Recommendation</strong><p>{finding.recommendation}</p></div><SourceLinks paths={finding.evidencePaths} onSelect={(path) => void inspectSource(path)} /></article>)}</div></section>}
     {!presentation.findings.length && presentation.presentationKind === "documentation-audit" && <section className="notice">No documentation findings were recorded for this audit.</section>}
     {!!presentation.prioritizedActions.length && <section className="panel"><span className="eyebrow">Recommended sequence</span><h2>Prioritized actions</h2><ol className="action-list">{presentation.prioritizedActions.map((action) => <li key={action}>{action}</li>)}</ol></section>}
     {!!presentation.coverageGaps.length && <section><div className="section-heading"><div><span className="eyebrow">Known limits</span><h2>Coverage gaps</h2></div></div><div className="finding-list">{presentation.coverageGaps.map((gap) => <article className="detail-block" key={gap.area}><h3>{gap.area}</h3><p>{gap.reason}</p><SourceLinks paths={gap.evidencePaths} onSelect={(path) => void inspectSource(path)} /></article>)}</div></section>}

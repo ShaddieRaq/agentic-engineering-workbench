@@ -4,6 +4,7 @@ export const agentDatasetCaseSchema = z
   .object({
     id: z.string().min(1),
     input: z.json(),
+    expected: z.json().optional(),
   })
   .strict();
 

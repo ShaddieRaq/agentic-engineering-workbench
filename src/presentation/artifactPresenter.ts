@@ -1,13 +1,18 @@
 import type { StoredArtifact } from "../artifacts/artifactStore.js";
 import { artifactPresentationSchema, type ArtifactPresentation, type ArtifactSourceSnapshot } from "./artifactPresentation.js";
 import { getDocumentationAuditSource, presentDocumentationAudit } from "./documentationAuditPresentation.js";
+import { getPlaywrightFailureTriageSource, presentPlaywrightFailureTriage } from "./playwrightFailureTriagePresentation.js";
 
 export function presentArtifact(artifactId: string, stored: StoredArtifact): ArtifactPresentation {
   if (stored.kind === "agent-run") {
-    const specializedRequested = stored.artifact.agentId === "documentation-auditor";
-    const specialized = specializedRequested
+    const specializedRequested =
+      stored.artifact.agentId === "documentation-auditor" ||
+      stored.artifact.agentId === "playwright-failure-triage";
+    const specialized = stored.artifact.agentId === "documentation-auditor"
       ? presentDocumentationAudit(artifactId, stored.artifact)
-      : null;
+      : stored.artifact.agentId === "playwright-failure-triage"
+        ? presentPlaywrightFailureTriage(artifactId, stored.artifact)
+        : null;
     if (specialized) return specialized;
     const run = stored.artifact;
     return artifactPresentationSchema.parse({
@@ -86,6 +91,12 @@ export function presentArtifact(artifactId: string, stored: StoredArtifact): Art
 }
 
 export function getArtifactSource(stored: StoredArtifact, path: string): ArtifactSourceSnapshot | null {
-  if (stored.kind !== "agent-run" || stored.artifact.agentId !== "documentation-auditor") return null;
-  return getDocumentationAuditSource(stored.artifact, path);
+  if (stored.kind !== "agent-run") return null;
+  if (stored.artifact.agentId === "documentation-auditor") {
+    return getDocumentationAuditSource(stored.artifact, path);
+  }
+  if (stored.artifact.agentId === "playwright-failure-triage") {
+    return getPlaywrightFailureTriageSource(stored.artifact, path);
+  }
+  return null;
 }

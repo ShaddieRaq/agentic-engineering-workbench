@@ -155,9 +155,11 @@ export interface EvaluationList {
 export interface EvaluationTrial {
   agentRunId: string;
   succeeded: boolean;
+  runtimeSucceeded: boolean;
   input: unknown;
   output: unknown | null;
   assessment: { passed: boolean; message: string } | null;
+  caseAssessment: { passed: boolean; message: string } | null;
   failure: { stage: string; category: string; message: string } | null;
   durationMs: number;
   completedAt: string;
@@ -173,6 +175,7 @@ export interface EvaluationCase {
   minimumPassRate: number | null;
   passed: boolean;
   input: unknown;
+  expectation: unknown | null;
   trials: EvaluationTrial[];
 }
 
@@ -215,7 +218,7 @@ export interface AgentEvaluationEvidence {
 export interface ArtifactPresentation {
   artifactId: string;
   artifactKind: "agent-run" | "agent-dataset-run" | "agent-evaluation";
-  presentationKind: "generic" | "documentation-audit";
+  presentationKind: "generic" | "documentation-audit" | "playwright-failure-triage";
   title: string;
   agentId: string;
   agentVersion: string;
@@ -228,7 +231,7 @@ export interface ArtifactPresentation {
   metrics: Array<{ id: string; label: string; value: string; detail: string | null }>;
   findings: Array<{
     title: string;
-    category: "stale" | "missing" | "inconsistent" | "accurate";
+    category: "stale" | "missing" | "inconsistent" | "accurate" | "test-defect" | "application-defect" | "environment" | "test-data" | "infrastructure" | "product-change" | "unknown";
     severity: "low" | "medium" | "high";
     explanation: string;
     evidencePaths: string[];

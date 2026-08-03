@@ -138,6 +138,29 @@ policy, and pass result. This is a controlled local process—not an operating-
 system sandbox—so it should run only against a workspace whose project scripts
 you trust.
 
+## Triage a Playwright Failure
+
+The experimental `playwright-failure-triage` agent turns a sanitized Playwright
+failure report into a structured, evidence-linked diagnosis. It reads only the
+named repository files and may run one fixed targeted-test verification action;
+it cannot choose an arbitrary command or edit the workspace.
+
+Run the included example from the CLI:
+
+```bash
+npm run agents -- run playwright-failure-triage \
+  --input examples/playwright-failure-triage/input.json
+```
+
+The saved artifact retains the failure input, bounded file reads, optional
+verification evidence, model response, citation checks, and timing. In the web
+console, use **Raw JSON** for this nested input and open the completed run for a
+specialized triage view with its diagnosis, actions, gaps, and cited sources.
+
+Its registered smoke dataset keeps expected classifications and required
+evidence paths hidden from the model. Evaluation Studio therefore distinguishes
+"the agent ran successfully" from "the diagnosis matched the reviewed answer."
+
 ## Run a Reliability Dataset
 
 The dataset command executes every registered case through the selected role,

@@ -769,12 +769,42 @@ Deferred deliberately:
 - operating-system or container isolation
 - write-capable patch application
 
+## Phase 39 — Playwright Failure Triage Agent
+
+Status: Complete foundation
+
+Implemented:
+
+- strict sanitized Playwright failure, attachment-metadata, and diagnosis
+  contracts
+- bounded repository reads selected from explicit failure input
+- optional fixed targeted-test verification through the controlled command tool
+- explicit untrusted-data prompt boundaries for logs, stacks, files, and command
+  output
+- deterministic rejection of invented repository and verification citations
+- complete read, command, provider, refusal, failure, citation, and timing
+  evidence
+- hidden dataset expectations kept outside model input
+- case-specific deterministic assessment separated from runtime success
+- expectation and assessment drill-down in Evaluation Studio
+- three representative test-defect, application-defect, and environment cases
+- registered experimental agent, workflow, dataset, and specialized run
+  presentation
+
+Deferred deliberately:
+
+- Playwright trace, HTML report, screenshot, and video parsing
+- automatic reruns or arbitrary Playwright command construction
+- source edits and patch application
+- unsanitized production failure ingestion
+- statistical claims from the small smoke dataset
+
 ## Current Priorities
 
-1. Define a sanitized Playwright failure evidence contract and dataset.
-2. Build the Playwright Failure Triage agent from bounded inspection and
-   controlled verification capabilities.
-3. Evaluate it in the Studio and promote reviewed failures into its dataset.
+1. Run the Playwright Failure Triage smoke dataset in Evaluation Studio.
+2. Add reviewed, sanitized failures from real projects as versioned cases.
+3. Promote incorrect or weak diagnoses into regression cases with hidden
+   expectations.
 4. Add Playwright-specific verification profiles only when cases demonstrate
    the exact command policy required.
 5. Export the proven agent into Claude Code and other runner-specific packages.

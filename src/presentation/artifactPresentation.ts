@@ -17,7 +17,19 @@ export const presentationTimelineStepSchema = z.object({
 
 export const presentationFindingSchema = z.object({
   title: z.string().min(1),
-  category: z.enum(["stale", "missing", "inconsistent", "accurate"]),
+  category: z.enum([
+    "stale",
+    "missing",
+    "inconsistent",
+    "accurate",
+    "test-defect",
+    "application-defect",
+    "environment",
+    "test-data",
+    "infrastructure",
+    "product-change",
+    "unknown",
+  ]),
   severity: z.enum(["low", "medium", "high"]),
   explanation: z.string().min(1),
   evidencePaths: z.array(z.string().min(1)),
@@ -45,7 +57,11 @@ export const presentationUsageSchema = z.object({
 export const artifactPresentationSchema = z.object({
   artifactId: z.string().min(1),
   artifactKind: z.enum(["agent-run", "agent-dataset-run", "agent-evaluation"]),
-  presentationKind: z.enum(["generic", "documentation-audit"]),
+  presentationKind: z.enum([
+    "generic",
+    "documentation-audit",
+    "playwright-failure-triage",
+  ]),
   title: z.string().min(1),
   agentId: z.string().min(1),
   agentVersion: z.string().min(1),

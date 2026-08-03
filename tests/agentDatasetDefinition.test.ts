@@ -26,4 +26,23 @@ describe("agentDatasetDefinitionSchema", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("preserves a hidden JSON expectation separately from agent input", () => {
+    const result = agentDatasetDefinitionSchema.parse({
+      id: "triage-dataset",
+      description: "Ground-truth triage cases.",
+      agentId: "triage-agent",
+      cases: [{
+        id: "timeout",
+        input: { failureMessage: "Timed out." },
+        expected: { classification: "test-defect" },
+      }],
+    });
+
+    expect(result.cases[0]).toEqual({
+      id: "timeout",
+      input: { failureMessage: "Timed out." },
+      expected: { classification: "test-defect" },
+    });
+  });
 });

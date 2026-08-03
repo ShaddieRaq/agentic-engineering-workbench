@@ -98,4 +98,80 @@ describe("runAgentDataset", () => {
       },
     ]);
   });
+
+  it("uses hidden case expectations instead of runtime success for reliability", async () => {
+    const expectedRegistration = defineAgent({
+      manifest: {
+        ...registration.manifest,
+        id: "expected-agent",
+        name: "Expected Agent",
+      },
+      inputSchema: z.object({}).strict(),
+      outputSchema: z.object({ classification: z.string() }).strict(),
+      async execute() {
+        return { classification: "application-defect" };
+      },
+      assessDatasetCase(_input, output, expected) {
+        const parsed = z.object({ classification: z.string() }).parse(expected);
+        return {
+          passed: output.classification === parsed.classification,
+          message: "Classification must match hidden ground truth.",
+        };
+      },
+    });
+    const expectedDataset = agentDatasetDefinitionSchema.parse({
+      id: "expected-dataset",
+      description: "Expected result.",
+      agentId: "expected-agent",
+      cases: [{
+        id: "case",
+        input: {},
+        expected: { classification: "test-defect" },
+      }],
+    });
+    const agentRun: AgentRunResult = {
+      ...run(true),
+      agentId: "expected-agent",
+      manifest: expectedRegistration.manifest,
+      output: { classification: "application-defect" },
+    };
+    const result = await runAgentDataset(
+      expectedDataset,
+      new AgentRegistry([expectedRegistration]),
+      async () => agentRun,
+    );
+
+    expect(result.runs[0]).toMatchObject({
+      expectation: { classification: "test-defect" },
+      caseAssessment: {
+        passed: false,
+        message: "Classification must match hidden ground truth.",
+      },
+      agentRun: { succeeded: true },
+    });
+    expect(result.caseSummaries[0]).toMatchObject({
+      passedRuns: 0,
+      failedRuns: 1,
+      passRate: 0,
+    });
+  });
+
+  it("rejects expected cases before execution when the agent has no case assessor", async () => {
+    const execute = vi.fn(async () => run(true));
+    const expectedDataset = agentDatasetDefinitionSchema.parse({
+      id: "invalid-expected-dataset",
+      description: "Missing policy.",
+      agentId: "test-agent",
+      cases: [{ id: "case", input: {}, expected: { answer: true } }],
+    });
+
+    await expect(
+      runAgentDataset(
+        expectedDataset,
+        new AgentRegistry([registration]),
+        execute,
+      ),
+    ).rejects.toThrow("does not define dataset-case assessment");
+    expect(execute).not.toHaveBeenCalled();
+  });
 });

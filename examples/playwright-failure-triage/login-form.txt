@@ -1,0 +1,9 @@
+Rendered login form implementation excerpt:
+
+<form aria-label="Customer login">
+  <label>Email <input name="email" /></label>
+  <label>Password <input name="password" type="password" /></label>
+  <button data-testid="login-submit" type="submit">Sign in</button>
+</form>
+
+The maintained test identifier is login-submit.

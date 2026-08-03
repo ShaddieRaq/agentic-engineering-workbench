@@ -888,6 +888,39 @@ observations. Case drill-down exposes the exact saved input, structured output,
 assessment, failure, and duration for every trial. The UI may download a
 reviewable dataset-case draft, but it cannot mutate versioned evaluation policy.
 
+Dataset cases may also carry hidden JSON expectations that are never included
+in agent input. An agent can register a deterministic case assessor that
+compares its structured result with that reviewed ground truth. Evaluation
+evidence records runtime success and case correctness separately, preventing a
+schema-valid but incorrect answer from being counted as reliable.
+
+### Playwright Failure Triage
+
+The first domain agent built on this evaluation boundary accepts sanitized
+Playwright failure evidence and explicit repository-relative source paths:
+
+```text
+sanitized failure report
+        |
+        v
+bounded source reads + optional fixed targeted test
+        |
+        v
+structured diagnosis with evidence citations
+        |
+        v
+citation validation + hidden case assessment + persisted evidence
+```
+
+Failure messages, stacks, file contents, and command output are explicitly
+marked as untrusted data in the model request. Attachments are metadata only;
+trace archives, screenshots, and videos are not ingested. Repository citations
+must match successful reads, and verification citations are allowed only when a
+controlled verification result exists. The agent classifies failures as test
+defects, application defects, environment, test data, infrastructure, product
+change, or unknown while preserving the evidence needed to challenge that
+conclusion.
+
 ### Web Security Boundary
 
 The console is a local control plane, not a remotely hosted application. It:

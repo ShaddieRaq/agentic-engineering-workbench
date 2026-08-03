@@ -26,6 +26,11 @@ export interface AgentRegistration {
     services: AgentExecutionServices,
   ): Promise<unknown>;
   assess(output: unknown): AgentOutputAssessment;
+  assessDatasetCase?(
+    input: unknown,
+    output: unknown,
+    expected: unknown,
+  ): AgentOutputAssessment;
 }
 
 export interface AgentOutputAssessment {
@@ -42,6 +47,11 @@ export interface TypedAgentRegistration<TInput, TOutput> {
     services: AgentExecutionServices,
   ): Promise<TOutput>;
   assess?(output: TOutput): AgentOutputAssessment;
+  assessDatasetCase?(
+    input: TInput,
+    output: TOutput,
+    expected: unknown,
+  ): AgentOutputAssessment;
 }
 
 export function defineAgent<TInput, TOutput>(
@@ -49,7 +59,7 @@ export function defineAgent<TInput, TOutput>(
 ): AgentRegistration {
   const manifest = agentManifestSchema.parse(registration.manifest);
 
-  return {
+  const defined: AgentRegistration = {
     manifest,
     inputSchema: registration.inputSchema,
     outputSchema: registration.outputSchema,
@@ -63,4 +73,15 @@ export function defineAgent<TInput, TOutput>(
       };
     },
   };
+
+  if (registration.assessDatasetCase) {
+    defined.assessDatasetCase = (input, output, expected) =>
+      registration.assessDatasetCase!(
+        input as TInput,
+        output as TOutput,
+        expected,
+      );
+  }
+
+  return defined;
 }

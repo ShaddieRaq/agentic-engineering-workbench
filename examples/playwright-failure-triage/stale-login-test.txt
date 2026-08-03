@@ -1,0 +1,9 @@
+Playwright test excerpt from tests/login.spec.ts:
+
+test("customer can sign in", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("customer@example.test");
+  await page.getByLabel("Password").fill("correct-password");
+  await page.getByTestId("submit-login").click();
+  await expect(page).toHaveURL("/account");
+});

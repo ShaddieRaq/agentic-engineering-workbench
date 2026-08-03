@@ -25,6 +25,7 @@ describe("changeRiskReviewerAgent", () => {
     expect(platformAgentRegistry.list().map(({ id }) => id)).toEqual([
       "change-risk-reviewer",
       "documentation-auditor",
+      "playwright-failure-triage",
       "repository-assistant",
       "tool-builder",
     ]);

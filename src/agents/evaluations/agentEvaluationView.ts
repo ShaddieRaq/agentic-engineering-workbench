@@ -9,9 +9,11 @@ const jsonValueSchema = z.json();
 export interface EvaluationTrialView {
   agentRunId: string;
   succeeded: boolean;
+  runtimeSucceeded: boolean;
   input: z.infer<typeof jsonValueSchema>;
   output: z.infer<typeof jsonValueSchema> | null;
   assessment: { passed: boolean; message: string } | null;
+  caseAssessment: { passed: boolean; message: string } | null;
   failure: AgentRunFailure | null;
   durationMs: number;
   completedAt: string;
@@ -27,6 +29,7 @@ export interface EvaluationCaseView {
   minimumPassRate: number | null;
   passed: boolean;
   input: z.infer<typeof jsonValueSchema>;
+  expectation: z.infer<typeof jsonValueSchema> | null;
   trials: EvaluationTrialView[];
 }
 
@@ -44,13 +47,18 @@ export interface AgentEvaluationView {
 
 export type EvaluationArtifactLoader = (id: string) => Promise<StoredArtifact>;
 
-function trial(run: AgentRunResult): EvaluationTrialView {
+function trial(
+  run: AgentRunResult,
+  caseAssessment: { passed: boolean; message: string } | undefined,
+): EvaluationTrialView {
   return {
     agentRunId: run.agentRunId,
-    succeeded: run.succeeded,
+    succeeded: run.succeeded && (caseAssessment?.passed ?? true),
+    runtimeSucceeded: run.succeeded,
     input: run.input,
     output: run.output,
     assessment: run.assessment,
+    caseAssessment: caseAssessment ?? null,
     failure: run.failure,
     durationMs: run.durationMs,
     completedAt: run.completedAt,
@@ -77,10 +85,9 @@ export async function buildAgentEvaluationView(
       throw new Error(`Evaluation reference ${reference.datasetRunArtifactId} does not match the experiment.`);
     }
     const cases = datasetRun.caseSummaries.map((summary) => {
-      const runs = datasetRun.runs
+      const runEvidence = datasetRun.runs
         .filter(({ datasetCaseId }) => datasetCaseId === summary.datasetCaseId)
-        .map(({ agentRun }) => agentRun);
-      const first = runs[0];
+      const first = runEvidence[0];
       if (!first) throw new Error(`Evaluation case ${summary.datasetCaseId} has no run evidence.`);
       const threshold = reference.verification.minimumPassRate;
       return {
@@ -92,8 +99,11 @@ export async function buildAgentEvaluationView(
         passRate: summary.passRate,
         minimumPassRate: threshold,
         passed: threshold !== null && summary.passRate !== null && summary.passRate >= threshold,
-        input: first.input,
-        trials: runs.map(trial),
+        input: first.agentRun.input,
+        expectation: first.expectation ?? null,
+        trials: runEvidence.map(({ agentRun, caseAssessment }) =>
+          trial(agentRun, caseAssessment),
+        ),
       };
     });
     datasets.push({

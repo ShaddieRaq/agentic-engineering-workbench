@@ -193,7 +193,13 @@ export async function buildAgentWebServer(
         return reply
           .header("content-type", "application/json; charset=utf-8")
           .header("content-disposition", `attachment; filename="${datasetCase.datasetCaseId}-dataset-case.json"`)
-          .send(`${JSON.stringify({ id: datasetCase.datasetCaseId, input: datasetCase.input }, null, 2)}\n`);
+          .send(`${JSON.stringify({
+            id: datasetCase.datasetCaseId,
+            input: datasetCase.input,
+            ...(datasetCase.expectation === null
+              ? {}
+              : { expected: datasetCase.expectation }),
+          }, null, 2)}\n`);
       } catch (error: unknown) {
         return reply.code(404).send({ error: errorMessage(error) });
       }

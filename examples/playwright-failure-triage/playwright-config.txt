@@ -1,0 +1,12 @@
+Playwright configuration excerpt:
+
+projects: [
+  {
+    name: "chrome",
+    use: { channel: "chrome" },
+  },
+]
+
+CI image inventory:
+- bundled Playwright Chromium is installed
+- branded Google Chrome is not installed

@@ -1801,3 +1801,65 @@ honest security terminology is necessary.
 - API credentials are not inherited from the workbench process
 - only trusted workspaces should be verified without stronger isolation
 - Playwright profiles require a later explicit allowlist decision
+
+---
+
+## Decision 067 — Keep Dataset Ground Truth Outside Agent Input
+
+Status: Accepted
+
+### Decision
+
+Allow agent dataset cases to contain optional hidden JSON expectations. Pass
+only the case input to the agent, then invoke a registered deterministic case
+assessor with the agent result and hidden expectation. Record runtime success
+and case correctness separately, and calculate case reliability from both.
+
+### Rationale
+
+A successful model call and schema-valid response do not prove that an agent
+made the correct decision. Putting the expected answer into the prompt would
+leak the evaluation oracle and make the resulting reliability measurement
+meaningless. Agent-specific assessors preserve a provider-neutral dataset
+runner while allowing domains to define what correctness means.
+
+### Consequences
+
+- hidden expectations are persisted as evaluation policy but never sent to the
+  model
+- agents must explicitly support expected cases before a dataset begins
+- incorrect structured answers can fail even when execution succeeds
+- Evaluation Studio can display both operational and semantic outcomes
+- expectations remain reviewed, versioned source rather than model-generated
+  truth
+
+---
+
+## Decision 068 — Ground Playwright Triage in Bounded Named Evidence
+
+Status: Accepted
+
+### Decision
+
+Build Playwright failure triage from a strict sanitized failure contract,
+explicit repository-relative source paths, bounded read evidence, and an
+optional fixed targeted-test verification action. Treat all supplied artifacts
+as untrusted data and deterministically reject source or verification citations
+that the workflow did not actually collect.
+
+### Rationale
+
+Failure triage is useful only when an engineer can trace a diagnosis back to
+the observed failure and relevant code. Letting the model browse arbitrarily,
+execute a shell, ingest uncontrolled artifacts, or invent citations would make
+the result unsafe and difficult to evaluate. The existing controlled tools are
+sufficient for a first measurable agent without duplicating an IDE runner's
+general-purpose capabilities.
+
+### Consequences
+
+- attachments are metadata only until a dedicated parser is reviewed
+- every run preserves the exact read and verification evidence used
+- the model cannot expand its own filesystem or command authority
+- unsupported conclusions remain visible as gaps or failed citation checks
+- additional Playwright capabilities require explicit policy and test cases

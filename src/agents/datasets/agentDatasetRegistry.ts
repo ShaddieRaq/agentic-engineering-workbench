@@ -3,12 +3,14 @@ import { repositoryAssistantDataset } from "./repositoryAssistantDataset.js";
 import { changeRiskReviewerDataset } from "./changeRiskReviewerDataset.js";
 import { documentationAuditorDataset } from "./documentationAuditorDataset.js";
 import { toolBuilderDataset } from "./toolBuilderDataset.js";
+import { playwrightFailureTriageDataset } from "./playwrightFailureTriageDataset.js";
 
 const datasets: Record<string, AgentDatasetDefinition> = {
   [changeRiskReviewerDataset.id]: changeRiskReviewerDataset,
   [documentationAuditorDataset.id]: documentationAuditorDataset,
   [repositoryAssistantDataset.id]: repositoryAssistantDataset,
   [toolBuilderDataset.id]: toolBuilderDataset,
+  [playwrightFailureTriageDataset.id]: playwrightFailureTriageDataset,
 };
 
 export function getAgentDatasetDefinition(id: string): AgentDatasetDefinition {

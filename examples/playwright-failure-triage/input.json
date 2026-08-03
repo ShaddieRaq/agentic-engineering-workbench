@@ -1,0 +1,19 @@
+{
+  "testTitle": "customer can sign in",
+  "testFile": "examples/playwright-failure-triage/stale-login-test.txt",
+  "projectName": "chromium",
+  "retry": 1,
+  "status": "timed-out",
+  "error": {
+    "name": "TimeoutError",
+    "message": "locator.click: Timeout 5000ms exceeded waiting for getByTestId('submit-login')",
+    "stack": "at tests/login.spec.ts:12:52\nat LoginPage.signIn (pages/loginPage.ts:24:18)"
+  },
+  "attachments": [],
+  "candidatePaths": [
+    "examples/playwright-failure-triage/login-form.txt"
+  ],
+  "verification": {
+    "mode": "none"
+  }
+}

@@ -21,6 +21,11 @@ const workflows: Record<string, WorkflowDescriptor> = {
     description:
       "Generate and deterministically validate a reviewable tool implementation proposal.",
   },
+  "playwright-failure-triage": {
+    id: "playwright-failure-triage",
+    description:
+      "Read bounded failure context, optionally run one controlled test, and produce a grounded Playwright diagnosis.",
+  },
 };
 
 export function getWorkflowDescriptor(id: string): WorkflowDescriptor {
