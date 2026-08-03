@@ -17,6 +17,10 @@ import {
   type AgentCandidateEvaluationArtifact,
 } from "../agents/evaluations/agentCandidateEvaluationArtifact.js";
 import {
+  agentPromotionDecisionSchema,
+  type AgentPromotionDecision,
+} from "../agents/evaluations/agentPromotionDecision.js";
+import {
   agentImprovementAnalysisResultSchema,
   type AgentImprovementAnalysisResult,
 } from "../agents/agentImprovement/agentImprovementAnalysis.js";
@@ -33,6 +37,15 @@ import type {
 const MAXIMUM_ARTIFACT_BYTES = 8 * 1024 * 1024;
 
 function descriptor(fileName: string): { kind: ArtifactKind; id: string } | null {
+  const promotionDecisionMatch =
+    /^agent-promotion-decision-([a-zA-Z0-9-]+)\.json$/.exec(fileName);
+  if (promotionDecisionMatch?.[1]) {
+    return {
+      kind: "agent-promotion-decision",
+      id: promotionDecisionMatch[1],
+    };
+  }
+
   const candidateEvaluationMatch =
     /^agent-candidate-evaluation-([a-zA-Z0-9-]+)\.json$/.exec(fileName);
   if (candidateEvaluationMatch?.[1]) {
@@ -70,7 +83,8 @@ function summary(
     | AgentDatasetRunResult
     | AgentEvaluationExperiment
     | AgentCandidateEvaluationArtifact
-    | AgentImprovementAnalysisResult,
+    | AgentImprovementAnalysisResult
+    | AgentPromotionDecision,
 ): ArtifactSummary {
   if (kind === "agent-candidate-evaluation") {
     const evaluation = artifact as AgentCandidateEvaluationArtifact;
@@ -83,6 +97,20 @@ function summary(
       workspaceId: evaluation.plan.workspaceId,
       completedAt: evaluation.completedAt,
       succeeded: evaluation.gates.passed,
+    };
+  }
+
+  if (kind === "agent-promotion-decision") {
+    const decision = artifact as AgentPromotionDecision;
+    return {
+      id: decision.decisionId,
+      kind,
+      path,
+      agentId: decision.subject.agentId,
+      agentVersion: decision.subject.agentVersion,
+      workspaceId: null,
+      completedAt: decision.decidedAt,
+      succeeded: decision.decision === "approve",
     };
   }
 
@@ -209,6 +237,18 @@ export class FileArtifactStore implements ArtifactStore {
     );
   }
 
+  async saveAgentPromotionDecision(
+    result: AgentPromotionDecision,
+  ): Promise<ArtifactReference> {
+    const validated = agentPromotionDecisionSchema.parse(result);
+    return this.#write(
+      "agent-promotion-decision",
+      validated.decisionId,
+      `agent-promotion-decision-${validated.decisionId}.json`,
+      validated,
+    );
+  }
+
   async list(query: ArtifactQuery = {}): Promise<ArtifactListResult> {
     const limit = Math.min(Math.max(query.limit ?? 100, 1), 500);
     let names: string[];
@@ -266,6 +306,10 @@ export class FileArtifactStore implements ArtifactStore {
         "agent-improvement-proposal",
         `agent-improvement-proposal-${id}.json`,
       ],
+      [
+        "agent-promotion-decision",
+        `agent-promotion-decision-${id}.json`,
+      ],
     ] as const) {
       try {
         return await this.#read(join(this.#root, name), kind);
@@ -286,7 +330,8 @@ export class FileArtifactStore implements ArtifactStore {
       | AgentDatasetRunResult
       | AgentEvaluationExperiment
       | AgentCandidateEvaluationArtifact
-      | AgentImprovementAnalysisResult,
+      | AgentImprovementAnalysisResult
+      | AgentPromotionDecision,
   ): Promise<ArtifactReference> {
     await mkdir(this.#root, { recursive: true });
     const path = join(this.#root, fileName);
@@ -322,9 +367,15 @@ export class FileArtifactStore implements ArtifactStore {
         artifact: agentCandidateEvaluationArtifactSchema.parse(parsed),
       };
     }
+    if (kind === "agent-improvement-proposal") {
+      return {
+        kind,
+        artifact: agentImprovementAnalysisResultSchema.parse(parsed),
+      };
+    }
     return {
       kind,
-      artifact: agentImprovementAnalysisResultSchema.parse(parsed),
+      artifact: agentPromotionDecisionSchema.parse(parsed),
     };
   }
 }

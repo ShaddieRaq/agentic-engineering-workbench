@@ -297,6 +297,8 @@ The project currently supports:
 - optional provider usage aggregated into agent-run evidence
 - cost gate enforced from comparable estimated-cost evidence when available
 - gate outcomes embedded in candidate-comparison artifacts and presentations
+- immutable operator approve, reject, and revise promotion decisions
+- approval-only source-controlled release tasks that never mutate the registry
 
 ## Current Evaluators
 
@@ -385,14 +387,15 @@ Phase 40 Slice C protected evidence boundary: complete foundation
 Phase 40 Slice C frozen comparative execution: complete foundation
 Phase 40 Slice C immutable comparison evidence: complete foundation
 Phase 40 Slice C deterministic promotion gates: complete
+Phase 40 Slice D promotion decisions: complete foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-120 test files passed
-364 tests passed
+121 test files passed
+367 tests passed
 ```
 
 This state must be verified before continuing:
@@ -420,9 +423,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Begin Slice D of the evidence-driven agent improvement plan with immutable
-operator approve, reject, or revise decisions over candidate comparisons.
-Keep automated gate passage separate from operator promotion authority.
+Continue Slice D by wiring Evaluation Studio and the application service to
+record promotion decisions against saved candidate comparisons. Keep approval
+as a source-controlled release task, not an automatic registry or source
+mutation.
 
 ## Broader Roadmap
 

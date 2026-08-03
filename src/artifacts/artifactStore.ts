@@ -2,6 +2,7 @@ import type { AgentRunResult } from "../agents/agentRunResult.js";
 import type { AgentDatasetRunResult } from "../agents/datasets/agentDatasetRunner.js";
 import type { AgentEvaluationExperiment } from "../agents/evaluations/agentEvaluationExperiment.js";
 import type { AgentCandidateEvaluationArtifact } from "../agents/evaluations/agentCandidateEvaluationArtifact.js";
+import type { AgentPromotionDecision } from "../agents/evaluations/agentPromotionDecision.js";
 import type { AgentImprovementAnalysisResult } from "../agents/agentImprovement/agentImprovementAnalysis.js";
 
 export type ArtifactKind =
@@ -9,7 +10,8 @@ export type ArtifactKind =
   | "agent-dataset-run"
   | "agent-evaluation"
   | "agent-candidate-evaluation"
-  | "agent-improvement-proposal";
+  | "agent-improvement-proposal"
+  | "agent-promotion-decision";
 
 export interface ArtifactReference {
   id: string;
@@ -54,6 +56,10 @@ export type StoredArtifact =
   | {
       kind: "agent-improvement-proposal";
       artifact: AgentImprovementAnalysisResult;
+    }
+  | {
+      kind: "agent-promotion-decision";
+      artifact: AgentPromotionDecision;
     };
 
 export interface ArtifactStore {
@@ -69,6 +75,9 @@ export interface ArtifactStore {
   ): Promise<ArtifactReference>;
   saveAgentImprovementProposal(
     result: AgentImprovementAnalysisResult,
+  ): Promise<ArtifactReference>;
+  saveAgentPromotionDecision(
+    result: AgentPromotionDecision,
   ): Promise<ArtifactReference>;
   list(query?: ArtifactQuery): Promise<ArtifactListResult>;
   load(id: string): Promise<StoredArtifact>;

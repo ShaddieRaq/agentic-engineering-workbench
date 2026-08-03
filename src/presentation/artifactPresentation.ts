@@ -66,6 +66,7 @@ export const artifactPresentationSchema = z.object({
     "agent-evaluation",
     "agent-candidate-evaluation",
     "agent-improvement-proposal",
+    "agent-promotion-decision",
   ]),
   presentationKind: z.enum([
     "generic",

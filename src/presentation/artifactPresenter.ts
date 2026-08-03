@@ -134,6 +134,49 @@ export function presentArtifact(artifactId: string, stored: StoredArtifact): Art
       ],
     });
   }
+  if (stored.kind === "agent-promotion-decision") {
+    const decision = stored.artifact;
+    return artifactPresentationSchema.parse({
+      artifactId,
+      artifactKind: stored.kind,
+      presentationKind: "generic",
+      title: `${decision.subject.agentId} Promotion Decision`,
+      agentId: decision.subject.agentId,
+      agentVersion: decision.subject.agentVersion,
+      workspaceId: null,
+      succeeded: decision.decision === "approve",
+      assessment: `${decision.decision} by ${decision.operatorId}: ${decision.rationale}`,
+      overview:
+        decision.releaseTask === null
+          ? `Candidate ${decision.candidate.candidateId} was not approved for release.`
+          : `Approval produced a source-controlled release task for candidate ${decision.candidate.candidateId}.`,
+      completedAt: decision.decidedAt,
+      durationMs: null,
+      metrics: [
+        {
+          id: "decision",
+          label: "Decision",
+          value: decision.decision,
+          detail: decision.gatesPassed ? "gates passed" : "gates failed",
+        },
+        {
+          id: "candidate",
+          label: "Candidate",
+          value: decision.candidate.candidateId,
+          detail: decision.candidate.effectivePolicyDigest.slice(0, 12),
+        },
+      ],
+      findings: [],
+      coverageGaps: [],
+      prioritizedActions: decision.releaseTask?.requiredActions ?? [],
+      sources: [],
+      timeline: [],
+      usage: null,
+      warnings: [
+        "This decision does not mutate source, datasets, evaluators, or the agent registry.",
+      ],
+    });
+  }
 
   const run = stored.artifact;
   return artifactPresentationSchema.parse({

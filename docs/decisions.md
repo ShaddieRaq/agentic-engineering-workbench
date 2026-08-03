@@ -2126,3 +2126,32 @@ aggregation preserves multi-call workflows as one comparable trial sample.
 - estimated cost still depends on known model pricing policies
 - subject-agent domain evidence may continue recording its own provider fields
   independently of the platform run evidence
+
+---
+
+## Decision 077 — Separate Operator Decisions From Automated Gates
+
+Status: Accepted
+
+### Decision
+
+Persist operator promotion outcomes as immutable `agent-promotion-decision`
+artifacts. Allow `approve`, `reject`, and `revise`. Require automated gates to
+have passed before approval. On approval, emit a source-controlled release task
+describing the deliberate registration change; never mutate source or the
+platform registry from the decision itself.
+
+### Rationale
+
+Automated gates can prove a comparison is complete and non-regressive, but they
+cannot own release authority. Encoding the operator decision as a separate
+artifact keeps the audit trail explicit and prevents a passing gate summary from
+being mistaken for promotion.
+
+### Consequences
+
+- failed gate comparisons cannot be approved
+- reject and revise remain available even when gates passed
+- approvals reference the candidate comparison and optional proposal artifact
+- release tasks preserve candidate identity and effective-policy digest
+- Evaluation Studio and service recording remain subsequent wiring work

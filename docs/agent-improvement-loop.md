@@ -59,7 +59,8 @@ The current platform already provides:
 
 The remaining boundaries are:
 
-- an auditable operator promotion decision record
+- Evaluation Studio and service wiring for recording promotion decisions
+- one complete local baseline-to-candidate-to-decision demonstration
 
 ## Roles and Responsibilities
 
@@ -433,9 +434,13 @@ Outcome: the workbench can demonstrate whether the candidate improved.
 
 ### Slice D — Promotion Decisions
 
-- immutable operator decision artifact
-- Evaluation Studio improvement workflow
-- candidate export as a source-controlled release task
+Status: Decision artifact foundation complete
+
+- **Complete:** immutable operator approve, reject, and revise decisions
+- **Complete:** approval blocked when automated gates fail
+- **Complete:** approval emits a source-controlled release task without source
+  mutation
+- Evaluation Studio and application-service recording
 - linked Tool Builder and Change Risk Reviewer handoffs
 
 Outcome: the complete loop is usable while release remains deliberate.
