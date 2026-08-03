@@ -799,14 +799,64 @@ Deferred deliberately:
 - unsanitized production failure ingestion
 - statistical claims from the small smoke dataset
 
+## Phase 40 — Evidence-Driven Agent Improvement
+
+Status: Planned
+
+Goal:
+
+Enable any eligible registered agent to turn saved evaluation failures into a
+reviewable improvement proposal, construct a candidate only through an explicit
+agent-owned revision schema, compare baseline and candidate under frozen
+conditions, and record a human-controlled promotion decision.
+
+Planned delivery:
+
+1. Read-only Agent Improvement Analyst with bounded evidence packets, strict
+   cited proposals, synthetic evaluation cases, persistence, and presentation.
+2. Opt-in agent revision surfaces and a Documentation Auditor pilot exposing
+   instruction and context policy only.
+3. Evaluation-only candidate identity, effective-policy digests, and ephemeral
+   candidate execution without source mutation.
+4. Development, regression, and protected dataset purposes with protected
+   evidence withheld from the optimizer.
+5. Frozen baseline-versus-candidate execution and deterministic regression,
+   scope, completeness, latency, and cost gates.
+6. Immutable approve, reject, or revise decisions in Evaluation Studio.
+7. Linked handoffs to Tool Builder and Change Risk Reviewer when a proposal
+   requires capabilities or source changes.
+
+Required safeguards:
+
+- the subject agent and optimizer cannot establish their own ground truth
+- candidate behavior cannot change graders or datasets in the same experiment
+- tool and permission expansion cannot occur through a policy candidate
+- protected cases cannot be inspected by the optimizer
+- promotion never occurs from one unreviewed model recommendation
+- released semantic versions remain source-controlled
+
+Detailed design:
+
+- [`docs/agent-improvement-loop.md`](agent-improvement-loop.md)
+
+Deferred deliberately:
+
+- unrestricted source-code generation or self-editing
+- automatic tool, permission, evaluator, or dataset mutation
+- model fine-tuning
+- automatic semantic-version release
+- Jenkins- or Playwright-specific improvement architecture
+- production feedback ingestion before the local loop is proven
+
 ## Current Priorities
 
-1. Run the Playwright Failure Triage smoke dataset in Evaluation Studio.
-2. Add reviewed, sanitized failures from real projects as versioned cases.
-3. Promote incorrect or weak diagnoses into regression cases with hidden
-   expectations.
-4. Add Playwright-specific verification profiles only when cases demonstrate
-   the exact command policy required.
-5. Export the proven agent into Claude Code and other runner-specific packages.
-6. Introduce a database, authentication, or remote deployment only when a
-   concrete operating requirement justifies those boundaries.
+1. Implement Slice A of the evidence-driven improvement plan: the read-only
+   Agent Improvement Analyst.
+2. Use Documentation Auditor as the first subject and preserve its current
+   behavior while extracting an opt-in revision policy.
+3. Add protected evaluation boundaries before executable candidates are
+   compared.
+4. Complete one local baseline-to-candidate-to-decision workflow.
+5. Exercise Playwright Failure Triage against reviewed real failures after the
+   general improvement loop is established.
+6. Export proven agents into Claude Code and other runner-specific packages.

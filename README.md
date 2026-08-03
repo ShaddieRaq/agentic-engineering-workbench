@@ -9,6 +9,12 @@ A local TypeScript project for learning and experimenting with:
 - Adversarial agents
 - Agent evaluation
 
+The next planned platform capability is an evidence-driven agent improvement
+loop: analyze saved evaluation failures, propose bounded candidate policy,
+compare it with the baseline under protected tests, and require an explicit
+promotion decision. The implementation plan and safety boundaries are in
+[`docs/agent-improvement-loop.md`](docs/agent-improvement-loop.md).
+
 ## Current Goal
 
 Provide a local agent platform where complete, versioned agents can be discovered,

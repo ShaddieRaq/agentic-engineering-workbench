@@ -921,6 +921,42 @@ defects, application defects, environment, test data, infrastructure, product
 change, or unknown while preserving the evidence needed to challenge that
 conclusion.
 
+### Planned Agent Improvement Boundary
+
+Agent improvement is a platform-level workflow that may operate on any eligible
+registered agent. It is deliberately separated into analysis, candidate
+construction, evaluation, and promotion:
+
+```text
+immutable evaluation evidence
+        |
+        v
+read-only Improvement Analyst
+        |
+        v
+schema-valid improvement proposal
+        |
+        v
+opt-in subject-owned candidate policy
+        |
+        v
+frozen baseline/candidate evaluation
+        |
+        v
+deterministic gates + operator decision
+```
+
+The optimizer cannot edit source, graders, datasets, tools, or permissions.
+Each subject agent must expose a runtime-validated revision surface before the
+workbench can construct an executable candidate. Candidate identity and policy
+digests remain distinct from released semantic versions. Development evidence
+may inform proposals, while protected evaluation evidence remains unavailable
+to the optimizer and is used only by promotion gates.
+
+The complete proposed contracts, safeguards, delivery slices, and verification
+strategy are defined in
+[`docs/agent-improvement-loop.md`](agent-improvement-loop.md).
+
 ### Web Security Boundary
 
 The console is a local control plane, not a remotely hosted application. It:

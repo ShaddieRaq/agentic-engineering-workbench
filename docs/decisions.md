@@ -1863,3 +1863,41 @@ general-purpose capabilities.
 - the model cannot expand its own filesystem or command authority
 - unsupported conclusions remain visible as gaps or failed citation checks
 - additional Playwright capabilities require explicit policy and test cases
+
+---
+
+## Decision 069 — Treat Agent Improvement as an Evidence-Gated Candidate Workflow
+
+Status: Proposed
+
+### Proposed Decision
+
+Implement general agent improvement as four separate boundaries: read-only
+failure analysis, opt-in candidate-policy construction, frozen comparative
+evaluation, and explicit promotion. Require each improvable agent to own a
+runtime-validated revision surface. Withhold protected evaluation evidence from
+the optimizer, prohibit candidate changes to graders, datasets, tools, or
+permissions, and keep released semantic versions source-controlled.
+
+### Rationale
+
+The current agents embed prompts and workflow policy in TypeScript, and the
+registry exposes one released version per agent ID. Allowing a model to modify
+that code, its own evaluator, or its hidden expectations would make improvement
+claims circular and unsafe. A proposal-only analyst plus bounded ephemeral
+candidates enables useful optimization while preserving comparable evidence,
+human accountability, and rollback.
+
+### Expected Consequences
+
+- improvement can operate on any agent that explicitly opts in
+- proposal evidence and candidate behavior remain independently inspectable
+- protected cases reduce direct optimization against the complete test corpus
+- code, capability, permission, and evaluator changes remain reviewed
+  engineering work
+- promotion decisions have reproducible baseline and candidate evidence
+- the first implementation adds configuration and artifact boundaries before
+  attempting experience ingestion or external CI integration
+
+Final acceptance should occur after Slice A validates the evidence and proposal
+contracts described in `docs/agent-improvement-loop.md`.

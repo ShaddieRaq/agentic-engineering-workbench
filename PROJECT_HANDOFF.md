@@ -348,6 +348,7 @@ Current milestone:
 
 ```text
 Phase 39 Playwright Failure Triage agent: complete foundation
+Phase 40 evidence-driven agent improvement: planned
 ```
 
 Verified test state:
@@ -383,18 +384,21 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Run the Playwright Failure Triage smoke dataset in Evaluation Studio, then add
-reviewed and sanitized failures from real projects as versioned regression
-cases. Use observed gaps to justify any additional Playwright-specific evidence
-parsers or verification profiles.
+Implement Slice A of the evidence-driven agent improvement plan: a read-only
+Agent Improvement Analyst that consumes bounded evaluation evidence and
+produces cited, policy-validated improvement proposals. Use Documentation
+Auditor as the first subject; do not construct executable candidates until
+protected evaluation boundaries and opt-in revision policies exist.
 
 ## Broader Roadmap
 
-1. Evaluate the Playwright Failure Triage agent in the Studio.
-2. Grow its versioned dataset from reviewed, sanitized real failures.
-3. Add Playwright evidence parsers and verification profiles only when the
-   resulting cases demonstrate a specific need.
-4. Exercise existing agents through durable Evaluation Studio experiments.
+1. Build the read-only Agent Improvement Analyst described in
+   `docs/agent-improvement-loop.md`.
+2. Add opt-in agent revision surfaces and use Documentation Auditor as the
+   first executable candidate subject.
+3. Add protected evaluation cases, frozen candidate comparison, and promotion
+   decision evidence.
+4. Exercise Playwright Failure Triage against reviewed real failures.
 5. Add isolated compilation and tests for approved Tool Builder proposals.
 6. Export proven agents to runner-specific packages when ready for use.
 7. Extract agents or replace filesystem persistence only when demonstrated
