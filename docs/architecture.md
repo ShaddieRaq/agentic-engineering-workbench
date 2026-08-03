@@ -863,11 +863,11 @@ evidence.
 ### Artifact Persistence
 
 The filesystem remains the source of truth. `FileArtifactStore` adapts current
-agent-run, agent-dataset-run, and agent-evaluation schemas to immutable JSON
-files under `runs/`. Reads are filename constrained, byte bounded, runtime
-validated, filterable, and explicit about rejected historical or incompatible
-artifacts. A database is deferred until query scale, concurrent writers, or
-deployment requires it.
+agent-run, agent-dataset-run, agent-evaluation, and agent-improvement-proposal
+schemas to immutable JSON files under `runs/`. Reads are filename constrained,
+byte bounded, runtime validated, filterable, and explicit about rejected
+historical or incompatible artifacts. A database is deferred until query
+scale, concurrent writers, or deployment requires it.
 
 ### Evaluation Studio
 
@@ -921,7 +921,7 @@ defects, application defects, environment, test data, infrastructure, product
 change, or unknown while preserving the evidence needed to challenge that
 conclusion.
 
-### Planned Agent Improvement Boundary
+### Agent Improvement Boundary
 
 Agent improvement is a platform-level workflow that may operate on any eligible
 registered agent. It is deliberately separated into analysis, candidate
@@ -946,6 +946,13 @@ frozen baseline/candidate evaluation
 deterministic gates + operator decision
 ```
 
+The read-only analysis portion is implemented. Evaluation Studio can select
+failed-case and failed-trial evidence, explicitly record hidden expectations as
+excluded, invoke the tool-free `agent-improvement-analyst`, validate its exact
+evidence citations, and persist a specialized proposal artifact. The proposal
+view exposes failure modes, recommendations, evidence IDs, policy results,
+model usage, and raw evidence without changing the subject agent.
+
 The optimizer cannot edit source, graders, datasets, tools, or permissions.
 Each subject agent must expose a runtime-validated revision surface before the
 workbench can construct an executable candidate. Candidate identity and policy
@@ -953,7 +960,7 @@ digests remain distinct from released semantic versions. Development evidence
 may inform proposals, while protected evaluation evidence remains unavailable
 to the optimizer and is used only by promotion gates.
 
-The complete proposed contracts, safeguards, delivery slices, and verification
+The complete contracts, safeguards, delivery slices, and verification
 strategy are defined in
 [`docs/agent-improvement-loop.md`](agent-improvement-loop.md).
 

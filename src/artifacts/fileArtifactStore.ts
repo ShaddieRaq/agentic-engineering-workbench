@@ -12,6 +12,10 @@ import {
   agentEvaluationExperimentSchema,
   type AgentEvaluationExperiment,
 } from "../agents/evaluations/agentEvaluationExperiment.js";
+import {
+  agentImprovementAnalysisResultSchema,
+  type AgentImprovementAnalysisResult,
+} from "../agents/agentImprovement/agentImprovementAnalysis.js";
 import type {
   ArtifactKind,
   ArtifactListResult,
@@ -25,6 +29,12 @@ import type {
 const MAXIMUM_ARTIFACT_BYTES = 8 * 1024 * 1024;
 
 function descriptor(fileName: string): { kind: ArtifactKind; id: string } | null {
+  const improvementMatch =
+    /^agent-improvement-proposal-([a-zA-Z0-9-]+)\.json$/.exec(fileName);
+  if (improvementMatch?.[1]) {
+    return { kind: "agent-improvement-proposal", id: improvementMatch[1] };
+  }
+
   const evaluationMatch = /^agent-evaluation-([a-zA-Z0-9-]+)\.json$/.exec(fileName);
   if (evaluationMatch?.[1]) {
     return { kind: "agent-evaluation", id: evaluationMatch[1] };
@@ -42,8 +52,26 @@ function descriptor(fileName: string): { kind: ArtifactKind; id: string } | null
 function summary(
   kind: ArtifactKind,
   path: string,
-  artifact: AgentRunResult | AgentDatasetRunResult | AgentEvaluationExperiment,
+  artifact:
+    | AgentRunResult
+    | AgentDatasetRunResult
+    | AgentEvaluationExperiment
+    | AgentImprovementAnalysisResult,
 ): ArtifactSummary {
+  if (kind === "agent-improvement-proposal") {
+    const proposal = artifact as AgentImprovementAnalysisResult;
+    return {
+      id: proposal.analysisRunId,
+      kind,
+      path,
+      agentId: proposal.packet.subject.agentId,
+      agentVersion: proposal.packet.subject.agentVersion,
+      workspaceId: proposal.packet.execution.workspaceId,
+      completedAt: proposal.completedAt,
+      succeeded: proposal.succeeded,
+    };
+  }
+
   if (kind === "agent-run") {
     const run = artifact as AgentRunResult;
     return {
@@ -129,6 +157,18 @@ export class FileArtifactStore implements ArtifactStore {
     );
   }
 
+  async saveAgentImprovementProposal(
+    result: AgentImprovementAnalysisResult,
+  ): Promise<ArtifactReference> {
+    const validated = agentImprovementAnalysisResultSchema.parse(result);
+    return this.#write(
+      "agent-improvement-proposal",
+      validated.analysisRunId,
+      `agent-improvement-proposal-${validated.analysisRunId}.json`,
+      validated,
+    );
+  }
+
   async list(query: ArtifactQuery = {}): Promise<ArtifactListResult> {
     const limit = Math.min(Math.max(query.limit ?? 100, 1), 500);
     let names: string[];
@@ -178,6 +218,10 @@ export class FileArtifactStore implements ArtifactStore {
       ["agent-run", `agent-run-${id}.json`],
       ["agent-dataset-run", `agent-dataset-run-${id}.json`],
       ["agent-evaluation", `agent-evaluation-${id}.json`],
+      [
+        "agent-improvement-proposal",
+        `agent-improvement-proposal-${id}.json`,
+      ],
     ] as const) {
       try {
         return await this.#read(join(this.#root, name), kind);
@@ -193,7 +237,11 @@ export class FileArtifactStore implements ArtifactStore {
     kind: ArtifactKind,
     id: string,
     fileName: string,
-    artifact: AgentRunResult | AgentDatasetRunResult | AgentEvaluationExperiment,
+    artifact:
+      | AgentRunResult
+      | AgentDatasetRunResult
+      | AgentEvaluationExperiment
+      | AgentImprovementAnalysisResult,
   ): Promise<ArtifactReference> {
     await mkdir(this.#root, { recursive: true });
     const path = join(this.#root, fileName);
@@ -220,6 +268,12 @@ export class FileArtifactStore implements ArtifactStore {
     if (kind === "agent-dataset-run") {
       return { kind, artifact: agentDatasetRunResultSchema.parse(parsed) };
     }
-    return { kind, artifact: agentEvaluationExperimentSchema.parse(parsed) };
+    if (kind === "agent-evaluation") {
+      return { kind, artifact: agentEvaluationExperimentSchema.parse(parsed) };
+    }
+    return {
+      kind,
+      artifact: agentImprovementAnalysisResultSchema.parse(parsed),
+    };
   }
 }

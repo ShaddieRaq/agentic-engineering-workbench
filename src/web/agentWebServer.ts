@@ -24,6 +24,25 @@ const verificationRequestSchema = z
   })
   .strict();
 
+const improvementRequestSchema = z
+  .object({
+    target: z
+      .enum([
+        "reliability",
+        "correctness",
+        "grounding",
+        "cost",
+        "latency",
+        "safety",
+        "operator-defined",
+      ])
+      .default("reliability"),
+    description: z.string().min(1).max(2_000).optional(),
+    constraints: z.array(z.string().min(1).max(500)).max(20).optional(),
+    model: z.string().min(1).optional(),
+  })
+  .strict();
+
 const addWorkspaceRequestSchema = z
   .object({
     id: z.string().min(1),
@@ -167,6 +186,54 @@ export async function buildAgentWebServer(
       }
     },
   );
+  app.post<{ Params: { experimentId: string } }>(
+    "/api/evaluations/:experimentId/improvements",
+    async (request, reply) => {
+      const parsed = improvementRequestSchema.safeParse(request.body ?? {});
+      if (!parsed.success) {
+        return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+      }
+      if (!options.apiKeyConfigured) {
+        return reply.code(503).send({ error: "OPENAI_API_KEY is not configured." });
+      }
+      try {
+        await options.service.getEvaluation(request.params.experimentId);
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+      const operation = operations.start(
+        "agent-improvement",
+        "agent-improvement-analyst",
+        async (emit) => {
+          emit("catalog", "Resolved the frozen subject evaluation and read-only analyst.");
+          emit("input", "Selected failed-case evidence while withholding hidden expectations.");
+          emit("permissions", "Agent Improvement Analyst has no tool permissions.");
+          emit("workflow", "Generating a cited, policy-checked improvement proposal.");
+          const result = await options.service.analyzeEvaluation({
+            experimentId: request.params.experimentId,
+            target: parsed.data.target,
+            ...(parsed.data.description
+              ? { description: parsed.data.description }
+              : {}),
+            ...(parsed.data.constraints
+              ? { constraints: parsed.data.constraints }
+              : {}),
+            ...(parsed.data.model ? { model: parsed.data.model } : {}),
+          });
+          emit(
+            "assessment",
+            result.analysis.policyEvaluation?.message ??
+              result.analysis.executionFailure?.message ??
+              result.analysis.refusal ??
+              "No proposal assessment was produced.",
+          );
+          emit("persistence", `Improvement proposal saved as ${result.artifactId}.`);
+          return result;
+        },
+      );
+      return reply.code(202).send(operation);
+    },
+  );
   app.get<{ Params: { experimentId: string; datasetId: string; caseId: string } }>(
     "/api/evaluations/:experimentId/cases/:datasetId/:caseId",
     async (request, reply) => {
@@ -210,10 +277,10 @@ export async function buildAgentWebServer(
     "/api/artifacts",
     async (request, reply) => {
       const kind = request.query.kind;
-      if (kind && kind !== "agent-run" && kind !== "agent-dataset-run" && kind !== "agent-evaluation") {
+      if (kind && kind !== "agent-run" && kind !== "agent-dataset-run" && kind !== "agent-evaluation" && kind !== "agent-improvement-proposal") {
         return reply.code(400).send({ error: "Unsupported artifact kind." });
       }
-      const artifactKind: ArtifactKind | undefined = kind === "agent-run" || kind === "agent-dataset-run" || kind === "agent-evaluation"
+      const artifactKind: ArtifactKind | undefined = kind === "agent-run" || kind === "agent-dataset-run" || kind === "agent-evaluation" || kind === "agent-improvement-proposal"
         ? kind
         : undefined;
       const succeeded = request.query.succeeded === undefined

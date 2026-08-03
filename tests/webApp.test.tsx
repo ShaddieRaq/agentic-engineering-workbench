@@ -185,11 +185,19 @@ describe("agent workbench web interface", () => {
         durationMs: 12, completedAt: "2026-08-02T12:00:01.000Z",
       }],
     };
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       let body: unknown = {};
       if (path.endsWith("/api/workspaces")) {
         body = { workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] };
+      } else if (path.endsWith("/api/evaluations/candidate-evaluation/improvements") && init?.method === "POST") {
+        body = { operationId: "improvement-operation" };
+      } else if (path.endsWith("/api/operations/improvement-operation")) {
+        body = {
+          operationId: "improvement-operation", kind: "agent-improvement", agentId: "agent-improvement-analyst",
+          status: "completed", events: [], result: { artifactId: "proposal-artifact" }, error: null,
+          createdAt: "2026-08-02T12:00:03.000Z", completedAt: "2026-08-02T12:00:04.000Z",
+        };
       } else if (path.includes("/api/evaluations/compare?")) {
         body = {
           baseline: { experimentId: "baseline-evaluation" }, candidate: { experimentId: "candidate-evaluation" },
@@ -213,6 +221,8 @@ describe("agent workbench web interface", () => {
     render(<AppRoutes />);
 
     expect(await screen.findByRole("heading", { name: "Evaluation candidat" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Analyze failures" }));
+    expect(await screen.findByRole("link", { name: "Inspect improvement proposal" })).toHaveAttribute("href", "/runs/proposal-artifact");
     fireEvent.change(await screen.findByLabelText("Baseline experiment"), { target: { value: "baseline-evaluation" } });
     expect(await screen.findByText("-50 points")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("link", { name: "checkout-timeout" }));

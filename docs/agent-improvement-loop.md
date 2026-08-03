@@ -392,6 +392,8 @@ The Improvement Analyst receives synthetic evidence for:
 
 ### Slice A — Read-Only Improvement Analyst
 
+Status: Complete
+
 - evidence packet and proposal schemas
 - deterministic evidence selection and citation policy
 - registered `agent-improvement-analyst` with no tools

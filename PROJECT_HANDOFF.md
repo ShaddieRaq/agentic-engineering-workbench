@@ -266,6 +266,11 @@ The project currently supports:
 - explicit untrusted-data prompt boundaries and deterministic citation checks
 - three representative hidden-ground-truth triage cases
 - specialized diagnosis, action, gap, source, and timeline presentation
+- a registered read-only `agent-improvement-analyst` with no tool permissions
+- bounded failed-evaluation packet assembly with hidden expectations withheld
+- deterministic evidence citation and candidate-patch policy validation
+- immutable `agent-improvement-proposal` artifacts linked to source experiments
+- Evaluation Studio failure-analysis operations and specialized proposal views
 
 ## Current Evaluators
 
@@ -348,15 +353,15 @@ Current milestone:
 
 ```text
 Phase 39 Playwright Failure Triage agent: complete foundation
-Phase 40 evidence-driven agent improvement: planned
+Phase 40 Slice A read-only improvement analysis: complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-111 test files passed
-327 tests passed
+116 test files passed
+346 tests passed
 ```
 
 This state must be verified before continuing:
@@ -384,22 +389,20 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Implement Slice A of the evidence-driven agent improvement plan: a read-only
-Agent Improvement Analyst that consumes bounded evaluation evidence and
-produces cited, policy-validated improvement proposals. Use Documentation
-Auditor as the first subject; do not construct executable candidates until
-protected evaluation boundaries and opt-in revision policies exist.
+Implement Slice B of the evidence-driven agent improvement plan: extract an
+opt-in Documentation Auditor revision policy for instructions and context
+selection, then construct temporary candidates in memory without writing
+source. Preserve current released behavior and do not compare candidates until
+protected evaluation boundaries exist.
 
 ## Broader Roadmap
 
-1. Build the read-only Agent Improvement Analyst described in
-   `docs/agent-improvement-loop.md`.
-2. Add opt-in agent revision surfaces and use Documentation Auditor as the
+1. Add opt-in agent revision surfaces and use Documentation Auditor as the
    first executable candidate subject.
-3. Add protected evaluation cases, frozen candidate comparison, and promotion
+2. Add protected evaluation cases, frozen candidate comparison, and promotion
    decision evidence.
-4. Exercise Playwright Failure Triage against reviewed real failures.
-5. Add isolated compilation and tests for approved Tool Builder proposals.
-6. Export proven agents to runner-specific packages when ready for use.
-7. Extract agents or replace filesystem persistence only when demonstrated
+3. Exercise Playwright Failure Triage against reviewed real failures.
+4. Add isolated compilation and tests for approved Tool Builder proposals.
+5. Export proven agents to runner-specific packages when ready for use.
+6. Extract agents or replace filesystem persistence only when demonstrated
    ownership, deployment, permission, or query requirements demand it.

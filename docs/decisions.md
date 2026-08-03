@@ -1868,9 +1868,9 @@ general-purpose capabilities.
 
 ## Decision 069 — Treat Agent Improvement as an Evidence-Gated Candidate Workflow
 
-Status: Proposed
+Status: Accepted
 
-### Proposed Decision
+### Decision
 
 Implement general agent improvement as four separate boundaries: read-only
 failure analysis, opt-in candidate-policy construction, frozen comparative
@@ -1899,5 +1899,8 @@ human accountability, and rollback.
 - the first implementation adds configuration and artifact boundaries before
   attempting experience ingestion or external CI integration
 
-Final acceptance should occur after Slice A validates the evidence and proposal
-contracts described in `docs/agent-improvement-loop.md`.
+Slice A validated the evidence and proposal contracts, registered the analyst
+without tools, withheld hidden expectations from optimizer input, persisted
+proposal artifacts, and exposed the read-only workflow in Evaluation Studio.
+Executable candidates remain prohibited until an agent opts into a bounded
+revision surface.

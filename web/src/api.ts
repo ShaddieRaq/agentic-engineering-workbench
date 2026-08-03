@@ -47,7 +47,11 @@ export interface JsonSchema {
 
 export interface ArtifactSummary {
   id: string;
-  kind: "agent-run" | "agent-dataset-run" | "agent-evaluation";
+  kind:
+    | "agent-run"
+    | "agent-dataset-run"
+    | "agent-evaluation"
+    | "agent-improvement-proposal";
   path: string;
   agentId: string;
   agentVersion: string;
@@ -89,7 +93,7 @@ export interface OperationEvent {
 
 export interface Operation {
   operationId: string;
-  kind: "agent-run" | "agent-verification";
+  kind: "agent-run" | "agent-verification" | "agent-improvement";
   agentId: string;
   status: "queued" | "running" | "completed" | "failed";
   events: OperationEvent[];
@@ -217,8 +221,16 @@ export interface AgentEvaluationEvidence {
 
 export interface ArtifactPresentation {
   artifactId: string;
-  artifactKind: "agent-run" | "agent-dataset-run" | "agent-evaluation";
-  presentationKind: "generic" | "documentation-audit" | "playwright-failure-triage";
+  artifactKind:
+    | "agent-run"
+    | "agent-dataset-run"
+    | "agent-evaluation"
+    | "agent-improvement-proposal";
+  presentationKind:
+    | "generic"
+    | "documentation-audit"
+    | "playwright-failure-triage"
+    | "agent-improvement";
   title: string;
   agentId: string;
   agentVersion: string;
@@ -258,6 +270,44 @@ export interface ArtifactPresentation {
     pricingIds: string[];
   } | null;
   warnings: string[];
+  improvement: {
+    sourceExperimentIds: string[];
+    evidenceItemCount: number;
+    excludedEvidenceCount: number;
+    proposal: {
+      disposition: string;
+      summary: string;
+      failureModes: Array<{
+        title: string;
+        explanation: string;
+        confidence: "low" | "medium" | "high";
+        evidenceIds: string[];
+      }>;
+      recommendations: Array<{
+        category: string;
+        title: string;
+        rationale: string;
+        proposedChange: string;
+        priority: "low" | "medium" | "high";
+        evidenceIds: string[];
+      }>;
+      candidatePolicyPatch: Record<string, unknown> | null;
+      evidenceGaps: string[];
+      verificationPlan: {
+        successCriteria: string[];
+        protectedRequirements: string[];
+        recommendedRepetitions: number;
+      };
+      [key: string]: unknown;
+    } | null;
+    policyEvaluation: {
+      passed: boolean;
+      citedEvidenceIds: string[];
+      invalidEvidenceIds: string[];
+      issues: string[];
+      message: string;
+    } | null;
+  } | null;
 }
 
 export interface ArtifactSourceSnapshot {

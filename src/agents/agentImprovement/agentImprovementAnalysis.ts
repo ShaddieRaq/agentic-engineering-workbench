@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type {
-  AIProvider,
-  AIProviderEvidence,
-  AIProviderResult,
+import { z } from "zod";
+import {
+  aiProviderEvidenceSchema,
+  type AIProvider,
+  type AIProviderResult,
 } from "../../providers/aiProvider.js";
 import { AIProviderError } from "../../providers/aiProviderError.js";
 import {
@@ -11,28 +12,37 @@ import {
 } from "./agentImprovementEvidence.js";
 import {
   agentImprovementProposalOutputSchema,
+  agentImprovementProposalPolicyEvaluationSchema,
   evaluateAgentImprovementProposal,
   type AgentImprovementProposalOutput,
-  type AgentImprovementProposalPolicyEvaluation,
 } from "./agentImprovementProposal.js";
 
-export interface AgentImprovementAnalysisResult {
-  analysisRunId: string;
-  packet: AgentImprovementEvidencePacket;
-  prompt: string;
-  rawOutput: string;
-  parsedOutput: AgentImprovementProposalOutput | null;
-  refusal: string | null;
-  provider: AIProviderEvidence | null;
-  executionFailure: {
-    category: "transport" | "parsing" | "unknown";
-    message: string;
-  } | null;
-  policyEvaluation: AgentImprovementProposalPolicyEvaluation | null;
-  succeeded: boolean;
-  durationMs: number;
-  completedAt: string;
-}
+export const agentImprovementAnalysisResultSchema = z
+  .object({
+    analysisRunId: z.string().min(1),
+    packet: agentImprovementEvidencePacketSchema,
+    prompt: z.string(),
+    rawOutput: z.string(),
+    parsedOutput: agentImprovementProposalOutputSchema.nullable(),
+    refusal: z.string().nullable(),
+    provider: aiProviderEvidenceSchema.nullable(),
+    executionFailure: z
+      .object({
+        category: z.enum(["transport", "parsing", "unknown"]),
+        message: z.string().min(1),
+      })
+      .strict()
+      .nullable(),
+    policyEvaluation: agentImprovementProposalPolicyEvaluationSchema.nullable(),
+    succeeded: z.boolean(),
+    durationMs: z.number().nonnegative(),
+    completedAt: z.string().min(1),
+  })
+  .strict();
+
+export type AgentImprovementAnalysisResult = z.infer<
+  typeof agentImprovementAnalysisResultSchema
+>;
 
 export function buildAgentImprovementPrompt(
   packet: AgentImprovementEvidencePacket,
@@ -108,7 +118,7 @@ export async function runAgentImprovementAnalysis(
     ? null
     : evaluateAgentImprovementProposal(packet, providerResult.parsedOutput);
 
-  return {
+  return agentImprovementAnalysisResultSchema.parse({
     analysisRunId: randomUUID(),
     packet,
     prompt,
@@ -125,5 +135,5 @@ export async function runAgentImprovementAnalysis(
       policyEvaluation?.passed === true,
     durationMs: performance.now() - startedAt,
     completedAt: new Date().toISOString(),
-  };
+  });
 }

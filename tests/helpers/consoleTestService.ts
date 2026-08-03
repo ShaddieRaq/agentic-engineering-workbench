@@ -9,6 +9,7 @@ import { FileArtifactStore } from "../../src/artifacts/fileArtifactStore.js";
 import { FakeProvider } from "../../src/providers/fakeProvider.js";
 import { ToolRegistry } from "../../src/tools/toolRegistry.js";
 import { FileWorkspaceStore } from "../../src/workspaces/fileWorkspaceStore.js";
+import { agentImprovementAnalystAgent } from "../../src/agents/agentImprovement/agentImprovementAnalystAgent.js";
 
 export const consoleTestAgent = defineAgent({
   manifest: {
@@ -34,7 +35,7 @@ export async function createConsoleTestService(apiKeyConfigured = true) {
   return {
     directory,
     service: new AgentApplicationService(
-      new AgentRegistry([consoleTestAgent]),
+      new AgentRegistry([agentImprovementAnalystAgent, consoleTestAgent]),
       new FileArtifactStore(directory),
       new FileWorkspaceStore(join(directory, ".workbench", "workspaces.json"), directory),
       () => new ToolRegistry([]),

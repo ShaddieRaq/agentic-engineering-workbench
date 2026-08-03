@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  agentImprovementProposalOutputSchema,
+  agentImprovementProposalPolicyEvaluationSchema,
+} from "../agents/agentImprovement/agentImprovementProposal.js";
 
 export const presentationMetricSchema = z.object({
   id: z.string().min(1),
@@ -56,11 +60,17 @@ export const presentationUsageSchema = z.object({
 
 export const artifactPresentationSchema = z.object({
   artifactId: z.string().min(1),
-  artifactKind: z.enum(["agent-run", "agent-dataset-run", "agent-evaluation"]),
+  artifactKind: z.enum([
+    "agent-run",
+    "agent-dataset-run",
+    "agent-evaluation",
+    "agent-improvement-proposal",
+  ]),
   presentationKind: z.enum([
     "generic",
     "documentation-audit",
     "playwright-failure-triage",
+    "agent-improvement",
   ]),
   title: z.string().min(1),
   agentId: z.string().min(1),
@@ -83,6 +93,18 @@ export const artifactPresentationSchema = z.object({
   timeline: z.array(presentationTimelineStepSchema),
   usage: presentationUsageSchema.nullable(),
   warnings: z.array(z.string().min(1)),
+  improvement: z
+    .object({
+      sourceExperimentIds: z.array(z.string().min(1)),
+      evidenceItemCount: z.number().int().nonnegative(),
+      excludedEvidenceCount: z.number().int().nonnegative(),
+      proposal: agentImprovementProposalOutputSchema.nullable(),
+      policyEvaluation:
+        agentImprovementProposalPolicyEvaluationSchema.nullable(),
+    })
+    .strict()
+    .nullable()
+    .default(null),
 }).strict();
 
 export const artifactSourceSnapshotSchema = presentationSourceSchema.extend({

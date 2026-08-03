@@ -9,10 +9,11 @@ A local TypeScript project for learning and experimenting with:
 - Adversarial agents
 - Agent evaluation
 
-The next planned platform capability is an evidence-driven agent improvement
-loop: analyze saved evaluation failures, propose bounded candidate policy,
-compare it with the baseline under protected tests, and require an explicit
-promotion decision. The implementation plan and safety boundaries are in
+The platform now begins an evidence-driven agent improvement loop: saved
+evaluation failures can become a cited, immutable, read-only improvement
+proposal. Bounded candidate construction, protected comparison, and explicit
+promotion decisions are the next delivery slices. The implementation plan and
+safety boundaries are in
 [`docs/agent-improvement-loop.md`](docs/agent-improvement-loop.md).
 
 ## Current Goal
@@ -46,6 +47,7 @@ Then open [http://127.0.0.1:4173](http://127.0.0.1:4173). The console provides:
 - persistent registration and selection of local project workspaces
 - inspectable tool contracts and their consuming agents
 - a visual authoring guide and safe agent scaffold command
+- read-only failure analysis with immutable improvement proposals
 
 The catalog and existing evidence remain available without an API key. Live
 runs and verification require `OPENAI_API_KEY` in the local `.env` file. The
@@ -63,6 +65,13 @@ input and output, assessments, failures, timing, and aligned baseline-versus-
 candidate comparisons. A reviewed case can be downloaded as a dataset-case
 draft; dataset authoring remains code-first so browser activity cannot silently
 change an agent's evaluation policy.
+
+When an experiment contains failed cases, select **Analyze failures**. The
+workbench withholds hidden expectations, sends only bounded saved evidence to
+the tool-free Agent Improvement Analyst, validates every cited evidence ID, and
+saves the result as an `agent-improvement-proposal` artifact. The proposal can
+be inspected or exported, but it cannot change source, tools, permissions,
+datasets, evaluators, or the registered agent.
 
 ## Register a Local Project
 

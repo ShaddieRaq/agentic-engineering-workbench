@@ -801,7 +801,7 @@ Deferred deliberately:
 
 ## Phase 40 — Evidence-Driven Agent Improvement
 
-Status: Planned
+Status: In progress — Slice A complete
 
 Goal:
 
@@ -810,10 +810,11 @@ reviewable improvement proposal, construct a candidate only through an explicit
 agent-owned revision schema, compare baseline and candidate under frozen
 conditions, and record a human-controlled promotion decision.
 
-Planned delivery:
+Delivery:
 
-1. Read-only Agent Improvement Analyst with bounded evidence packets, strict
-   cited proposals, synthetic evaluation cases, persistence, and presentation.
+1. **Complete:** Read-only Agent Improvement Analyst with bounded evidence
+   packets, strict cited proposals, cross-agent synthetic evaluation cases,
+   immutable persistence, and Evaluation Studio presentation.
 2. Opt-in agent revision surfaces and a Documentation Auditor pilot exposing
    instruction and context policy only.
 3. Evaluation-only candidate identity, effective-policy digests, and ephemeral
@@ -850,13 +851,11 @@ Deferred deliberately:
 
 ## Current Priorities
 
-1. Implement Slice A of the evidence-driven improvement plan: the read-only
-   Agent Improvement Analyst.
-2. Use Documentation Auditor as the first subject and preserve its current
+1. Use Documentation Auditor as the first subject and preserve its current
    behavior while extracting an opt-in revision policy.
-3. Add protected evaluation boundaries before executable candidates are
+2. Add protected evaluation boundaries before executable candidates are
    compared.
-4. Complete one local baseline-to-candidate-to-decision workflow.
-5. Exercise Playwright Failure Triage against reviewed real failures after the
+3. Complete one local baseline-to-candidate-to-decision workflow.
+4. Exercise Playwright Failure Triage against reviewed real failures after the
    general improvement loop is established.
-6. Export proven agents into Claude Code and other runner-specific packages.
+5. Export proven agents into Claude Code and other runner-specific packages.

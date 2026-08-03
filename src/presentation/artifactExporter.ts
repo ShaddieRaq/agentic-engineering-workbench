@@ -35,6 +35,21 @@ export function renderArtifactMarkdown(presentation: ArtifactPresentation): stri
     presentation.prioritizedActions.forEach((action, index) => lines.push(`${index + 1}. ${safe(action)}`));
     lines.push("");
   }
+  if (presentation.improvement?.proposal) {
+    lines.push("## Evidence-Grounded Failure Modes", "");
+    for (const failure of presentation.improvement.proposal.failureModes) {
+      lines.push(
+        `- **${safe(failure.title)} (${failure.confidence} confidence):** ${safe(failure.explanation)} — evidence: ${failure.evidenceIds.map((id) => `\`${safe(id)}\``).join(", ")}`,
+      );
+    }
+    lines.push("", "## Improvement Recommendations", "");
+    for (const recommendation of presentation.improvement.proposal.recommendations) {
+      lines.push(
+        `- **${safe(recommendation.title)} (${recommendation.category}):** ${safe(recommendation.proposedChange)} — evidence: ${recommendation.evidenceIds.map((id) => `\`${safe(id)}\``).join(", ")}`,
+      );
+    }
+    lines.push("");
+  }
   if (presentation.coverageGaps.length) {
     lines.push("## Coverage Gaps", "");
     for (const gap of presentation.coverageGaps) lines.push(`- **${safe(gap.area)}:** ${safe(gap.reason)} (${gap.evidencePaths.map((path) => `\`${safe(path)}\``).join(", ")})`);

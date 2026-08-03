@@ -2,8 +2,12 @@ import type { StoredArtifact } from "../artifacts/artifactStore.js";
 import { artifactPresentationSchema, type ArtifactPresentation, type ArtifactSourceSnapshot } from "./artifactPresentation.js";
 import { getDocumentationAuditSource, presentDocumentationAudit } from "./documentationAuditPresentation.js";
 import { getPlaywrightFailureTriageSource, presentPlaywrightFailureTriage } from "./playwrightFailureTriagePresentation.js";
+import { presentAgentImprovement } from "./agentImprovementPresentation.js";
 
 export function presentArtifact(artifactId: string, stored: StoredArtifact): ArtifactPresentation {
+  if (stored.kind === "agent-improvement-proposal") {
+    return presentAgentImprovement(artifactId, stored.artifact);
+  }
   if (stored.kind === "agent-run") {
     const specializedRequested =
       stored.artifact.agentId === "documentation-auditor" ||

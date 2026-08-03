@@ -26,6 +26,11 @@ import {
   compareAgentEvaluationViews,
   findEvaluationCase,
 } from "./evaluations/agentEvaluationView.js";
+import { runAgentImprovementAnalysis } from "./agentImprovement/agentImprovementAnalysis.js";
+import {
+  buildAgentImprovementEvidencePacket,
+  type AgentImprovementObjective,
+} from "./agentImprovement/agentImprovementEvidenceBuilder.js";
 
 export type ProviderFactory = (model: string) => AIProvider;
 export type ToolRegistryFactory = (workspaceRoot: string) => ToolRegistry;
@@ -61,6 +66,20 @@ export interface AgentVerificationEvidence {
 export interface AgentEvaluationEvidence {
   experiment: AgentEvaluationExperiment;
   datasets: AgentVerificationEvidence[];
+  artifactId: string;
+  artifactPath: string;
+}
+
+export interface AnalyzeAgentImprovementRequest {
+  experimentId: string;
+  model?: string;
+  target?: AgentImprovementObjective["target"];
+  description?: string;
+  constraints?: string[];
+}
+
+export interface AgentImprovementEvidence {
+  analysis: Awaited<ReturnType<typeof runAgentImprovementAnalysis>>;
   artifactId: string;
   artifactPath: string;
 }
@@ -191,6 +210,51 @@ export class AgentApplicationService {
       datasetId,
       datasetCaseId,
     );
+  }
+
+  async analyzeEvaluation(
+    request: AnalyzeAgentImprovementRequest,
+  ): Promise<AgentImprovementEvidence> {
+    const view = await this.getEvaluation(request.experimentId);
+    const firstDatasetReference = view.experiment.datasets[0];
+    if (!firstDatasetReference) {
+      throw new Error("Evaluation has no dataset evidence.");
+    }
+    const storedDataset = await this.artifacts.load(
+      firstDatasetReference.datasetRunArtifactId,
+    );
+    if (storedDataset.kind !== "agent-dataset-run") {
+      throw new Error("Evaluation subject evidence is not a dataset run.");
+    }
+    const frozenRun = storedDataset.artifact.runs[0]?.agentRun;
+    if (!frozenRun) {
+      throw new Error("Evaluation subject evidence has no agent run.");
+    }
+
+    const packet = buildAgentImprovementEvidencePacket({
+      view,
+      subject: {
+        manifest: frozenRun.manifest,
+        manifestDigest: frozenRun.manifestDigest,
+      },
+      objective: {
+        ...(request.target ? { target: request.target } : {}),
+        ...(request.description ? { description: request.description } : {}),
+        ...(request.constraints ? { constraints: request.constraints } : {}),
+      },
+    });
+    const analyst = this.agents.get("agent-improvement-analyst");
+    const model = request.model ?? analyst.manifest.defaultModel;
+    const analysis = await runAgentImprovementAnalysis(
+      this.providerFactory(model),
+      packet,
+    );
+    const reference = await this.artifacts.saveAgentImprovementProposal(analysis);
+    return {
+      analysis,
+      artifactId: reference.id,
+      artifactPath: reference.path,
+    };
   }
 
   async run(request: RunAgentRequest): Promise<RunAgentResponse> {

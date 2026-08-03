@@ -110,13 +110,19 @@ export type AgentImprovementProposalOutput = z.infer<
   typeof agentImprovementProposalOutputSchema
 >;
 
-export interface AgentImprovementProposalPolicyEvaluation {
-  passed: boolean;
-  citedEvidenceIds: string[];
-  invalidEvidenceIds: string[];
-  issues: string[];
-  message: string;
-}
+export const agentImprovementProposalPolicyEvaluationSchema = z
+  .object({
+    passed: z.boolean(),
+    citedEvidenceIds: z.array(z.string().min(1)),
+    invalidEvidenceIds: z.array(z.string().min(1)),
+    issues: z.array(z.string().min(1)),
+    message: z.string().min(1),
+  })
+  .strict();
+
+export type AgentImprovementProposalPolicyEvaluation = z.infer<
+  typeof agentImprovementProposalPolicyEvaluationSchema
+>;
 
 function uniqueSorted(values: string[]): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));

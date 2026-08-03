@@ -79,7 +79,7 @@ function parseStringArray(value: string): string[] {
 }
 
 export function OperationTrace({ operation }: { operation: Operation }) {
-  const artifactId = operation.kind === "agent-run"
+  const artifactId = operation.kind === "agent-run" || operation.kind === "agent-improvement"
     ? (operation.result as { artifactId?: string } | null)?.artifactId
     : null;
   const evaluation = operation.kind === "agent-verification" && operation.result && !Array.isArray(operation.result)
@@ -97,7 +97,7 @@ export function OperationTrace({ operation }: { operation: Operation }) {
         ))}
       </ol>
       {operation.error && <ErrorNotice message={operation.error} />}
-      {artifactId && <Link className="button button-secondary" to={`/runs/${artifactId}`}>Inspect persisted evidence</Link>}
+      {artifactId && <Link className="button button-secondary" to={`/runs/${artifactId}`}>{operation.kind === "agent-improvement" ? "Inspect improvement proposal" : "Inspect persisted evidence"}</Link>}
       {evaluation && (
         <div className="verification-results">
           <article>

@@ -155,4 +155,69 @@ describe("agent web server", () => {
     });
     await app.close();
   });
+
+  it("persists a read-only improvement proposal for a failed evaluation", async () => {
+    const { service } = await createConsoleTestService();
+    const datasetRun = evaluationDatasetRun("improvement-dataset", [false]);
+    datasetRun.runs[0]!.expectation = { hiddenAnswer: "test-defect" };
+    const datasetReference = await service.artifacts.saveAgentDatasetRun(datasetRun);
+    const experiment = createAgentEvaluationExperiment({
+      experimentId: "failed-improvement-source",
+      agentId: datasetRun.agentId,
+      agentVersion: datasetRun.agentVersion,
+      workspaceId: "fixture-workspace",
+      model: "fake-model",
+      repetitions: 1,
+      concurrency: 1,
+      datasets: [
+        {
+          datasetRun,
+          verification: evaluationVerification(datasetRun),
+          artifactId: datasetReference.id,
+        },
+      ],
+    });
+    await service.artifacts.saveAgentEvaluation(experiment);
+    const app = await buildAgentWebServer({ service, apiKeyConfigured: true });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/evaluations/failed-improvement-source/improvements",
+      payload: { target: "reliability" },
+    });
+    const completed = await waitForCompletion(app, response.json().operationId);
+    const artifact = await app.inject({
+      method: "GET",
+      url: `/api/artifacts/${completed.result.artifactId}`,
+    });
+    const presentation = await app.inject({
+      method: "GET",
+      url: `/api/artifacts/${completed.result.artifactId}/presentation`,
+    });
+
+    expect(response.statusCode).toBe(202);
+    expect(completed).toMatchObject({
+      kind: "agent-improvement",
+      status: "completed",
+      result: {
+        analysis: {
+          packet: { sourceExperimentIds: ["failed-improvement-source"] },
+        },
+      },
+    });
+    expect(JSON.stringify(completed.result.analysis.packet)).not.toContain(
+      "hiddenAnswer",
+    );
+    expect(artifact.json()).toMatchObject({
+      kind: "agent-improvement-proposal",
+    });
+    expect(presentation.json()).toMatchObject({
+      presentationKind: "agent-improvement",
+      agentId: "evaluation-agent",
+      improvement: {
+        sourceExperimentIds: ["failed-improvement-source"],
+      },
+    });
+    await app.close();
+  });
 });
