@@ -2156,3 +2156,34 @@ being mistaken for promotion.
 - release tasks preserve candidate identity and effective-policy digest
 - the application service and Evaluation Studio record decisions against saved
   candidate comparisons without mutating the registry
+
+---
+
+## Decision 078 — Derive Candidate Evaluation From Saved Proposal Evidence
+
+Status: Accepted
+
+### Decision
+
+Allow only a successful, policy-valid, candidate-ready improvement proposal to
+start comparative execution. Rebuild its candidate through the registered
+subject-owned revision surface, use the proposal artifact ID as candidate
+lineage, and derive workspace, model, datasets, repetitions, and concurrency
+from the saved proposal packet. Persist baseline and candidate evidence before
+presenting promotion gates and an operator decision.
+
+### Rationale
+
+Accepting an independently configured candidate-evaluation request would allow
+the comparison to drift from the evidence the operator reviewed. Deriving the
+plan from immutable proposal evidence preserves traceability while the frozen
+plan still enforces released datasets, graders, tools, permissions, schemas,
+and manifest identity.
+
+### Consequences
+
+- stale registered manifests or revision surfaces block candidate construction
+- the candidate receives no permission, dataset, grader, or contract expansion
+- baseline and candidate execute under one inspectable frozen plan
+- the proposal page can start the workflow without exposing policy drift inputs
+- a promotion decision may link only the exact proposal in candidate lineage

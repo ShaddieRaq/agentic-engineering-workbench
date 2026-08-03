@@ -59,7 +59,6 @@ The current platform already provides:
 
 The remaining boundaries are:
 
-- one complete local baseline-to-candidate-to-decision demonstration
 - linked Tool Builder and Change Risk Reviewer handoffs when proposals need
   capabilities or source changes
 
@@ -435,7 +434,7 @@ Outcome: the workbench can demonstrate whether the candidate improved.
 
 ### Slice D — Promotion Decisions
 
-Status: Decision recording complete; handoffs remain
+Status: Executable candidate and decision workflow complete; handoffs remain
 
 - **Complete:** immutable operator approve, reject, and revise decisions
 - **Complete:** approval blocked when automated gates fail
@@ -443,6 +442,9 @@ Status: Decision recording complete; handoffs remain
   mutation
 - **Complete:** application-service and Evaluation Studio recording against
   saved candidate comparisons
+- **Complete:** candidate-ready proposal action that freezes the saved
+  workspace, model, datasets, graders, and execution policy; runs baseline and
+  candidate; persists the comparison; and links to operator review
 - linked Tool Builder and Change Risk Reviewer handoffs
 
 Outcome: the complete loop is usable while release remains deliberate.

@@ -8,9 +8,12 @@ import {
   createPassingCandidateComparison,
   withFailedPromotionGates,
 } from "./helpers/candidateComparisonFixture.js";
+import {
+  createCandidateReadyImprovementAnalysis,
+} from "./helpers/improvementProposalFixture.js";
 
 async function waitForCompletion(app: Awaited<ReturnType<typeof buildAgentWebServer>>, id: string) {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
     const response = await app.inject({ method: "GET", url: `/api/operations/${id}` });
     const body = response.json();
     if (body.status === "completed" || body.status === "failed") return body;
@@ -273,6 +276,47 @@ describe("agent web server", () => {
     });
     expect(blocked.statusCode).toBe(422);
     expect(blocked.json().error).toContain("cannot be approved");
+    await app.close();
+  });
+
+  it("runs a saved improvement proposal as a frozen candidate comparison", async () => {
+    const { service } = await createConsoleTestService(true, {
+      includeCandidateWorkflow: true,
+    });
+    const proposal = createCandidateReadyImprovementAnalysis();
+    const proposalReference =
+      await service.artifacts.saveAgentImprovementProposal(proposal);
+    const app = await buildAgentWebServer({
+      service,
+      apiKeyConfigured: true,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url:
+        `/api/improvement-proposals/${proposalReference.id}/candidate-evaluations`,
+    });
+    expect(response.statusCode).toBe(202);
+    expect(response.json()).toMatchObject({
+      kind: "agent-candidate-evaluation",
+      agentId: "documentation-auditor",
+    });
+
+    const completed = await waitForCompletion(
+      app,
+      response.json().operationId,
+    );
+    expect(completed).toMatchObject({
+      status: "completed",
+      result: {
+        evaluation: {
+          plan: { candidate: { proposalId: proposalReference.id } },
+        },
+      },
+    });
+    expect(
+      (await service.artifacts.load(completed.result.artifactId)).kind,
+    ).toBe("agent-candidate-evaluation");
     await app.close();
   });
 });

@@ -4,6 +4,9 @@ import {
   createPassingCandidateComparison,
   withFailedPromotionGates,
 } from "./helpers/candidateComparisonFixture.js";
+import {
+  createCandidateReadyImprovementAnalysis,
+} from "./helpers/improvementProposalFixture.js";
 
 describe("AgentApplicationService", () => {
   it("shares catalog description and persisted execution across entry points", async () => {
@@ -49,6 +52,17 @@ describe("AgentApplicationService", () => {
     expect(
       (await service.artifacts.load(approved.artifactId)).kind,
     ).toBe("agent-promotion-decision");
+    await expect(
+      service.recordPromotionDecision({
+        candidateEvaluationId: comparison.candidateEvaluationId,
+        decision: "reject",
+        operatorId: "operator-1",
+        rationale: "Reject with mismatched lineage.",
+        proposalArtifactId: "different-proposal",
+      }),
+    ).rejects.toThrow(
+      "Improvement proposal does not match the candidate comparison lineage",
+    );
 
     const failed = withFailedPromotionGates(comparison);
     failed.candidateEvaluationId = "00000000-0000-4000-8000-000000000021";
@@ -61,5 +75,56 @@ describe("AgentApplicationService", () => {
         rationale: "Should be refused.",
       }),
     ).rejects.toThrow("cannot be approved");
+  });
+
+  it("evaluates a saved candidate-ready proposal under frozen conditions", async () => {
+    const { service } = await createConsoleTestService(true, {
+      includeCandidateWorkflow: true,
+    });
+    const proposal = createCandidateReadyImprovementAnalysis();
+    const proposalReference =
+      await service.artifacts.saveAgentImprovementProposal(proposal);
+
+    const result = await service.evaluateImprovementProposal(
+      proposalReference.id,
+    );
+
+    expect(result.evaluation).toMatchObject({
+      plan: {
+        subject: {
+          agentId: "documentation-auditor",
+          agentVersion: "1.0.0",
+        },
+        candidate: { proposalId: proposalReference.id },
+        workspaceId: proposal.packet.execution.workspaceId,
+        model: proposal.packet.execution.model,
+        execution: {
+          repetitions: proposal.packet.execution.repetitions,
+          concurrency: proposal.packet.execution.concurrency,
+        },
+      },
+    });
+    expect(result.datasetRunArtifactIds).toHaveLength(2);
+    expect(
+      (await service.artifacts.load(result.artifactId)).kind,
+    ).toBe("agent-candidate-evaluation");
+  });
+
+  it("rejects a candidate proposal for a stale registered manifest", async () => {
+    const { service } = await createConsoleTestService(true, {
+      includeCandidateWorkflow: true,
+    });
+    const proposal = createCandidateReadyImprovementAnalysis({
+      analysisRunId: "00000000-0000-4000-8000-000000000041",
+    });
+    proposal.packet.subject.manifestDigest = "c".repeat(64);
+    const proposalReference =
+      await service.artifacts.saveAgentImprovementProposal(proposal);
+
+    await expect(
+      service.evaluateImprovementProposal(proposalReference.id),
+    ).rejects.toThrow(
+      "Registered subject manifest does not match the improvement proposal",
+    );
   });
 });

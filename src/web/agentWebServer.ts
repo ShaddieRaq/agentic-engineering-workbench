@@ -243,6 +243,66 @@ export async function buildAgentWebServer(
       return reply.code(202).send(operation);
     },
   );
+  app.post<{ Params: { proposalArtifactId: string } }>(
+    "/api/improvement-proposals/:proposalArtifactId/candidate-evaluations",
+    async (request, reply) => {
+      if (!options.apiKeyConfigured) {
+        return reply.code(503).send({ error: "OPENAI_API_KEY is not configured." });
+      }
+      let agentId: string;
+      try {
+        const stored = await options.service.artifacts.load(
+          request.params.proposalArtifactId,
+        );
+        if (stored.kind !== "agent-improvement-proposal") {
+          return reply.code(404).send({
+            error:
+              `Artifact ${request.params.proposalArtifactId} is not an improvement proposal.`,
+          });
+        }
+        agentId = stored.artifact.packet.subject.agentId;
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+      const operation = operations.start(
+        "agent-candidate-evaluation",
+        agentId,
+        async (emit) => {
+          emit(
+            "catalog",
+            "Resolved the saved proposal, released subject, and declared datasets.",
+          );
+          emit(
+            "input",
+            "Validated the candidate-ready patch against the subject-owned revision surface.",
+          );
+          emit(
+            "permissions",
+            "Reused the released tool allowlist without permission expansion.",
+          );
+          emit(
+            "workflow",
+            "Running baseline and candidate under the proposal's frozen evaluation conditions.",
+          );
+          const result = await options.service.evaluateImprovementProposal(
+            request.params.proposalArtifactId,
+          );
+          emit(
+            "assessment",
+            result.evaluation.gates.passed
+              ? "All automated promotion gates passed or were not applicable."
+              : "One or more automated promotion gates failed.",
+          );
+          emit(
+            "persistence",
+            `Candidate comparison saved as ${result.artifactId}.`,
+          );
+          return result;
+        },
+      );
+      return reply.code(202).send(operation);
+    },
+  );
   app.get<{ Params: { experimentId: string; datasetId: string; caseId: string } }>(
     "/api/evaluations/:experimentId/cases/:datasetId/:caseId",
     async (request, reply) => {

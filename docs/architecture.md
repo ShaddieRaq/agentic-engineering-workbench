@@ -1010,6 +1010,17 @@ source, datasets, evaluators, or the agent registry. Development and regression
 evidence may inform proposals, while protected evaluation evidence remains
 available only to these gates and promotion decisions.
 
+A candidate-ready proposal artifact exposes the executable bridge into this
+comparison boundary. `POST
+/api/improvement-proposals/:id/candidate-evaluations` validates the saved
+proposal and current released manifest, rebuilds the candidate only through the
+subject-owned revision surface, and freezes the workspace, model, datasets,
+graders, repetitions, and concurrency captured in the proposal packet. The
+background operation executes both sides, persists every dataset run and
+evaluation plus the comparison index, and links the operator to the existing
+gate and decision page. The proposal artifact ID becomes candidate lineage;
+promotion decisions may link only that exact proposal.
+
 The complete contracts, safeguards, delivery slices, and verification
 strategy are defined in
 [`docs/agent-improvement-loop.md`](agent-improvement-loop.md).

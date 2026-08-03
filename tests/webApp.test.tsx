@@ -165,6 +165,99 @@ describe("agent workbench web interface", () => {
     expect(await screen.findByText("Run npm run old-command.")).toBeInTheDocument();
   });
 
+  it("runs a candidate-ready proposal and links its frozen comparison", async () => {
+    const proposal = {
+      analysisRunId: "proposal-artifact",
+      succeeded: true,
+      packet: {
+        subject: {
+          agentId: "documentation-auditor",
+          agentVersion: "1.0.0",
+        },
+        execution: {
+          workspaceId: "workbench",
+          model: "test-model",
+          repetitions: 1,
+          concurrency: 1,
+        },
+      },
+      parsedOutput: {
+        disposition: "candidate-ready",
+        candidatePolicyPatch: {
+          changes: [{ field: "instructions", valueJson: "{}" }],
+        },
+      },
+      policyEvaluation: {
+        passed: true,
+        message: "Proposal passed policy evaluation.",
+      },
+    };
+    const presentation = {
+      artifactId: "proposal-artifact",
+      artifactKind: "agent-improvement-proposal",
+      presentationKind: "agent-improvement",
+      title: "Documentation Auditor Improvement Proposal",
+      agentId: "documentation-auditor",
+      agentVersion: "1.0.0",
+      workspaceId: "workbench",
+      succeeded: true,
+      assessment: "Proposal passed policy evaluation.",
+      overview: "Clarify evidence citation requirements.",
+      completedAt: "2026-08-03T23:00:00.000Z",
+      durationMs: 1,
+      metrics: [],
+      findings: [],
+      coverageGaps: [],
+      prioritizedActions: [],
+      sources: [],
+      timeline: [],
+      usage: null,
+      warnings: [],
+      improvement: null,
+    };
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      const body = path.endsWith("/api/workspaces")
+        ? { workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-03T23:00:00.000Z", builtIn: true }] }
+        : path.endsWith("/api/artifacts/proposal-artifact/presentation")
+          ? presentation
+          : path.endsWith("/api/artifacts/proposal-artifact")
+            ? { kind: "agent-improvement-proposal", artifact: proposal }
+            : path.endsWith("/api/improvement-proposals/proposal-artifact/candidate-evaluations") && init?.method === "POST"
+              ? { operationId: "candidate-operation" }
+              : path.endsWith("/api/operations/candidate-operation")
+                ? {
+                    operationId: "candidate-operation",
+                    kind: "agent-candidate-evaluation",
+                    agentId: "documentation-auditor",
+                    status: "completed",
+                    events: [],
+                    result: { artifactId: "candidate-comparison" },
+                    error: null,
+                    createdAt: "2026-08-03T23:00:01.000Z",
+                    completedAt: "2026-08-03T23:00:02.000Z",
+                  }
+                : {};
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }));
+
+    window.history.replaceState(null, "", "/runs/proposal-artifact");
+    render(<AppRoutes />);
+
+    expect(
+      await screen.findByRole("heading", { name: "Run candidate comparison" }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Run frozen comparison" }),
+    );
+    expect(
+      await screen.findByRole("link", { name: "Inspect candidate comparison" }),
+    ).toHaveAttribute("href", "/runs/candidate-comparison");
+  });
+
   it("connects experiment history, comparison, case results, and trial evidence", async () => {
     const experiment = {
       experimentId: "candidate-evaluation", agentId: "evaluation-agent", agentVersion: "1.1.0",

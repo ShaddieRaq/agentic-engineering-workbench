@@ -1,4 +1,7 @@
 import { z } from "zod";
+import {
+  persistAgentCandidateEvaluation,
+} from "../artifacts/agentCandidateEvaluationPersistence.js";
 import type { ArtifactQuery, ArtifactStore } from "../artifacts/artifactStore.js";
 import type { AIProvider } from "../providers/aiProvider.js";
 import { exportArtifactPresentation } from "../presentation/artifactExporter.js";
@@ -7,6 +10,7 @@ import type { ToolRegistry } from "../tools/toolRegistry.js";
 import type { FileWorkspaceStore } from "../workspaces/fileWorkspaceStore.js";
 import { parseExecutionOptions } from "../orchestration/executionPolicy.js";
 import { buildAgentCatalogReport } from "./agentCatalogReport.js";
+import { digestJsonEvidence } from "./agentEvidenceDigest.js";
 import type { AgentManifest } from "./agentManifest.js";
 import type { AgentRegistry } from "./agentRegistry.js";
 import type { AgentRunResult } from "./agentRunResult.js";
@@ -27,11 +31,18 @@ import {
   findEvaluationCase,
 } from "./evaluations/agentEvaluationView.js";
 import { runAgentImprovementAnalysis } from "./agentImprovement/agentImprovementAnalysis.js";
+import { buildAgentCandidate } from "./agentImprovement/agentCandidateBuilder.js";
 import {
   buildAgentImprovementEvidencePacket,
   type AgentImprovementObjective,
 } from "./agentImprovement/agentImprovementEvidenceBuilder.js";
 import type { AgentCandidateEvaluationArtifact } from "./evaluations/agentCandidateEvaluationArtifact.js";
+import {
+  createFrozenAgentCandidateEvaluationPlan,
+} from "./evaluations/agentCandidateEvaluationPlan.js";
+import {
+  runFrozenAgentCandidateEvaluation,
+} from "./evaluations/agentCandidateEvaluationRunner.js";
 import {
   createAgentPromotionDecision,
   type AgentPromotionDecision,
@@ -88,6 +99,15 @@ export interface AgentImprovementEvidence {
   analysis: Awaited<ReturnType<typeof runAgentImprovementAnalysis>>;
   artifactId: string;
   artifactPath: string;
+}
+
+export interface AgentCandidateEvaluationEvidence {
+  evaluation: AgentCandidateEvaluationArtifact;
+  artifactId: string;
+  artifactPath: string;
+  baselineEvaluationArtifactId: string;
+  candidateEvaluationArtifactId: string;
+  datasetRunArtifactIds: string[];
 }
 
 export interface RecordPromotionDecisionRequest {
@@ -244,6 +264,92 @@ export class AgentApplicationService {
     return stored.artifact;
   }
 
+  async evaluateImprovementProposal(
+    proposalArtifactId: string,
+  ): Promise<AgentCandidateEvaluationEvidence> {
+    const stored = await this.artifacts.load(proposalArtifactId);
+    if (stored.kind !== "agent-improvement-proposal") {
+      throw new Error(
+        `Artifact ${proposalArtifactId} is not an improvement proposal.`,
+      );
+    }
+    const analysis = stored.artifact;
+    if (
+      !analysis.succeeded ||
+      analysis.parsedOutput === null ||
+      analysis.policyEvaluation?.passed !== true
+    ) {
+      throw new Error(
+        "Only a successful, policy-valid improvement proposal can be evaluated.",
+      );
+    }
+    if (
+      analysis.parsedOutput.disposition !== "candidate-ready" ||
+      analysis.parsedOutput.candidatePolicyPatch === null
+    ) {
+      throw new Error(
+        "Only a candidate-ready improvement proposal can be evaluated.",
+      );
+    }
+
+    const registration = this.agents.get(analysis.packet.subject.agentId);
+    if (
+      registration.manifest.version !==
+        analysis.packet.subject.agentVersion ||
+      digestJsonEvidence(registration.manifest) !==
+        analysis.packet.subject.manifestDigest
+    ) {
+      throw new Error(
+        "Registered subject manifest does not match the improvement proposal.",
+      );
+    }
+    const workspace = await this.workspaces.get(
+      analysis.packet.execution.workspaceId,
+    );
+    const candidate = buildAgentCandidate({
+      registration,
+      packet: analysis.packet,
+      proposal: analysis.parsedOutput,
+      proposalId: proposalArtifactId,
+    });
+    const datasets = registration.manifest.verification.datasetIds.map(
+      (datasetId) => getAgentDatasetDefinition(datasetId),
+    );
+    const plan = createFrozenAgentCandidateEvaluationPlan({
+      baselineRegistration: registration,
+      candidate,
+      datasets,
+      workspaceId: workspace.id,
+      model: analysis.packet.execution.model,
+      execution: {
+        repetitions: analysis.packet.execution.repetitions,
+        concurrency: analysis.packet.execution.concurrency,
+      },
+    });
+    const execution = await runFrozenAgentCandidateEvaluation({
+      plan,
+      tools: this.toolFactory(workspace.rootPath),
+      providerFactory: this.providerFactory,
+      workspaceRoot: workspace.rootPath,
+    });
+    const persisted = await persistAgentCandidateEvaluation(
+      this.artifacts,
+      execution,
+    );
+    return {
+      evaluation: persisted.artifact,
+      artifactId: persisted.reference.id,
+      artifactPath: persisted.reference.path,
+      baselineEvaluationArtifactId:
+        persisted.baselineEvaluationReference.id,
+      candidateEvaluationArtifactId:
+        persisted.candidateEvaluationReference.id,
+      datasetRunArtifactIds: persisted.datasetRunReferences.map(
+        ({ id }) => id,
+      ),
+    };
+  }
+
   async recordPromotionDecision(
     request: RecordPromotionDecisionRequest,
   ): Promise<PromotionDecisionEvidence> {
@@ -251,6 +357,13 @@ export class AgentApplicationService {
       request.candidateEvaluationId,
     );
     if (request.proposalArtifactId) {
+      if (
+        request.proposalArtifactId !== comparison.plan.candidate.proposalId
+      ) {
+        throw new Error(
+          "Improvement proposal does not match the candidate comparison lineage.",
+        );
+      }
       const proposal = await this.artifacts.load(request.proposalArtifactId);
       if (proposal.kind !== "agent-improvement-proposal") {
         throw new Error(

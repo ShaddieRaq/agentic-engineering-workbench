@@ -95,7 +95,11 @@ export interface OperationEvent {
 
 export interface Operation {
   operationId: string;
-  kind: "agent-run" | "agent-verification" | "agent-improvement";
+  kind:
+    | "agent-run"
+    | "agent-verification"
+    | "agent-improvement"
+    | "agent-candidate-evaluation";
   agentId: string;
   status: "queued" | "running" | "completed" | "failed";
   events: OperationEvent[];
@@ -350,6 +354,32 @@ export interface CandidateEvaluationArtifact {
     }>;
   };
   completedAt: string;
+}
+
+export interface ImprovementProposalArtifact {
+  analysisRunId: string;
+  succeeded: boolean;
+  packet: {
+    subject: { agentId: string; agentVersion: string };
+    execution: {
+      workspaceId: string;
+      model: string;
+      repetitions: number;
+      concurrency: number;
+    };
+  };
+  parsedOutput: {
+    disposition:
+      | "candidate-ready"
+      | "engineering-change-required"
+      | "evaluation-gap"
+      | "insufficient-evidence"
+      | "no-change";
+    candidatePolicyPatch: {
+      changes: Array<{ field: string; valueJson: string }>;
+    } | null;
+  } | null;
+  policyEvaluation: { passed: boolean; message: string } | null;
 }
 
 export interface PromotionDecisionEvidence {

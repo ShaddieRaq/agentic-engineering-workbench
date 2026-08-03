@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 export type OperationKind =
   | "agent-run"
   | "agent-verification"
-  | "agent-improvement";
+  | "agent-improvement"
+  | "agent-candidate-evaluation";
 export type OperationStatus = "queued" | "running" | "completed" | "failed";
 
 export interface OperationEvent {

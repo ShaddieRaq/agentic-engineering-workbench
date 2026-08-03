@@ -7,9 +7,13 @@ import { AgentRegistry } from "../../src/agents/agentRegistry.js";
 import { defineAgent } from "../../src/agents/agentRegistration.js";
 import { FileArtifactStore } from "../../src/artifacts/fileArtifactStore.js";
 import { FakeProvider } from "../../src/providers/fakeProvider.js";
-import { ToolRegistry } from "../../src/tools/toolRegistry.js";
+import {
+  createPlatformToolRegistry,
+  ToolRegistry,
+} from "../../src/tools/toolRegistry.js";
 import { FileWorkspaceStore } from "../../src/workspaces/fileWorkspaceStore.js";
 import { agentImprovementAnalystAgent } from "../../src/agents/agentImprovement/agentImprovementAnalystAgent.js";
+import { documentationAuditorAgent } from "../../src/agents/documentationAuditor/documentationAuditorAgent.js";
 
 export const consoleTestAgent = defineAgent({
   manifest: {
@@ -30,15 +34,25 @@ export const consoleTestAgent = defineAgent({
   async execute(input) { return { answer: input.instruction }; },
 });
 
-export async function createConsoleTestService(apiKeyConfigured = true) {
+export async function createConsoleTestService(
+  apiKeyConfigured = true,
+  options: { includeCandidateWorkflow?: boolean } = {},
+) {
   const directory = await mkdtemp(join(tmpdir(), "agent-console-"));
+  const registrations = [agentImprovementAnalystAgent, consoleTestAgent];
+  if (options.includeCandidateWorkflow) {
+    registrations.push(documentationAuditorAgent);
+  }
   return {
     directory,
     service: new AgentApplicationService(
-      new AgentRegistry([agentImprovementAnalystAgent, consoleTestAgent]),
+      new AgentRegistry(registrations),
       new FileArtifactStore(directory),
       new FileWorkspaceStore(join(directory, ".workbench", "workspaces.json"), directory),
-      () => new ToolRegistry([]),
+      (workspaceRoot) =>
+        options.includeCandidateWorkflow
+          ? createPlatformToolRegistry(workspaceRoot)
+          : new ToolRegistry([]),
       () => {
         if (!apiKeyConfigured) throw new Error("Provider unavailable.");
         return new FakeProvider("unused");

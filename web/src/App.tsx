@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type ToolDescription, type ToolSummary } from "./api.js";
+import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type ImprovementProposalArtifact, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type ToolDescription, type ToolSummary } from "./api.js";
 import { ArtifactPresentationView } from "./artifactPresentation.js";
 import { AgentCard, EmptyState, ErrorNotice, Loading, OperationTrace, RunAgentPanel, StatusBadge } from "./components.js";
 import { useOperation, useResource } from "./hooks.js";
@@ -138,17 +138,74 @@ function RunsPage() {
   );
 }
 
+function CandidateEvaluationPanel({
+  proposalArtifactId,
+  proposal,
+}: {
+  proposalArtifactId: string;
+  proposal: ImprovementProposalArtifact;
+}) {
+  const [operationId, setOperationId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const operation = useOperation(operationId);
+
+  async function runComparison() {
+    try {
+      const started = await api<Operation>(
+        `/api/improvement-proposals/${encodeURIComponent(proposalArtifactId)}/candidate-evaluations`,
+        { method: "POST" },
+      );
+      setOperationId(started.operationId);
+      setError(null);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  return (
+    <section className="panel">
+      <div className="section-heading">
+        <div>
+          <span className="eyebrow">Frozen comparative execution</span>
+          <h2>Run candidate comparison</h2>
+        </div>
+        <StatusBadge value="candidate-ready" />
+      </div>
+      <p>
+        Re-run the released baseline and this in-memory candidate with the saved
+        workspace, model, datasets, graders, and execution policy. This makes
+        live model calls but does not modify source or the agent registry.
+      </p>
+      <div className="metric-grid report-metrics">
+        <div><span>Workspace</span><strong className="metric-word">{proposal.packet.execution.workspaceId}</strong></div>
+        <div><span>Model</span><strong className="metric-word">{proposal.packet.execution.model}</strong></div>
+        <div><span>Repetitions</span><strong>{proposal.packet.execution.repetitions}</strong></div>
+        <div><span>Concurrency</span><strong>{proposal.packet.execution.concurrency}</strong></div>
+      </div>
+      {error && <ErrorNotice message={error} />}
+      {!operation.data && (
+        <button className="button" type="button" onClick={() => void runComparison()}>
+          Run frozen comparison
+        </button>
+      )}
+      {operation.data && <OperationTrace operation={operation.data} />}
+    </section>
+  );
+}
+
 function PromotionDecisionPanel({
   candidateEvaluationId,
   gatesPassed,
+  proposalId,
 }: {
   candidateEvaluationId: string;
   gatesPassed: boolean;
+  proposalId: string;
 }) {
   const [decision, setDecision] = useState<PromotionDecisionKind>(gatesPassed ? "approve" : "reject");
   const [operatorId, setOperatorId] = useState("local-operator");
   const [rationale, setRationale] = useState("");
-  const [proposalArtifactId, setProposalArtifactId] = useState("");
+  const [proposalArtifactId, setProposalArtifactId] = useState(proposalId);
   const [error, setError] = useState<string | null>(null);
   const [recorded, setRecorded] = useState<PromotionDecisionEvidence | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -274,13 +331,31 @@ function RunDetailPage() {
     resource.data.kind === "agent-candidate-evaluation"
       ? (resource.data.artifact as CandidateEvaluationArtifact)
       : null;
+  const proposal =
+    resource.data.kind === "agent-improvement-proposal"
+      ? (resource.data.artifact as ImprovementProposalArtifact)
+      : null;
+  const candidateReadyProposal =
+    proposal?.succeeded === true &&
+      proposal.policyEvaluation?.passed === true &&
+      proposal.parsedOutput?.disposition === "candidate-ready" &&
+      proposal.parsedOutput.candidatePolicyPatch !== null
+      ? proposal
+      : null;
   return (
     <>
       <ArtifactPresentationView presentation={presentation.data} rawArtifact={resource.data.artifact} />
+      {candidateReadyProposal && artifactId && (
+        <CandidateEvaluationPanel
+          proposalArtifactId={artifactId}
+          proposal={candidateReadyProposal}
+        />
+      )}
       {candidate && (
         <PromotionDecisionPanel
           candidateEvaluationId={candidate.candidateEvaluationId}
           gatesPassed={candidate.gates.passed}
+          proposalId={candidate.plan.candidate.proposalId}
         />
       )}
     </>

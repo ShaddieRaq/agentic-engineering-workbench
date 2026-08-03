@@ -801,7 +801,7 @@ Deferred deliberately:
 
 ## Phase 40 — Evidence-Driven Agent Improvement
 
-Status: In progress — Slices A–D recording path complete; end-to-end demo and handoffs remain
+Status: In progress — Slices A–D executable workflow complete; handoffs remain
 
 Goal:
 
@@ -829,7 +829,10 @@ Delivery:
 6. **Complete:** Immutable approve, reject, or revise decision artifacts, plus
    application-service and Evaluation Studio recording against saved candidate
    comparisons. Approval still emits only a source-controlled release task.
-7. Linked handoffs to Tool Builder and Change Risk Reviewer when a proposal
+7. **Complete:** Candidate-ready proposal execution through the subject-owned
+   revision surface, frozen baseline/candidate runs, immutable comparison,
+   promotion gates, and the operator decision page.
+8. Linked handoffs to Tool Builder and Change Risk Reviewer when a proposal
    requires capabilities or source changes.
 
 Required safeguards:
@@ -856,10 +859,9 @@ Deferred deliberately:
 
 ## Current Priorities
 
-1. Complete one local baseline-to-candidate-to-decision workflow.
-2. Keep approval as a source-controlled release task without auto-promotion.
-3. Link Tool Builder and Change Risk Reviewer handoffs when proposals need
+1. Link Tool Builder and Change Risk Reviewer handoffs when proposals need
    capabilities or source changes.
-4. Exercise Playwright Failure Triage against reviewed real failures after the
+2. Keep approval as a source-controlled release task without auto-promotion.
+3. Exercise Playwright Failure Triage against reviewed real failures after the
    general improvement loop is established.
-5. Export proven agents into Claude Code and other runner-specific packages.
+4. Export proven agents into Claude Code and other runner-specific packages.

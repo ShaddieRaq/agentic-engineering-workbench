@@ -301,6 +301,9 @@ The project currently supports:
 - approval-only source-controlled release tasks that never mutate the registry
 - application-service and Evaluation Studio recording of promotion decisions
   against saved candidate comparisons
+- candidate-ready proposal execution from its artifact page through candidate
+  construction, frozen baseline/candidate evaluation, comparison persistence,
+  promotion gates, and the existing operator decision boundary
 
 ## Current Evaluators
 
@@ -389,7 +392,7 @@ Phase 40 Slice C protected evidence boundary: complete foundation
 Phase 40 Slice C frozen comparative execution: complete foundation
 Phase 40 Slice C immutable comparison evidence: complete foundation
 Phase 40 Slice C deterministic promotion gates: complete
-Phase 40 Slice D promotion decisions: complete recording path
+Phase 40 Slice D candidate workflow and promotion decisions: complete
 ```
 
 Verified test state:
@@ -397,7 +400,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 121 test files passed
-367 tests passed
+373 tests passed
 ```
 
 This state must be verified before continuing:
@@ -425,10 +428,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Complete one local baseline-to-candidate-to-decision workflow end to end.
-Keep approval as a source-controlled release task, not an automatic registry
-or source mutation. Then link Tool Builder and Change Risk Reviewer handoffs
-when a proposal needs capabilities or source changes.
+Link Tool Builder and Change Risk Reviewer handoffs when a proposal needs
+capabilities or source changes. Keep approval as a source-controlled release
+task, not an automatic registry or source mutation.
 
 ## Broader Roadmap
 
