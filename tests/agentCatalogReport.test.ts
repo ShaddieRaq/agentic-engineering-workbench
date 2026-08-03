@@ -11,9 +11,9 @@ describe("buildAgentCatalogReport", () => {
     );
 
     expect(report).toMatchObject({
-      totalAgents: 5,
+      totalAgents: 6,
       statusCounts: {
-        experimental: 2,
+        experimental: 3,
         active: 3,
         deprecated: 0,
         retired: 0,
@@ -22,6 +22,7 @@ describe("buildAgentCatalogReport", () => {
       validationIssues: [],
     });
     expect(report.agents.map(({ id, version }) => `${id}@${version}`)).toEqual([
+      "agent-improvement-analyst@0.1.0",
       "change-risk-reviewer@1.0.0",
       "documentation-auditor@1.0.0",
       "playwright-failure-triage@0.1.0",

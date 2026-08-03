@@ -4,6 +4,11 @@ export interface WorkflowDescriptor {
 }
 
 const workflows: Record<string, WorkflowDescriptor> = {
+  "agent-improvement-analysis": {
+    id: "agent-improvement-analysis",
+    description:
+      "Analyze bounded evaluation evidence and produce a grounded, policy-checked improvement proposal.",
+  },
   "change-risk-review": {
     id: "change-risk-review",
     description: "Inspect repository changes and produce a grounded risk review.",

@@ -23,6 +23,7 @@ import { ToolRegistry } from "../src/tools/toolRegistry.js";
 describe("changeRiskReviewerAgent", () => {
   it("registers a second independently versioned agent product", () => {
     expect(platformAgentRegistry.list().map(({ id }) => id)).toEqual([
+      "agent-improvement-analyst",
       "change-risk-reviewer",
       "documentation-auditor",
       "playwright-failure-triage",

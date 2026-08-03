@@ -4,8 +4,10 @@ import { changeRiskReviewerDataset } from "./changeRiskReviewerDataset.js";
 import { documentationAuditorDataset } from "./documentationAuditorDataset.js";
 import { toolBuilderDataset } from "./toolBuilderDataset.js";
 import { playwrightFailureTriageDataset } from "./playwrightFailureTriageDataset.js";
+import { agentImprovementAnalystDataset } from "./agentImprovementAnalystDataset.js";
 
 const datasets: Record<string, AgentDatasetDefinition> = {
+  [agentImprovementAnalystDataset.id]: agentImprovementAnalystDataset,
   [changeRiskReviewerDataset.id]: changeRiskReviewerDataset,
   [documentationAuditorDataset.id]: documentationAuditorDataset,
   [repositoryAssistantDataset.id]: repositoryAssistantDataset,
