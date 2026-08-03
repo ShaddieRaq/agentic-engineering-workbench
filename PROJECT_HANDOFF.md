@@ -299,6 +299,8 @@ The project currently supports:
 - gate outcomes embedded in candidate-comparison artifacts and presentations
 - immutable operator approve, reject, and revise promotion decisions
 - approval-only source-controlled release tasks that never mutate the registry
+- application-service and Evaluation Studio recording of promotion decisions
+  against saved candidate comparisons
 
 ## Current Evaluators
 
@@ -387,7 +389,7 @@ Phase 40 Slice C protected evidence boundary: complete foundation
 Phase 40 Slice C frozen comparative execution: complete foundation
 Phase 40 Slice C immutable comparison evidence: complete foundation
 Phase 40 Slice C deterministic promotion gates: complete
-Phase 40 Slice D promotion decisions: complete foundation
+Phase 40 Slice D promotion decisions: complete recording path
 ```
 
 Verified test state:
@@ -423,10 +425,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Continue Slice D by wiring Evaluation Studio and the application service to
-record promotion decisions against saved candidate comparisons. Keep approval
-as a source-controlled release task, not an automatic registry or source
-mutation.
+Complete one local baseline-to-candidate-to-decision workflow end to end.
+Keep approval as a source-controlled release task, not an automatic registry
+or source mutation. Then link Tool Builder and Change Risk Reviewer handoffs
+when a proposal needs capabilities or source changes.
 
 ## Broader Roadmap
 

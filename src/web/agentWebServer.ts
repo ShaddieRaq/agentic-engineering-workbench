@@ -43,6 +43,15 @@ const improvementRequestSchema = z
   })
   .strict();
 
+const promotionDecisionRequestSchema = z
+  .object({
+    decision: z.enum(["approve", "reject", "revise"]),
+    operatorId: z.string().min(1).max(200),
+    rationale: z.string().min(1).max(8_000),
+    proposalArtifactId: z.string().min(1).nullable().optional(),
+  })
+  .strict();
+
 const addWorkspaceRequestSchema = z
   .object({
     id: z.string().min(1),
@@ -245,6 +254,50 @@ export async function buildAgentWebServer(
         );
       } catch (error: unknown) {
         return reply.code(404).send({ error: errorMessage(error) });
+      }
+    },
+  );
+  app.get<{ Params: { candidateEvaluationId: string } }>(
+    "/api/candidate-evaluations/:candidateEvaluationId",
+    async (request, reply) => {
+      try {
+        return await options.service.getCandidateEvaluation(
+          request.params.candidateEvaluationId,
+        );
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+    },
+  );
+  app.post<{ Params: { candidateEvaluationId: string } }>(
+    "/api/candidate-evaluations/:candidateEvaluationId/decisions",
+    async (request, reply) => {
+      const parsed = promotionDecisionRequestSchema.safeParse(request.body ?? {});
+      if (!parsed.success) {
+        return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+      }
+      try {
+        const result = await options.service.recordPromotionDecision({
+          candidateEvaluationId: request.params.candidateEvaluationId,
+          decision: parsed.data.decision,
+          operatorId: parsed.data.operatorId,
+          rationale: parsed.data.rationale,
+          proposalArtifactId: parsed.data.proposalArtifactId ?? null,
+        });
+        return reply.code(201).send(result);
+      } catch (error: unknown) {
+        const message = errorMessage(error);
+        if (message.includes("is not a candidate evaluation")) {
+          return reply.code(404).send({ error: message });
+        }
+        if (
+          message.includes("cannot be approved") ||
+          message.includes("is not an improvement proposal") ||
+          message.includes("does not match the candidate comparison")
+        ) {
+          return reply.code(422).send({ error: message });
+        }
+        return reply.code(400).send({ error: message });
       }
     },
   );

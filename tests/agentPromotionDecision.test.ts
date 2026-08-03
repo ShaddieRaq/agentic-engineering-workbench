@@ -1,102 +1,20 @@
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { z } from "zod";
 import { describe, expect, it } from "vitest";
-import type { BuiltAgentCandidate } from "../src/agents/agentImprovement/agentCandidateBuilder.js";
-import { defineAgent } from "../src/agents/agentRegistration.js";
-import { toolBuilderDataset } from "../src/agents/datasets/toolBuilderDataset.js";
-import { createAgentCandidateEvaluationArtifact } from "../src/agents/evaluations/agentCandidateEvaluationArtifact.js";
-import { createFrozenAgentCandidateEvaluationPlan } from "../src/agents/evaluations/agentCandidateEvaluationPlan.js";
-import { runFrozenAgentCandidateEvaluation } from "../src/agents/evaluations/agentCandidateEvaluationRunner.js";
 import {
   createAgentPromotionDecision,
 } from "../src/agents/evaluations/agentPromotionDecision.js";
-import { toolBuilderAgent } from "../src/agents/toolBuilder/toolBuilderAgent.js";
 import { FileArtifactStore } from "../src/artifacts/fileArtifactStore.js";
 import { presentArtifact } from "../src/presentation/artifactPresenter.js";
-import { FakeProvider } from "../src/providers/fakeProvider.js";
-import { ToolRegistry } from "../src/tools/toolRegistry.js";
-
-const baseline = defineAgent({
-  manifest: toolBuilderAgent.manifest,
-  inputSchema: z.json(),
-  outputSchema: z.object({ answer: z.string() }).strict(),
-  async execute() {
-    return { answer: "Baseline answer." };
-  },
-  assess(output) {
-    const parsed = z.object({ answer: z.string() }).parse(output);
-    const passed = parsed.answer.startsWith("Cited:");
-    return {
-      passed,
-      message: passed ? "Answer cited evidence." : "Answer omitted citations.",
-    };
-  },
-  assessDatasetCase(_input, output) {
-    const parsed = z.object({ answer: z.string() }).parse(output);
-    const passed = parsed.answer.startsWith("Cited:");
-    return {
-      passed,
-      message: passed ? "Answer cited evidence." : "Answer omitted citations.",
-    };
-  },
-});
-
-function candidate(): BuiltAgentCandidate {
-  return {
-    evidence: {
-      identity: {
-        subjectAgentId: "tool-builder",
-        baseVersion: "0.1.0",
-        candidateId: "00000000-0000-4000-8000-000000000001",
-        proposalId: "proposal-1",
-        baselinePolicyDigest: "a".repeat(64),
-        effectivePolicyDigest: "b".repeat(64),
-      },
-      changedFields: ["instructions"],
-      baselinePolicy: { instructions: "Use supplied evidence." },
-      effectivePolicy: { instructions: "Cite supplied evidence." },
-    },
-    registration: {
-      ...baseline,
-      assess: baseline.assess,
-      ...(baseline.assessDatasetCase
-        ? { assessDatasetCase: baseline.assessDatasetCase }
-        : {}),
-      async execute() {
-        return { answer: "Cited: supplied evidence." };
-      },
-    },
-  };
-}
-
-async function comparisonArtifact() {
-  const plan = createFrozenAgentCandidateEvaluationPlan({
-    baselineRegistration: baseline,
-    candidate: candidate(),
-    datasets: [toolBuilderDataset],
-    workspaceId: "workspace-1",
-    model: "test-model",
-    execution: { repetitions: 1, concurrency: 1 },
-    planId: "00000000-0000-4000-8000-000000000010",
-  });
-  const execution = await runFrozenAgentCandidateEvaluation({
-    plan,
-    tools: new ToolRegistry([]),
-    providerFactory: () => new FakeProvider("unused"),
-    workspaceRoot: "/workspace",
-  });
-  return createAgentCandidateEvaluationArtifact(execution, {
-    candidateEvaluationId: "00000000-0000-4000-8000-000000000020",
-    completedAt: "2026-08-03T22:00:00.000Z",
-    gatePolicy: { maximumLatencyRegressionRatio: 1_000_000_000 },
-  });
-}
+import {
+  createPassingCandidateComparison,
+  withFailedPromotionGates,
+} from "./helpers/candidateComparisonFixture.js";
 
 describe("createAgentPromotionDecision", () => {
   it("approves only when gates passed and emits a release task", async () => {
-    const comparison = await comparisonArtifact();
+    const comparison = await createPassingCandidateComparison();
     expect(comparison.gates.passed).toBe(true);
 
     const approved = createAgentPromotionDecision({
@@ -123,16 +41,7 @@ describe("createAgentPromotionDecision", () => {
     });
     expect(approved.releaseTask?.requiredActions.length).toBeGreaterThan(0);
 
-    const failedComparison = structuredClone(comparison);
-    failedComparison.gates = {
-      ...failedComparison.gates,
-      passed: false,
-      results: failedComparison.gates.results.map((result) =>
-        result.gateId === "improvement"
-          ? { ...result, status: "failed" as const, message: "No improvement." }
-          : result
-      ),
-    };
+    const failedComparison = withFailedPromotionGates(comparison);
     expect(() =>
       createAgentPromotionDecision({
         comparison: failedComparison,
@@ -144,7 +53,7 @@ describe("createAgentPromotionDecision", () => {
   });
 
   it("allows reject and revise without a release task", async () => {
-    const comparison = await comparisonArtifact();
+    const comparison = await createPassingCandidateComparison();
     const rejected = createAgentPromotionDecision({
       comparison,
       decision: "reject",
@@ -166,7 +75,7 @@ describe("createAgentPromotionDecision", () => {
   });
 
   it("persists and presents an immutable promotion decision", async () => {
-    const comparison = await comparisonArtifact();
+    const comparison = await createPassingCandidateComparison();
     const decision = createAgentPromotionDecision({
       comparison,
       decision: "approve",

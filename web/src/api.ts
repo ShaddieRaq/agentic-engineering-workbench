@@ -324,6 +324,58 @@ export interface ArtifactSourceSnapshot {
   toolCallId: string;
 }
 
+export type PromotionDecisionKind = "approve" | "reject" | "revise";
+
+export interface CandidateEvaluationArtifact {
+  candidateEvaluationId: string;
+  plan: {
+    planId: string;
+    subject: { agentId: string; agentVersion: string };
+    candidate: { candidateId: string; proposalId: string };
+  };
+  comparison: {
+    summary: {
+      improvedCases: number;
+      regressedCases: number;
+      unchangedCases: number;
+      insufficientEvidenceCases: number;
+    };
+  };
+  gates: {
+    passed: boolean;
+    results: Array<{
+      gateId: string;
+      status: "passed" | "failed" | "not-applicable";
+      message: string;
+    }>;
+  };
+  completedAt: string;
+}
+
+export interface PromotionDecisionEvidence {
+  decision: {
+    decisionId: string;
+    decision: PromotionDecisionKind;
+    candidateEvaluationArtifactId: string;
+    proposalArtifactId: string | null;
+    gatesPassed: boolean;
+    operatorId: string;
+    rationale: string;
+    releaseTask: {
+      kind: "source-controlled-agent-release";
+      subjectAgentId: string;
+      baseVersion: string;
+      candidateId: string;
+      proposalId: string;
+      effectivePolicyDigest: string;
+      requiredActions: string[];
+    } | null;
+    decidedAt: string;
+  };
+  artifactId: string;
+  artifactPath: string;
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,

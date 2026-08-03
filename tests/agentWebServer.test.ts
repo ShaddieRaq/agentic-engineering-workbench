@@ -4,6 +4,10 @@ import { buildAgentWebServer } from "../src/web/agentWebServer.js";
 import { createConsoleTestService } from "./helpers/consoleTestService.js";
 import { createAgentEvaluationExperiment } from "../src/agents/evaluations/agentEvaluationExperiment.js";
 import { evaluationDatasetRun, evaluationVerification } from "./helpers/evaluationFixture.js";
+import {
+  createPassingCandidateComparison,
+  withFailedPromotionGates,
+} from "./helpers/candidateComparisonFixture.js";
 
 async function waitForCompletion(app: Awaited<ReturnType<typeof buildAgentWebServer>>, id: string) {
   for (let attempt = 0; attempt < 20; attempt += 1) {
@@ -218,6 +222,57 @@ describe("agent web server", () => {
         sourceExperimentIds: ["failed-improvement-source"],
       },
     });
+    await app.close();
+  });
+
+  it("loads a candidate comparison and records a promotion decision", async () => {
+    const { service } = await createConsoleTestService();
+    const comparison = await createPassingCandidateComparison();
+    await service.artifacts.saveAgentCandidateEvaluation(comparison);
+    const app = await buildAgentWebServer({ service, apiKeyConfigured: false });
+
+    const loaded = await app.inject({
+      method: "GET",
+      url: `/api/candidate-evaluations/${comparison.candidateEvaluationId}`,
+    });
+    expect(loaded.statusCode).toBe(200);
+    expect(loaded.json()).toMatchObject({
+      candidateEvaluationId: comparison.candidateEvaluationId,
+      gates: { passed: true },
+    });
+
+    const approved = await app.inject({
+      method: "POST",
+      url: `/api/candidate-evaluations/${comparison.candidateEvaluationId}/decisions`,
+      payload: {
+        decision: "reject",
+        operatorId: "operator-1",
+        rationale: "Prefer a narrower instruction change before release.",
+      },
+    });
+    expect(approved.statusCode).toBe(201);
+    expect(approved.json()).toMatchObject({
+      decision: {
+        decision: "reject",
+        candidateEvaluationArtifactId: comparison.candidateEvaluationId,
+        releaseTask: null,
+      },
+    });
+
+    const failed = withFailedPromotionGates(comparison);
+    failed.candidateEvaluationId = "00000000-0000-4000-8000-000000000021";
+    await service.artifacts.saveAgentCandidateEvaluation(failed);
+    const blocked = await app.inject({
+      method: "POST",
+      url: `/api/candidate-evaluations/${failed.candidateEvaluationId}/decisions`,
+      payload: {
+        decision: "approve",
+        operatorId: "operator-1",
+        rationale: "Should be refused when gates failed.",
+      },
+    });
+    expect(blocked.statusCode).toBe(422);
+    expect(blocked.json().error).toContain("cannot be approved");
     await app.close();
   });
 });

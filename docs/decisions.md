@@ -2154,4 +2154,5 @@ being mistaken for promotion.
 - reject and revise remain available even when gates passed
 - approvals reference the candidate comparison and optional proposal artifact
 - release tasks preserve candidate identity and effective-policy digest
-- Evaluation Studio and service recording remain subsequent wiring work
+- the application service and Evaluation Studio record decisions against saved
+  candidate comparisons without mutating the registry

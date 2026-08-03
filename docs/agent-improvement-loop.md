@@ -59,8 +59,9 @@ The current platform already provides:
 
 The remaining boundaries are:
 
-- Evaluation Studio and service wiring for recording promotion decisions
 - one complete local baseline-to-candidate-to-decision demonstration
+- linked Tool Builder and Change Risk Reviewer handoffs when proposals need
+  capabilities or source changes
 
 ## Roles and Responsibilities
 
@@ -434,13 +435,14 @@ Outcome: the workbench can demonstrate whether the candidate improved.
 
 ### Slice D — Promotion Decisions
 
-Status: Decision artifact foundation complete
+Status: Decision recording complete; handoffs remain
 
 - **Complete:** immutable operator approve, reject, and revise decisions
 - **Complete:** approval blocked when automated gates fail
 - **Complete:** approval emits a source-controlled release task without source
   mutation
-- Evaluation Studio and application-service recording
+- **Complete:** application-service and Evaluation Studio recording against
+  saved candidate comparisons
 - linked Tool Builder and Change Risk Reviewer handoffs
 
 Outcome: the complete loop is usable while release remains deliberate.

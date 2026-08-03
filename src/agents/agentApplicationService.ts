@@ -31,6 +31,12 @@ import {
   buildAgentImprovementEvidencePacket,
   type AgentImprovementObjective,
 } from "./agentImprovement/agentImprovementEvidenceBuilder.js";
+import type { AgentCandidateEvaluationArtifact } from "./evaluations/agentCandidateEvaluationArtifact.js";
+import {
+  createAgentPromotionDecision,
+  type AgentPromotionDecision,
+  type AgentPromotionDecisionKind,
+} from "./evaluations/agentPromotionDecision.js";
 
 export type ProviderFactory = (model: string) => AIProvider;
 export type ToolRegistryFactory = (workspaceRoot: string) => ToolRegistry;
@@ -80,6 +86,20 @@ export interface AnalyzeAgentImprovementRequest {
 
 export interface AgentImprovementEvidence {
   analysis: Awaited<ReturnType<typeof runAgentImprovementAnalysis>>;
+  artifactId: string;
+  artifactPath: string;
+}
+
+export interface RecordPromotionDecisionRequest {
+  candidateEvaluationId: string;
+  decision: AgentPromotionDecisionKind;
+  operatorId: string;
+  rationale: string;
+  proposalArtifactId?: string | null;
+}
+
+export interface PromotionDecisionEvidence {
+  decision: AgentPromotionDecision;
   artifactId: string;
   artifactPath: string;
 }
@@ -210,6 +230,66 @@ export class AgentApplicationService {
       datasetId,
       datasetCaseId,
     );
+  }
+
+  async getCandidateEvaluation(
+    candidateEvaluationId: string,
+  ): Promise<AgentCandidateEvaluationArtifact> {
+    const stored = await this.artifacts.load(candidateEvaluationId);
+    if (stored.kind !== "agent-candidate-evaluation") {
+      throw new Error(
+        `Artifact ${candidateEvaluationId} is not a candidate evaluation.`,
+      );
+    }
+    return stored.artifact;
+  }
+
+  async recordPromotionDecision(
+    request: RecordPromotionDecisionRequest,
+  ): Promise<PromotionDecisionEvidence> {
+    const comparison = await this.getCandidateEvaluation(
+      request.candidateEvaluationId,
+    );
+    if (request.proposalArtifactId) {
+      const proposal = await this.artifacts.load(request.proposalArtifactId);
+      if (proposal.kind !== "agent-improvement-proposal") {
+        throw new Error(
+          `Artifact ${request.proposalArtifactId} is not an improvement proposal.`,
+        );
+      }
+      if (
+        proposal.artifact.packet.subject.agentId !==
+          comparison.plan.subject.agentId ||
+        proposal.artifact.packet.subject.agentVersion !==
+          comparison.plan.subject.agentVersion
+      ) {
+        throw new Error(
+          "Improvement proposal subject does not match the candidate comparison.",
+        );
+      }
+    }
+
+    let decision: AgentPromotionDecision;
+    try {
+      decision = createAgentPromotionDecision({
+        comparison,
+        decision: request.decision,
+        operatorId: request.operatorId,
+        rationale: request.rationale,
+        proposalArtifactId: request.proposalArtifactId ?? null,
+      });
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        throw new Error(z.prettifyError(error));
+      }
+      throw error;
+    }
+    const reference = await this.artifacts.saveAgentPromotionDecision(decision);
+    return {
+      decision,
+      artifactId: reference.id,
+      artifactPath: reference.path,
+    };
   }
 
   async analyzeEvaluation(

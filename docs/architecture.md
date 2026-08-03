@@ -1001,9 +1001,12 @@ provider wrapper. When every compared run has priced usage, the cost gate
 enforces its configured regression ratio; otherwise it remains not-applicable.
 Gate passage still does not promote a candidate. Operators record immutable
 `agent-promotion-decision` artifacts that approve, reject, or request revision
-against a saved comparison. Approval is refused when automated gates failed and
-produces only a source-controlled release task; it never mutates source,
-datasets, evaluators, or the agent registry. Development and regression
+against a saved comparison through the application service and Evaluation
+Studio (`GET /api/candidate-evaluations/:id`,
+`POST /api/candidate-evaluations/:id/decisions`, and the decision form on a
+candidate-comparison evidence page). Approval is refused when automated gates
+failed and produces only a source-controlled release task; it never mutates
+source, datasets, evaluators, or the agent registry. Development and regression
 evidence may inform proposals, while protected evaluation evidence remains
 available only to these gates and promotion decisions.
 

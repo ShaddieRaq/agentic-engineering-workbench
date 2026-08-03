@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type Operation, type ToolDescription, type ToolSummary } from "./api.js";
+import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type ToolDescription, type ToolSummary } from "./api.js";
 import { ArtifactPresentationView } from "./artifactPresentation.js";
 import { AgentCard, EmptyState, ErrorNotice, Loading, OperationTrace, RunAgentPanel, StatusBadge } from "./components.js";
 import { useOperation, useResource } from "./hooks.js";
@@ -138,13 +138,153 @@ function RunsPage() {
   );
 }
 
+function PromotionDecisionPanel({
+  candidateEvaluationId,
+  gatesPassed,
+}: {
+  candidateEvaluationId: string;
+  gatesPassed: boolean;
+}) {
+  const [decision, setDecision] = useState<PromotionDecisionKind>(gatesPassed ? "approve" : "reject");
+  const [operatorId, setOperatorId] = useState("local-operator");
+  const [rationale, setRationale] = useState("");
+  const [proposalArtifactId, setProposalArtifactId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [recorded, setRecorded] = useState<PromotionDecisionEvidence | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setSubmitting(true);
+    try {
+      const result = await api<PromotionDecisionEvidence>(
+        `/api/candidate-evaluations/${encodeURIComponent(candidateEvaluationId)}/decisions`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            decision,
+            operatorId,
+            rationale,
+            proposalArtifactId: proposalArtifactId.trim() || null,
+          }),
+        },
+      );
+      setRecorded(result);
+      setError(null);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (recorded) {
+    return (
+      <section className="panel">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">Immutable decision</span>
+            <h2>Promotion decision recorded</h2>
+          </div>
+          <StatusBadge value={recorded.decision.decision === "approve" ? "completed" : "failed"} />
+        </div>
+        <p>
+          {recorded.decision.decision} by {recorded.decision.operatorId}.{" "}
+          <Link to={`/runs/${recorded.artifactId}`}>Open decision artifact</Link>
+        </p>
+        {recorded.decision.releaseTask && (
+          <div className="notice">
+            <strong>Source-controlled release task</strong>
+            <ol className="action-list">
+              {recorded.decision.releaseTask.requiredActions.map((action) => (
+                <li key={action}>{action}</li>
+              ))}
+            </ol>
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  return (
+    <section className="panel">
+      <div className="section-heading">
+        <div>
+          <span className="eyebrow">Human release authority</span>
+          <h2>Record promotion decision</h2>
+        </div>
+        <StatusBadge value={gatesPassed ? "completed" : "failed"} />
+      </div>
+      <p className="lede">
+        Automated gates {gatesPassed ? "passed" : "failed"}. Approval requires passing gates and still only emits a source-controlled release task.
+      </p>
+      <form onSubmit={(event) => void submit(event)}>
+        <label>
+          Decision
+          <select
+            value={decision}
+            onChange={(event) => setDecision(event.target.value as PromotionDecisionKind)}
+          >
+            {gatesPassed && <option value="approve">Approve</option>}
+            <option value="reject">Reject</option>
+            <option value="revise">Revise</option>
+          </select>
+        </label>
+        <label>
+          Operator ID
+          <input
+            required
+            value={operatorId}
+            onChange={(event) => setOperatorId(event.target.value)}
+          />
+        </label>
+        <label>
+          Rationale
+          <textarea
+            required
+            rows={4}
+            value={rationale}
+            onChange={(event) => setRationale(event.target.value)}
+          />
+        </label>
+        <label>
+          Proposal artifact ID (optional)
+          <input
+            value={proposalArtifactId}
+            onChange={(event) => setProposalArtifactId(event.target.value)}
+            placeholder="Leave blank when not linking a proposal"
+          />
+        </label>
+        {error && <ErrorNotice message={error} />}
+        <button className="button" type="submit" disabled={submitting}>
+          {submitting ? "Recording…" : "Record decision"}
+        </button>
+      </form>
+    </section>
+  );
+}
+
 function RunDetailPage() {
   const artifactId = usePathname().split("/")[2];
   const resource = useResource<{ kind: string; artifact: unknown }>(artifactId ? `/api/artifacts/${artifactId}` : null);
   const presentation = useResource<ArtifactPresentation>(artifactId ? `/api/artifacts/${artifactId}/presentation` : null);
   if (resource.loading || presentation.loading) return <Loading />;
   if (resource.error || presentation.error || !resource.data || !presentation.data) return <ErrorNotice message={resource.error ?? presentation.error ?? "Artifact not found"} />;
-  return <ArtifactPresentationView presentation={presentation.data} rawArtifact={resource.data.artifact} />;
+  const candidate =
+    resource.data.kind === "agent-candidate-evaluation"
+      ? (resource.data.artifact as CandidateEvaluationArtifact)
+      : null;
+  return (
+    <>
+      <ArtifactPresentationView presentation={presentation.data} rawArtifact={resource.data.artifact} />
+      {candidate && (
+        <PromotionDecisionPanel
+          candidateEvaluationId={candidate.candidateEvaluationId}
+          gatesPassed={candidate.gates.passed}
+        />
+      )}
+    </>
+  );
 }
 
 function passRate(value: number | null): string {
