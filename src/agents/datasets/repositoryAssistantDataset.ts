@@ -7,6 +7,7 @@ export const repositoryAssistantDataset = agentDatasetDefinitionSchema.parse({
   description:
     "Exercises the registered repository assistant with its default analysis task.",
   agentId: "repository-assistant",
+  purpose: "regression",
   cases: [
     {
       id: "architecture-review",

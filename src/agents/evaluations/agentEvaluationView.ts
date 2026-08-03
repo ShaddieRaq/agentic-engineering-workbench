@@ -2,6 +2,7 @@ import { z } from "zod";
 import { compareReliabilitySummaries } from "../../orchestration/reliabilityComparison.js";
 import type { StoredArtifact } from "../../artifacts/artifactStore.js";
 import type { AgentRunFailure, AgentRunResult } from "../agentRunResult.js";
+import type { AgentDatasetPurpose } from "../datasets/agentDatasetDefinition.js";
 import type { AgentEvaluationExperiment } from "./agentEvaluationExperiment.js";
 
 const jsonValueSchema = z.json();
@@ -35,6 +36,7 @@ export interface EvaluationCaseView {
 
 export interface EvaluationDatasetView {
   datasetId: string;
+  datasetPurpose: AgentDatasetPurpose;
   passed: boolean;
   minimumPassRate: number | null;
   cases: EvaluationCaseView[];
@@ -79,6 +81,7 @@ export async function buildAgentEvaluationView(
     const datasetRun = stored.artifact;
     if (
       datasetRun.datasetId !== reference.datasetId
+      || (datasetRun.datasetPurpose ?? "regression") !== reference.datasetPurpose
       || datasetRun.agentId !== experiment.agentId
       || datasetRun.agentVersion !== experiment.agentVersion
     ) {
@@ -108,6 +111,7 @@ export async function buildAgentEvaluationView(
     });
     datasets.push({
       datasetId: reference.datasetId,
+      datasetPurpose: reference.datasetPurpose,
       passed: reference.verification.passed,
       minimumPassRate: reference.verification.minimumPassRate,
       cases,

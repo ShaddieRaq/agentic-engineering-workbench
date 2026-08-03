@@ -81,8 +81,31 @@ export function buildAgentImprovementEvidencePacket(input: {
   if (experiment.agentId !== manifest.id || experiment.agentVersion !== manifest.version) {
     throw new Error("Evaluation evidence does not match the frozen subject manifest.");
   }
-  if (experiment.summary.failedCases === 0) {
-    throw new Error("Improvement analysis requires at least one failed evaluation case.");
+  const visibleDatasets = datasets.filter(
+    ({ datasetPurpose }) => datasetPurpose !== "protected",
+  );
+  const visibleCases = visibleDatasets.flatMap(({ cases }) => cases);
+  const totalRuns = visibleCases.reduce(
+    (total, datasetCase) => total + datasetCase.totalRuns,
+    0,
+  );
+  const passedRuns = visibleCases.reduce(
+    (total, datasetCase) => total + datasetCase.passedRuns,
+    0,
+  );
+  const aggregate = {
+    totalCases: visibleCases.length,
+    passedCases: visibleCases.filter(({ passed }) => passed).length,
+    failedCases: visibleCases.filter(({ passed }) => !passed).length,
+    totalRuns,
+    passedRuns,
+    failedRuns: totalRuns - passedRuns,
+    passRate: totalRuns === 0 ? null : passedRuns / totalRuns,
+  };
+  if (aggregate.failedCases === 0) {
+    throw new Error(
+      "Improvement analysis requires at least one failed evaluation case outside protected datasets.",
+    );
   }
 
   const evidenceItems: AgentImprovementEvidenceItem[] = [
@@ -92,13 +115,21 @@ export function buildAgentImprovementEvidencePacket(input: {
       datasetId: null,
       datasetCaseId: null,
       agentRunId: null,
-      summary: `${experiment.summary.failedCases}/${experiment.summary.totalCases} cases and ${experiment.summary.failedRuns}/${experiment.summary.totalRuns} trials failed.`,
-      details: experiment.summary,
+      summary: `${aggregate.failedCases}/${aggregate.totalCases} cases and ${aggregate.failedRuns}/${aggregate.totalRuns} trials failed.`,
+      details: aggregate,
     },
   ];
   const excludedEvidence: Array<{ source: string; reason: string }> = [];
 
   for (const dataset of datasets) {
+    if (dataset.datasetPurpose === "protected") {
+      excludedEvidence.push({
+        source: dataset.datasetId,
+        reason:
+          "Protected evaluation inputs, expectations, outcomes, and trial evidence are withheld from optimizer context.",
+      });
+      continue;
+    }
     for (const datasetCase of dataset.cases) {
       if (datasetCase.expectation !== null) {
         excludedEvidence.push({
@@ -192,15 +223,7 @@ export function buildAgentImprovementEvidencePacket(input: {
       repetitions: experiment.execution.repetitions,
       concurrency: experiment.execution.concurrency,
     },
-    aggregate: {
-      totalCases: experiment.summary.totalCases,
-      passedCases: experiment.summary.passedCases,
-      failedCases: experiment.summary.failedCases,
-      totalRuns: experiment.summary.totalRuns,
-      passedRuns: experiment.summary.passedRuns,
-      failedRuns: experiment.summary.failedRuns,
-      passRate: experiment.summary.passRate,
-    },
+    aggregate,
     evidenceItems,
     excludedEvidence: excludedEvidence.slice(0, 100),
     revisionSurface: input.subject.revisionSurface

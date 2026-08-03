@@ -8,6 +8,7 @@ describe("agentDatasetDefinitionSchema", () => {
         id: "test-dataset",
         description: "Test cases.",
         agentId: "test-agent",
+        purpose: "development",
         cases: [{ id: "case-1", input: { instruction: "Test." } }],
       }),
     ).toMatchObject({ id: "test-dataset", agentId: "test-agent" });
@@ -18,6 +19,7 @@ describe("agentDatasetDefinitionSchema", () => {
       id: "test-dataset",
       description: "Test cases.",
       agentId: "test-agent",
+      purpose: "regression",
       cases: [
         { id: "same", input: {} },
         { id: "same", input: {} },
@@ -32,6 +34,7 @@ describe("agentDatasetDefinitionSchema", () => {
       id: "triage-dataset",
       description: "Ground-truth triage cases.",
       agentId: "triage-agent",
+      purpose: "protected",
       cases: [{
         id: "timeout",
         input: { failureMessage: "Timed out." },

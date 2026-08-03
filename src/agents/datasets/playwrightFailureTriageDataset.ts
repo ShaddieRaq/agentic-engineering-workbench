@@ -6,6 +6,7 @@ export const playwrightFailureTriageDataset =
     description:
       "Exercises hidden-ground-truth classification across test, application, and environment failures.",
     agentId: "playwright-failure-triage",
+    purpose: "regression",
     cases: [
       {
         id: "stale-login-locator",

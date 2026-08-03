@@ -4,6 +4,7 @@ export const documentationAuditorDataset = agentDatasetDefinitionSchema.parse({
   id: "documentation-auditor-smoke",
   description: "Exercises documentation auditing over a repository with documentation and source evidence.",
   agentId: "documentation-auditor",
+  purpose: "regression",
   cases: [
     {
       id: "documentation-health",

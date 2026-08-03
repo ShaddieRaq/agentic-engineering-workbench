@@ -4,7 +4,10 @@ import { AgentRegistry } from "../src/agents/agentRegistry.js";
 import { defineAgent } from "../src/agents/agentRegistration.js";
 import type { AgentRunResult } from "../src/agents/agentRunResult.js";
 import { agentDatasetDefinitionSchema } from "../src/agents/datasets/agentDatasetDefinition.js";
-import { runAgentDataset } from "../src/agents/datasets/agentDatasetRunner.js";
+import {
+  agentDatasetRunResultSchema,
+  runAgentDataset,
+} from "../src/agents/datasets/agentDatasetRunner.js";
 
 const registration = defineAgent({
   manifest: {
@@ -36,6 +39,7 @@ const dataset = agentDatasetDefinitionSchema.parse({
   id: "test-dataset",
   description: "Test.",
   agentId: "test-agent",
+  purpose: "regression",
   cases: [
     { id: "first", input: {} },
     { id: "second", input: {} },
@@ -75,6 +79,7 @@ describe("runAgentDataset", () => {
 
     expect(execute).toHaveBeenCalledTimes(4);
     expect(result.agentVersion).toBe("2.0.0");
+    expect(result.datasetPurpose).toBe("regression");
     expect(result.runs.map(({ datasetCaseId }) => datasetCaseId)).toEqual([
       "first",
       "first",
@@ -123,6 +128,7 @@ describe("runAgentDataset", () => {
       id: "expected-dataset",
       description: "Expected result.",
       agentId: "expected-agent",
+      purpose: "protected",
       cases: [{
         id: "case",
         input: {},
@@ -162,6 +168,7 @@ describe("runAgentDataset", () => {
       id: "invalid-expected-dataset",
       description: "Missing policy.",
       agentId: "test-agent",
+      purpose: "development",
       cases: [{ id: "case", input: {}, expected: { answer: true } }],
     });
 
@@ -173,5 +180,19 @@ describe("runAgentDataset", () => {
       ),
     ).rejects.toThrow("does not define dataset-case assessment");
     expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("loads historical run evidence as regression purpose", async () => {
+    const result = await runAgentDataset(
+      dataset,
+      new AgentRegistry([registration]),
+      async () => run(true),
+    );
+    const historical = { ...result };
+    delete historical.datasetPurpose;
+
+    expect(
+      agentDatasetRunResultSchema.parse(historical).datasetPurpose,
+    ).toBe("regression");
   });
 });

@@ -280,6 +280,10 @@ The project currently supports:
 - evaluation-only candidate identity linked to source proposals
 - validated proposal-patch merging through subject-owned revision surfaces
 - optional candidate identity preserved in backward-compatible run evidence
+- explicit development, regression, and protected dataset purposes
+- dataset purpose frozen into run and evaluation artifacts
+- protected inputs, expectations, outcomes, trials, and aggregate signals
+  withheld from optimizer evidence
 
 ## Current Evaluators
 
@@ -364,6 +368,7 @@ Current milestone:
 Phase 39 Playwright Failure Triage agent: complete foundation
 Phase 40 Slice A read-only improvement analysis: complete
 Phase 40 Slice B opt-in candidate policies: complete
+Phase 40 Slice C protected evidence boundary: complete foundation
 ```
 
 Verified test state:
@@ -371,7 +376,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 118 test files passed
-354 tests passed
+356 tests passed
 ```
 
 This state must be verified before continuing:
@@ -399,10 +404,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Implement Slice C of the evidence-driven agent improvement plan by classifying
-datasets as development, regression, or protected and withholding protected
-inputs, expectations, and trial evidence from optimizer context. Then add frozen
-baseline-versus-candidate execution without changing graders or datasets.
+Continue Slice C of the evidence-driven agent improvement plan with frozen
+baseline-versus-candidate execution over identical dataset and grader
+boundaries. Add deterministic regression and protected promotion gates before
+any candidate can be selected.
 
 ## Broader Roadmap
 

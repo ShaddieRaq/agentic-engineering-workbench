@@ -165,4 +165,68 @@ describe("buildAgentImprovementEvidencePacket", () => {
       }),
     ).toThrow("at least one failed evaluation case");
   });
+
+  it("withholds protected datasets from optimizer evidence and aggregates", async () => {
+    const visible = evaluationDatasetRun("visible-run", [false]);
+    visible.datasetPurpose = "development";
+    const protectedRun = evaluationDatasetRun("protected-run", [false]);
+    protectedRun.datasetId = "protected-dataset";
+    protectedRun.datasetPurpose = "protected";
+    protectedRun.runs[0]!.agentRun.input = {
+      secretProtectedInput: "withhold this",
+    };
+    protectedRun.runs[0]!.agentRun.output = {
+      secretProtectedOutput: "withhold this",
+    };
+    protectedRun.runs[0]!.expectation = {
+      secretProtectedExpectation: "withhold this",
+    };
+    const experiment = createAgentEvaluationExperiment({
+      experimentId: "mixed-evaluation",
+      agentId: visible.agentId,
+      agentVersion: visible.agentVersion,
+      workspaceId: "fixture-workspace",
+      model: "fake-model",
+      repetitions: 1,
+      concurrency: 1,
+      datasets: [
+        {
+          datasetRun: visible,
+          verification: evaluationVerification(visible),
+          artifactId: visible.datasetRunId,
+        },
+        {
+          datasetRun: protectedRun,
+          verification: evaluationVerification(protectedRun),
+          artifactId: protectedRun.datasetRunId,
+        },
+      ],
+    });
+    const view = await buildAgentEvaluationView(experiment, async (id) => ({
+      kind: "agent-dataset-run",
+      artifact: id === visible.datasetRunId ? visible : protectedRun,
+    }));
+    const frozenRun = visible.runs[0]!.agentRun;
+
+    const packet = buildAgentImprovementEvidencePacket({
+      view,
+      subject: {
+        manifest: frozenRun.manifest,
+        manifestDigest: frozenRun.manifestDigest,
+      },
+    });
+
+    expect(packet.aggregate).toMatchObject({
+      totalCases: 1,
+      failedCases: 1,
+      totalRuns: 1,
+      failedRuns: 1,
+    });
+    expect(packet.excludedEvidence).toContainEqual({
+      source: "protected-dataset",
+      reason:
+        "Protected evaluation inputs, expectations, outcomes, and trial evidence are withheld from optimizer context.",
+    });
+    expect(JSON.stringify(packet)).not.toContain("secretProtected");
+  });
 });

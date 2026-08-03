@@ -83,6 +83,7 @@ export const agentImprovementAnalystDataset =
     description:
       "Exercises improvement classification across every existing subject-agent family without exposing an executable revision surface.",
     agentId: "agent-improvement-analyst",
+    purpose: "regression",
     cases: [
       {
         id: "documentation-instruction-gap",

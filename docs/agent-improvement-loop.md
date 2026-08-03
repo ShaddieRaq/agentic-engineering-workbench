@@ -59,7 +59,7 @@ The current platform already provides:
 
 The remaining boundaries are:
 
-- protected evaluation cases unavailable to the optimizer
+- frozen baseline-versus-candidate execution
 - promotion gates and an auditable decision record
 
 ## Roles and Responsibilities
@@ -419,7 +419,11 @@ version.
 
 ### Slice C — Comparative Candidate Evaluation
 
-- dataset purposes and protected evidence boundary
+Status: Protected evidence boundary complete
+
+- **Complete:** dataset purposes frozen into run and evaluation evidence
+- **Complete:** protected inputs, expectations, outcomes, trials, and aggregate
+  signals excluded from optimizer context
 - frozen baseline/candidate execution
 - candidate comparison artifact
 - deterministic non-regression and scope gates

@@ -821,8 +821,8 @@ Delivery:
 3. **Complete:** Evaluation-only candidate identity, effective-policy digests,
    proposal-patch merging, and ephemeral candidate execution without source
    mutation.
-4. Development, regression, and protected dataset purposes with protected
-   evidence withheld from the optimizer.
+4. **Complete:** Development, regression, and protected dataset purposes with
+   protected evidence withheld from the optimizer.
 5. Frozen baseline-versus-candidate execution and deterministic regression,
    scope, completeness, latency, and cost gates.
 6. Immutable approve, reject, or revise decisions in Evaluation Studio.
@@ -853,9 +853,9 @@ Deferred deliberately:
 
 ## Current Priorities
 
-1. Add development, regression, and protected dataset purposes while
-   withholding protected evidence from optimizer context.
-2. Add frozen baseline-versus-candidate execution and deterministic gates.
+1. Add frozen baseline-versus-candidate execution over identical dataset and
+   grader boundaries.
+2. Add deterministic regression and protected promotion gates.
 3. Complete one local baseline-to-candidate-to-decision workflow.
 4. Exercise Playwright Failure Triage against reviewed real failures after the
    general improvement loop is established.

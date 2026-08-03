@@ -5,6 +5,7 @@ export const toolBuilderDataset = agentDatasetDefinitionSchema.parse({
   description:
     "Exercises safe proposal, incomplete-requirement, and unsafe-capability decisions.",
   agentId: "tool-builder",
+  purpose: "regression",
   cases: [
     {
       id: "bounded-json-reader",

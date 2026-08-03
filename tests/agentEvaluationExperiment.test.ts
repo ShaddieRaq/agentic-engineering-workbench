@@ -30,6 +30,7 @@ describe("agent evaluation experiment", () => {
     expect(experiment).toMatchObject({
       experimentId: "experiment-1",
       passed: false,
+      datasets: [{ datasetPurpose: "regression" }],
       execution: { repetitions: 2, concurrency: 1 },
       summary: {
         totalDatasets: 1,
@@ -40,6 +41,16 @@ describe("agent evaluation experiment", () => {
         passRate: 0.5,
       },
     });
+    const historical = {
+      ...experiment,
+      datasets: experiment.datasets.map(
+        ({ datasetPurpose: _purpose, ...dataset }) => dataset,
+      ),
+    };
+    expect(
+      agentEvaluationExperimentSchema.parse(historical).datasets[0]
+        ?.datasetPurpose,
+    ).toBe("regression");
   });
 
   it("rejects a summary that does not match referenced evidence", () => {

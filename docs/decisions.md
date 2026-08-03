@@ -1970,3 +1970,35 @@ candidates originate from separate proposal attempts.
 - historical run artifacts remain valid because candidate identity is optional
 - candidate runs can be grouped by effective policy without claiming a release
 - protected datasets and comparative promotion gates remain separate work
+
+---
+
+## Decision 072 — Freeze Dataset Purpose and Withhold Protected Evidence
+
+Status: Accepted
+
+### Decision
+
+Classify every agent dataset as development, regression, or protected. Freeze
+that purpose into dataset-run and evaluation artifacts. Exclude protected
+inputs, expectations, outcomes, trial evidence, and derived aggregate signals
+when constructing optimizer evidence, while recording that the dataset was
+withheld.
+
+### Rationale
+
+A protected case stops measuring generalization if its inputs or outcome signals
+enter proposal context. Filtering only expectations is insufficient because
+failed-case counts, outputs, and evaluator messages can reveal the hidden gate.
+Freezing purpose in artifacts avoids reinterpreting historical evidence after a
+source definition changes.
+
+### Consequences
+
+- current registered smoke datasets are explicitly regression evidence
+- historical artifacts without purpose load as regression for compatibility
+- protected datasets may affect later promotion decisions but not proposals
+- optimizer aggregates are recomputed from non-protected datasets
+- an evaluation containing only protected failures cannot start improvement
+  analysis
+- frozen baseline-versus-candidate execution and promotion gates remain next

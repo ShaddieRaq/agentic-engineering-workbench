@@ -5,9 +5,11 @@ import {
   type AgentVerificationResult,
 } from "../agentVerification.js";
 import type { AgentDatasetRunResult } from "../datasets/agentDatasetRunner.js";
+import { agentDatasetPurposeSchema } from "../datasets/agentDatasetDefinition.js";
 
 const evaluationDatasetSummarySchema = z.object({
   datasetId: z.string().min(1),
+  datasetPurpose: agentDatasetPurposeSchema.default("regression"),
   datasetRunArtifactId: z.string().min(1),
   verification: agentVerificationResultSchema,
   totalCases: z.number().int().nonnegative(),
@@ -131,6 +133,7 @@ export function createAgentEvaluationExperiment(input: {
     const passedRuns = datasetRun.caseSummaries.reduce((total, summary) => total + summary.passedRuns, 0);
     return {
       datasetId: datasetRun.datasetId,
+      datasetPurpose: datasetRun.datasetPurpose ?? "regression",
       datasetRunArtifactId: artifactId,
       verification,
       totalCases: datasetRun.caseSummaries.length,

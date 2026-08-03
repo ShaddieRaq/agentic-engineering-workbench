@@ -970,11 +970,16 @@ proposal ID, released base version, and deterministic baseline and effective
 policy digests. Candidate runs may preserve that identity without changing the
 released semantic version or invalidating historical run artifacts.
 
-Protected evaluation boundaries and frozen comparative execution remain the
-next controls before temporary candidates can enter Evaluation Studio
-experiments. Development evidence may inform proposals, while protected
-evaluation evidence remains unavailable to the optimizer and is used only by
-promotion gates.
+Dataset definitions now declare development, regression, or protected purpose,
+which is frozen into dataset-run and evaluation artifacts. Historical artifacts
+without purpose load as regression evidence. Improvement evidence excludes
+protected inputs, expectations, outcomes, trial details, and aggregate signals;
+only an exclusion record identifies the protected dataset boundary.
+
+Frozen comparative execution remains the next control before temporary
+candidates can enter Evaluation Studio experiments. Development and regression
+evidence may inform proposals, while protected evaluation evidence remains
+available only to later promotion gates.
 
 The complete contracts, safeguards, delivery slices, and verification
 strategy are defined in

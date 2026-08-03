@@ -5,6 +5,7 @@ export const changeRiskReviewerDataset = agentDatasetDefinitionSchema.parse({
   description:
     "Exercises grounded risk classification and missing-test recommendations.",
   agentId: "change-risk-reviewer",
+  purpose: "regression",
   cases: [
     {
       id: "working-tree-review",

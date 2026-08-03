@@ -12,7 +12,9 @@ import { agentRunResultSchema } from "../agentRunResult.js";
 import type {
   AgentDatasetCase,
   AgentDatasetDefinition,
+  AgentDatasetPurpose,
 } from "./agentDatasetDefinition.js";
+import { agentDatasetPurposeSchema } from "./agentDatasetDefinition.js";
 
 export type AgentDatasetExecutor = (
   agentId: string,
@@ -37,6 +39,7 @@ export interface AgentDatasetCaseSummary {
 export interface AgentDatasetRunResult {
   datasetRunId: string;
   datasetId: string;
+  datasetPurpose?: AgentDatasetPurpose;
   agentId: string;
   agentVersion: string;
   runs: AgentDatasetRunEvidence[];
@@ -48,6 +51,7 @@ export const agentDatasetRunResultSchema: z.ZodType<AgentDatasetRunResult> = z
   .object({
     datasetRunId: z.string().min(1),
     datasetId: z.string().min(1),
+    datasetPurpose: agentDatasetPurposeSchema.default("regression"),
     agentId: z.string().min(1),
     agentVersion: z.string().min(1),
     runs: z.array(
@@ -158,6 +162,7 @@ export async function runAgentDataset(
   return {
     datasetRunId: randomUUID(),
     datasetId: dataset.id,
+    datasetPurpose: dataset.purpose,
     agentId: dataset.agentId,
     agentVersion: registration.manifest.version,
     runs,
