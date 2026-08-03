@@ -5,6 +5,10 @@ import {
   agentManifestSchema,
   type AgentManifest,
 } from "./agentManifest.js";
+import type {
+  AgentRevisionSurface,
+  RevisionPolicy,
+} from "./agentRevisionSurface.js";
 
 export interface AgentToolCatalog {
   get<TInput, TOutput>(id: string): ToolDefinition<TInput, TOutput>;
@@ -21,6 +25,7 @@ export interface AgentRegistration {
   manifest: AgentManifest;
   inputSchema: ZodType;
   outputSchema: ZodType;
+  revisionSurface?: AgentRevisionSurface;
   execute(
     input: unknown,
     services: AgentExecutionServices,
@@ -38,10 +43,15 @@ export interface AgentOutputAssessment {
   message: string;
 }
 
-export interface TypedAgentRegistration<TInput, TOutput> {
+export interface TypedAgentRegistration<
+  TInput,
+  TOutput,
+  TPolicy extends RevisionPolicy = RevisionPolicy,
+> {
   manifest: AgentManifest;
   inputSchema: ZodType<TInput>;
   outputSchema: ZodType<TOutput>;
+  revisionSurface?: AgentRevisionSurface<TPolicy>;
   execute(
     input: TInput,
     services: AgentExecutionServices,
@@ -54,8 +64,12 @@ export interface TypedAgentRegistration<TInput, TOutput> {
   ): AgentOutputAssessment;
 }
 
-export function defineAgent<TInput, TOutput>(
-  registration: TypedAgentRegistration<TInput, TOutput>,
+export function defineAgent<
+  TInput,
+  TOutput,
+  TPolicy extends RevisionPolicy = RevisionPolicy,
+>(
+  registration: TypedAgentRegistration<TInput, TOutput, TPolicy>,
 ): AgentRegistration {
   const manifest = agentManifestSchema.parse(registration.manifest);
 
@@ -81,6 +95,10 @@ export function defineAgent<TInput, TOutput>(
         output as TOutput,
         expected,
       );
+  }
+  if (registration.revisionSurface) {
+    defined.revisionSurface =
+      registration.revisionSurface as AgentRevisionSurface;
   }
 
   return defined;

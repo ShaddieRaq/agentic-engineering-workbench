@@ -230,12 +230,25 @@ export class AgentApplicationService {
     if (!frozenRun) {
       throw new Error("Evaluation subject evidence has no agent run.");
     }
+    const subjectRegistration = this.agents.find(view.experiment.agentId);
+    if (
+      subjectRegistration &&
+      JSON.stringify(subjectRegistration.manifest) !==
+      JSON.stringify(frozenRun.manifest)
+    ) {
+      throw new Error(
+        "Registered subject manifest does not match frozen evaluation evidence.",
+      );
+    }
 
     const packet = buildAgentImprovementEvidencePacket({
       view,
       subject: {
         manifest: frozenRun.manifest,
         manifestDigest: frozenRun.manifestDigest,
+        ...(subjectRegistration?.revisionSurface
+          ? { revisionSurface: subjectRegistration.revisionSurface }
+          : {}),
       },
       objective: {
         ...(request.target ? { target: request.target } : {}),

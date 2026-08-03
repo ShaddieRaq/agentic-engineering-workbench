@@ -1,5 +1,8 @@
+import { z } from "zod";
 import { describe, expect, it } from "vitest";
 import { buildAgentImprovementEvidencePacket } from "../src/agents/agentImprovement/agentImprovementEvidenceBuilder.js";
+import type { AgentRegistration } from "../src/agents/agentRegistration.js";
+import { defineAgentRevisionSurface } from "../src/agents/agentRevisionSurface.js";
 import { buildAgentEvaluationView } from "../src/agents/evaluations/agentEvaluationView.js";
 import { createAgentEvaluationExperiment } from "../src/agents/evaluations/agentEvaluationExperiment.js";
 import {
@@ -76,6 +79,31 @@ describe("buildAgentImprovementEvidencePacket", () => {
     });
     expect(JSON.stringify(packet)).not.toContain("secretGroundTruth");
     expect(packet.revisionSurface).toBeNull();
+    const optInPacket = buildAgentImprovementEvidencePacket({
+      view,
+      subject: {
+        manifest: frozenRun.manifest,
+        manifestDigest: frozenRun.manifestDigest,
+        revisionSurface: defineAgentRevisionSurface({
+          schema: z
+            .object({
+              instructions: z.array(z.string().min(1)).min(1),
+            })
+            .strict(),
+          baselinePolicy: {
+            instructions: ["Use only supplied evidence."],
+          },
+          mutableFields: ["instructions"],
+          createCandidate: () => ({} as AgentRegistration),
+        }),
+      },
+    });
+    expect(optInPacket.revisionSurface).toEqual({
+      mutableFields: ["instructions"],
+      baselinePolicy: {
+        instructions: ["Use only supplied evidence."],
+      },
+    });
     const trialEvidence = packet.evidenceItems.find(
       ({ id }) => id === "trial:failed-dataset-run-1",
     );

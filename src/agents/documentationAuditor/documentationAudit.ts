@@ -7,6 +7,11 @@ import type { FileInventoryInput, FileInventoryOutput } from "../../tools/fileIn
 import type { ReadFileInput, ReadFileOutput } from "../../tools/readFileTool.js";
 import type { ToolDefinition } from "../../tools/toolDefinition.js";
 import { executeTool, type ToolCallEvidence } from "../../tools/toolExecutor.js";
+import {
+  documentationAuditorBaselinePolicy,
+  documentationAuditorPolicySchema,
+  type DocumentationAuditorPolicy,
+} from "./documentationAuditorPolicy.js";
 
 const evidencePathsSchema = z.array(z.string().min(1)).min(1);
 
@@ -70,14 +75,15 @@ export interface DocumentationAuditResult {
   completedAt: string;
 }
 
-const documentationExtensions = new Set([".md", ".mdx", ".rst"]);
-const sourceExtensions = new Set([".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".java", ".cs"]);
-const manifestNames = new Set(["package.json", "pyproject.toml", "Cargo.toml", "go.mod", "pom.xml", "README.md"]);
-
 export function selectDocumentationAuditPaths(
   inventory: FileInventoryOutput,
   maximumFiles: number,
+  policy: DocumentationAuditorPolicy["contextSelection"] =
+    documentationAuditorBaselinePolicy.contextSelection,
 ): Array<{ path: string; rationale: string }> {
+  const documentationExtensions = new Set(policy.documentationExtensions);
+  const sourceExtensions = new Set(policy.sourceExtensions);
+  const manifestNames = new Set(policy.manifestNames);
   const documents = inventory.entries
     .filter(({ extension }) => documentationExtensions.has(extension))
     .map(({ path }) => ({ path, rationale: "Repository documentation selected for claim review." }));
@@ -85,11 +91,21 @@ export function selectDocumentationAuditPaths(
     .filter(({ path }) => manifestNames.has(basename(path)) && !documentationExtensions.has(extnameSafe(path)))
     .map(({ path }) => ({ path, rationale: "Project metadata selected to verify documented commands and structure." }));
   const source = inventory.entries
-    .filter(({ path, extension }) => path.startsWith("src/") && sourceExtensions.has(extension))
+    .filter(
+      ({ path, extension }) =>
+        path.startsWith(policy.sourcePathPrefix) &&
+        sourceExtensions.has(extension),
+    )
     .map(({ path }) => ({ path, rationale: "Representative source selected to identify undocumented components." }));
   const seen = new Set<string>();
-  const documentBudget = Math.max(1, Math.floor(maximumFiles / 2));
-  const manifestBudget = Math.min(4, Math.max(1, maximumFiles - documentBudget));
+  const documentBudget = Math.max(
+    1,
+    Math.floor(maximumFiles * policy.documentFraction),
+  );
+  const manifestBudget = Math.min(
+    policy.maximumManifestFiles,
+    Math.max(1, maximumFiles - documentBudget),
+  );
   const balanced = [
     ...documents.slice(0, documentBudget),
     ...manifests.slice(0, manifestBudget),
@@ -114,9 +130,12 @@ export async function runDocumentationAudit(
   tools: DocumentationAuditTools,
   provider: AIProvider,
   instruction: string,
-  maximumContextFiles = 16,
+  maximumContextFiles =
+    documentationAuditorBaselinePolicy.contextSelection.defaultMaximumFiles,
+  policy: DocumentationAuditorPolicy = documentationAuditorBaselinePolicy,
 ): Promise<DocumentationAuditResult> {
   const startedAt = performance.now();
+  const validatedPolicy = documentationAuditorPolicySchema.parse(policy);
   if (!Number.isInteger(maximumContextFiles) || maximumContextFiles < 2 || maximumContextFiles > 30) {
     throw new Error("maximumContextFiles must be an integer from 2 through 30.");
   }
@@ -129,19 +148,31 @@ export async function runDocumentationAudit(
   if (!inventory.succeeded || !inventory.output) {
     throw new Error(inventory.failure?.message ?? "Repository inventory failed.");
   }
-  const candidates = selectDocumentationAuditPaths(inventory.output, maximumContextFiles);
+  const candidates = selectDocumentationAuditPaths(
+    inventory.output,
+    maximumContextFiles,
+    validatedPolicy.contextSelection,
+  );
+  const documentationExtensions = new Set(
+    validatedPolicy.contextSelection.documentationExtensions,
+  );
   if (!candidates.some(({ path }) => documentationExtensions.has(extnameSafe(path)))) {
     throw new Error("Documentation audit requires at least one documentation file.");
   }
   const reads: ToolCallEvidence<ReadFileOutput>[] = [];
   const context: DocumentationAuditContextItem[] = [];
   let contextBytes = 0;
-  const maximumContextBytes = 131_072;
   for (const candidate of candidates) {
-    const evidence = await executeTool(tools.readFile, { path: candidate.path, maxBytes: 32_768 });
+    const evidence = await executeTool(tools.readFile, {
+      path: candidate.path,
+      maxBytes: validatedPolicy.contextSelection.perFileMaximumBytes,
+    });
     reads.push(evidence);
     if (!evidence.succeeded || !evidence.output) continue;
-    if (contextBytes + evidence.output.sizeBytes > maximumContextBytes) continue;
+    if (
+      contextBytes + evidence.output.sizeBytes >
+      validatedPolicy.contextSelection.maximumContextBytes
+    ) continue;
     context.push({
       path: evidence.output.path,
       content: evidence.output.content,
@@ -154,12 +185,7 @@ export async function runDocumentationAudit(
   if (context.length === 0) throw new Error("No readable documentation audit context was assembled.");
   const prompt = [
     "ROLE:",
-    "You are a repository documentation auditor.",
-    "Use only the supplied repository files.",
-    "Find stale commands, inconsistent claims, missing documentation, and confirmed accurate documentation.",
-    "Every finding and coverage gap must cite exact Source paths from the supplied context.",
-    "Do not infer that an absent file or command exists.",
-    "Prioritize concrete, actionable changes.",
+    ...validatedPolicy.instructions.roleLines,
     "",
     "CONTEXT:",
     ...context.map(({ path, content }) => `Source: ${path}\n${content}\n---`),

@@ -271,6 +271,11 @@ The project currently supports:
 - deterministic evidence citation and candidate-patch policy validation
 - immutable `agent-improvement-proposal` artifacts linked to source experiments
 - Evaluation Studio failure-analysis operations and specialized proposal views
+- opt-in runtime-validated agent revision surfaces
+- frozen baseline policies with exact mutable-field allowlists
+- a Documentation Auditor instruction and context-selection revision policy
+- subject-owned in-memory candidate construction without source mutation
+- revision-surface projection into improvement evidence for registered subjects
 
 ## Current Evaluators
 
@@ -354,14 +359,15 @@ Current milestone:
 ```text
 Phase 39 Playwright Failure Triage agent: complete foundation
 Phase 40 Slice A read-only improvement analysis: complete
+Phase 40 Slice B revision-surface foundation: complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-116 test files passed
-346 tests passed
+117 test files passed
+351 tests passed
 ```
 
 This state must be verified before continuing:
@@ -389,10 +395,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Implement Slice B of the evidence-driven agent improvement plan: extract an
-opt-in Documentation Auditor revision policy for instructions and context
-selection, then construct temporary candidates in memory without writing
-source. Preserve current released behavior and do not compare candidates until
+Continue Slice B of the evidence-driven agent improvement plan by adding
+evaluation-only candidate identity and deterministic effective-policy digests,
+then merge validated proposal patches through the subject-owned revision
+surface. Preserve current released behavior and do not compare candidates until
 protected evaluation boundaries exist.
 
 ## Broader Roadmap

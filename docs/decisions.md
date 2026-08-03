@@ -1904,3 +1904,37 @@ without tools, withheld hidden expectations from optimizer input, persisted
 proposal artifacts, and exposed the read-only workflow in Evaluation Studio.
 Executable candidates remain prohibited until an agent opts into a bounded
 revision surface.
+
+---
+
+## Decision 070 — Require Subject-Owned Opt-In Revision Surfaces
+
+Status: Accepted
+
+### Decision
+
+Allow an agent registration to opt into revision by declaring a
+runtime-validated policy schema, frozen baseline policy, exact mutable-field
+allowlist, and subject-owned in-memory candidate factory. Keep this capability
+optional. Use Documentation Auditor as the first pilot and expose only its
+instructions and bounded context-selection policy.
+
+### Rationale
+
+Agent behavior is currently embedded in typed source alongside permissions,
+contracts, assessment, and orchestration. A generic optimizer must not rebuild
+those registrations or infer which fields are safe to change. Subject-owned
+construction keeps fixed behavior in reviewed code while giving improvement
+workflows one explicit, testable policy boundary.
+
+### Consequences
+
+- agents without a revision surface remain proposal-only
+- baseline and candidate policies are runtime validated
+- candidate construction does not mutate source or the platform registry
+- Documentation Auditor tools, permissions, contracts, datasets, citation
+  evaluation, and assessment remain fixed
+- historical or unregistered evaluation subjects remain analyzable without
+  gaining candidate authority
+- candidate identity, effective-policy digests, protected evaluation, and
+  promotion remain separate subsequent controls

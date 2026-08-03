@@ -57,12 +57,8 @@ The current platform already provides:
 - a Change Risk Reviewer
 - explicit tool allowlists and controlled verification commands
 
-The missing boundaries are:
+The remaining boundaries are:
 
-- a normalized evidence packet for improvement analysis
-- a general Improvement Analyst agent
-- immutable improvement-proposal artifacts
-- opt-in, schema-validated agent revision surfaces
 - candidate identity separate from released semantic versions
 - protected evaluation cases unavailable to the optimizer
 - promotion gates and an auditable decision record
@@ -409,13 +405,17 @@ bounded next change, but cannot construct or promote it.
 
 ### Slice B — Opt-In Candidate Policies
 
-- revision-surface contract
-- Documentation Auditor policy extraction
-- candidate ID and effective-policy digest evidence
-- in-memory candidate construction
+Status: Revision-surface foundation complete
 
-Outcome: a proposal can become an executable temporary candidate without
-writing code.
+- **Complete:** revision-surface contract
+- **Complete:** Documentation Auditor policy extraction
+- **Complete:** validated in-memory candidate construction
+- candidate ID and effective-policy digest evidence
+- proposal-patch merging through the subject-owned surface
+
+Current outcome: reviewed policy values can construct an in-memory temporary
+candidate without writing code. Proposal-patch merging and evaluation-only
+identity remain before Evaluation Studio can execute that candidate.
 
 ### Slice C — Comparative Candidate Evaluation
 

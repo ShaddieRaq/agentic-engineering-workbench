@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { AgentManifest } from "../agentManifest.js";
+import type { AgentRevisionSurface } from "../agentRevisionSurface.js";
 import type { AgentEvaluationView } from "../evaluations/agentEvaluationView.js";
 import {
   agentImprovementEvidencePacketSchema,
@@ -22,6 +23,7 @@ const DIAGNOSTIC_OUTPUT_FIELDS = [
 export interface AgentImprovementSubjectSnapshot {
   manifest: AgentManifest;
   manifestDigest: string;
+  revisionSurface?: AgentRevisionSurface;
 }
 
 export interface AgentImprovementObjective {
@@ -201,6 +203,11 @@ export function buildAgentImprovementEvidencePacket(input: {
     },
     evidenceItems,
     excludedEvidence: excludedEvidence.slice(0, 100),
-    revisionSurface: null,
+    revisionSurface: input.subject.revisionSurface
+      ? {
+          mutableFields: [...input.subject.revisionSurface.mutableFields],
+          baselinePolicy: input.subject.revisionSurface.baselinePolicy,
+        }
+      : null,
   });
 }

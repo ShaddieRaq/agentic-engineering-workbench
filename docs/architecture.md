@@ -953,12 +953,21 @@ evidence citations, and persist a specialized proposal artifact. The proposal
 view exposes failure modes, recommendations, evidence IDs, policy results,
 model usage, and raw evidence without changing the subject agent.
 
+Registrations may now opt into a runtime-validated revision surface containing
+a frozen baseline policy, an exact top-level mutable-field allowlist, and a
+subject-owned candidate factory. The Documentation Auditor is the first pilot:
+its role instructions, default task instruction, and bounded context-selection
+policy are explicit, while its tools, permissions, output contracts, citation
+evaluation, datasets, and assessment remain fixed. Candidate construction
+returns an in-memory registration and does not mutate source or the platform
+registry. Historical or currently unregistered subjects remain proposal-only.
+
 The optimizer cannot edit source, graders, datasets, tools, or permissions.
-Each subject agent must expose a runtime-validated revision surface before the
-workbench can construct an executable candidate. Candidate identity and policy
-digests remain distinct from released semantic versions. Development evidence
-may inform proposals, while protected evaluation evidence remains unavailable
-to the optimizer and is used only by promotion gates.
+Candidate identity, effective-policy digests, proposal-patch merging, protected
+evaluation boundaries, and comparative execution remain the next controls
+before temporary candidates can enter Evaluation Studio experiments.
+Development evidence may inform proposals, while protected evaluation evidence
+remains unavailable to the optimizer and is used only by promotion gates.
 
 The complete contracts, safeguards, delivery slices, and verification
 strategy are defined in
