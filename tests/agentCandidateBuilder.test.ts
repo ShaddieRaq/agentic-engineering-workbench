@@ -146,6 +146,12 @@ describe("buildAgentCandidate", () => {
     expect(candidate.registration.manifest).toEqual(
       documentationAuditorAgent.manifest,
     );
+    expect(candidate.registration.assess).toBe(
+      documentationAuditorAgent.assess,
+    );
+    expect(candidate.registration.assessDatasetCase).toBe(
+      documentationAuditorAgent.assessDatasetCase,
+    );
     expect(candidate.registration.inputSchema.parse({})).toMatchObject({
       instruction: "Audit documentation with exact citations.",
     });

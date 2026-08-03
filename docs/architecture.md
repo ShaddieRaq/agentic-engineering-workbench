@@ -976,10 +976,19 @@ without purpose load as regression evidence. Improvement evidence excludes
 protected inputs, expectations, outcomes, trial details, and aggregate signals;
 only an exclusion record identifies the protected dataset boundary.
 
-Frozen comparative execution remains the next control before temporary
-candidates can enter Evaluation Studio experiments. Development and regression
-evidence may inform proposals, while protected evaluation evidence remains
-available only to later promotion gates.
+Comparative execution now begins from an immutable in-memory plan. The plan
+validates candidate lineage and released-manifest equality, clones and freezes
+the exact registered datasets, records dataset digests and case order, and
+digests the workspace, model, repetitions, concurrency, and baseline grader
+boundary. Candidate construction replaces candidate-provided assessment
+functions with the exact baseline functions. Both sides run through the normal
+agent and dataset runners, while candidate evaluations and trials preserve the
+evaluation-only candidate identity.
+
+An immutable comparison artifact and deterministic promotion gates remain the
+next controls before temporary candidates can enter Evaluation Studio
+experiments. Development and regression evidence may inform proposals, while
+protected evaluation evidence remains available only to later promotion gates.
 
 The complete contracts, safeguards, delivery slices, and verification
 strategy are defined in

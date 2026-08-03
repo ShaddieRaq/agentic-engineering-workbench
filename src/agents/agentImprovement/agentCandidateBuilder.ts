@@ -104,26 +104,33 @@ export function buildAgentCandidate(input: {
     throw new Error("Candidate policy patch does not change effective policy.");
   }
 
-  const registration = surface.createCandidate(validatedPolicy);
+  const candidateRegistration = surface.createCandidate(validatedPolicy);
   if (
-    JSON.stringify(registration.manifest) !==
+    JSON.stringify(candidateRegistration.manifest) !==
       JSON.stringify(input.registration.manifest)
   ) {
     throw new Error(
       "Candidate construction changed the released manifest boundary.",
     );
   }
-  if (registration.outputSchema !== input.registration.outputSchema) {
+  if (candidateRegistration.outputSchema !== input.registration.outputSchema) {
     throw new Error("Candidate construction changed the output contract.");
   }
   if (
-    Boolean(registration.assessDatasetCase) !==
+    Boolean(candidateRegistration.assessDatasetCase) !==
     Boolean(input.registration.assessDatasetCase)
   ) {
     throw new Error(
       "Candidate construction changed dataset assessment capability.",
     );
   }
+  const registration: AgentRegistration = {
+    ...candidateRegistration,
+    assess: input.registration.assess,
+    ...(input.registration.assessDatasetCase
+      ? { assessDatasetCase: input.registration.assessDatasetCase }
+      : {}),
+  };
 
   const evidence = agentCandidateEvidenceSchema.parse({
     identity: {

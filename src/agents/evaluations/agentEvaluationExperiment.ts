@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
+  agentCandidateIdentitySchema,
+  type AgentCandidateIdentity,
+} from "../agentCandidateIdentity.js";
+import {
   agentVerificationResultSchema,
   type AgentVerificationResult,
 } from "../agentVerification.js";
@@ -38,6 +42,7 @@ export const agentEvaluationExperimentSchema = z.object({
   experimentId: z.string().min(1),
   agentId: z.string().min(1),
   agentVersion: z.string().min(1),
+  candidate: agentCandidateIdentitySchema.optional(),
   workspaceId: z.string().min(1),
   model: z.string().min(1),
   execution: z.object({
@@ -108,11 +113,21 @@ export function createAgentEvaluationExperiment(input: {
   repetitions: number;
   concurrency: number;
   datasets: EvaluationDatasetEvidence[];
+  candidate?: AgentCandidateIdentity;
   experimentId?: string;
   completedAt?: string;
 }): AgentEvaluationExperiment {
   if (input.datasets.length === 0) {
     throw new Error("An evaluation experiment requires at least one dataset result.");
+  }
+  if (
+    input.candidate &&
+    (
+      input.candidate.subjectAgentId !== input.agentId ||
+      input.candidate.baseVersion !== input.agentVersion
+    )
+  ) {
+    throw new Error("Evaluation candidate identity does not match the subject.");
   }
 
   const datasets = input.datasets.map(({ datasetRun, verification, artifactId }) => {
@@ -149,6 +164,7 @@ export function createAgentEvaluationExperiment(input: {
     experimentId: input.experimentId ?? randomUUID(),
     agentId: input.agentId,
     agentVersion: input.agentVersion,
+    ...(input.candidate ? { candidate: input.candidate } : {}),
     workspaceId: input.workspaceId,
     model: input.model,
     execution: {

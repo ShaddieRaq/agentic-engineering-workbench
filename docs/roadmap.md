@@ -823,8 +823,9 @@ Delivery:
    mutation.
 4. **Complete:** Development, regression, and protected dataset purposes with
    protected evidence withheld from the optimizer.
-5. Frozen baseline-versus-candidate execution and deterministic regression,
-   scope, completeness, latency, and cost gates.
+5. **In progress:** Frozen baseline-versus-candidate execution is complete;
+   immutable comparison evidence plus deterministic regression, scope,
+   completeness, latency, and cost gates remain.
 6. Immutable approve, reject, or revise decisions in Evaluation Studio.
 7. Linked handoffs to Tool Builder and Change Risk Reviewer when a proposal
    requires capabilities or source changes.
@@ -853,8 +854,8 @@ Deferred deliberately:
 
 ## Current Priorities
 
-1. Add frozen baseline-versus-candidate execution over identical dataset and
-   grader boundaries.
+1. Persist immutable candidate-comparison evidence linked to its frozen plan
+   and baseline/candidate evaluation runs.
 2. Add deterministic regression and protected promotion gates.
 3. Complete one local baseline-to-candidate-to-decision workflow.
 4. Exercise Playwright Failure Triage against reviewed real failures after the

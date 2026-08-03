@@ -2002,3 +2002,34 @@ source definition changes.
 - an evaluation containing only protected failures cannot start improvement
   analysis
 - frozen baseline-versus-candidate execution and promotion gates remain next
+
+---
+
+## Decision 073 — Execute Comparisons From One Frozen Plan
+
+Status: Accepted
+
+### Decision
+
+Construct one immutable candidate-evaluation plan before execution. Include the
+released subject and manifest digest, candidate lineage, exact dataset snapshots
+and digests, case order, workspace, model, repetitions, concurrency, and grader
+boundary. Run both baseline and candidate from that plan and always assess both
+with the baseline registration's output and dataset-case graders.
+
+### Rationale
+
+Two independently configured evaluations can appear comparable while differing
+in cases, execution policy, or assessment code. Freezing one plan makes drift a
+construction error and ensures that the behavior policy is the only intended
+variable. Using the exact baseline function objects also prevents a
+subject-owned candidate factory from silently changing its own grader.
+
+### Consequences
+
+- candidate construction normalizes assessment functions to the baseline
+- dataset content is cloned before execution and represented by stable digests
+- baseline and candidate use separate provider instances but the same model
+- candidate evaluations and every candidate trial preserve candidate lineage
+- existing catalog, runtime, output, and dataset validation remain active
+- comparison persistence and promotion gates remain separate next controls

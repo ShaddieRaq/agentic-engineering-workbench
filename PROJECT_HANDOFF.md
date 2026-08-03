@@ -284,6 +284,11 @@ The project currently supports:
 - dataset purpose frozen into run and evaluation artifacts
 - protected inputs, expectations, outcomes, trials, and aggregate signals
   withheld from optimizer evidence
+- deterministic candidate-evaluation plan digests over frozen datasets,
+  workspace, model, and execution policy
+- exact baseline output and dataset-case graders reused for candidates
+- baseline and candidate execution from one immutable in-memory plan
+- candidate identity preserved in candidate evaluation and trial evidence
 
 ## Current Evaluators
 
@@ -369,14 +374,15 @@ Phase 39 Playwright Failure Triage agent: complete foundation
 Phase 40 Slice A read-only improvement analysis: complete
 Phase 40 Slice B opt-in candidate policies: complete
 Phase 40 Slice C protected evidence boundary: complete foundation
+Phase 40 Slice C frozen comparative execution: complete foundation
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-118 test files passed
-356 tests passed
+119 test files passed
+360 tests passed
 ```
 
 This state must be verified before continuing:
@@ -404,10 +410,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Continue Slice C of the evidence-driven agent improvement plan with frozen
-baseline-versus-candidate execution over identical dataset and grader
-boundaries. Add deterministic regression and protected promotion gates before
-any candidate can be selected.
+Continue Slice C of the evidence-driven agent improvement plan by persisting an
+immutable candidate-comparison artifact that references the frozen plan,
+baseline evaluation, candidate evaluation, and dataset runs. Then add
+deterministic regression and protected promotion gates.
 
 ## Broader Roadmap
 

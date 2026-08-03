@@ -424,7 +424,8 @@ Status: Protected evidence boundary complete
 - **Complete:** dataset purposes frozen into run and evaluation evidence
 - **Complete:** protected inputs, expectations, outcomes, trials, and aggregate
   signals excluded from optimizer context
-- frozen baseline/candidate execution
+- **Complete:** immutable plan snapshot and digest
+- **Complete:** frozen baseline/candidate execution using baseline graders
 - candidate comparison artifact
 - deterministic non-regression and scope gates
 
