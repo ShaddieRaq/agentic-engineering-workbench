@@ -291,7 +291,9 @@ export interface ArtifactPresentation {
         priority: "low" | "medium" | "high";
         evidenceIds: string[];
       }>;
-      candidatePolicyPatch: Record<string, unknown> | null;
+      candidatePolicyPatch: {
+        changes: Array<{ field: string; valueJson: string }>;
+      } | null;
       evidenceGaps: string[];
       verificationPlan: {
         successCriteria: string[];

@@ -159,8 +159,12 @@ Each recommendation has one category:
 - `no-change`
 
 Only fields included in the subject agent's declared revision schema may appear
-in `candidatePolicyPatch`. Tool, contract, evaluator, dataset, permission, and
-implementation changes remain engineering proposals in the first release.
+in `candidatePolicyPatch`. The patch uses a fixed `changes[]` contract with a
+declared `field` and bounded `valueJson` string. The platform parses that string
+as JSON and validates the field against the revision surface after generation;
+the model never receives an unrestricted-object output schema. Tool, contract,
+evaluator, dataset, permission, and implementation changes remain engineering
+proposals in the first release.
 
 Proposal dispositions:
 

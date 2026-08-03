@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import type { AgentImprovementEvidencePacket } from "../src/agents/agentImprovement/agentImprovementEvidence.js";
 import {
   agentImprovementProposalOutputSchema,
@@ -86,7 +87,14 @@ function proposal() {
       },
     ],
     candidatePolicyPatch: {
-      instructions: "Every conclusion must cite supplied repository evidence.",
+      changes: [
+        {
+          field: "instructions",
+          valueJson: JSON.stringify(
+            "Every conclusion must cite supplied repository evidence.",
+          ),
+        },
+      ],
     },
     suggestedEvaluationCases: [],
     expectedEffects: [
@@ -131,7 +139,11 @@ describe("evaluateAgentImprovementProposal", () => {
 
   it("rejects candidate fields outside the revision surface", () => {
     const input = proposal();
-    input.candidatePolicyPatch = { toolIds: ["arbitrary-shell"] };
+    input.candidatePolicyPatch = {
+      changes: [
+        { field: "toolIds", valueJson: JSON.stringify(["arbitrary-shell"]) },
+      ],
+    };
 
     expect(evaluateAgentImprovementProposal(packet, input)).toMatchObject({
       passed: false,
@@ -145,5 +157,21 @@ describe("evaluateAgentImprovementProposal", () => {
     expect(evaluateAgentImprovementProposal(packet, input)).toMatchObject({
       passed: false,
     });
+  });
+
+  it("rejects an invalid serialized candidate value", () => {
+    const input = proposal();
+    input.candidatePolicyPatch!.changes[0]!.valueJson = "not-json";
+
+    expect(evaluateAgentImprovementProposal(packet, input)).toMatchObject({
+      passed: false,
+      issues: [expect.stringContaining("invalid JSON")],
+    });
+  });
+
+  it("generates an OpenAI-compatible schema without propertyNames", () => {
+    expect(
+      JSON.stringify(z.toJSONSchema(agentImprovementProposalOutputSchema)),
+    ).not.toContain('"propertyNames"');
   });
 });

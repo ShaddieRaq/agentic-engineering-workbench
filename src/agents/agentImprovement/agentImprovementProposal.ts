@@ -31,6 +31,27 @@ const citedObservationSchema = z
   })
   .strict();
 
+export const agentImprovementCandidatePolicyPatchSchema = z
+  .object({
+    changes: z
+      .array(
+        z
+          .object({
+            field: z.string().min(1).max(200),
+            valueJson: z.string().min(1).max(32_000),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(20)
+      .refine(
+        (changes) =>
+          new Set(changes.map(({ field }) => field)).size === changes.length,
+        { message: "Candidate policy fields must be unique." },
+      ),
+  })
+  .strict();
+
 export const agentImprovementProposalOutputSchema = z
   .object({
     disposition: agentImprovementDispositionSchema,
@@ -52,7 +73,7 @@ export const agentImprovementProposalOutputSchema = z
       )
       .min(1)
       .max(20),
-    candidatePolicyPatch: z.record(z.string().min(1), z.json()).nullable(),
+    candidatePolicyPatch: agentImprovementCandidatePolicyPatchSchema.nullable(),
     suggestedEvaluationCases: z
       .array(
         z
@@ -146,18 +167,36 @@ export function evaluateAgentImprovementProposal(
   }
 
   const patch = proposal.candidatePolicyPatch;
-  const patchKeys = patch === null ? [] : Object.keys(patch);
+  const patchFields =
+    patch === null ? [] : patch.changes.map(({ field }) => field);
+
+  if (patch !== null) {
+    for (const change of patch.changes) {
+      let parsedValue: unknown;
+      try {
+        parsedValue = JSON.parse(change.valueJson);
+      } catch {
+        issues.push(`Candidate patch field ${change.field} has invalid JSON.`);
+        continue;
+      }
+      if (!z.json().safeParse(parsedValue).success) {
+        issues.push(
+          `Candidate patch field ${change.field} is not a JSON value.`,
+        );
+      }
+    }
+  }
 
   if (proposal.disposition === "candidate-ready") {
     if (packet.revisionSurface === null) {
       issues.push("A candidate cannot be prepared because the subject exposes no revision surface.");
     }
-    if (patch === null || patchKeys.length === 0) {
+    if (patch === null) {
       issues.push("A candidate-ready proposal requires a nonempty policy patch.");
     }
     if (packet.revisionSurface !== null) {
       const allowed = new Set(packet.revisionSurface.mutableFields);
-      const invalidFields = patchKeys.filter((field) => !allowed.has(field));
+      const invalidFields = patchFields.filter((field) => !allowed.has(field));
       if (invalidFields.length > 0) {
         issues.push(`Candidate patch changes fields outside the revision surface: ${invalidFields.join(", ")}.`);
       }
