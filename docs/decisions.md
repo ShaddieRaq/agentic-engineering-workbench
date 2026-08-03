@@ -1938,3 +1938,35 @@ workflows one explicit, testable policy boundary.
   gaining candidate authority
 - candidate identity, effective-policy digests, protected evaluation, and
   promotion remain separate subsequent controls
+
+---
+
+## Decision 071 — Separate Candidate Identity From Released Versions
+
+Status: Accepted
+
+### Decision
+
+Build temporary candidates by revalidating a policy-approved proposal patch
+against the subject's live revision surface. Assign each candidate a unique
+evaluation-only ID while retaining the released agent ID and semantic version.
+Record the source proposal plus deterministic baseline and effective-policy
+digests, and allow this identity to appear optionally in run evidence.
+
+### Rationale
+
+A temporary policy candidate is not a released agent version. Reusing semantic
+versions as candidate identifiers would make persisted evidence ambiguous,
+while mutating the platform registry would weaken rollback and source-control
+boundaries. Policy digests make effective behavior attributable even when two
+candidates originate from separate proposal attempts.
+
+### Consequences
+
+- candidate patches are rechecked against supplied evidence and mutable fields
+- stale, schema-invalid, unauthorized, and no-op patches are rejected
+- candidate construction must preserve the released manifest, permissions,
+  output contract, and dataset-assessment capability
+- historical run artifacts remain valid because candidate identity is optional
+- candidate runs can be grouped by effective policy without claiming a release
+- protected datasets and comparative promotion gates remain separate work

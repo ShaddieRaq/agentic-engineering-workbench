@@ -110,6 +110,45 @@ describe("runAgent", () => {
     expect(registered.execute).toHaveBeenCalledOnce();
   });
 
+  it("records matching candidate identity and rejects mismatched subjects", async () => {
+    const identity = {
+      subjectAgentId: "test-agent",
+      baseVersion: "1.2.3",
+      candidateId: "00000000-0000-4000-8000-000000000001",
+      proposalId: "proposal-1",
+      baselinePolicyDigest: "a".repeat(64),
+      effectivePolicyDigest: "b".repeat(64),
+    };
+    const registered = registration();
+    const result = await runAgent(
+      "test-agent",
+      { instruction: "Review this." },
+      { ...options(registered.definition), candidate: identity },
+    );
+
+    expect(result.candidate).toEqual(identity);
+    expect(result.succeeded).toBe(true);
+
+    const mismatched = registration();
+    const rejected = await runAgent(
+      "test-agent",
+      { instruction: "Review this." },
+      {
+        ...options(mismatched.definition),
+        candidate: { ...identity, subjectAgentId: "different-agent" },
+      },
+    );
+    expect(rejected).toMatchObject({
+      succeeded: false,
+      failure: {
+        stage: "catalog",
+        category: "validation",
+        message: "Candidate identity does not match the registered subject.",
+      },
+    });
+    expect(mismatched.execute).not.toHaveBeenCalled();
+  });
+
   it("preserves invalid input without calling the agent", async () => {
     const registered = registration();
     const result = await runAgent(

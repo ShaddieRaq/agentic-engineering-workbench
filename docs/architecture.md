@@ -963,11 +963,18 @@ returns an in-memory registration and does not mutate source or the platform
 registry. Historical or currently unregistered subjects remain proposal-only.
 
 The optimizer cannot edit source, graders, datasets, tools, or permissions.
-Candidate identity, effective-policy digests, proposal-patch merging, protected
-evaluation boundaries, and comparative execution remain the next controls
-before temporary candidates can enter Evaluation Studio experiments.
-Development evidence may inform proposals, while protected evaluation evidence
-remains unavailable to the optimizer and is used only by promotion gates.
+Candidate construction revalidates proposal policy, merges only declared
+top-level fields, validates the complete effective policy, and rejects stale or
+no-op patches. Each temporary candidate has an evaluation-only UUID, source
+proposal ID, released base version, and deterministic baseline and effective
+policy digests. Candidate runs may preserve that identity without changing the
+released semantic version or invalidating historical run artifacts.
+
+Protected evaluation boundaries and frozen comparative execution remain the
+next controls before temporary candidates can enter Evaluation Studio
+experiments. Development evidence may inform proposals, while protected
+evaluation evidence remains unavailable to the optimizer and is used only by
+promotion gates.
 
 The complete contracts, safeguards, delivery slices, and verification
 strategy are defined in

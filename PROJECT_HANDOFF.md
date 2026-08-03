@@ -276,6 +276,10 @@ The project currently supports:
 - a Documentation Auditor instruction and context-selection revision policy
 - subject-owned in-memory candidate construction without source mutation
 - revision-surface projection into improvement evidence for registered subjects
+- deterministic baseline and effective-policy digests
+- evaluation-only candidate identity linked to source proposals
+- validated proposal-patch merging through subject-owned revision surfaces
+- optional candidate identity preserved in backward-compatible run evidence
 
 ## Current Evaluators
 
@@ -359,15 +363,15 @@ Current milestone:
 ```text
 Phase 39 Playwright Failure Triage agent: complete foundation
 Phase 40 Slice A read-only improvement analysis: complete
-Phase 40 Slice B revision-surface foundation: complete
+Phase 40 Slice B opt-in candidate policies: complete
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-117 test files passed
-351 tests passed
+118 test files passed
+354 tests passed
 ```
 
 This state must be verified before continuing:
@@ -395,11 +399,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Continue Slice B of the evidence-driven agent improvement plan by adding
-evaluation-only candidate identity and deterministic effective-policy digests,
-then merge validated proposal patches through the subject-owned revision
-surface. Preserve current released behavior and do not compare candidates until
-protected evaluation boundaries exist.
+Implement Slice C of the evidence-driven agent improvement plan by classifying
+datasets as development, regression, or protected and withholding protected
+inputs, expectations, and trial evidence from optimizer context. Then add frozen
+baseline-versus-candidate execution without changing graders or datasets.
 
 ## Broader Roadmap
 

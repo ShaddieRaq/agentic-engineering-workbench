@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { agentCandidateIdentitySchema } from "./agentCandidateIdentity.js";
 import { agentManifestSchema } from "./agentManifest.js";
 
 export const agentRunFailureSchema = z
@@ -16,6 +17,7 @@ export const agentRunResultSchema = z
     agentVersion: z.string().min(1),
     manifestDigest: z.string().regex(/^[a-f0-9]{64}$/),
     manifest: agentManifestSchema,
+    candidate: agentCandidateIdentitySchema.optional(),
     input: z.json(),
     configuration: z
       .object({

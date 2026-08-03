@@ -801,7 +801,7 @@ Deferred deliberately:
 
 ## Phase 40 — Evidence-Driven Agent Improvement
 
-Status: In progress — Slice A and Slice B revision-surface foundation complete
+Status: In progress — Slices A and B complete
 
 Goal:
 
@@ -818,8 +818,9 @@ Delivery:
 2. **Complete:** Opt-in agent revision surfaces and a Documentation Auditor
    pilot exposing instruction and context policy only, with validated in-memory
    candidate construction.
-3. Evaluation-only candidate identity, effective-policy digests, proposal-patch
-   merging, and ephemeral candidate execution without source mutation.
+3. **Complete:** Evaluation-only candidate identity, effective-policy digests,
+   proposal-patch merging, and ephemeral candidate execution without source
+   mutation.
 4. Development, regression, and protected dataset purposes with protected
    evidence withheld from the optimizer.
 5. Frozen baseline-versus-candidate execution and deterministic regression,
@@ -852,10 +853,9 @@ Deferred deliberately:
 
 ## Current Priorities
 
-1. Add evaluation-only candidate identity and effective-policy digests, then
-   merge validated proposal patches through the Documentation Auditor surface.
-2. Add protected evaluation boundaries before executable candidates are
-   compared.
+1. Add development, regression, and protected dataset purposes while
+   withholding protected evidence from optimizer context.
+2. Add frozen baseline-versus-candidate execution and deterministic gates.
 3. Complete one local baseline-to-candidate-to-decision workflow.
 4. Exercise Playwright Failure Triage against reviewed real failures after the
    general improvement loop is established.

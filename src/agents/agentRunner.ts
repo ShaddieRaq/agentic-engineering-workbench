@@ -1,8 +1,13 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { AIProvider } from "../providers/aiProvider.js";
 import type { ToolRegistry } from "../tools/toolRegistry.js";
 import { validateAgentCatalog } from "./agentCatalogValidator.js";
+import {
+  agentCandidateIdentitySchema,
+  type AgentCandidateIdentity,
+} from "./agentCandidateIdentity.js";
+import { digestJsonEvidence } from "./agentEvidenceDigest.js";
 import type { AgentRegistry } from "./agentRegistry.js";
 import type {
   AgentRunFailure,
@@ -16,12 +21,7 @@ export interface AgentRunnerOptions {
   workspaceRoot: string;
   workspaceId?: string;
   model?: string;
-}
-
-function manifestDigest(manifest: object): string {
-  return createHash("sha256")
-    .update(JSON.stringify(manifest))
-    .digest("hex");
+  candidate?: AgentCandidateIdentity;
 }
 
 function validationMessage(error: z.ZodError): string {
@@ -38,6 +38,9 @@ export async function runAgent(
   const { manifest } = registration;
   const model = options.model ?? manifest.defaultModel;
   const permittedTools = options.tools.subset(manifest.permissions.toolIds);
+  const candidate = options.candidate
+    ? agentCandidateIdentitySchema.safeParse(options.candidate)
+    : null;
   const serializedInput = z.json().safeParse(rawInput);
   let input: unknown = serializedInput.success ? serializedInput.data : null;
   let output: unknown = null;
@@ -51,7 +54,25 @@ export async function runAgent(
     options.tools,
   ).filter((issue) => issue.agentId === agentId);
 
-  if (!serializedInput.success) {
+  if (candidate !== null && !candidate.success) {
+    failure = {
+      stage: "catalog",
+      category: "validation",
+      message: "Candidate identity is invalid.",
+    };
+  } else if (
+    candidate?.success &&
+    (
+      candidate.data.subjectAgentId !== manifest.id ||
+      candidate.data.baseVersion !== manifest.version
+    )
+  ) {
+    failure = {
+      stage: "catalog",
+      category: "validation",
+      message: "Candidate identity does not match the registered subject.",
+    };
+  } else if (!serializedInput.success) {
     failure = {
       stage: "input",
       category: "validation",
@@ -133,8 +154,9 @@ export async function runAgent(
     agentRunId: randomUUID(),
     agentId: manifest.id,
     agentVersion: manifest.version,
-    manifestDigest: manifestDigest(manifest),
+    manifestDigest: digestJsonEvidence(manifest),
     manifest,
+    ...(candidate?.success ? { candidate: candidate.data } : {}),
     input: input as z.infer<ReturnType<typeof z.json>>,
     configuration: {
       model,

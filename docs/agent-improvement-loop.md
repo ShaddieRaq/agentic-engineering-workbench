@@ -59,7 +59,6 @@ The current platform already provides:
 
 The remaining boundaries are:
 
-- candidate identity separate from released semantic versions
 - protected evaluation cases unavailable to the optimizer
 - promotion gates and an auditable decision record
 
@@ -405,17 +404,18 @@ bounded next change, but cannot construct or promote it.
 
 ### Slice B — Opt-In Candidate Policies
 
-Status: Revision-surface foundation complete
+Status: Complete
 
 - **Complete:** revision-surface contract
 - **Complete:** Documentation Auditor policy extraction
 - **Complete:** validated in-memory candidate construction
-- candidate ID and effective-policy digest evidence
-- proposal-patch merging through the subject-owned surface
+- **Complete:** candidate ID and effective-policy digest evidence
+- **Complete:** proposal-patch merging through the subject-owned surface
+- **Complete:** backward-compatible candidate identity in run evidence
 
-Current outcome: reviewed policy values can construct an in-memory temporary
-candidate without writing code. Proposal-patch merging and evaluation-only
-identity remain before Evaluation Studio can execute that candidate.
+Outcome: a validated proposal patch can construct an identified, executable
+temporary candidate without writing code or changing the released semantic
+version.
 
 ### Slice C — Comparative Candidate Evaluation
 
