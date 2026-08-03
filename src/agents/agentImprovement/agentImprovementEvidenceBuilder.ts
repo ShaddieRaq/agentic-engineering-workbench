@@ -9,6 +9,15 @@ import {
 
 const MAXIMUM_TRIAL_OUTPUT_BYTES = 8_192;
 const MAXIMUM_EVIDENCE_ITEMS = 100;
+const DIAGNOSTIC_OUTPUT_FIELDS = [
+  "succeeded",
+  "disposition",
+  "summary",
+  "policyEvaluation",
+  "citationEvaluation",
+  "failure",
+  "assessment",
+] as const;
 
 export interface AgentImprovementSubjectSnapshot {
   manifest: AgentManifest;
@@ -35,9 +44,28 @@ function boundedOutput(output: z.infer<ReturnType<typeof z.json>> | null) {
     ? output
     : {
         omitted: true,
-        reason: `Trial output exceeded ${MAXIMUM_TRIAL_OUTPUT_BYTES} bytes.`,
+        omissionScope: "improvement-evidence-packet",
+        reason:
+          `Trial output was omitted only from the improvement evidence packet because it exceeded ${MAXIMUM_TRIAL_OUTPUT_BYTES} bytes.`,
         sizeBytes: bytes,
+        causedTrialFailure: false,
       };
+}
+
+function diagnosticProjection(
+  output: z.infer<ReturnType<typeof z.json>> | null,
+) {
+  if (output === null || typeof output !== "object" || Array.isArray(output)) {
+    return null;
+  }
+
+  const diagnostics: Record<string, z.infer<ReturnType<typeof z.json>>> = {};
+  for (const field of DIAGNOSTIC_OUTPUT_FIELDS) {
+    const value = output[field];
+    if (value !== undefined) diagnostics[field] = value;
+  }
+
+  return Object.keys(diagnostics).length === 0 ? null : diagnostics;
 }
 
 export function buildAgentImprovementEvidencePacket(input: {
@@ -123,6 +151,7 @@ export function buildAgentImprovementEvidencePacket(input: {
           details: {
             runtimeSucceeded: trial.runtimeSucceeded,
             output: boundedOutput(trial.output),
+            diagnostics: diagnosticProjection(trial.output),
             assessment: trial.assessment,
             caseAssessment: trial.caseAssessment,
             failure: trial.failure,

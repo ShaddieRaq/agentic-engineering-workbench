@@ -17,6 +17,23 @@ describe("buildAgentImprovementEvidencePacket", () => {
       passed: false,
       message: "The observed classification did not match hidden ground truth.",
     };
+    datasetRun.runs[0]!.agentRun.output = {
+      succeeded: false,
+      disposition: "propose",
+      summary: "Proposed a read JSON tool.",
+      policyEvaluation: {
+        passed: false,
+        issues: [
+          "Generated path is outside the permitted proposal roots: src/tools/read-json.ts",
+          "A proposed tool requires a Vitest file under tests/.",
+          "Verification must include npm run typecheck.",
+        ],
+        message: "The generated proposal violates policy.",
+      },
+      proposalEvidence: {
+        rawOutput: "x".repeat(9_000),
+      },
+    };
     const experiment = createAgentEvaluationExperiment({
       experimentId: "failed-evaluation",
       agentId: datasetRun.agentId,
@@ -59,6 +76,31 @@ describe("buildAgentImprovementEvidencePacket", () => {
     });
     expect(JSON.stringify(packet)).not.toContain("secretGroundTruth");
     expect(packet.revisionSurface).toBeNull();
+    const trialEvidence = packet.evidenceItems.find(
+      ({ id }) => id === "trial:failed-dataset-run-1",
+    );
+    expect(trialEvidence?.details).toMatchObject({
+      output: {
+        omitted: true,
+        omissionScope: "improvement-evidence-packet",
+        reason:
+          "Trial output was omitted only from the improvement evidence packet because it exceeded 8192 bytes.",
+        causedTrialFailure: false,
+      },
+      diagnostics: {
+        succeeded: false,
+        disposition: "propose",
+        summary: "Proposed a read JSON tool.",
+        policyEvaluation: {
+          passed: false,
+          issues: [
+            "Generated path is outside the permitted proposal roots: src/tools/read-json.ts",
+            "A proposed tool requires a Vitest file under tests/.",
+            "Verification must include npm run typecheck.",
+          ],
+        },
+      },
+    });
   });
 
   it("rejects an evaluation with no failed case", async () => {
