@@ -107,7 +107,51 @@ describe("runAgent", () => {
       succeeded: true,
     });
     expect(result.manifestDigest).toMatch(/^[a-f0-9]{64}$/);
+    expect(result.provider).toBeUndefined();
     expect(registered.execute).toHaveBeenCalledOnce();
+  });
+
+  it("aggregates provider usage into run evidence", async () => {
+    const definition = defineAgent({
+      manifest: manifest(),
+      inputSchema: z.object({ instruction: z.string().min(1) }).strict(),
+      outputSchema: z.object({ answer: z.string().min(1) }).strict(),
+      async execute(input, services) {
+        await services.provider.generate({ prompt: input.instruction });
+        await services.provider.generate({ prompt: "second" });
+        return { answer: input.instruction };
+      },
+    });
+    const result = await runAgent(
+      "test-agent",
+      { instruction: "Review this." },
+      {
+        agents: new AgentRegistry([definition]),
+        tools,
+        provider: new FakeProvider("unused", {
+          model: "gpt-5.4-mini",
+          usage: {
+            inputTokens: 5,
+            cachedInputTokens: 1,
+            outputTokens: 2,
+            reasoningTokens: 0,
+            totalTokens: 7,
+          },
+        }),
+        workspaceRoot: "/workspace",
+      },
+    );
+
+    expect(result.provider).toEqual({
+      model: "gpt-5.4-mini",
+      usage: {
+        inputTokens: 10,
+        cachedInputTokens: 2,
+        outputTokens: 4,
+        reasoningTokens: 0,
+        totalTokens: 14,
+      },
+    });
   });
 
   it("records matching candidate identity and rejects mismatched subjects", async () => {

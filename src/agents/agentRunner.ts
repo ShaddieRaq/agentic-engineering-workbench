@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { AIProvider } from "../providers/aiProvider.js";
+import { createUsageCollectingProvider } from "../providers/usageCollectingProvider.js";
 import type { ToolRegistry } from "../tools/toolRegistry.js";
 import { validateAgentCatalog } from "./agentCatalogValidator.js";
 import {
@@ -53,6 +54,7 @@ export async function runAgent(
     options.agents,
     options.tools,
   ).filter((issue) => issue.agentId === agentId);
+  const collectingProvider = createUsageCollectingProvider(options.provider);
 
   if (candidate !== null && !candidate.success) {
     failure = {
@@ -104,7 +106,7 @@ export async function runAgent(
 
       try {
         const candidateOutput = await registration.execute(input, {
-          provider: options.provider,
+          provider: collectingProvider.provider,
           tools: permittedTools,
           workspaceRoot: options.workspaceRoot,
         });
@@ -150,6 +152,8 @@ export async function runAgent(
     }
   }
 
+  const provider = collectingProvider.evidence(model);
+
   return {
     agentRunId: randomUUID(),
     agentId: manifest.id,
@@ -167,6 +171,7 @@ export async function runAgent(
     output: output as z.infer<ReturnType<typeof z.json>> | null,
     assessment,
     failure,
+    ...(provider ? { provider } : {}),
     succeeded: failure === null,
     durationMs: performance.now() - startedAt,
     completedAt: new Date().toISOString(),

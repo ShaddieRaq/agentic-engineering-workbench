@@ -288,6 +288,46 @@ describe("createFrozenAgentCandidateEvaluationPlan", () => {
       expect.objectContaining({ gateId: "protected", status: "failed" }),
     );
 
+    const withUsage = structuredClone(result);
+    const assignUsage = (
+      side: typeof withUsage.baseline,
+      totalTokens: number,
+    ) => {
+      for (const datasetRun of side.datasetRuns) {
+        for (const run of datasetRun.runs) {
+          run.agentRun.provider = {
+            model: "gpt-5.4-mini",
+            usage: {
+              inputTokens: totalTokens,
+              cachedInputTokens: 0,
+              outputTokens: 0,
+              reasoningTokens: 0,
+              totalTokens,
+            },
+          };
+        }
+      }
+    };
+    assignUsage(withUsage.baseline, 100);
+    assignUsage(withUsage.candidate, 100);
+    expect(
+      evaluateAgentCandidatePromotionGates(withUsage, {
+        maximumLatencyRegressionRatio: 1_000_000_000,
+        maximumCostRegressionRatio: 0.25,
+      }).results,
+    ).toContainEqual(
+      expect.objectContaining({ gateId: "cost", status: "passed" }),
+    );
+    assignUsage(withUsage.candidate, 200);
+    expect(
+      evaluateAgentCandidatePromotionGates(withUsage, {
+        maximumLatencyRegressionRatio: 1_000_000_000,
+        maximumCostRegressionRatio: 0.25,
+      }).results,
+    ).toContainEqual(
+      expect.objectContaining({ gateId: "cost", status: "failed" }),
+    );
+
     const store = new FileArtifactStore(
       await mkdtemp(join(tmpdir(), "candidate-evaluation-")),
     );

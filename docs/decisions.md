@@ -2094,5 +2094,35 @@ prevents later decision records from inventing a different automated policy.
   frozen threshold without regression
 - at least one non-protected case must improve
 - latency uses mean trial duration and a configured regression ratio
-- cost remains not-applicable until comparable usage evidence exists
+- cost uses estimated USD when every compared run has priced usage evidence
+- cost remains not-applicable when usage or pricing is incomplete
 - automated gate passage still requires an explicit operator decision
+
+---
+
+## Decision 076 — Collect Provider Usage at the Agent Runner Boundary
+
+Status: Accepted
+
+### Decision
+
+Wrap the injected AI provider during `runAgent` with a usage-collecting proxy.
+Aggregate every `generate` call into optional run-level provider evidence.
+When any sample lacks usage, record incomplete usage as null. Leave historical
+runs without the field valid.
+
+### Rationale
+
+Domain agents already receive a provider, but their outputs are not a reliable
+place for promotion economics. Collecting usage at the runner makes cost
+evidence available for every agent without changing subject contracts, and
+aggregation preserves multi-call workflows as one comparable trial sample.
+
+### Consequences
+
+- agent runs without provider calls omit the provider field
+- incomplete provider samples yield `usage: null` rather than partial totals
+- the cost promotion gate reuses existing token-cost comparison helpers
+- estimated cost still depends on known model pricing policies
+- subject-agent domain evidence may continue recording its own provider fields
+  independently of the platform run evidence

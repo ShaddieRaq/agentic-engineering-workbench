@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  compareTokenCostSummaries,
+  summarizeTokenCosts,
+} from "../../orchestration/tokenCostComparison.js";
 import { digestJsonEvidence } from "../agentEvidenceDigest.js";
 import type {
   AgentCandidateEvaluationExecution,
@@ -188,6 +192,31 @@ export function evaluateAgentCandidatePromotionGates(
   const latencyPassed = latencyRegressionRatio === null ||
     latencyRegressionRatio <= policy.maximumLatencyRegressionRatio;
 
+  const baselineCost = summarizeTokenCosts(
+    baselineRuns.map(({ agentRun }) => agentRun.provider ?? null),
+  );
+  const candidateCost = summarizeTokenCosts(
+    candidateRuns.map(({ agentRun }) => agentRun.provider ?? null),
+  );
+  const costComparison = compareTokenCostSummaries(baselineCost, candidateCost);
+  const costRegressionRatio =
+    costComparison.estimatedCostDeltaUsd === null ||
+      baselineCost.estimatedCostUsd === null ||
+      baselineCost.estimatedCostUsd === 0
+      ? null
+      : costComparison.estimatedCostDeltaUsd / baselineCost.estimatedCostUsd;
+  const costStatus =
+    costComparison.costClassification === "insufficient-evidence"
+      ? "not-applicable"
+      : costRegressionRatio === null
+      ? baselineCost.estimatedCostUsd === 0 &&
+          (candidateCost.estimatedCostUsd ?? 0) > 0
+        ? "failed"
+        : "passed"
+      : costRegressionRatio <= policy.maximumCostRegressionRatio
+      ? "passed"
+      : "failed";
+
   const results: AgentCandidatePromotionGateEvaluation["results"] = [
     {
       gateId: "completeness",
@@ -273,10 +302,39 @@ export function evaluateAgentCandidatePromotionGates(
     },
     {
       gateId: "cost",
-      status: "not-applicable",
-      message: "Run evidence does not yet contain comparable usage or cost data.",
+      status: costStatus,
+      message: costStatus === "not-applicable"
+        ? "Comparable provider usage or cost evidence is unavailable."
+        : costStatus === "passed"
+        ? "Estimated candidate cost stayed within the configured tolerance."
+        : "Estimated candidate cost exceeded the configured tolerance.",
       details: {
+        baseline: {
+          runCount: baselineCost.runCount,
+          usageSampleCount: baselineCost.usageSampleCount,
+          inputTokens: baselineCost.inputTokens,
+          cachedInputTokens: baselineCost.cachedInputTokens,
+          outputTokens: baselineCost.outputTokens,
+          reasoningTokens: baselineCost.reasoningTokens,
+          totalTokens: baselineCost.totalTokens,
+          estimatedCostUsd: baselineCost.estimatedCostUsd,
+          pricingIds: [...baselineCost.pricingIds],
+        },
+        candidate: {
+          runCount: candidateCost.runCount,
+          usageSampleCount: candidateCost.usageSampleCount,
+          inputTokens: candidateCost.inputTokens,
+          cachedInputTokens: candidateCost.cachedInputTokens,
+          outputTokens: candidateCost.outputTokens,
+          reasoningTokens: candidateCost.reasoningTokens,
+          totalTokens: candidateCost.totalTokens,
+          estimatedCostUsd: candidateCost.estimatedCostUsd,
+          pricingIds: [...candidateCost.pricingIds],
+        },
+        estimatedCostDeltaUsd: costComparison.estimatedCostDeltaUsd,
+        regressionRatio: costRegressionRatio,
         maximumRegressionRatio: policy.maximumCostRegressionRatio,
+        costClassification: costComparison.costClassification,
       },
     },
   ];

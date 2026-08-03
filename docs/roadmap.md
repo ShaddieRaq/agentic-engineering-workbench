@@ -801,7 +801,7 @@ Deferred deliberately:
 
 ## Phase 40 — Evidence-Driven Agent Improvement
 
-Status: In progress — Slices A and B complete
+Status: In progress — Slices A, B, and C complete
 
 Goal:
 
@@ -823,10 +823,9 @@ Delivery:
    mutation.
 4. **Complete:** Development, regression, and protected dataset purposes with
    protected evidence withheld from the optimizer.
-5. **In progress:** Frozen execution, immutable comparison evidence, and
-   deterministic completeness, scope, regression, protected, improvement, and
-   latency gates are complete. Comparable provider usage evidence remains
-   before the cost tolerance can be enforced.
+5. **Complete:** Frozen execution, immutable comparison evidence, and
+   deterministic completeness, scope, regression, protected, improvement,
+   latency, and cost gates.
 6. Immutable approve, reject, or revise decisions in Evaluation Studio.
 7. Linked handoffs to Tool Builder and Change Risk Reviewer when a proposal
    requires capabilities or source changes.
@@ -855,10 +854,10 @@ Deferred deliberately:
 
 ## Current Priorities
 
-1. Preserve comparable provider usage and cost evidence in agent runs and
-   enforce the candidate cost tolerance.
-2. Add immutable approve, reject, or revise operator decisions.
-3. Complete one local baseline-to-candidate-to-decision workflow.
+1. Add immutable approve, reject, or revise operator decisions over candidate
+   comparisons.
+2. Complete one local baseline-to-candidate-to-decision workflow.
+3. Surface the decision workflow in Evaluation Studio without auto-promotion.
 4. Exercise Playwright Failure Triage against reviewed real failures after the
    general improvement loop is established.
 5. Export proven agents into Claude Code and other runner-specific packages.

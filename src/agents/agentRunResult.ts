@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { aiProviderEvidenceSchema } from "../providers/aiProvider.js";
 import { agentCandidateIdentitySchema } from "./agentCandidateIdentity.js";
 import { agentManifestSchema } from "./agentManifest.js";
 
@@ -36,6 +37,7 @@ export const agentRunResultSchema = z
       .strict()
       .nullable(),
     failure: agentRunFailureSchema.nullable(),
+    provider: aiProviderEvidenceSchema.optional(),
     succeeded: z.boolean(),
     durationMs: z.number().nonnegative(),
     completedAt: z.string().min(1),

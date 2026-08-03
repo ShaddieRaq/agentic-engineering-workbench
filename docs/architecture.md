@@ -994,13 +994,15 @@ and shared baseline/candidate run references. The artifact is available through
 normal listing, loading, raw export, and generic presentation paths.
 
 Each candidate-comparison artifact now embeds a deterministic promotion-gate
-evaluation. Completeness, scope, regression, protected, improvement, and
-latency gates run automatically when the comparison is created. The cost gate
-is recorded as not-applicable until agent runs expose comparable provider usage
-evidence. Gate passage still does not promote a candidate; an operator decision
-remains required. Development and regression evidence may inform proposals,
-while protected evaluation evidence remains available only to these gates and
-later promotion decisions.
+evaluation. Completeness, scope, regression, protected, improvement, latency,
+and cost gates run automatically when the comparison is created. Agent runs
+optionally preserve aggregated provider usage collected through a runner-owned
+provider wrapper. When every compared run has priced usage, the cost gate
+enforces its configured regression ratio; otherwise it remains not-applicable.
+Gate passage still does not promote a candidate; an operator decision remains
+required. Development and regression evidence may inform proposals, while
+protected evaluation evidence remains available only to these gates and later
+promotion decisions.
 
 The complete contracts, safeguards, delivery slices, and verification
 strategy are defined in
