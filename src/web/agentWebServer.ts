@@ -277,10 +277,10 @@ export async function buildAgentWebServer(
     "/api/artifacts",
     async (request, reply) => {
       const kind = request.query.kind;
-      if (kind && kind !== "agent-run" && kind !== "agent-dataset-run" && kind !== "agent-evaluation" && kind !== "agent-improvement-proposal") {
+      if (kind && kind !== "agent-run" && kind !== "agent-dataset-run" && kind !== "agent-evaluation" && kind !== "agent-candidate-evaluation" && kind !== "agent-improvement-proposal") {
         return reply.code(400).send({ error: "Unsupported artifact kind." });
       }
-      const artifactKind: ArtifactKind | undefined = kind === "agent-run" || kind === "agent-dataset-run" || kind === "agent-evaluation" || kind === "agent-improvement-proposal"
+      const artifactKind: ArtifactKind | undefined = kind === "agent-run" || kind === "agent-dataset-run" || kind === "agent-evaluation" || kind === "agent-candidate-evaluation" || kind === "agent-improvement-proposal"
         ? kind
         : undefined;
       const succeeded = request.query.succeeded === undefined

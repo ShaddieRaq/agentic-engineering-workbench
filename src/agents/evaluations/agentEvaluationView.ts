@@ -121,26 +121,54 @@ export async function buildAgentEvaluationView(
   return { experiment, datasets };
 }
 
-export interface EvaluationCaseComparison {
-  datasetId: string;
-  datasetCaseId: string;
-  baselinePassRate: number | null;
-  candidatePassRate: number | null;
-  passRateDelta: number | null;
-  classification: "improved" | "regressed" | "unchanged" | "insufficient-evidence";
-}
+const evaluationIdentitySchema = z
+  .object({
+    experimentId: z.string().min(1),
+    agentId: z.string().min(1),
+    agentVersion: z.string().min(1),
+    model: z.string().min(1),
+    completedAt: z.string().min(1),
+  })
+  .strict();
 
-export interface AgentEvaluationComparison {
-  baseline: Pick<AgentEvaluationExperiment, "experimentId" | "agentId" | "agentVersion" | "model" | "completedAt">;
-  candidate: Pick<AgentEvaluationExperiment, "experimentId" | "agentId" | "agentVersion" | "model" | "completedAt">;
-  summary: {
-    improvedCases: number;
-    regressedCases: number;
-    unchangedCases: number;
-    insufficientEvidenceCases: number;
-  };
-  cases: EvaluationCaseComparison[];
-}
+export const evaluationCaseComparisonSchema = z
+  .object({
+    datasetId: z.string().min(1),
+    datasetCaseId: z.string().min(1),
+    baselinePassRate: z.number().min(0).max(1).nullable(),
+    candidatePassRate: z.number().min(0).max(1).nullable(),
+    passRateDelta: z.number().min(-1).max(1).nullable(),
+    classification: z.enum([
+      "improved",
+      "regressed",
+      "unchanged",
+      "insufficient-evidence",
+    ]),
+  })
+  .strict();
+
+export const agentEvaluationComparisonSchema = z
+  .object({
+    baseline: evaluationIdentitySchema,
+    candidate: evaluationIdentitySchema,
+    summary: z
+      .object({
+        improvedCases: z.number().int().nonnegative(),
+        regressedCases: z.number().int().nonnegative(),
+        unchangedCases: z.number().int().nonnegative(),
+        insufficientEvidenceCases: z.number().int().nonnegative(),
+      })
+      .strict(),
+    cases: z.array(evaluationCaseComparisonSchema),
+  })
+  .strict();
+
+export type EvaluationCaseComparison = z.infer<
+  typeof evaluationCaseComparisonSchema
+>;
+export type AgentEvaluationComparison = z.infer<
+  typeof agentEvaluationComparisonSchema
+>;
 
 export function compareAgentEvaluationViews(
   baseline: AgentEvaluationView,
@@ -168,9 +196,16 @@ export function compareAgentEvaluationViews(
     );
     return { datasetId, datasetCaseId, ...comparison };
   });
-  return {
-    baseline: baseline.experiment,
-    candidate: candidate.experiment,
+  const identity = (experiment: AgentEvaluationExperiment) => ({
+    experimentId: experiment.experimentId,
+    agentId: experiment.agentId,
+    agentVersion: experiment.agentVersion,
+    model: experiment.model,
+    completedAt: experiment.completedAt,
+  });
+  return agentEvaluationComparisonSchema.parse({
+    baseline: identity(baseline.experiment),
+    candidate: identity(candidate.experiment),
     summary: {
       improvedCases: cases.filter(({ classification }) => classification === "improved").length,
       regressedCases: cases.filter(({ classification }) => classification === "regressed").length,
@@ -178,7 +213,7 @@ export function compareAgentEvaluationViews(
       insufficientEvidenceCases: cases.filter(({ classification }) => classification === "insufficient-evidence").length,
     },
     cases,
-  };
+  });
 }
 
 export function findEvaluationCase(

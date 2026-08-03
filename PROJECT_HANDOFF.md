@@ -289,6 +289,9 @@ The project currently supports:
 - exact baseline output and dataset-case graders reused for candidates
 - baseline and candidate execution from one immutable in-memory plan
 - candidate identity preserved in candidate evaluation and trial evidence
+- immutable candidate-comparison artifacts referencing frozen plan, evaluation,
+  and dataset-run evidence
+- candidate-comparison listing, loading, export, and generic presentation
 
 ## Current Evaluators
 
@@ -375,6 +378,7 @@ Phase 40 Slice A read-only improvement analysis: complete
 Phase 40 Slice B opt-in candidate policies: complete
 Phase 40 Slice C protected evidence boundary: complete foundation
 Phase 40 Slice C frozen comparative execution: complete foundation
+Phase 40 Slice C immutable comparison evidence: complete foundation
 ```
 
 Verified test state:
@@ -410,10 +414,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Continue Slice C of the evidence-driven agent improvement plan by persisting an
-immutable candidate-comparison artifact that references the frozen plan,
-baseline evaluation, candidate evaluation, and dataset runs. Then add
-deterministic regression and protected promotion gates.
+Continue Slice C of the evidence-driven agent improvement plan with
+deterministic completeness, scope, regression, protected, latency, and cost
+gates over the immutable candidate-comparison artifact.
 
 ## Broader Roadmap
 

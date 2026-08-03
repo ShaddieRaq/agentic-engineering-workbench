@@ -71,6 +71,52 @@ export function presentArtifact(artifactId: string, stored: StoredArtifact): Art
       findings: [], coverageGaps: [], prioritizedActions: [], sources: [], timeline: [], usage: null, warnings: [],
     });
   }
+  if (stored.kind === "agent-candidate-evaluation") {
+    const evaluation = stored.artifact;
+    return artifactPresentationSchema.parse({
+      artifactId,
+      artifactKind: stored.kind,
+      presentationKind: "generic",
+      title: `${evaluation.plan.subject.agentId} Candidate Comparison`,
+      agentId: evaluation.plan.subject.agentId,
+      agentVersion: evaluation.plan.subject.agentVersion,
+      workspaceId: evaluation.plan.workspaceId,
+      succeeded: null,
+      assessment:
+        `${evaluation.comparison.summary.improvedCases} improved, ${evaluation.comparison.summary.regressedCases} regressed; promotion gates not yet applied.`,
+      overview:
+        `Candidate ${evaluation.plan.candidate.candidateId} compared under frozen plan ${evaluation.plan.planId}.`,
+      completedAt: evaluation.completedAt,
+      durationMs: null,
+      metrics: [
+        {
+          id: "improved",
+          label: "Improved cases",
+          value: String(evaluation.comparison.summary.improvedCases),
+          detail: null,
+        },
+        {
+          id: "regressed",
+          label: "Regressed cases",
+          value: String(evaluation.comparison.summary.regressedCases),
+          detail: null,
+        },
+        {
+          id: "unchanged",
+          label: "Unchanged cases",
+          value: String(evaluation.comparison.summary.unchangedCases),
+          detail: null,
+        },
+      ],
+      findings: [],
+      coverageGaps: [],
+      prioritizedActions: [],
+      sources: [],
+      timeline: [],
+      usage: null,
+      warnings: ["Promotion gates have not been applied to this comparison."],
+    });
+  }
 
   const run = stored.artifact;
   return artifactPresentationSchema.parse({

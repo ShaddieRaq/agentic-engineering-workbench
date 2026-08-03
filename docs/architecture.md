@@ -985,10 +985,18 @@ functions with the exact baseline functions. Both sides run through the normal
 agent and dataset runners, while candidate evaluations and trials preserve the
 evaluation-only candidate identity.
 
-An immutable comparison artifact and deterministic promotion gates remain the
-next controls before temporary candidates can enter Evaluation Studio
-experiments. Development and regression evidence may inform proposals, while
-protected evaluation evidence remains available only to later promotion gates.
+Completed comparisons are now persisted as immutable
+`agent-candidate-evaluation` artifacts. The artifact contains the frozen plan
+and compact case comparison while referencing the separately persisted
+baseline and candidate evaluations and every dataset run. Runtime validation
+rejects mismatched experiment subjects, models, incomplete dataset references,
+and shared baseline/candidate run references. The artifact is available through
+normal listing, loading, raw export, and generic presentation paths.
+
+Deterministic promotion gates remain the next control before temporary
+candidates can be selected. Development and regression evidence may inform
+proposals, while protected evaluation evidence remains available only to those
+gates.
 
 The complete contracts, safeguards, delivery slices, and verification
 strategy are defined in

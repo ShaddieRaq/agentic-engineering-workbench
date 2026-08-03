@@ -64,6 +64,7 @@ export const artifactPresentationSchema = z.object({
     "agent-run",
     "agent-dataset-run",
     "agent-evaluation",
+    "agent-candidate-evaluation",
     "agent-improvement-proposal",
   ]),
   presentationKind: z.enum([

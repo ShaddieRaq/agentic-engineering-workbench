@@ -1,12 +1,14 @@
 import type { AgentRunResult } from "../agents/agentRunResult.js";
 import type { AgentDatasetRunResult } from "../agents/datasets/agentDatasetRunner.js";
 import type { AgentEvaluationExperiment } from "../agents/evaluations/agentEvaluationExperiment.js";
+import type { AgentCandidateEvaluationArtifact } from "../agents/evaluations/agentCandidateEvaluationArtifact.js";
 import type { AgentImprovementAnalysisResult } from "../agents/agentImprovement/agentImprovementAnalysis.js";
 
 export type ArtifactKind =
   | "agent-run"
   | "agent-dataset-run"
   | "agent-evaluation"
+  | "agent-candidate-evaluation"
   | "agent-improvement-proposal";
 
 export interface ArtifactReference {
@@ -46,6 +48,10 @@ export type StoredArtifact =
   | { kind: "agent-dataset-run"; artifact: AgentDatasetRunResult }
   | { kind: "agent-evaluation"; artifact: AgentEvaluationExperiment }
   | {
+      kind: "agent-candidate-evaluation";
+      artifact: AgentCandidateEvaluationArtifact;
+    }
+  | {
       kind: "agent-improvement-proposal";
       artifact: AgentImprovementAnalysisResult;
     };
@@ -57,6 +63,9 @@ export interface ArtifactStore {
   ): Promise<ArtifactReference>;
   saveAgentEvaluation(
     result: AgentEvaluationExperiment,
+  ): Promise<ArtifactReference>;
+  saveAgentCandidateEvaluation(
+    result: AgentCandidateEvaluationArtifact,
   ): Promise<ArtifactReference>;
   saveAgentImprovementProposal(
     result: AgentImprovementAnalysisResult,

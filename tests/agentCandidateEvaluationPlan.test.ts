@@ -1,3 +1,6 @@
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { z } from "zod";
 import { describe, expect, it } from "vitest";
 import type {
@@ -7,9 +10,13 @@ import { defineAgent } from "../src/agents/agentRegistration.js";
 import { toolBuilderDataset } from "../src/agents/datasets/toolBuilderDataset.js";
 import { createFrozenAgentCandidateEvaluationPlan } from "../src/agents/evaluations/agentCandidateEvaluationPlan.js";
 import { runFrozenAgentCandidateEvaluation } from "../src/agents/evaluations/agentCandidateEvaluationRunner.js";
+import { agentCandidateEvaluationArtifactSchema } from "../src/agents/evaluations/agentCandidateEvaluationArtifact.js";
 import { toolBuilderAgent } from "../src/agents/toolBuilder/toolBuilderAgent.js";
 import { FakeProvider } from "../src/providers/fakeProvider.js";
 import { ToolRegistry } from "../src/tools/toolRegistry.js";
+import { persistAgentCandidateEvaluation } from "../src/artifacts/agentCandidateEvaluationPersistence.js";
+import { FileArtifactStore } from "../src/artifacts/fileArtifactStore.js";
+import { presentArtifact } from "../src/presentation/artifactPresenter.js";
 
 const baseline = defineAgent({
   manifest: toolBuilderAgent.manifest,
@@ -198,5 +205,43 @@ describe("createFrozenAgentCandidateEvaluationPlan", () => {
     expect(result.baseline.datasetRuns[0]?.runs[0]?.agentRun.input).toEqual(
       result.candidate.datasetRuns[0]?.runs[0]?.agentRun.input,
     );
+
+    const store = new FileArtifactStore(
+      await mkdtemp(join(tmpdir(), "candidate-evaluation-")),
+    );
+    const persisted = await persistAgentCandidateEvaluation(store, result, {
+      candidateEvaluationId: "00000000-0000-4000-8000-000000000020",
+      completedAt: "2026-08-03T22:00:00.000Z",
+    });
+    const loaded = await store.load(persisted.reference.id);
+
+    expect(persisted.datasetRunReferences).toHaveLength(2);
+    expect(loaded).toEqual({
+      kind: "agent-candidate-evaluation",
+      artifact: persisted.artifact,
+    });
+    expect(
+      (await store.list({ kind: "agent-candidate-evaluation" })).artifacts,
+    ).toEqual([
+      expect.objectContaining({
+        id: persisted.artifact.candidateEvaluationId,
+        agentId: "tool-builder",
+        succeeded: null,
+      }),
+    ]);
+    expect(presentArtifact(persisted.reference.id, loaded)).toMatchObject({
+      artifactKind: "agent-candidate-evaluation",
+      succeeded: null,
+    });
+    expect(() =>
+      agentCandidateEvaluationArtifactSchema.parse({
+        ...persisted.artifact,
+        candidate: {
+          ...persisted.artifact.candidate,
+          experimentArtifactId:
+            persisted.artifact.baseline.experimentArtifactId,
+        },
+      })
+    ).toThrow("Candidate reference does not match comparison evidence");
   });
 });

@@ -426,7 +426,7 @@ Status: Protected evidence boundary complete
   signals excluded from optimizer context
 - **Complete:** immutable plan snapshot and digest
 - **Complete:** frozen baseline/candidate execution using baseline graders
-- candidate comparison artifact
+- **Complete:** immutable candidate comparison artifact and evidence references
 - deterministic non-regression and scope gates
 
 Outcome: the workbench can demonstrate whether the candidate improved.

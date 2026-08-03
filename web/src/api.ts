@@ -51,6 +51,7 @@ export interface ArtifactSummary {
     | "agent-run"
     | "agent-dataset-run"
     | "agent-evaluation"
+    | "agent-candidate-evaluation"
     | "agent-improvement-proposal";
   path: string;
   agentId: string;
@@ -225,6 +226,7 @@ export interface ArtifactPresentation {
     | "agent-run"
     | "agent-dataset-run"
     | "agent-evaluation"
+    | "agent-candidate-evaluation"
     | "agent-improvement-proposal";
   presentationKind:
     | "generic"

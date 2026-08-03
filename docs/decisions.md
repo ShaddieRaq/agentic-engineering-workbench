@@ -2033,3 +2033,33 @@ subject-owned candidate factory from silently changing its own grader.
 - candidate evaluations and every candidate trial preserve candidate lineage
 - existing catalog, runtime, output, and dataset validation remain active
 - comparison persistence and promotion gates remain separate next controls
+
+---
+
+## Decision 074 — Persist Comparisons as Reference Artifacts
+
+Status: Accepted
+
+### Decision
+
+Persist each completed candidate comparison as an immutable
+`agent-candidate-evaluation` artifact. Store the frozen plan and compact
+case-level comparison in that artifact, while referencing separately persisted
+baseline and candidate evaluation experiments and dataset runs.
+
+### Rationale
+
+Copying all trial evidence into one comparison would create multiple competing
+sources of truth and unnecessarily duplicate protected evidence. A validated
+reference artifact preserves lineage and makes comparison evidence inspectable
+without weakening the immutability of existing run and evaluation artifacts.
+
+### Consequences
+
+- all dataset runs are saved before their evaluation experiments
+- the comparison validates experiment IDs, subject, version, model, dataset
+  reference completeness, and baseline/candidate reference separation
+- candidate comparisons can be listed, loaded, exported, and presented through
+  the existing artifact boundaries
+- comparison summaries do not imply approval before promotion gates run
+- deterministic promotion gates remain the next control

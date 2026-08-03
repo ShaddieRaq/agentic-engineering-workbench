@@ -13,6 +13,10 @@ import {
   type AgentEvaluationExperiment,
 } from "../agents/evaluations/agentEvaluationExperiment.js";
 import {
+  agentCandidateEvaluationArtifactSchema,
+  type AgentCandidateEvaluationArtifact,
+} from "../agents/evaluations/agentCandidateEvaluationArtifact.js";
+import {
   agentImprovementAnalysisResultSchema,
   type AgentImprovementAnalysisResult,
 } from "../agents/agentImprovement/agentImprovementAnalysis.js";
@@ -29,6 +33,15 @@ import type {
 const MAXIMUM_ARTIFACT_BYTES = 8 * 1024 * 1024;
 
 function descriptor(fileName: string): { kind: ArtifactKind; id: string } | null {
+  const candidateEvaluationMatch =
+    /^agent-candidate-evaluation-([a-zA-Z0-9-]+)\.json$/.exec(fileName);
+  if (candidateEvaluationMatch?.[1]) {
+    return {
+      kind: "agent-candidate-evaluation",
+      id: candidateEvaluationMatch[1],
+    };
+  }
+
   const improvementMatch =
     /^agent-improvement-proposal-([a-zA-Z0-9-]+)\.json$/.exec(fileName);
   if (improvementMatch?.[1]) {
@@ -56,8 +69,23 @@ function summary(
     | AgentRunResult
     | AgentDatasetRunResult
     | AgentEvaluationExperiment
+    | AgentCandidateEvaluationArtifact
     | AgentImprovementAnalysisResult,
 ): ArtifactSummary {
+  if (kind === "agent-candidate-evaluation") {
+    const evaluation = artifact as AgentCandidateEvaluationArtifact;
+    return {
+      id: evaluation.candidateEvaluationId,
+      kind,
+      path,
+      agentId: evaluation.plan.subject.agentId,
+      agentVersion: evaluation.plan.subject.agentVersion,
+      workspaceId: evaluation.plan.workspaceId,
+      completedAt: evaluation.completedAt,
+      succeeded: null,
+    };
+  }
+
   if (kind === "agent-improvement-proposal") {
     const proposal = artifact as AgentImprovementAnalysisResult;
     return {
@@ -157,6 +185,18 @@ export class FileArtifactStore implements ArtifactStore {
     );
   }
 
+  async saveAgentCandidateEvaluation(
+    result: AgentCandidateEvaluationArtifact,
+  ): Promise<ArtifactReference> {
+    const validated = agentCandidateEvaluationArtifactSchema.parse(result);
+    return this.#write(
+      "agent-candidate-evaluation",
+      validated.candidateEvaluationId,
+      `agent-candidate-evaluation-${validated.candidateEvaluationId}.json`,
+      validated,
+    );
+  }
+
   async saveAgentImprovementProposal(
     result: AgentImprovementAnalysisResult,
   ): Promise<ArtifactReference> {
@@ -219,6 +259,10 @@ export class FileArtifactStore implements ArtifactStore {
       ["agent-dataset-run", `agent-dataset-run-${id}.json`],
       ["agent-evaluation", `agent-evaluation-${id}.json`],
       [
+        "agent-candidate-evaluation",
+        `agent-candidate-evaluation-${id}.json`,
+      ],
+      [
         "agent-improvement-proposal",
         `agent-improvement-proposal-${id}.json`,
       ],
@@ -241,6 +285,7 @@ export class FileArtifactStore implements ArtifactStore {
       | AgentRunResult
       | AgentDatasetRunResult
       | AgentEvaluationExperiment
+      | AgentCandidateEvaluationArtifact
       | AgentImprovementAnalysisResult,
   ): Promise<ArtifactReference> {
     await mkdir(this.#root, { recursive: true });
@@ -270,6 +315,12 @@ export class FileArtifactStore implements ArtifactStore {
     }
     if (kind === "agent-evaluation") {
       return { kind, artifact: agentEvaluationExperimentSchema.parse(parsed) };
+    }
+    if (kind === "agent-candidate-evaluation") {
+      return {
+        kind,
+        artifact: agentCandidateEvaluationArtifactSchema.parse(parsed),
+      };
     }
     return {
       kind,
