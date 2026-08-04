@@ -7,6 +7,7 @@ import {
   type IntakeTurnOutput,
 } from "../../foundry/intakeTurnOutput.js";
 import { defineAgent } from "../agentRegistration.js";
+import { assessProjectIntakeExpectation } from "./projectIntakeExpectation.js";
 import { buildProjectIntakePrompt } from "./projectIntakePrompt.js";
 
 export const projectIntakeAgent = defineAgent<IntakeTurnInput, IntakeTurnOutput>({
@@ -28,7 +29,10 @@ export const projectIntakeAgent = defineAgent<IntakeTurnInput, IntakeTurnOutput>
       datasetIds: [],
     },
     permissions: { toolIds: [] },
-    verification: { datasetIds: [], minimumPassRate: null },
+    verification: {
+      datasetIds: ["project-intake-smoke"],
+      minimumPassRate: 1,
+    },
   },
   inputSchema: intakeTurnInputSchema,
   outputSchema: intakeTurnOutputSchema,
@@ -62,5 +66,8 @@ export const projectIntakeAgent = defineAgent<IntakeTurnInput, IntakeTurnOutput>
         `Turn produced ${output.nextQuestions.length} question(s) and ` +
         `${blockingIssues} blocking issue(s).`,
     };
+  },
+  assessDatasetCase(_input, output, expected) {
+    return assessProjectIntakeExpectation(output, expected);
   },
 });

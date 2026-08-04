@@ -123,6 +123,59 @@ describe("projectIntakeAgent", () => {
     expect(result.failure?.message).toMatch(/no parsable/i);
   });
 
+  it("assesses dataset cases against hidden expectations", async () => {
+    const dataset = (
+      await import("../src/agents/datasets/projectIntakeDataset.js")
+    ).projectIntakeDataset;
+    const vagueCase = dataset.cases.find(
+      ({ id }) => id === "vague-answer-is-challenged-not-accepted",
+    )!;
+    const constraintId = (
+      vagueCase.input as {
+        briefContent: { constraints: { id: string }[] };
+      }
+    ).briefContent.constraints[0]!.id;
+
+    const honest = turnOutput();
+    honest.updatedBriefDraft.constraints = [
+      {
+        id: constraintId,
+        text: "Performance target for the weekly summary is unspecified.",
+        source: "unresolved",
+      },
+    ];
+    const honestRun = await runAgent("project-intake", vagueCase.input, {
+      agents: platformAgentRegistry,
+      tools: new ToolRegistry([]),
+      provider: scriptedProvider(honest),
+      workspaceRoot: "/workspace",
+    });
+    const registration = platformAgentRegistry.get("project-intake");
+    expect(
+      registration.assessDatasetCase!(
+        vagueCase.input,
+        honestRun.output,
+        vagueCase.expected,
+      ).passed,
+    ).toBe(true);
+
+    const dishonest = turnOutput();
+    dishonest.updatedBriefDraft.constraints = [
+      {
+        id: constraintId,
+        text: "The tool should be fast.",
+        source: "user-stated",
+      },
+    ];
+    const failedAssessment = registration.assessDatasetCase!(
+      vagueCase.input,
+      dishonest,
+      vagueCase.expected,
+    );
+    expect(failedAssessment.passed).toBe(false);
+    expect(failedAssessment.message).toMatch(/without operator confirmation/i);
+  });
+
   it("passes assessment for blocking issues without questions on a final turn", async () => {
     const output = turnOutput();
     output.nextQuestions = [];
