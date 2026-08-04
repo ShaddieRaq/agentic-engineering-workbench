@@ -361,6 +361,15 @@ The project currently supports:
   `brief-show`, `brief-list`, `brief-lineage`, and `brief-decide`
 - per-turn provenance-conversion metrics tracking how interview answers turn
   inferred and unresolved content into user-stated content
+- a `project-intake-smoke` hidden-expectation verification dataset gating
+  interview quality: entry preservation, provenance honesty, contradiction
+  challenges, and honest final-turn reporting
+- a project-intake instruction revision surface enabling candidate policy
+  patches through the standard improvement loop
+- deterministic intake turn reconciliation (project-intake 0.2.0): duplicate
+  entry ids re-minted and dangling references removed between structural model
+  parsing and strict contract validation, with complete repair evidence on the
+  output and visible in the intake CLI
 
 ## Current Evaluators
 
@@ -459,16 +468,25 @@ Phase 41 clean-clone health check: complete locally
 Foundry Slice 1 project brief artifact boundary: complete
 Foundry Slice 2 intake controller and project-intake agent: complete,
 live-validated end to end (real interview reached ready-for-decision)
-Foundry Slice 3 intake verification datasets: not started
+Foundry Slice 3 intake verification datasets: complete, live-gated
+Foundry Slice 4 improvement loop on project-intake: two full cycles run;
+both instruction candidates failed gates; operator revise decisions
+redirected to an engineering change
+Foundry Slice 5 deterministic id reconciliation (project-intake 0.2.0):
+complete; live reps-3 baseline improved 10/15 to 13/15, with both
+structural failure cases (contradiction, final-turn) now 3/3
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-132 test files passed
-459 tests passed
+136 test files passed
+484 tests passed
 npm run agents -- validate passed (7 agents)
+project-intake 0.2.0 live gate: 13/15 (vague-answer 1/3 is the sole
+remaining weakness, a provenance-honesty behavior for a future
+instructions candidate)
 ```
 
 This state must be verified before continuing:
