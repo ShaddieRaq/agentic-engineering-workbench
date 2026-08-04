@@ -7,7 +7,7 @@ import {
   briefContentOf,
   createInitialProjectBrief,
 } from "../src/foundry/projectBrief.js";
-import type { IntakeTurnOutput } from "../src/foundry/intakeTurnOutput.js";
+import type { IntakeTurnModelOutput } from "../src/foundry/intakeTurnOutput.js";
 import type { AIProvider } from "../src/providers/aiProvider.js";
 import {
   createPlatformToolRegistry,
@@ -28,7 +28,7 @@ function turnInput() {
   };
 }
 
-function turnOutput(): IntakeTurnOutput {
+function turnOutput(): IntakeTurnModelOutput {
   const goalId = randomUUID();
   return {
     updatedBriefDraft: {
@@ -57,7 +57,7 @@ function turnOutput(): IntakeTurnOutput {
   };
 }
 
-function scriptedProvider(output: IntakeTurnOutput | null, refusal: string | null = null): AIProvider {
+function scriptedProvider(output: IntakeTurnModelOutput | null, refusal: string | null = null): AIProvider {
   return {
     async generate<TOutput>() {
       return {
@@ -96,7 +96,36 @@ describe("projectIntakeAgent", () => {
       succeeded: true,
       configuration: { permittedToolIds: [] },
       assessment: { passed: true },
+      output: { reconciliation: null },
     });
+  });
+
+  it("repairs duplicate entry ids instead of failing the turn", async () => {
+    const output = turnOutput();
+    const original = output.updatedBriefDraft.goals[0]!;
+    output.updatedBriefDraft.nonGoals = [
+      { id: original.id, text: "Duplicated into a non-goal.", source: "agent-inferred" },
+    ];
+
+    const result = await runAgent("project-intake", turnInput(), {
+      agents: platformAgentRegistry,
+      tools: new ToolRegistry([]),
+      provider: scriptedProvider(output),
+      workspaceRoot: "/workspace",
+    });
+
+    expect(result.succeeded).toBe(true);
+    const parsed = result.output as {
+      updatedBriefDraft: { goals: { id: string }[]; nonGoals: { id: string }[] };
+      reconciliation: { remintedEntries: { originalId: string; section: string }[] };
+    };
+    expect(parsed.reconciliation.remintedEntries).toHaveLength(1);
+    expect(parsed.reconciliation.remintedEntries[0]).toMatchObject({
+      originalId: original.id,
+      section: "nonGoals",
+    });
+    expect(parsed.updatedBriefDraft.goals[0]!.id).toBe(original.id);
+    expect(parsed.updatedBriefDraft.nonGoals[0]!.id).not.toBe(original.id);
   });
 
   it("fails the run when the provider refuses", async () => {

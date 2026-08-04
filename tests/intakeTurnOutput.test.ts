@@ -55,6 +55,7 @@ describe("intakeTurnOutputSchema", () => {
           relatedEntryIds: [],
         },
       ],
+      reconciliation: null,
     });
 
     expect(turn.nextQuestions).toHaveLength(2);
@@ -72,6 +73,7 @@ describe("intakeTurnOutputSchema", () => {
         updatedBriefDraft: fullBrief,
         nextQuestions: [],
         openIssues: [],
+        reconciliation: null,
       }),
     ).toThrowError();
   });
@@ -91,6 +93,7 @@ describe("intakeTurnOutputSchema", () => {
           },
         ],
         openIssues: [],
+        reconciliation: null,
       }),
     ).toThrowError(/unknown brief entry/i);
   });
@@ -110,6 +113,7 @@ describe("intakeTurnOutputSchema", () => {
           },
         ],
         openIssues: [],
+        reconciliation: null,
       }),
     ).toThrowError(/must target at least one brief entry/i);
   });
@@ -128,6 +132,7 @@ describe("intakeTurnOutputSchema", () => {
         updatedBriefDraft: draft,
         nextQuestions: questions,
         openIssues: [],
+        reconciliation: null,
       }),
     ).toThrowError();
   });
@@ -147,6 +152,7 @@ describe("intakeTurnOutputSchema", () => {
             relatedEntryIds: [randomUUID()],
           },
         ],
+        reconciliation: null,
       }),
     ).toThrowError(/unknown brief entry/i);
   });

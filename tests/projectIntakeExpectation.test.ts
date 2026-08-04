@@ -39,6 +39,7 @@ function output(
     },
     nextQuestions: [],
     openIssues: [],
+    reconciliation: null,
     ...turn,
   };
 }

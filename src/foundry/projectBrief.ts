@@ -117,10 +117,12 @@ function refineBriefContent(
   }
 }
 
-export const projectBriefDraftContentSchema = z
+export const projectBriefDraftContentShapeSchema = z
   .object(briefContentShape)
-  .strict()
-  .superRefine(refineBriefContent);
+  .strict();
+
+export const projectBriefDraftContentSchema =
+  projectBriefDraftContentShapeSchema.superRefine(refineBriefContent);
 
 export const projectBriefSchema = z
   .object({

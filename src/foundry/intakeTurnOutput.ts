@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   projectBriefDraftContentSchema,
+  projectBriefDraftContentShapeSchema,
   type ProjectBriefDraftContent,
 } from "./projectBrief.js";
 
@@ -28,6 +29,56 @@ export const intakeOpenIssueSchema = z
   })
   .strict();
 
+// The structural contract sent to the provider: no cross-reference checks and
+// no reconciliation field, so structural model slips (duplicate ids, dangling
+// references) survive parsing long enough to be deterministically repaired.
+export const intakeTurnModelOutputSchema = z
+  .object({
+    updatedBriefDraft: projectBriefDraftContentShapeSchema,
+    nextQuestions: z.array(intakeNextQuestionSchema).max(10),
+    openIssues: z.array(intakeOpenIssueSchema).max(50),
+  })
+  .strict();
+
+export const intakeReconciliationSectionSchema = z.enum([
+  "goals",
+  "users",
+  "constraints",
+  "risks",
+  "nonGoals",
+  "assumptions",
+  "acceptanceCriteria",
+  "openQuestions",
+]);
+
+export const intakeReconciliationSchema = z
+  .object({
+    remintedEntries: z
+      .array(
+        z
+          .object({
+            originalId: z.uuid(),
+            mintedId: z.uuid(),
+            section: intakeReconciliationSectionSchema,
+          })
+          .strict(),
+      )
+      .max(50),
+    removedReferences: z
+      .array(
+        z
+          .object({
+            context: z.enum(["nextQuestions", "openIssues", "openQuestions"]),
+            ownerId: z.uuid(),
+            removedId: z.uuid(),
+          })
+          .strict(),
+      )
+      .max(100),
+    droppedQuestionIds: z.array(z.uuid()).max(10),
+  })
+  .strict();
+
 function collectBriefEntryIds(brief: ProjectBriefDraftContent): Set<string> {
   const ids = new Set<string>();
   for (const section of [
@@ -49,6 +100,7 @@ export const intakeTurnOutputSchema = z
     updatedBriefDraft: projectBriefDraftContentSchema,
     nextQuestions: z.array(intakeNextQuestionSchema).max(10),
     openIssues: z.array(intakeOpenIssueSchema).max(50),
+    reconciliation: intakeReconciliationSchema.nullable(),
   })
   .strict()
   .superRefine((turn, context) => {
@@ -89,4 +141,6 @@ export const intakeTurnOutputSchema = z
 export type IntakeQuestionIntent = z.infer<typeof intakeQuestionIntentSchema>;
 export type IntakeNextQuestion = z.infer<typeof intakeNextQuestionSchema>;
 export type IntakeOpenIssue = z.infer<typeof intakeOpenIssueSchema>;
+export type IntakeTurnModelOutput = z.infer<typeof intakeTurnModelOutputSchema>;
+export type IntakeReconciliation = z.infer<typeof intakeReconciliationSchema>;
 export type IntakeTurnOutput = z.infer<typeof intakeTurnOutputSchema>;

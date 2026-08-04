@@ -49,7 +49,7 @@ function question(targetEntryIds: string[] = []) {
 }
 
 type ScriptStep =
-  | { kind: "output"; output: IntakeTurnOutput }
+  | { kind: "output"; output: Omit<IntakeTurnOutput, "reconciliation"> }
   | { kind: "failure"; message: string };
 
 function scriptedAgentService(steps: ScriptStep[]): IntakeAgentRunService & {
@@ -76,7 +76,11 @@ function scriptedAgentService(steps: ScriptStep[]): IntakeAgentRunService & {
       }
       return {
         artifactId: `agent-run-${index}`,
-        run: { succeeded: true, output: step.output, failure: null },
+        run: {
+          succeeded: true,
+          output: { ...step.output, reconciliation: null },
+          failure: null,
+        },
       };
     },
   };

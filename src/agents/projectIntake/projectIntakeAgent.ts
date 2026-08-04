@@ -1,5 +1,9 @@
+import { reconcileIntakeTurnOutput } from "../../foundry/intakeReconciliation.js";
 import { intakeTurnInputSchema } from "../../foundry/intakeTurnInput.js";
-import { intakeTurnOutputSchema } from "../../foundry/intakeTurnOutput.js";
+import {
+  intakeTurnModelOutputSchema,
+  intakeTurnOutputSchema,
+} from "../../foundry/intakeTurnOutput.js";
 import { defineAgent, type AgentRegistration } from "../agentRegistration.js";
 import { defineAgentRevisionSurface } from "../agentRevisionSurface.js";
 import { assessProjectIntakeExpectation } from "./projectIntakeExpectation.js";
@@ -19,7 +23,7 @@ export function createProjectIntakeAgent(
     manifest: {
       id: "project-intake",
       name: "Project Intake",
-      version: "0.1.0",
+      version: "0.2.0",
       status: "experimental",
       description:
         "Interviews a software idea into a decision-ready project brief through " +
@@ -50,7 +54,7 @@ export function createProjectIntakeAgent(
     async execute(input, services) {
       const result = await services.provider.generate({
         prompt: buildProjectIntakePrompt(input, effectivePolicy),
-        outputSchema: intakeTurnOutputSchema,
+        outputSchema: intakeTurnModelOutputSchema,
       });
 
       if (result.refusal !== null) {
@@ -62,7 +66,9 @@ export function createProjectIntakeAgent(
         );
       }
 
-      return result.parsedOutput;
+      return reconcileIntakeTurnOutput(
+        intakeTurnModelOutputSchema.parse(result.parsedOutput),
+      );
     },
     // Blocking issues without questions are legitimate on the final budgeted
     // turn, and assess cannot see remainingTurns, so it only summarizes.

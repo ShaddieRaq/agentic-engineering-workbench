@@ -87,6 +87,17 @@ function renderTurn(result: IntakeTurnResult): void {
     }
   }
 
+  if (result.reconciliation) {
+    const { remintedEntries, removedReferences, droppedQuestionIds } =
+      result.reconciliation;
+    console.log(
+      "Structural repairs applied: " +
+        `${remintedEntries.length} re-minted id(s), ` +
+        `${removedReferences.length} removed reference(s), ` +
+        `${droppedQuestionIds.length} dropped question(s).`,
+    );
+  }
+
   if (record.status === "ready-for-decision") {
     console.log(
       `Ready for decision: npm run foundry -- brief-decide --brief-id ${brief.briefId} --version ${brief.version} ...`,

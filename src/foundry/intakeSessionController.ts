@@ -4,6 +4,7 @@ import { intakeTurnRecordSchema, type IntakeTurnRecord } from "./intakeTurn.js";
 import type { IntakeOperatorAnswer } from "./intakeTurnInput.js";
 import {
   intakeTurnOutputSchema,
+  type IntakeReconciliation,
   type IntakeTurnOutput,
 } from "./intakeTurnOutput.js";
 import {
@@ -36,6 +37,7 @@ export interface IntakeAgentRunService {
 export interface IntakeTurnResult {
   brief: ProjectBrief;
   record: IntakeTurnRecord;
+  reconciliation: IntakeReconciliation | null;
 }
 
 export interface IntakeStatusReport {
@@ -282,7 +284,7 @@ export class IntakeSessionController {
       startedAt,
     });
 
-    return { brief: resultingBrief, record };
+    return { brief: resultingBrief, record, reconciliation: output.reconciliation };
   }
 
   async #persistTurnRecord(turn: {
