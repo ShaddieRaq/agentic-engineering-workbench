@@ -24,47 +24,40 @@ describe("inspect-git-diff tool", () => {
       { mode: "working-tree", contextLines: 5, maxBytes: 1000 },
     );
 
-    expect(runGit).toHaveBeenNthCalledWith(1, {
+    expect(runGit).toHaveBeenCalledTimes(3);
+    expect(runGit.mock.calls[0]?.[0]).toMatchObject({
       cwd: process.cwd(),
-      args: [
+      timeoutMs: 5_000,
+      maximumBytes: 1_000,
+    });
+    expect(runGit.mock.calls[0]?.[0].args).toEqual(
+      expect.arrayContaining([
         "diff",
         "--no-ext-diff",
         "--no-textconv",
         "--no-color",
         "--unified=5",
-        "--src-prefix=a/",
-        "--dst-prefix=b/",
-        "--",
-      ],
-      timeoutMs: 5_000,
-      maximumBytes: 1_000,
-    });
-    expect(runGit).toHaveBeenNthCalledWith(2, {
-      cwd: process.cwd(),
-      args: [
-        "diff",
-        "--no-ext-diff",
-        "--no-textconv",
+        ".",
+        ":(exclude,glob).env",
+        ":(exclude,glob)**/.env",
+        ":(exclude,glob)runs/**",
+      ]),
+    );
+    expect(runGit.mock.calls[1]?.[0].args).toEqual(
+      expect.arrayContaining([
         "--name-only",
-        "-z",
         "--diff-filter=ACMRTUXB",
-        "--",
-      ],
-      timeoutMs: 5_000,
-      maximumBytes: 1_000,
-    });
-    expect(runGit).toHaveBeenNthCalledWith(3, {
-      cwd: process.cwd(),
-      args: [
+        ":(exclude,glob)node_modules/**",
+      ]),
+    );
+    expect(runGit.mock.calls[2]?.[0].args).toEqual(
+      expect.arrayContaining([
         "ls-files",
         "--others",
         "--exclude-standard",
-        "-z",
-        "--",
-      ],
-      timeoutMs: 5_000,
-      maximumBytes: 1_000,
-    });
+        ":(exclude,glob)**/runs/**",
+      ]),
+    );
     expect(evidence).toMatchObject({
       toolId: "inspect-git-diff",
       output: {
@@ -99,6 +92,38 @@ describe("inspect-git-diff tool", () => {
       trackedPaths: [],
       untrackedPaths: [],
     });
+  });
+
+  it("combines staged, unstaged, and untracked workspace evidence", async () => {
+    const runGit = vi
+      .fn<GitDiffRunner>()
+      .mockResolvedValueOnce(Buffer.from("diff --git a/src/a.ts b/src/a.ts\n+unstaged\n"))
+      .mockResolvedValueOnce(Buffer.from("src/a.ts\0"))
+      .mockResolvedValueOnce(Buffer.from("diff --git a/src/b.ts b/src/b.ts\n+staged\n"))
+      .mockResolvedValueOnce(Buffer.from("src/b.ts\0"))
+      .mockResolvedValueOnce(Buffer.from("src/new.ts\0"));
+    const evidence = await executeTool(
+      createInspectGitDiffTool({
+        allowedRoot: process.cwd(),
+        runGit,
+      }),
+      { mode: "workspace", contextLines: 3, maxBytes: 65_536 },
+    );
+
+    expect(runGit).toHaveBeenCalledTimes(5);
+    expect(runGit.mock.calls[0]?.[0].args).not.toContain("--cached");
+    expect(runGit.mock.calls[2]?.[0].args).toContain("--cached");
+    expect(runGit.mock.calls.slice(0, 4).every(([invocation]) =>
+      invocation.args.includes(":(exclude,glob)**/.env")
+    )).toBe(true);
+    expect(evidence.output).toMatchObject({
+      mode: "workspace",
+      empty: false,
+      trackedPaths: ["src/a.ts", "src/b.ts"],
+      untrackedPaths: ["src/new.ts"],
+    });
+    expect(evidence.output?.diff).toContain("UNSTAGED PATCH:");
+    expect(evidence.output?.diff).toContain("STAGED PATCH:");
   });
 
   it("rejects unsupported input fields", async () => {

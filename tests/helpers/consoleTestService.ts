@@ -15,6 +15,7 @@ import { FileWorkspaceStore } from "../../src/workspaces/fileWorkspaceStore.js";
 import { agentImprovementAnalystAgent } from "../../src/agents/agentImprovement/agentImprovementAnalystAgent.js";
 import { documentationAuditorAgent } from "../../src/agents/documentationAuditor/documentationAuditorAgent.js";
 import { toolBuilderAgent } from "../../src/agents/toolBuilder/toolBuilderAgent.js";
+import { changeRiskReviewerAgent } from "../../src/agents/changeRiskReviewer/changeRiskReviewerAgent.js";
 
 export const consoleTestAgent = defineAgent({
   manifest: {
@@ -40,6 +41,7 @@ export async function createConsoleTestService(
   options: {
     includeCandidateWorkflow?: boolean;
     includeToolBuilder?: boolean;
+    includeChangeRiskReviewer?: boolean;
   } = {},
 ) {
   const directory = await mkdtemp(join(tmpdir(), "agent-console-"));
@@ -50,6 +52,9 @@ export async function createConsoleTestService(
   if (options.includeToolBuilder) {
     registrations.push(toolBuilderAgent);
   }
+  if (options.includeChangeRiskReviewer) {
+    registrations.push(changeRiskReviewerAgent);
+  }
   return {
     directory,
     service: new AgentApplicationService(
@@ -57,7 +62,8 @@ export async function createConsoleTestService(
       new FileArtifactStore(directory),
       new FileWorkspaceStore(join(directory, ".workbench", "workspaces.json"), directory),
       (workspaceRoot) =>
-        options.includeCandidateWorkflow
+        options.includeCandidateWorkflow ||
+            options.includeChangeRiskReviewer
           ? createPlatformToolRegistry(workspaceRoot)
           : new ToolRegistry([]),
       () => {

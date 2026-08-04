@@ -278,6 +278,11 @@ export interface ArtifactPresentation {
     pricingIds: string[];
   } | null;
   warnings: string[];
+  relatedArtifacts: Array<{
+    id: string;
+    kind: ArtifactSummary["kind"];
+    relationship: "source-improvement" | "tool-builder-proposal";
+  }>;
   improvement: {
     sourceExperimentIds: string[];
     evidenceItemCount: number;

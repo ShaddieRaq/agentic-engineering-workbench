@@ -95,6 +95,27 @@ export const artifactPresentationSchema = z.object({
   timeline: z.array(presentationTimelineStepSchema),
   usage: presentationUsageSchema.nullable(),
   warnings: z.array(z.string().min(1)),
+  relatedArtifacts: z
+    .array(
+      z
+        .object({
+          id: z.string().min(1),
+          kind: z.enum([
+            "agent-run",
+            "agent-dataset-run",
+            "agent-evaluation",
+            "agent-candidate-evaluation",
+            "agent-improvement-proposal",
+            "agent-promotion-decision",
+          ]),
+          relationship: z.enum([
+            "source-improvement",
+            "tool-builder-proposal",
+          ]),
+        })
+        .strict(),
+    )
+    .default([]),
   improvement: z
     .object({
       sourceExperimentIds: z.array(z.string().min(1)),

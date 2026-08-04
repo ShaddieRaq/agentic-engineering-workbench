@@ -30,6 +30,14 @@ export const changeRiskReviewerInputSchema = z
       .default(
         "Review the current repository changes, identify concrete risks, and recommend missing tests.",
       ),
+    sourceImprovement: z
+      .object({
+        artifactId: z.string().min(1),
+        recommendationIndex: z.number().int().nonnegative(),
+        toolBuilderRunArtifactId: z.string().min(1).optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 

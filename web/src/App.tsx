@@ -277,6 +277,101 @@ function ToolBuilderHandoffPanel({
   );
 }
 
+function ChangeRiskHandoffPanel({
+  proposalArtifactId,
+  recommendations,
+}: {
+  proposalArtifactId: string;
+  recommendations: Array<{
+    index: number;
+    recommendation: NonNullable<
+      ImprovementProposalArtifact["parsedOutput"]
+    >["recommendations"][number];
+  }>;
+}) {
+  const [toolBuilderRunArtifactId, setToolBuilderRunArtifactId] = useState("");
+  const [operationId, setOperationId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const operation = useOperation(operationId);
+
+  async function runHandoff(recommendationIndex: number) {
+    try {
+      const started = await api<Operation>(
+        `/api/improvement-proposals/${encodeURIComponent(proposalArtifactId)}/change-risk-reviewer-handoffs`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            recommendationIndex,
+            ...(toolBuilderRunArtifactId.trim()
+              ? {
+                  toolBuilderRunArtifactId:
+                    toolBuilderRunArtifactId.trim(),
+                }
+              : {}),
+          }),
+        },
+      );
+      setOperationId(started.operationId);
+      setError(null);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  return (
+    <section className="panel">
+      <div className="section-heading">
+        <div>
+          <span className="eyebrow">Applied-change evidence</span>
+          <h2>Review applied workspace changes</h2>
+        </div>
+        <StatusBadge value="engineering-change-required" />
+      </div>
+      <p>
+        Apply and review source changes first. The read-only reviewer will
+        inspect the proposal workspace&apos;s current staged, unstaged, and
+        untracked changes. It cannot write files or run commands, and it does
+        not treat proposal text as implemented code.
+      </p>
+      <label>
+        Tool Builder run artifact ID (optional)
+        <input
+          value={toolBuilderRunArtifactId}
+          onChange={(event) =>
+            setToolBuilderRunArtifactId(event.target.value)
+          }
+          placeholder="Link the exact Tool Builder proposal if one was used"
+        />
+      </label>
+      <div className="finding-list">
+        {recommendations.map(({ index, recommendation }) => (
+          <article className="detail-block" key={index}>
+            <div className="finding-heading">
+              <div>
+                <span className="eyebrow">{recommendation.category}</span>
+                <h3>{recommendation.title}</h3>
+              </div>
+              <StatusBadge value={recommendation.priority} />
+            </div>
+            <p>{recommendation.proposedChange}</p>
+            {!operation.data && (
+              <button
+                className="button button-secondary"
+                type="button"
+                onClick={() => void runHandoff(index)}
+              >
+                Run Change Risk Reviewer
+              </button>
+            )}
+          </article>
+        ))}
+      </div>
+      {error && <ErrorNotice message={error} />}
+      {operation.data && <OperationTrace operation={operation.data} />}
+    </section>
+  );
+}
+
 function PromotionDecisionPanel({
   candidateEvaluationId,
   gatesPassed,
@@ -436,6 +531,14 @@ function RunDetailPage() {
           recommendation.category === "tool-capability"
         )
       : [];
+  const changeRiskRecommendations =
+    proposal?.succeeded === true &&
+      proposal.policyEvaluation?.passed === true &&
+      proposal.parsedOutput?.disposition === "engineering-change-required"
+      ? proposal.parsedOutput.recommendations
+        .map((recommendation, index) => ({ recommendation, index }))
+        .filter(({ recommendation }) => recommendation.category !== "no-change")
+      : [];
   return (
     <>
       <ArtifactPresentationView presentation={presentation.data} rawArtifact={resource.data.artifact} />
@@ -449,6 +552,12 @@ function RunDetailPage() {
         <ToolBuilderHandoffPanel
           proposalArtifactId={artifactId}
           recommendations={toolBuilderRecommendations}
+        />
+      )}
+      {artifactId && changeRiskRecommendations.length > 0 && (
+        <ChangeRiskHandoffPanel
+          proposalArtifactId={artifactId}
+          recommendations={changeRiskRecommendations}
         />
       )}
       {candidate && (

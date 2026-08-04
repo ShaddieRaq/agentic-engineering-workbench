@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api, type ArtifactPresentation, type ArtifactSourceSnapshot } from "./api.js";
 import { ErrorNotice, StatusBadge } from "./components.js";
+import { LocalLink as Link } from "./router.js";
 
 function milliseconds(value: number | null): string {
   if (value === null) return "Not recorded";
@@ -53,6 +54,21 @@ export function ArtifactPresentationView({
       <a className="button button-secondary" href={`/api/artifacts/${presentation.artifactId}/export?format=json`} download>Download report JSON</a>
       <a className="button button-secondary" href={`/api/artifacts/${presentation.artifactId}/raw`} download>Download raw evidence</a>
     </div>
+    {!!(presentation.relatedArtifacts ?? []).length && (
+      <section className="panel">
+        <span className="eyebrow">Artifact lineage</span>
+        <h2>Related evidence</h2>
+        <div className="source-links">
+          {(presentation.relatedArtifacts ?? []).map((related) => (
+            <Link key={`${related.relationship}-${related.id}`} to={`/runs/${related.id}`}>
+              {related.relationship === "source-improvement"
+                ? "Source improvement proposal"
+                : "Tool Builder proposal"}
+            </Link>
+          ))}
+        </div>
+      </section>
+    )}
     <section className="metric-grid evidence-metrics">
       <div><span>Agent</span><strong className="metric-word">{presentation.agentId}</strong></div>
       <div><span>Workspace</span><strong className="metric-word">{presentation.workspaceId ?? "Legacy"}</strong></div>

@@ -100,7 +100,7 @@ export function OperationTrace({ operation }: { operation: Operation }) {
         ))}
       </ol>
       {operation.error && <ErrorNotice message={operation.error} />}
-      {artifactId && <Link className="button button-secondary" to={`/runs/${artifactId}`}>{operation.kind === "agent-improvement" ? "Inspect improvement proposal" : operation.kind === "agent-candidate-evaluation" ? "Inspect candidate comparison" : operation.agentId === "tool-builder" ? "Inspect Tool Builder proposal" : "Inspect persisted evidence"}</Link>}
+      {artifactId && <Link className="button button-secondary" to={`/runs/${artifactId}`}>{operation.kind === "agent-improvement" ? "Inspect improvement proposal" : operation.kind === "agent-candidate-evaluation" ? "Inspect candidate comparison" : operation.agentId === "tool-builder" ? "Inspect Tool Builder proposal" : operation.agentId === "change-risk-reviewer" ? "Inspect Change Risk review" : "Inspect persisted evidence"}</Link>}
       {evaluation && (
         <div className="verification-results">
           <article>

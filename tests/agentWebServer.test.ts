@@ -10,6 +10,7 @@ import {
 } from "./helpers/candidateComparisonFixture.js";
 import {
   createCandidateReadyImprovementAnalysis,
+  createSuccessfulToolBuilderRun,
   createToolCapabilityImprovementAnalysis,
 } from "./helpers/improvementProposalFixture.js";
 
@@ -369,6 +370,63 @@ describe("agent web server", () => {
             },
           },
           configuration: { permittedToolIds: [] },
+        },
+      },
+    });
+    expect(
+      (await service.artifacts.load(completed.result.artifactId)).kind,
+    ).toBe("agent-run");
+    await app.close();
+  });
+
+  it("reviews applied workspace changes with proposal lineage", async () => {
+    const { service } = await createConsoleTestService(true, {
+      includeChangeRiskReviewer: true,
+    });
+    const proposal = createToolCapabilityImprovementAnalysis();
+    const proposalReference =
+      await service.artifacts.saveAgentImprovementProposal(proposal);
+    const toolBuilderReference = await service.artifacts.saveAgentRun(
+      createSuccessfulToolBuilderRun({
+        proposalArtifactId: proposalReference.id,
+        recommendationIndex: 0,
+      }),
+    );
+    const app = await buildAgentWebServer({
+      service,
+      apiKeyConfigured: true,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url:
+        `/api/improvement-proposals/${proposalReference.id}/change-risk-reviewer-handoffs`,
+      payload: {
+        recommendationIndex: 0,
+        toolBuilderRunArtifactId: toolBuilderReference.id,
+      },
+    });
+    expect(response.statusCode).toBe(202);
+    expect(response.json()).toMatchObject({
+      kind: "agent-run",
+      agentId: "change-risk-reviewer",
+    });
+
+    const completed = await waitForCompletion(
+      app,
+      response.json().operationId,
+    );
+    expect(completed).toMatchObject({
+      status: "completed",
+      result: {
+        run: {
+          input: {
+            sourceImprovement: {
+              artifactId: proposalReference.id,
+              recommendationIndex: 0,
+              toolBuilderRunArtifactId: toolBuilderReference.id,
+            },
+          },
         },
       },
     });

@@ -325,6 +325,7 @@ describe("agent workbench web interface", () => {
       improvement: null,
     };
     let submittedBody: unknown = null;
+    let submittedRiskBody: unknown = null;
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);
       const body = path.endsWith("/api/workspaces")
@@ -338,6 +339,11 @@ describe("agent workbench web interface", () => {
                   submittedBody = JSON.parse(String(init.body)),
                   { operationId: "tool-builder-operation" }
                 )
+              : path.endsWith("/api/improvement-proposals/tool-handoff-proposal/change-risk-reviewer-handoffs") && init?.method === "POST"
+                ? (
+                    submittedRiskBody = JSON.parse(String(init.body)),
+                    { operationId: "change-risk-operation" }
+                  )
               : path.endsWith("/api/operations/tool-builder-operation")
                 ? {
                     operationId: "tool-builder-operation",
@@ -350,6 +356,18 @@ describe("agent workbench web interface", () => {
                     createdAt: "2026-08-03T23:10:01.000Z",
                     completedAt: "2026-08-03T23:10:02.000Z",
                   }
+                : path.endsWith("/api/operations/change-risk-operation")
+                  ? {
+                      operationId: "change-risk-operation",
+                      kind: "agent-run",
+                      agentId: "change-risk-reviewer",
+                      status: "completed",
+                      events: [],
+                      result: { artifactId: "change-risk-run" },
+                      error: null,
+                      createdAt: "2026-08-03T23:10:03.000Z",
+                      completedAt: "2026-08-03T23:10:04.000Z",
+                    }
                 : {};
       return new Response(JSON.stringify(body), {
         status: 200,
@@ -373,6 +391,30 @@ describe("agent workbench web interface", () => {
     expect(
       await screen.findByRole("link", { name: "Inspect Tool Builder proposal" }),
     ).toHaveAttribute("href", "/runs/tool-builder-run");
+    expect(
+      screen.getByRole("heading", {
+        name: "Review applied workspace changes",
+      }),
+    ).toBeInTheDocument();
+    fireEvent.change(
+      screen.getByLabelText("Tool Builder run artifact ID (optional)"),
+      { target: { value: "tool-builder-run" } },
+    );
+    expect(
+      screen.getAllByRole("button", { name: "Run Change Risk Reviewer" }),
+    ).toHaveLength(2);
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Run Change Risk Reviewer" })[0]!,
+    );
+    await waitFor(() =>
+      expect(submittedRiskBody).toEqual({
+        recommendationIndex: 0,
+        toolBuilderRunArtifactId: "tool-builder-run",
+      })
+    );
+    expect(
+      await screen.findByRole("link", { name: "Inspect Change Risk review" }),
+    ).toHaveAttribute("href", "/runs/change-risk-run");
   });
 
   it("connects experiment history, comparison, case results, and trial evidence", async () => {

@@ -256,12 +256,14 @@ creating another filesystem permission path. It accepts only files named
 identity, module type, scripts, and dependency maps. Arbitrary manifest fields
 are intentionally omitted from tool evidence.
 
-`inspect-git-diff` invokes Git with application-owned argument lists for either
-working-tree or staged changes. The caller may select only the mode, context
-line count, and requested byte limit. External diff drivers, text conversion,
-and color output are disabled. Working-tree evidence also uses a separate fixed
-Git query to report untracked paths without reading their contents. Diff and
-path evidence share one aggregate byte limit and deadline policy.
+`inspect-git-diff` invokes Git with application-owned argument lists for
+working-tree, staged, or combined workspace changes. The caller may select only
+the mode, context line count, and requested byte limit. External diff drivers,
+text conversion, and color output are disabled. Combined workspace evidence
+preserves staged and unstaged patches plus untracked paths without reading
+untracked contents. Denied path segments become Git exclusion pathspecs for raw
+patches and path queries, preventing denied evidence from entering prompts.
+Diff and path evidence share one aggregate byte limit and deadline policy.
 
 `run-verification-command` accepts a command identifier rather than command
 text. The application maps it to `npm run typecheck`, `npm test`, or one
@@ -1020,6 +1022,17 @@ background operation executes both sides, persists every dataset run and
 evaluation plus the comparison index, and links the operator to the existing
 gate and decision page. The proposal artifact ID becomes candidate lineage;
 promotion decisions may link only that exact proposal.
+
+An `engineering-change-required` proposal may also trigger Change Risk Reviewer
+after an operator applies source changes. The handoff fixes the proposal
+workspace and recommendation server-side, optionally validates a successful
+Tool Builder run with identical lineage, and stores those references in normal
+Change Risk Reviewer input. Repository inspection uses the combined workspace
+diff, and the model receives the bounded allowed patch plus current changed-file
+snapshots. Empty, failed, or incomplete evidence returns a deterministic failed
+review without a model call. Presentation projects backlinks to the source
+proposal and optional Tool Builder artifact; no source application or release
+authority is implied.
 
 The complete contracts, safeguards, delivery slices, and verification
 strategy are defined in

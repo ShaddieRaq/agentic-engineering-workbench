@@ -307,6 +307,9 @@ The project currently supports:
 - operator-triggered Tool Builder handoffs from policy-valid
   `engineering-change-required` tool-capability recommendations, with exact
   proposal/recommendation lineage and forced read-only proposal generation
+- operator-triggered Change Risk Reviewer handoffs that inspect bounded staged,
+  unstaged, and untracked workspace evidence, preserve proposal and optional
+  Tool Builder lineage, and skip model calls for empty or incomplete evidence
 
 ## Current Evaluators
 
@@ -397,6 +400,7 @@ Phase 40 Slice C immutable comparison evidence: complete foundation
 Phase 40 Slice C deterministic promotion gates: complete
 Phase 40 Slice D candidate workflow and promotion decisions: complete
 Phase 40 Slice D Tool Builder handoff: complete
+Phase 40 Slice D Change Risk Reviewer handoff: complete
 ```
 
 Verified test state:
@@ -404,7 +408,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 121 test files passed
-377 tests passed
+384 tests passed
 ```
 
 This state must be verified before continuing:
@@ -432,9 +436,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Link reviewed source changes to Change Risk Reviewer evidence. Keep Tool Builder
-outputs proposal-only and approval as a source-controlled release task, not an
-automatic registry or source mutation.
+Exercise Playwright Failure Triage against reviewed real failures. Keep Tool
+Builder outputs proposal-only and approval as a source-controlled release task,
+not an automatic registry or source mutation.
 
 ## Broader Roadmap
 

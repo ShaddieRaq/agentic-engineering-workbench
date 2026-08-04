@@ -8,7 +8,9 @@ import { deniedSegmentsFor } from "./repositoryPathPolicy.js";
 
 export const inspectGitDiffInputSchema = z
   .object({
-    mode: z.enum(["working-tree", "staged"]).default("working-tree"),
+    mode: z
+      .enum(["working-tree", "staged", "workspace"])
+      .default("working-tree"),
     contextLines: z.number().int().min(0).max(20).default(3),
     maxBytes: z.number().int().positive().max(1_000_000).default(65_536),
   })
@@ -16,7 +18,7 @@ export const inspectGitDiffInputSchema = z
 
 export const inspectGitDiffOutputSchema = z
   .object({
-    mode: z.enum(["working-tree", "staged"]),
+    mode: z.enum(["working-tree", "staged", "workspace"]),
     diff: z.string(),
     sizeBytes: z.number().int().nonnegative(),
     empty: z.boolean(),
@@ -49,6 +51,20 @@ export interface InspectGitDiffToolOptions {
   timeoutMs?: number;
   deniedPathSegments?: string[];
   runGit?: GitDiffRunner;
+}
+
+function deniedPathspecs(segments: ReadonlySet<string>): string[] {
+  return [
+    ".",
+    ...[...segments]
+      .sort((left, right) => left.localeCompare(right))
+      .flatMap((segment) => [
+        `:(exclude,glob)${segment}`,
+        `:(exclude,glob)${segment}/**`,
+        `:(exclude,glob)**/${segment}`,
+        `:(exclude,glob)**/${segment}/**`,
+      ]),
+  ];
 }
 
 function runGitDiff({
@@ -126,52 +142,59 @@ export function createInspectGitDiffTool(
     async execute(input): Promise<InspectGitDiffOutput> {
       const allowedRoot = await realpath(options.allowedRoot);
       const byteLimit = Math.min(input.maxBytes, maximumBytes);
-      const args = [
-        "diff",
-        "--no-ext-diff",
-        "--no-textconv",
-        "--no-color",
-        `--unified=${input.contextLines}`,
-        "--src-prefix=a/",
-        "--dst-prefix=b/",
-      ];
+      const deniedPathSegments = deniedSegmentsFor(
+        options.deniedPathSegments === undefined
+          ? { allowedRoot }
+          : {
+              allowedRoot,
+              deniedPathSegments: options.deniedPathSegments,
+            },
+      );
+      const pathspecs = deniedPathspecs(deniedPathSegments);
+      const modes = input.mode === "workspace"
+        ? ["working-tree", "staged"] as const
+        : [input.mode] as const;
+      const diffOutputs: Buffer[] = [];
+      const trackedPathOutputs: Buffer[] = [];
 
-      if (input.mode === "staged") {
-        args.push("--cached");
+      for (const mode of modes) {
+        const args = [
+          "diff",
+          "--no-ext-diff",
+          "--no-textconv",
+          "--no-color",
+          `--unified=${input.contextLines}`,
+          "--src-prefix=a/",
+          "--dst-prefix=b/",
+        ];
+        if (mode === "staged") args.push("--cached");
+        args.push("--", ...pathspecs);
+        diffOutputs.push(await runner({
+          cwd: allowedRoot,
+          args,
+          timeoutMs,
+          maximumBytes: byteLimit,
+        }));
+
+        const changedPathArgs = [
+          "diff",
+          "--no-ext-diff",
+          "--no-textconv",
+          "--name-only",
+          "-z",
+          "--diff-filter=ACMRTUXB",
+        ];
+        if (mode === "staged") changedPathArgs.push("--cached");
+        changedPathArgs.push("--", ...pathspecs);
+        trackedPathOutputs.push(await runner({
+          cwd: allowedRoot,
+          args: changedPathArgs,
+          timeoutMs,
+          maximumBytes: byteLimit,
+        }));
       }
 
-      args.push("--");
-
-      const output = await runner({
-        cwd: allowedRoot,
-        args,
-        timeoutMs,
-        maximumBytes: byteLimit,
-      });
-
-      const changedPathArgs = [
-        "diff",
-        "--no-ext-diff",
-        "--no-textconv",
-        "--name-only",
-        "-z",
-        "--diff-filter=ACMRTUXB",
-      ];
-
-      if (input.mode === "staged") {
-        changedPathArgs.push("--cached");
-      }
-
-      changedPathArgs.push("--");
-
-      const trackedPathOutput = await runner({
-        cwd: allowedRoot,
-        args: changedPathArgs,
-        timeoutMs,
-        maximumBytes: byteLimit,
-      });
-
-      const untrackedOutput = input.mode === "working-tree"
+      const untrackedOutput = input.mode !== "staged"
         ? await runner({
             cwd: allowedRoot,
             args: [
@@ -180,15 +203,34 @@ export function createInspectGitDiffTool(
               "--exclude-standard",
               "-z",
               "--",
+              ...pathspecs,
             ],
             timeoutMs,
             maximumBytes: byteLimit,
           })
         : Buffer.alloc(0);
 
+      const decoder = new TextDecoder("utf-8", { fatal: true });
+      const decodedDiffs = diffOutputs.map((output) => decoder.decode(output));
+      const diff = input.mode === "workspace"
+        ? [
+            decodedDiffs[0]
+              ? `UNSTAGED PATCH:\n${decodedDiffs[0]}`
+              : "",
+            decodedDiffs[1]
+              ? `STAGED PATCH:\n${decodedDiffs[1]}`
+              : "",
+          ].filter(Boolean).join("\n\n")
+        : decodedDiffs[0] ?? "";
+      const trackedPathTexts = trackedPathOutputs.map((output) =>
+        decoder.decode(output)
+      );
       if (
-        output.byteLength +
-          trackedPathOutput.byteLength +
+        Buffer.byteLength(diff) +
+          trackedPathOutputs.reduce(
+            (total, output) => total + output.byteLength,
+            0,
+          ) +
           untrackedOutput.byteLength >
         byteLimit
       ) {
@@ -196,21 +238,8 @@ export function createInspectGitDiffTool(
           `Git change evidence exceeds the ${byteLimit}-byte limit.`,
         );
       }
-
-      const diff = new TextDecoder("utf-8", { fatal: true }).decode(output);
-      const trackedPathText = new TextDecoder("utf-8", {
-        fatal: true,
-      }).decode(trackedPathOutput);
       const untrackedText = new TextDecoder("utf-8", { fatal: true }).decode(
         untrackedOutput,
-      );
-      const deniedPathSegments = deniedSegmentsFor(
-        options.deniedPathSegments === undefined
-          ? { allowedRoot }
-          : {
-              allowedRoot,
-              deniedPathSegments: options.deniedPathSegments,
-            },
       );
       const filterAllowedPaths = (text: string): string[] => text
         .split("\0")
@@ -221,13 +250,15 @@ export function createInspectGitDiffTool(
           ),
         )
         .sort((left, right) => left.localeCompare(right));
-      const trackedPaths = filterAllowedPaths(trackedPathText);
+      const trackedPaths = [
+        ...new Set(trackedPathTexts.flatMap(filterAllowedPaths)),
+      ].sort((left, right) => left.localeCompare(right));
       const untrackedPaths = filterAllowedPaths(untrackedText);
 
       return {
         mode: input.mode,
         diff,
-        sizeBytes: output.byteLength,
+        sizeBytes: Buffer.byteLength(diff),
         empty: trackedPaths.length === 0 && untrackedPaths.length === 0,
         trackedPaths,
         untrackedPaths,

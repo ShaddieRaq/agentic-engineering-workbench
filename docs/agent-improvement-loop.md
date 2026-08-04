@@ -57,10 +57,8 @@ The current platform already provides:
 - a Change Risk Reviewer
 - explicit tool allowlists and controlled verification commands
 
-The remaining boundaries are:
-
-- linked Change Risk Reviewer evidence after an operator applies a reviewed
-  source change
+The foundation boundaries are complete. Later experience intake remains a
+separate slice rather than an implicit extension of promotion authority.
 
 ## Roles and Responsibilities
 
@@ -436,7 +434,7 @@ Outcome: the workbench can demonstrate whether the candidate improved.
 
 ### Slice D — Promotion Decisions
 
-Status: Executable candidate and decision workflow complete; handoffs remain
+Status: Complete
 
 - **Complete:** immutable operator approve, reject, and revise decisions
 - **Complete:** approval blocked when automated gates fail
@@ -449,7 +447,9 @@ Status: Executable candidate and decision workflow complete; handoffs remain
   candidate; persists the comparison; and links to operator review
 - **Complete:** proposal-to-Tool-Builder handoff with cited recommendation
   derivation, forced no-side-effect execution, and structural source lineage
-- linked Change Risk Reviewer evidence after reviewed source changes
+- **Complete:** proposal-to-Change-Risk handoff that reviews actual bounded
+  workspace changes, blocks empty evidence before model execution, and
+  preserves proposal and optional Tool Builder lineage
 
 Outcome: the complete loop is usable while release remains deliberate.
 

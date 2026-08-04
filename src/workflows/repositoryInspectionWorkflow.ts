@@ -41,7 +41,7 @@ export interface RepositoryInspectionTools {
   >;
   gitChanges: ToolDefinition<
     {
-      mode: "working-tree" | "staged";
+      mode: "working-tree" | "staged" | "workspace";
       contextLines: number;
       maxBytes: number;
     },
@@ -120,7 +120,7 @@ export async function runRepositoryInspectionWorkflow(
     maxEntries: 50,
   });
   const changeEvidence = await executeTool(tools.gitChanges, {
-    mode: "working-tree",
+    mode: "workspace",
     contextLines: 3,
     maxBytes: 65_536,
   });

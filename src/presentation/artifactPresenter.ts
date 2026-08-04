@@ -1,4 +1,7 @@
 import type { StoredArtifact } from "../artifacts/artifactStore.js";
+import {
+  changeRiskReviewerInputSchema,
+} from "../agents/changeRiskReviewer/changeRiskReviewerAgent.js";
 import { artifactPresentationSchema, type ArtifactPresentation, type ArtifactSourceSnapshot } from "./artifactPresentation.js";
 import { getDocumentationAuditSource, presentDocumentationAudit } from "./documentationAuditPresentation.js";
 import { getPlaywrightFailureTriageSource, presentPlaywrightFailureTriage } from "./playwrightFailureTriagePresentation.js";
@@ -19,6 +22,29 @@ export function presentArtifact(artifactId: string, stored: StoredArtifact): Art
         : null;
     if (specialized) return specialized;
     const run = stored.artifact;
+    const changeRiskInput = run.agentId === "change-risk-reviewer"
+      ? changeRiskReviewerInputSchema.safeParse(run.input)
+      : null;
+    const sourceImprovement =
+      changeRiskInput?.success
+        ? changeRiskInput.data.sourceImprovement
+        : undefined;
+    const relatedArtifacts = sourceImprovement
+      ? [
+          {
+            id: sourceImprovement.artifactId,
+            kind: "agent-improvement-proposal" as const,
+            relationship: "source-improvement" as const,
+          },
+          ...(sourceImprovement.toolBuilderRunArtifactId
+            ? [{
+                id: sourceImprovement.toolBuilderRunArtifactId,
+                kind: "agent-run" as const,
+                relationship: "tool-builder-proposal" as const,
+              }]
+            : []),
+        ]
+      : [];
     return artifactPresentationSchema.parse({
       artifactId,
       artifactKind: stored.kind,
@@ -39,6 +65,7 @@ export function presentArtifact(artifactId: string, stored: StoredArtifact): Art
         { id: "persistence", label: "Evidence persistence", status: "completed", detail: `Immutable artifact ${artifactId} loaded through its runtime contract.`, durationMs: null },
       ],
       usage: null,
+      relatedArtifacts,
       warnings: [
         ...run.warnings,
         ...(specializedRequested ? ["The specialized documentation-audit presentation could not validate this artifact; generic evidence is shown instead."] : []),

@@ -6,6 +6,7 @@ import {
 } from "./helpers/candidateComparisonFixture.js";
 import {
   createCandidateReadyImprovementAnalysis,
+  createSuccessfulToolBuilderRun,
   createToolCapabilityImprovementAnalysis,
 } from "./helpers/improvementProposalFixture.js";
 
@@ -225,5 +226,84 @@ describe("AgentApplicationService", () => {
         recommendationIndex: 0,
       }),
     ).rejects.toThrow("successful, policy-valid");
+  });
+
+  it("reviews current workspace changes with exact improvement lineage", async () => {
+    const { service } = await createConsoleTestService(true, {
+      includeChangeRiskReviewer: true,
+    });
+    const proposal = createToolCapabilityImprovementAnalysis();
+    const proposalReference =
+      await service.artifacts.saveAgentImprovementProposal(proposal);
+    const toolBuilderRun = createSuccessfulToolBuilderRun({
+      proposalArtifactId: proposalReference.id,
+      recommendationIndex: 0,
+    });
+    const toolBuilderReference =
+      await service.artifacts.saveAgentRun(toolBuilderRun);
+
+    const result =
+      await service.handoffImprovementToChangeRiskReviewer({
+        proposalArtifactId: proposalReference.id,
+        recommendationIndex: 0,
+        toolBuilderRunArtifactId: toolBuilderReference.id,
+      });
+
+    expect(result.run).toMatchObject({
+      agentId: "change-risk-reviewer",
+      configuration: {
+        model: "gpt-5.4-mini",
+        workspaceId: "workbench",
+        permittedToolIds: [
+          "inspect-git-diff",
+          "inspect-package",
+          "list-files",
+          "read-file",
+        ],
+      },
+      input: {
+        sourceImprovement: {
+          artifactId: proposalReference.id,
+          recommendationIndex: 0,
+          toolBuilderRunArtifactId: toolBuilderReference.id,
+        },
+      },
+    });
+    expect(result.run.input).toMatchObject({
+      instruction: expect.stringContaining(
+        "Do not assume that proposal text or a Tool Builder output was applied",
+      ),
+    });
+    expect((await service.artifacts.load(result.artifactId)).kind).toBe(
+      "agent-run",
+    );
+  });
+
+  it("rejects mismatched Tool Builder lineage for Change Risk review", async () => {
+    const { service } = await createConsoleTestService(true, {
+      includeChangeRiskReviewer: true,
+    });
+    const proposal = createToolCapabilityImprovementAnalysis({
+      analysisRunId: "00000000-0000-4000-8000-000000000061",
+    });
+    const proposalReference =
+      await service.artifacts.saveAgentImprovementProposal(proposal);
+    const mismatchedRun = createSuccessfulToolBuilderRun({
+      proposalArtifactId: "another-proposal",
+      recommendationIndex: 0,
+      agentRunId: "00000000-0000-4000-8000-000000000062",
+    });
+    const toolBuilderReference =
+      await service.artifacts.saveAgentRun(mismatchedRun);
+
+    await expect(
+      service.handoffImprovementToChangeRiskReviewer({
+        proposalArtifactId: proposalReference.id,
+        recommendationIndex: 0,
+        toolBuilderRunArtifactId: toolBuilderReference.id,
+      }),
+    ).rejects.toThrow(
+      "Linked Tool Builder run does not match the improvement handoff lineage",
+    );
   });
 });

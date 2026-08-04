@@ -110,4 +110,33 @@ describe("artifact presentation", () => {
     expect(presentation.presentationKind).toBe("generic");
     expect(presentation.warnings).toContainEqual(expect.stringContaining("could not validate"));
   });
+
+  it("projects Change Risk lineage as related artifact links", () => {
+    const run = documentationRun();
+    run.agentId = "change-risk-reviewer";
+    run.input = {
+      instruction: "Review applied workspace changes.",
+      sourceImprovement: {
+        artifactId: "improvement-proposal",
+        recommendationIndex: 0,
+        toolBuilderRunArtifactId: "tool-builder-run",
+      },
+    };
+
+    expect(
+      presentArtifact("risk-review", { kind: "agent-run", artifact: run })
+        .relatedArtifacts,
+    ).toEqual([
+      {
+        id: "improvement-proposal",
+        kind: "agent-improvement-proposal",
+        relationship: "source-improvement",
+      },
+      {
+        id: "tool-builder-run",
+        kind: "agent-run",
+        relationship: "tool-builder-proposal",
+      },
+    ]);
+  });
 });

@@ -43,6 +43,7 @@ import {
 import {
   runFrozenAgentCandidateEvaluation,
 } from "./evaluations/agentCandidateEvaluationRunner.js";
+import { toolBuilderInputSchema } from "./toolBuilder/toolBuilderAgent.js";
 import {
   createAgentPromotionDecision,
   type AgentPromotionDecision,
@@ -113,6 +114,12 @@ export interface AgentCandidateEvaluationEvidence {
 export interface ToolBuilderHandoffRequest {
   proposalArtifactId: string;
   recommendationIndex: number;
+}
+
+export interface ChangeRiskReviewerHandoffRequest {
+  proposalArtifactId: string;
+  recommendationIndex: number;
+  toolBuilderRunArtifactId?: string;
 }
 
 export interface RecordPromotionDecisionRequest {
@@ -308,6 +315,14 @@ export class AgentApplicationService {
         `Improvement recommendation index is out of range: ${request.recommendationIndex}.`,
       );
     }
+    if (
+      recommendation.category === "no-change" ||
+      recommendation.evidenceIds.length === 0
+    ) {
+      throw new Error(
+        "Change Risk handoff requires an engineering recommendation with cited evidence.",
+      );
+    }
     if (recommendation.category !== "tool-capability") {
       throw new Error(
         "Only a tool-capability recommendation can create a Tool Builder handoff.",
@@ -349,6 +364,114 @@ export class AgentApplicationService {
         sourceImprovement: {
           artifactId: request.proposalArtifactId,
           recommendationIndex: request.recommendationIndex,
+        },
+      },
+    });
+  }
+
+  async handoffImprovementToChangeRiskReviewer(
+    request: ChangeRiskReviewerHandoffRequest,
+  ): Promise<RunAgentResponse> {
+    if (
+      !Number.isInteger(request.recommendationIndex) ||
+      request.recommendationIndex < 0
+    ) {
+      throw new Error(
+        "Change Risk handoff recommendation index must be a nonnegative integer.",
+      );
+    }
+    const stored = await this.artifacts.load(request.proposalArtifactId);
+    if (stored.kind !== "agent-improvement-proposal") {
+      throw new Error(
+        `Artifact ${request.proposalArtifactId} is not an improvement proposal.`,
+      );
+    }
+    const analysis = stored.artifact;
+    if (
+      !analysis.succeeded ||
+      analysis.parsedOutput === null ||
+      analysis.policyEvaluation?.passed !== true
+    ) {
+      throw new Error(
+        "Only a successful, policy-valid improvement proposal can create a Change Risk handoff.",
+      );
+    }
+    if (analysis.parsedOutput.disposition !== "engineering-change-required") {
+      throw new Error(
+        "Only an engineering-change-required proposal can create a Change Risk handoff.",
+      );
+    }
+    const recommendation =
+      analysis.parsedOutput.recommendations[request.recommendationIndex];
+    if (!recommendation) {
+      throw new Error(
+        `Improvement recommendation index is out of range: ${request.recommendationIndex}.`,
+      );
+    }
+    const availableEvidenceIds = new Set(
+      analysis.packet.evidenceItems.map(({ id }) => id),
+    );
+    const missingEvidenceId = recommendation.evidenceIds.find(
+      (evidenceId) => !availableEvidenceIds.has(evidenceId),
+    );
+    if (missingEvidenceId) {
+      throw new Error(
+        `Change Risk handoff cites unavailable evidence: ${missingEvidenceId}.`,
+      );
+    }
+
+    if (request.toolBuilderRunArtifactId) {
+      const toolBuilderStored = await this.artifacts.load(
+        request.toolBuilderRunArtifactId,
+      );
+      if (
+        toolBuilderStored.kind !== "agent-run" ||
+        toolBuilderStored.artifact.agentId !== "tool-builder" ||
+        !toolBuilderStored.artifact.succeeded
+      ) {
+        throw new Error(
+          "Linked Tool Builder artifact must be a successful Tool Builder run.",
+        );
+      }
+      const toolBuilderInput = toolBuilderInputSchema.safeParse(
+        toolBuilderStored.artifact.input,
+      );
+      if (
+        !toolBuilderInput.success ||
+        toolBuilderInput.data.sourceImprovement?.artifactId !==
+          request.proposalArtifactId ||
+        toolBuilderInput.data.sourceImprovement.recommendationIndex !==
+          request.recommendationIndex ||
+        toolBuilderStored.artifact.configuration.workspaceId !==
+          analysis.packet.execution.workspaceId
+      ) {
+        throw new Error(
+          "Linked Tool Builder run does not match the improvement handoff lineage.",
+        );
+      }
+    }
+
+    return this.run({
+      agentId: "change-risk-reviewer",
+      workspaceId: analysis.packet.execution.workspaceId,
+      input: {
+        instruction: [
+          `Review the actual current workspace changes for ${analysis.packet.subject.agentId}@${analysis.packet.subject.agentVersion}.`,
+          `Improvement recommendation: ${recommendation.title}`,
+          `Rationale: ${recommendation.rationale}`,
+          `Intended change: ${recommendation.proposedChange}`,
+          "Determine whether the observed diff plausibly implements this recommendation and identify concrete risks and missing tests.",
+          "Do not assume that proposal text or a Tool Builder output was applied; use only current workspace evidence.",
+        ].join("\n"),
+        sourceImprovement: {
+          artifactId: request.proposalArtifactId,
+          recommendationIndex: request.recommendationIndex,
+          ...(request.toolBuilderRunArtifactId
+            ? {
+                toolBuilderRunArtifactId:
+                  request.toolBuilderRunArtifactId,
+              }
+            : {}),
         },
       },
     });

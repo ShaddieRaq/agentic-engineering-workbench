@@ -2218,3 +2218,35 @@ reviewable and machine-checkable.
 - no handoff can authorize writes, commands, dependencies, or registration
 - historical direct Tool Builder inputs remain valid because lineage is optional
 - generated files remain reviewable proposal evidence, not applied changes
+
+---
+
+## Decision 080 — Review Real Workspace Changes, Not Proposal Text
+
+Status: Accepted
+
+### Decision
+
+Allow an operator to hand one cited recommendation from a successful,
+policy-valid `engineering-change-required` proposal to Change Risk Reviewer.
+Inspect the proposal workspace's combined staged, unstaged, and untracked
+change evidence at execution time. Preserve proposal and optional matching Tool
+Builder lineage in normal agent-run input, include only bounded allowed patch
+evidence in the model prompt, and skip the model when evidence is empty,
+failed, or incomplete.
+
+### Rationale
+
+Generated proposal text is not evidence that source changes were applied.
+Reviewing the current Git-visible workspace preserves the distinction between
+intended and actual behavior. A combined diff prevents staged-only changes from
+being omitted, while Git pathspec exclusions prevent denied files from leaking
+through raw patch text.
+
+### Consequences
+
+- the handoff cannot claim that observed changes implement the recommendation
+- the proposal workspace and recommendation are derived server-side
+- optional Tool Builder evidence must match proposal, recommendation, and workspace
+- clean or incomplete repositories produce persisted failed evidence without a model call
+- Change Risk Reviewer remains read-only and cannot apply, verify, or release changes

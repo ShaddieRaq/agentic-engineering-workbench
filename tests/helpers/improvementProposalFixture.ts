@@ -16,6 +16,8 @@ import {
 import {
   documentationAuditorBaselinePolicy,
 } from "../../src/agents/documentationAuditor/documentationAuditorPolicy.js";
+import type { AgentRunResult } from "../../src/agents/agentRunResult.js";
+import { toolBuilderAgent } from "../../src/agents/toolBuilder/toolBuilderAgent.js";
 
 export function createCandidateReadyImprovementAnalysis(
   options: {
@@ -183,4 +185,48 @@ export function createToolCapabilityImprovementAnalysis(
     policyEvaluation,
     succeeded: policyEvaluation.passed,
   });
+}
+
+export function createSuccessfulToolBuilderRun(input: {
+  agentRunId?: string;
+  proposalArtifactId: string;
+  recommendationIndex: number;
+  workspaceId?: string;
+}): AgentRunResult {
+  return {
+    agentRunId:
+      input.agentRunId ?? "00000000-0000-4000-8000-000000000060",
+    agentId: toolBuilderAgent.manifest.id,
+    agentVersion: toolBuilderAgent.manifest.version,
+    manifestDigest: digestJsonEvidence(toolBuilderAgent.manifest),
+    manifest: toolBuilderAgent.manifest,
+    input: {
+      request: "Propose one bounded read-only repository inventory tool.",
+      allowSideEffects: false,
+      additionalConstraints: [],
+      sourceImprovement: {
+        artifactId: input.proposalArtifactId,
+        recommendationIndex: input.recommendationIndex,
+      },
+    },
+    configuration: {
+      model: toolBuilderAgent.manifest.defaultModel,
+      permittedToolIds: [],
+      workspaceId: input.workspaceId ?? "workbench",
+    },
+    warnings: [],
+    output: {
+      succeeded: true,
+      disposition: "propose",
+      summary: "A bounded proposal was produced.",
+    },
+    assessment: {
+      passed: true,
+      message: "Tool proposal completed within the authoring safety policy.",
+    },
+    failure: null,
+    succeeded: true,
+    durationMs: 1,
+    completedAt: "2026-08-03T23:20:00.000Z",
+  };
 }

@@ -81,7 +81,7 @@ function createTools(
       inspectGitDiffInputSchema,
       inspectGitDiffOutputSchema,
       {
-        mode: "working-tree",
+        mode: "workspace",
         diff: "",
         sizeBytes: 0,
         empty: true,

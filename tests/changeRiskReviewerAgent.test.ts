@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { platformAgentRegistry } from "../src/agents/platformAgentRegistry.js";
 import { runAgent } from "../src/agents/agentRunner.js";
-import type { AIProvider } from "../src/providers/aiProvider.js";
+import type {
+  AIProvider,
+  AIProviderRequest,
+} from "../src/providers/aiProvider.js";
 import {
   inspectGitDiffInputSchema,
   inspectGitDiffOutputSchema,
@@ -79,7 +82,7 @@ describe("changeRiskReviewerAgent", () => {
         outputSchema: inspectGitDiffOutputSchema,
         async execute() {
           return {
-            mode: "working-tree" as const,
+            mode: "workspace" as const,
             diff: "+ changed",
             sizeBytes: 9,
             empty: false,
@@ -105,8 +108,10 @@ describe("changeRiskReviewerAgent", () => {
         },
       },
     ]);
+    let observedPrompt = "";
     const provider: AIProvider = {
-      async generate<TOutput>() {
+      async generate<TOutput>(request: AIProviderRequest<TOutput>) {
+        observedPrompt = request.prompt;
         return {
           rawOutput: "structured review",
           parsedOutput: {
@@ -138,7 +143,13 @@ describe("changeRiskReviewerAgent", () => {
 
     const result = await runAgent(
       "change-risk-reviewer",
-      {},
+      {
+        sourceImprovement: {
+          artifactId: "improvement-proposal",
+          recommendationIndex: 1,
+          toolBuilderRunArtifactId: "tool-builder-run",
+        },
+      },
       {
         agents: platformAgentRegistry,
         tools,
@@ -159,6 +170,15 @@ describe("changeRiskReviewerAgent", () => {
         overallRisk: "medium",
         releaseRecommendation: "caution",
       },
+      input: {
+        sourceImprovement: {
+          artifactId: "improvement-proposal",
+          recommendationIndex: 1,
+          toolBuilderRunArtifactId: "tool-builder-run",
+        },
+      },
     });
+    expect(observedPrompt).toContain("OBSERVED CHANGE PATCH:");
+    expect(observedPrompt).toContain("+ changed");
   });
 });
