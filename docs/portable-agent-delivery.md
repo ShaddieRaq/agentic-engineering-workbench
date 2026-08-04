@@ -48,6 +48,18 @@ A second laptop is ready only when a fresh private clone can:
 The local workspace registry and historical run artifacts are intentionally not
 portable. Each machine establishes its own approved workspaces and evidence.
 
+The repository provides one offline health-check path:
+
+```bash
+npm ci
+npm run portability:check
+```
+
+This verifies the supported Node runtime, lockfile, required scripts, local-data
+Git exclusions, type checking, tests, production web build, and registered-agent
+catalog. Provider configuration is optional for this check and remains required
+only for live model execution.
+
 ## Existing-Agent Acceptance Set
 
 Before connecting an employer repository, verify:

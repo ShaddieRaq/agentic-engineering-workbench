@@ -29,6 +29,22 @@ inside explicit contracts, permissions, workflows, assessment, and evidence.
 - Prefer visible evidence: code, tests, logs, and reports.
 - Start with one orchestrator rather than multiple autonomous agents.
 
+## Verify a Clean Clone
+
+Use a supported Node runtime and install exactly from the committed lockfile:
+
+```bash
+npm ci
+npm run portability:check
+```
+
+The portability check requires Node `20.19.0` or newer, verifies local-data Git
+exclusions, runs TypeScript and Vitest checks, builds the web client, and
+validates the agent catalog without making a model call. A missing
+`OPENAI_API_KEY` is reported as a warning because offline verification remains
+valid. Configure the key separately in an uncommitted `.env` only when live
+model runs are required.
+
 ## Open the Agent Workbench
 
 Build and start the loopback-only web console:

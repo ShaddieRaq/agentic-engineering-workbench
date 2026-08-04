@@ -875,8 +875,10 @@ delivering proven agents independently of the Workbench for interactive use.
 
 Delivery:
 
-1. Clean-clone setup and health-check path covering install, typecheck, tests,
-   local environment configuration, server startup, and workspace registration.
+1. **Local path complete; fresh-clone verification pending:** Clean-clone setup
+   and offline health check covering runtime, lockfile, local-data exclusions,
+   typecheck, tests, web build, and agent catalog. Server startup, workspace
+   registration, and live provider access remain machine-specific acceptance.
 2. Machine-local workspace registry and run evidence with explicit exclusions
    for credentials, employer repositories, datasets, and artifacts.
 3. Acceptance checks using existing registered agents against a sanitized
@@ -894,7 +896,8 @@ Detailed boundary:
 
 ## Current Priorities
 
-1. Build and verify the clean-clone portability path.
+1. Push privately and verify the clean-clone portability path on the approved
+   second laptop.
 2. Run the existing-agent acceptance checks on a sanitized external workspace.
 3. Define the canonical standalone-agent export contract.
 4. Export one proven agent without a Workbench runtime dependency.

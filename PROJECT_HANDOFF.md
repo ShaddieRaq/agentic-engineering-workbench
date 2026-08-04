@@ -330,6 +330,9 @@ The project currently supports:
   hidden cross-agent disposition cases
 - live cross-agent improvement validation covering candidate-ready,
   engineering-change-required, evaluation-gap, and self-evaluation outcomes
+- an offline `npm run portability:check` path covering the supported Node
+  runtime, lockfile, local-data exclusions, typecheck, tests, web build, and
+  registered-agent catalog without requiring an API key
 
 ## Current Evaluators
 
@@ -424,14 +427,15 @@ Phase 40 Slice D Change Risk Reviewer handoff: complete
 Documentation Auditor protected non-regression coverage: complete
 General-agent live improvement validation matrix: complete
 Playwright Failure Triage live improvement validation: deliberately deferred
+Phase 41 clean-clone health check: complete locally
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-121 test files passed
-386 tests passed
+122 test files passed
+389 tests passed
 ```
 
 This state must be verified before continuing:
@@ -459,10 +463,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Prepare private-laptop portability and standalone agent delivery. The Workbench
-is the personal authoring and evaluation lab; the distributable product is an
-approved agent or runner-specific package. Keep Playwright Failure Triage as
-the final agent validation milestone.
+Push the private repository and validate `npm ci` plus
+`npm run portability:check` from a fresh clone on the approved second laptop.
+Then run existing-agent acceptance checks against a sanitized external
+workspace before registering employer-controlled source.
 
 ## Broader Roadmap
 

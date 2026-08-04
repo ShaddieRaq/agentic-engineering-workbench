@@ -24,8 +24,13 @@
     "assist-repository": "tsx src/runRepositoryAssistant.ts",
     "replay": "tsx src/runReplay.ts",
     "report": "tsx src/runReport.ts",
+    "portability:preflight": "tsx src/runPortabilityPreflight.ts",
+    "portability:check": "npm run portability:preflight && npm run typecheck && npm test && npm run web:build && npm run agents -- validate",
     "typecheck": "tsc --noEmit && tsc -p web/tsconfig.json --noEmit",
     "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   },
   "keywords": [],
   "author": "",
