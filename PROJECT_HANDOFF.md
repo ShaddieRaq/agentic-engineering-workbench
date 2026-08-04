@@ -336,6 +336,31 @@ The project currently supports:
 - an offline `npm run portability:check` path covering the supported Node
   runtime, lockfile, local-data exclusions, typecheck, tests, web build, and
   registered-agent catalog without requiring an API key
+- a Foundry module (`src/foundry/`) for the Agentic Project Foundry direction:
+  versioned, immutable Project Brief artifacts with per-entry provenance
+  (`user-stated`, `agent-inferred`, `unresolved`), hash-chained version lineage,
+  and independently verifiable acceptance criteria
+- operator approve/reject/revise brief decisions pinned to exact version and
+  digest, with a hard approval block while unresolved entries or open
+  questions remain
+- a hardened Foundry artifact store (`runs/foundry/`) with root-bounded paths,
+  exclusive writes, and deterministic `{briefId}-v{version}` /
+  `{briefId}-t{turn}` artifact identities that fail loudly on collisions
+- a registered no-tool `project-intake@0.1.0` agent producing content-only
+  brief drafts, provenance-honest entries, intent-typed questions, and
+  severity-ranked open issues through strict structured output
+- a deterministic `IntakeSessionController` that loops single-shot intake
+  turns with all conversation state held in brief artifacts, never model
+  context
+- intake-turn evidence records linking operator answers, agent-run artifacts,
+  and resulting brief versions, including persisted model-failure turns
+- interview budget counted by successful turns via the brief version chain,
+  with failed attempts bounded by a consecutive-failure retry cap
+- an operator intake CLI: `npm run foundry -- intake-start`, `intake-turn`
+  with question-linked answers, `intake-status`, plus `brief-create`,
+  `brief-show`, `brief-list`, `brief-lineage`, and `brief-decide`
+- per-turn provenance-conversion metrics tracking how interview answers turn
+  inferred and unresolved content into user-stated content
 
 ## Current Evaluators
 
@@ -431,14 +456,19 @@ Documentation Auditor protected non-regression coverage: complete
 General-agent live improvement validation matrix: complete
 Playwright Failure Triage live improvement validation: deliberately deferred
 Phase 41 clean-clone health check: complete locally
+Foundry Slice 1 project brief artifact boundary: complete
+Foundry Slice 2 intake controller and project-intake agent: complete,
+live-validated end to end (real interview reached ready-for-decision)
+Foundry Slice 3 intake verification datasets: not started
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-122 test files passed
-390 tests passed
+132 test files passed
+459 tests passed
+npm run agents -- validate passed (7 agents)
 ```
 
 This state must be verified before continuing:
@@ -464,12 +494,32 @@ Each run records the matched scenario ID or explicit `null`.
 When a scenario exposes an output schema, the CLI passes it through
 `SimpleHarness` to the provider request.
 
+## Foundry Direction
+
+The Workbench is expanding toward an Agentic Project Foundry: a conversational
+idea is interrogated into an approved Project Brief, then (in later phases)
+planned, scaffolded, implemented in bounded slices, and independently
+evaluated. The first milestone is the Intake Agent only; it produces briefs
+and never generates code. Decisions on record:
+
+- Intake uses a deterministic controller looping single-shot turns; the model
+  never holds conversation state and never fabricates identity or lineage.
+- Batched questions per turn are an accepted UX tradeoff over fluid chat.
+- Approval hard-blocks briefs with unresolved entries or open questions.
+- Sequencing: build the Intake Agent first, then use it as the first export
+  subject to Claude Code, exercising the untested export lifecycle.
+
+Live-validated learnings encoded in code: models cite question ids as entry
+references (schema rejects the turn; the prompt now forbids it), and
+final-turn blocking reports without questions are legitimate.
+
 ## Immediate Next Step
 
-Commit, push, and pull the per-run Documentation Auditor scope boundary into the
-clean clone. Re-run the blind `test_app` audit with `apps/` excluded, then use
-the resulting inventory evidence to decide whether exhaustive batching is still
-needed.
+Foundry Slice 3: version-matched `project-intake` verification datasets with
+hidden expectations, encoding the observed live failure modes (invalid entry
+references, provenance honesty, entry-id preservation, final-turn behavior),
+wired into `manifest.verification` so `npm run agents -- test project-intake`
+becomes a meaningful gate.
 
 ## Broader Roadmap
 
