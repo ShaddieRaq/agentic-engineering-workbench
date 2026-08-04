@@ -121,19 +121,28 @@ export class IntakeSessionController {
     briefId: string;
     answers: IntakeOperatorAnswer[];
   }): Promise<IntakeTurnResult> {
-    const previous = await this.#loadLatestTurnRecord(input.briefId);
+    const records = await this.#loadTurnRecords(input.briefId);
+    const previous = records[records.length - 1] ?? null;
     if (previous === null) {
       throw new Error(
         `Brief ${input.briefId} has no intake turns. Use startIntake first.`,
       );
     }
-    if (previous.status !== "awaiting-answers") {
+    if (previous.status !== "awaiting-answers" && previous.status !== "model-failure") {
       throw new Error(
         `Intake for brief ${input.briefId} is ${previous.status} and cannot accept answers.`,
       );
     }
 
-    const knownQuestionIds = new Set(previous.nextQuestions.map(({ id }) => id));
+    // After a model failure the interview resumes against the questions from
+    // the last successful turn; a first-turn failure leaves none to cite.
+    const questionSource =
+      previous.status === "model-failure"
+        ? [...records].reverse().find(({ status }) => status === "awaiting-answers")
+        : previous;
+    const knownQuestionIds = new Set(
+      (questionSource?.nextQuestions ?? []).map(({ id }) => id),
+    );
     for (const answer of input.answers) {
       if (answer.questionId !== null && !knownQuestionIds.has(answer.questionId)) {
         throw new Error(
@@ -289,22 +298,24 @@ export class IntakeSessionController {
     return record;
   }
 
-  async #loadLatestTurnRecord(briefId: string): Promise<IntakeTurnRecord | null> {
+  async #loadTurnRecords(briefId: string): Promise<IntakeTurnRecord[]> {
     const { artifacts } = await this.#store.list({
       kind: "intake-turn",
       briefId,
       limit: 500,
     });
-    if (artifacts.length === 0) return null;
 
-    let latest: IntakeTurnRecord | null = null;
+    const records: IntakeTurnRecord[] = [];
     for (const summary of artifacts) {
       const stored = await this.#store.load(summary.id);
       if (stored.kind !== "intake-turn") continue;
-      if (latest === null || stored.artifact.turnNumber > latest.turnNumber) {
-        latest = stored.artifact;
-      }
+      records.push(stored.artifact);
     }
-    return latest;
+    return records.sort((left, right) => left.turnNumber - right.turnNumber);
+  }
+
+  async #loadLatestTurnRecord(briefId: string): Promise<IntakeTurnRecord | null> {
+    const records = await this.#loadTurnRecords(briefId);
+    return records[records.length - 1] ?? null;
   }
 }

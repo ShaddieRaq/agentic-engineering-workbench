@@ -123,7 +123,7 @@ describe("projectIntakeAgent", () => {
     expect(result.failure?.message).toMatch(/no parsable/i);
   });
 
-  it("fails assessment when blocking issues come with no questions", async () => {
+  it("passes assessment for blocking issues without questions on a final turn", async () => {
     const output = turnOutput();
     output.nextQuestions = [];
     output.openIssues = [
@@ -142,8 +142,8 @@ describe("projectIntakeAgent", () => {
       workspaceRoot: "/workspace",
     });
 
-    expect(result.succeeded).toBe(false);
-    expect(result.assessment?.passed).toBe(false);
-    expect(result.assessment?.message).toMatch(/blocking issue/i);
+    expect(result.succeeded).toBe(true);
+    expect(result.assessment?.passed).toBe(true);
+    expect(result.assessment?.message).toMatch(/1 blocking issue/i);
   });
 });

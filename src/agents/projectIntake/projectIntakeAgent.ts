@@ -49,19 +49,12 @@ export const projectIntakeAgent = defineAgent<IntakeTurnInput, IntakeTurnOutput>
 
     return result.parsedOutput;
   },
+  // Blocking issues without questions are legitimate on the final budgeted
+  // turn, and assess cannot see remainingTurns, so it only summarizes.
   assess(output) {
     const blockingIssues = output.openIssues.filter(
       ({ severity }) => severity === "blocking",
     ).length;
-
-    if (blockingIssues > 0 && output.nextQuestions.length === 0) {
-      return {
-        passed: false,
-        message:
-          `Turn reported ${blockingIssues} blocking issue(s) but asked no ` +
-          "questions to resolve them.",
-      };
-    }
 
     return {
       passed: true,

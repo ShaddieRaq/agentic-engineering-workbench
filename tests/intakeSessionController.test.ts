@@ -242,6 +242,63 @@ describe("IntakeSessionController", () => {
     }
   });
 
+  it("resumes with a retry turn after a model failure", async () => {
+    const goal = {
+      id: randomUUID(),
+      text: "Track daily habits",
+      source: "user-stated" as const,
+    };
+    const q1 = question([goal.id]);
+    const openQuestion = {
+      id: randomUUID(),
+      question: "Which platforms must be supported?",
+      relatedEntryIds: [goal.id],
+    };
+    const { controller, store } = await createController([
+      {
+        kind: "output",
+        output: {
+          updatedBriefDraft: content({
+            goals: [goal],
+            openQuestions: [openQuestion],
+          }),
+          nextQuestions: [{ ...q1, intent: "confirm-inferred" }],
+          openIssues: [],
+        },
+      },
+      { kind: "failure", message: "Model cited an invalid entry." },
+      {
+        kind: "output",
+        output: {
+          updatedBriefDraft: content({ goals: [goal] }),
+          nextQuestions: [],
+          openIssues: [],
+        },
+      },
+    ]);
+
+    const started = await controller.startIntake({
+      title: "Habit tracker",
+      idea: "Track habits.",
+      maxTurns: 5,
+    });
+    const answers = [{ questionId: q1.id, answer: "Goal confirmed." }];
+
+    await expect(
+      controller.runTurn({ briefId: started.brief.briefId, answers }),
+    ).rejects.toThrowError(/invalid entry/i);
+
+    const retried = await controller.runTurn({
+      briefId: started.brief.briefId,
+      answers,
+    });
+    expect(retried.record.turnNumber).toBe(3);
+    expect(retried.record.status).toBe("ready-for-decision");
+
+    const { artifacts } = await store.list({ kind: "intake-turn" });
+    expect(artifacts).toHaveLength(3);
+  });
+
   it("rejects answers citing unknown question ids before calling the model", async () => {
     const { controller, agentService } = await createController([
       {
