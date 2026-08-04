@@ -5,10 +5,27 @@ import { deniedSegmentsFor, resolveAllowedRepositoryPath } from "./repositoryPat
 import type { ToolDefinition } from "./toolDefinition.js";
 import { ToolTimeoutError } from "./toolTimeoutError.js";
 
+export const fileInventoryExcludedPathSchema = z
+  .string()
+  .min(1)
+  .max(500)
+  .refine(
+    (value) =>
+      !value.startsWith("/")
+      && !value.startsWith("\\")
+      && !/^[a-zA-Z]:[\\/]/u.test(value)
+      && !value.split(/[\\/]/u).includes(".."),
+    "Excluded paths must remain within the repository root.",
+  );
+
 export const fileInventoryInputSchema = z
   .object({
     path: z.string().min(1).default("."),
     extensions: z.array(z.string().regex(/^\.[a-zA-Z0-9]+$/)).max(30).default([]),
+    excludedPaths: z
+      .array(fileInventoryExcludedPathSchema)
+      .max(50)
+      .default([]),
     maxFiles: z.number().int().positive().max(2_000).default(500),
     maxDepth: z.number().int().nonnegative().max(20).default(8),
   })
@@ -61,6 +78,12 @@ export function createFileInventoryTool(
       const resolved = await resolveAllowedRepositoryPath(options, input.path);
       const denied = deniedSegmentsFor(options);
       const extensionFilter = new Set(input.extensions.map((value) => value.toLowerCase()));
+      const excludedPrefixes = input.excludedPaths.map((value) =>
+        value
+          .replaceAll("\\", "/")
+          .replace(/^\.\//u, "")
+          .replace(/\/+$/u, "")
+      );
       const limit = Math.min(input.maxFiles, maximumFiles);
       const deadline = performance.now() + timeoutMs;
       const entries: FileInventoryOutput["entries"] = [];
@@ -75,9 +98,20 @@ export function createFileInventoryTool(
         }
       }
 
+      function isExcluded(target: string): boolean {
+        const relativePath = relative(resolved.allowedRoot, target)
+          .replaceAll("\\", "/");
+        return excludedPrefixes.some(
+          (prefix) =>
+            prefix === ""
+            || relativePath === prefix
+            || relativePath.startsWith(`${prefix}/`),
+        );
+      }
+
       async function visit(target: string, depth: number): Promise<void> {
         checkDeadline();
-        if (truncated) return;
+        if (truncated || isExcluded(target)) return;
         const metadata = await stat(target);
         if (metadata.isFile()) {
           filesObserved += 1;
@@ -101,11 +135,23 @@ export function createFileInventoryTool(
         directoriesVisited += 1;
         if (depth >= input.maxDepth) {
           const children = await readdir(target, { withFileTypes: true });
-          if (children.some((entry) => !entry.isSymbolicLink() && !denied.has(entry.name))) truncated = true;
+          if (
+            children.some(
+              (entry) =>
+                !entry.isSymbolicLink()
+                && !denied.has(entry.name)
+                && !isExcluded(resolve(target, entry.name)),
+            )
+          ) truncated = true;
           return;
         }
         const children = (await readdir(target, { withFileTypes: true }))
-          .filter((entry) => !entry.isSymbolicLink() && !denied.has(entry.name))
+          .filter(
+            (entry) =>
+              !entry.isSymbolicLink()
+              && !denied.has(entry.name)
+              && !isExcluded(resolve(target, entry.name)),
+          )
           .sort((left, right) => left.name.localeCompare(right.name));
         for (const child of children) {
           await visit(resolve(target, child.name), depth + 1);

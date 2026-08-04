@@ -133,6 +133,7 @@ export async function runDocumentationAudit(
   maximumContextFiles =
     documentationAuditorBaselinePolicy.contextSelection.defaultMaximumFiles,
   policy: DocumentationAuditorPolicy = documentationAuditorBaselinePolicy,
+  excludedPaths: string[] = [],
 ): Promise<DocumentationAuditResult> {
   const startedAt = performance.now();
   const validatedPolicy = documentationAuditorPolicySchema.parse(policy);
@@ -142,6 +143,7 @@ export async function runDocumentationAudit(
   const inventory = await executeTool(tools.inventory, {
     path: ".",
     extensions: [],
+    excludedPaths,
     maxFiles: 1_000,
     maxDepth: 10,
   });

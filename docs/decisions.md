@@ -2316,3 +2316,33 @@ evaluation, and controlled automation.
 - provider approval remains necessary because local execution may still send
   selected context to an external model service
 - Playwright and Jenkins evidence remains in employer-controlled storage
+
+---
+
+## Decision 083 — Declare Audit Scope Per Run
+
+Status: Accepted
+
+### Decision
+
+Allow Documentation Auditor runs to exclude explicit repository-relative paths
+before inventory limits are applied. Validate exclusions as root-contained,
+exclusion-only input and persist them in ordinary tool-call evidence. Do not
+globally deny project-structure names such as `apps`, because the same path may
+be fixture code in one workspace and product code in another.
+
+### Rationale
+
+A blind audit of `test_app` reached its 1,000-file inventory boundary primarily
+because `apps/` contained test applications and generated framework output.
+Post-inventory filtering would still consume the budget and produce misleading
+coverage. Per-run scope expresses operator intent while preserving reusable
+agent behavior across different repository structures.
+
+### Consequences
+
+- full coverage claims apply only to the declared audit scope
+- excluded paths are visible in immutable run evidence
+- exclusions reduce context and cost but cannot grant additional access
+- generated-directory defaults remain a separate cross-project policy decision
+- exhaustive batching is considered only after irrelevant paths are removed

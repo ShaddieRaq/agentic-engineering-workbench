@@ -283,6 +283,9 @@ The project currently supports:
 - a Documentation Auditor instruction and context-selection revision policy
 - an evidence-approved Documentation Auditor `1.1.1` baseline that recognizes
   AsciiDoc `.adoc` files without expanding tool permissions
+- a Documentation Auditor `1.2.0` input boundary for explicit per-run path
+  exclusions, preventing project-specific fixtures from consuming inventory or
+  model context while preserving the selected scope in run evidence
 - a registered protected Documentation Auditor dataset that participates in
   every frozen candidate comparison while remaining outside optimizer context
 - subject-owned in-memory candidate construction without source mutation
@@ -435,7 +438,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 122 test files passed
-389 tests passed
+390 tests passed
 ```
 
 This state must be verified before continuing:
@@ -463,10 +466,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Push the private repository and validate `npm ci` plus
-`npm run portability:check` from a fresh clone on the approved second laptop.
-Then run existing-agent acceptance checks against a sanitized external
-workspace before registering employer-controlled source.
+Commit, push, and pull the per-run Documentation Auditor scope boundary into the
+clean clone. Re-run the blind `test_app` audit with `apps/` excluded, then use
+the resulting inventory evidence to decide whether exhaustive batching is still
+needed.
 
 ## Broader Roadmap
 

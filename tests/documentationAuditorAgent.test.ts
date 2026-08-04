@@ -41,11 +41,18 @@ describe("DocumentationAuditor", () => {
   it("audits local documentation through bounded tools and citation validation", async () => {
     const root = await mkdtemp(join(tmpdir(), "documentation-auditor-"));
     await mkdir(join(root, "src"));
+    await mkdir(join(root, "apps"));
     await writeFile(join(root, "README.adoc"), "Run npm run old-command.");
     await writeFile(join(root, "package.json"), JSON.stringify({ scripts: { test: "vitest" } }));
     await writeFile(join(root, "src", "index.ts"), "export const active = true;");
+    await writeFile(
+      join(root, "apps", "fixture.md"),
+      "THIS TEST FIXTURE MUST NOT ENTER AUDIT CONTEXT.",
+    );
+    let observedPrompt = "";
     const provider: AIProvider = {
-      async generate<TOutput>() {
+      async generate<TOutput>(request: AIProviderRequest<TOutput>) {
+        observedPrompt = request.prompt;
         return {
           rawOutput: "structured audit",
           parsedOutput: {
@@ -66,13 +73,17 @@ describe("DocumentationAuditor", () => {
         };
       },
     };
-    const result = await runAgent("documentation-auditor", {}, {
+    const result = await runAgent(
+      "documentation-auditor",
+      { excludedPaths: ["apps/"] },
+      {
       agents: platformAgentRegistry,
       tools: createPlatformToolRegistry(root),
       provider,
       workspaceRoot: root,
       workspaceId: "fixture",
-    });
+      },
+    );
     expect(result).toMatchObject({
       succeeded: true,
       configuration: { workspaceId: "fixture" },
@@ -81,6 +92,9 @@ describe("DocumentationAuditor", () => {
         findings: [{ category: "stale" }],
       },
     });
+    expect(observedPrompt).not.toContain(
+      "THIS TEST FIXTURE MUST NOT ENTER AUDIT CONTEXT.",
+    );
   });
 
   it("constructs an in-memory candidate only through validated policy", async () => {
@@ -113,6 +127,7 @@ describe("DocumentationAuditor", () => {
     expect(candidate.inputSchema.parse({})).toEqual({
       instruction: "Run the candidate documentation audit.",
       maximumContextFiles: 2,
+      excludedPaths: [],
     });
     expect(candidate.revisionSurface?.baselinePolicy).toEqual(
       surface!.baselinePolicy,

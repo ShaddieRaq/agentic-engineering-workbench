@@ -110,6 +110,11 @@ Start the console with `npm run web`, select a workspace, open
 reads a bounded selection of documentation and implementation files, and
 returns evidence-linked findings without changing the project.
 
+Use the guided `excludedPaths` input to omit repository-relative fixture or
+generated trees that are outside the audit target. Enter one path per line, for
+example `apps/`. Exclusions apply during inventory rather than after selection,
+and the exact scope remains in saved run evidence.
+
 The same operation is available from the CLI:
 
 ```bash

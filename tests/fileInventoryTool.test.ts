@@ -9,16 +9,19 @@ describe("file-inventory", () => {
   it("returns bounded deterministic files while excluding denied paths and symlinks", async () => {
     const root = await mkdtemp(join(tmpdir(), "file-inventory-"));
     await mkdir(join(root, "docs"));
+    await mkdir(join(root, "apps"));
     await mkdir(join(root, ".git"));
     await writeFile(join(root, "README.md"), "readme");
     await writeFile(join(root, "docs", "guide.md"), "guide");
     await writeFile(join(root, "docs", "note.txt"), "note");
+    await writeFile(join(root, "apps", "fixture.md"), "fixture");
     await writeFile(join(root, ".git", "secret.md"), "secret");
     await symlink(join(root, "docs"), join(root, "linked-docs"));
 
     const evidence = await executeTool(createFileInventoryTool({ allowedRoot: root }), {
       path: ".",
       extensions: [".md"],
+      excludedPaths: ["apps/"],
       maxFiles: 10,
       maxDepth: 5,
     });
@@ -29,6 +32,22 @@ describe("file-inventory", () => {
       "README.md",
     ]);
     expect(evidence.output?.truncated).toBe(false);
+  });
+
+  it("rejects exclusions outside the repository root", async () => {
+    const root = await mkdtemp(join(tmpdir(), "file-inventory-exclusion-"));
+    const result = await executeTool(createFileInventoryTool({ allowedRoot: root }), {
+      path: ".",
+      extensions: [],
+      excludedPaths: ["../outside"],
+      maxFiles: 10,
+      maxDepth: 2,
+    });
+
+    expect(result).toMatchObject({
+      succeeded: false,
+      failure: { category: "validation" },
+    });
   });
 
   it("reports truncation when the requested file limit is reached", async () => {

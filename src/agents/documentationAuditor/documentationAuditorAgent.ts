@@ -1,5 +1,9 @@
 import { z } from "zod";
-import type { FileInventoryInput, FileInventoryOutput } from "../../tools/fileInventoryTool.js";
+import {
+  fileInventoryExcludedPathSchema,
+  type FileInventoryInput,
+  type FileInventoryOutput,
+} from "../../tools/fileInventoryTool.js";
 import type { ReadFileInput, ReadFileOutput } from "../../tools/readFileTool.js";
 import {
   defineAgent,
@@ -32,6 +36,13 @@ function createDocumentationAuditorInputSchema(
       .min(2)
       .max(30)
       .default(policy.contextSelection.defaultMaximumFiles),
+    excludedPaths: z
+      .array(fileInventoryExcludedPathSchema)
+      .max(50)
+      .default([])
+      .describe(
+        "Repository-relative files or directories to omit from this audit, such as apps/ when it contains test fixtures.",
+      ),
   })
   .strict();
 }
@@ -59,7 +70,7 @@ export function createDocumentationAuditorAgent(
     manifest: {
       id: "documentation-auditor",
       name: "Documentation Auditor",
-      version: "1.1.1",
+      version: "1.2.0",
       status: "active",
       description: "Finds stale, inconsistent, missing, and accurate repository documentation using cited local evidence.",
       owner: "local-platform",
@@ -103,6 +114,7 @@ export function createDocumentationAuditorAgent(
         input.instruction,
         input.maximumContextFiles,
         effectivePolicy,
+        input.excludedPaths,
       );
       return {
         auditRunId: result.auditRunId,

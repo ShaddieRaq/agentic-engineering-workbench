@@ -898,8 +898,11 @@ Detailed boundary:
 
 1. Push privately and verify the clean-clone portability path on the approved
    second laptop.
-2. Run the existing-agent acceptance checks on a sanitized external workspace.
-3. Define the canonical standalone-agent export contract.
-4. Export one proven agent without a Workbench runtime dependency.
-5. Exercise Playwright Failure Triage against reviewed real failures as the
+2. Re-run Documentation Auditor on the blind `test_app` workspace with its
+   fixture `apps/` tree explicitly excluded, then measure scoped coverage.
+3. Add evidence-backed model qualification before treating a cheaper model as
+   approved for an agent and task profile.
+4. Define the canonical standalone-agent export contract.
+5. Export one proven agent without a Workbench runtime dependency.
+6. Exercise Playwright Failure Triage against reviewed real failures as the
    final agent validation milestone.

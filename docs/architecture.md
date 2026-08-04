@@ -1168,6 +1168,12 @@ bounded file inventory -> balanced context selection -> bounded file reads
 The auditor is read-only. It receives only `file-inventory` and `read-file`,
 balances documentation and implementation context under an aggregate byte
 budget, and accepts findings only when their cited paths were actually read.
+Each run may declare repository-relative `excludedPaths`. The inventory tool
+validates those paths as exclusion-only scope, omits matching files and
+descendants before counting its bounded inventory, and preserves the exact
+input in tool-call evidence. Project-specific directories such as fixture
+`apps/` trees are therefore excluded explicitly rather than becoming unsafe
+global denials for every workspace.
 
 ## Artifact Presentation and Export
 

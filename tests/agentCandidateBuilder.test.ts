@@ -130,7 +130,7 @@ describe("buildAgentCandidate", () => {
     expect(candidate.evidence).toMatchObject({
       identity: {
         subjectAgentId: "documentation-auditor",
-        baseVersion: "1.1.1",
+        baseVersion: "1.2.0",
         candidateId: "00000000-0000-4000-8000-000000000001",
         proposalId: "proposal-1",
       },
