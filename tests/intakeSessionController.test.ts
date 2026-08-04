@@ -297,6 +297,39 @@ describe("IntakeSessionController", () => {
 
     const { artifacts } = await store.list({ kind: "intake-turn" });
     expect(artifacts).toHaveLength(3);
+
+    const status = await controller.status(started.brief.briefId);
+    expect(status.completedTurns).toBe(2);
+    expect(status.attempts).toBe(3);
+  });
+
+  it("stops retrying after consecutive model failures", async () => {
+    const { controller, store, agentService } = await createController([
+      { kind: "failure", message: "First failure." },
+      { kind: "failure", message: "Second failure." },
+    ]);
+
+    await expect(
+      controller.startIntake({ title: "Habit tracker", idea: "Track habits." }),
+    ).rejects.toThrowError(/First failure/);
+
+    const { artifacts } = await store.list({ kind: "project-brief" });
+    const briefId = artifacts[0]!.briefId;
+
+    await expect(
+      controller.runTurn({
+        briefId,
+        answers: [{ questionId: null, answer: "Retry once." }],
+      }),
+    ).rejects.toThrowError(/Second failure/);
+
+    await expect(
+      controller.runTurn({
+        briefId,
+        answers: [{ questionId: null, answer: "Retry twice." }],
+      }),
+    ).rejects.toThrowError(/consecutive turns/i);
+    expect(agentService.calls).toHaveLength(2);
   });
 
   it("rejects answers citing unknown question ids before calling the model", async () => {

@@ -62,9 +62,12 @@ async function collectAnswers(
 
 function renderTurn(result: IntakeTurnResult): void {
   const { brief, record } = result;
+  const completedTurns = brief.version - 1;
   console.log(`Brief: ${brief.briefId} (version ${brief.version})`);
   console.log(
-    `Turn ${record.turnNumber}/${record.maxTurns}: ${record.status}`,
+    `Turn ${completedTurns}/${record.maxTurns}` +
+      (record.turnNumber === completedTurns ? "" : ` (attempt ${record.turnNumber})`) +
+      `: ${record.status}`,
   );
 
   if (record.nextQuestions.length > 0) {

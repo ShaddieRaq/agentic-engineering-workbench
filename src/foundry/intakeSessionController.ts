@@ -16,6 +16,10 @@ import type { ProjectBriefService } from "./projectBriefService.js";
 
 export const PROJECT_INTAKE_AGENT_ID = "project-intake";
 
+// Failed turns do not consume interview budget, so retries need their own
+// bound to keep model spend finite.
+export const MAX_CONSECUTIVE_TURN_FAILURES = 2;
+
 // Structural subset of AgentApplicationService.run so tests can script turns
 // without fabricating complete agent-run artifacts.
 export interface IntakeAgentRunService {
@@ -38,7 +42,8 @@ export interface IntakeStatusReport {
   briefId: string;
   briefVersion: number;
   status: IntakeTurnRecord["status"];
-  turnNumber: number;
+  completedTurns: number;
+  attempts: number;
   maxTurns: number;
   nextQuestions: IntakeTurnRecord["nextQuestions"];
   openIssues: IntakeTurnRecord["openIssues"];
@@ -48,7 +53,7 @@ export interface IntakeStatusReport {
 export function deriveIntakeStatus(
   brief: ProjectBrief,
   output: IntakeTurnOutput,
-  turnNumber: number,
+  completedTurns: number,
   maxTurns: number,
 ): IntakeTurnRecord["status"] {
   const hasBlockingIssues = output.openIssues.some(
@@ -71,7 +76,7 @@ export function deriveIntakeStatus(
   ) {
     return "ready-for-decision";
   }
-  if (turnNumber >= maxTurns) return "turn-budget-exhausted";
+  if (completedTurns >= maxTurns) return "turn-budget-exhausted";
   return "awaiting-answers";
 }
 
@@ -134,6 +139,18 @@ export class IntakeSessionController {
       );
     }
 
+    let trailingFailures = 0;
+    for (let index = records.length - 1; index >= 0; index -= 1) {
+      if (records[index]!.status !== "model-failure") break;
+      trailingFailures += 1;
+    }
+    if (trailingFailures >= MAX_CONSECUTIVE_TURN_FAILURES) {
+      throw new Error(
+        `Intake for brief ${input.briefId} failed ${trailingFailures} consecutive turns; ` +
+          "review the model-failure evidence before retrying.",
+      );
+    }
+
     // After a model failure the interview resumes against the questions from
     // the last successful turn; a first-turn failure leaves none to cite.
     const questionSource =
@@ -181,7 +198,8 @@ export class IntakeSessionController {
       briefId,
       briefVersion: brief.version,
       status: record.status,
-      turnNumber: record.turnNumber,
+      completedTurns: brief.version - 1,
+      attempts: record.turnNumber,
       maxTurns: record.maxTurns,
       nextQuestions: record.nextQuestions,
       openIssues: record.openIssues,
@@ -197,11 +215,15 @@ export class IntakeSessionController {
     maxTurns: number;
   }): Promise<IntakeTurnResult> {
     const startedAt = new Date().toISOString();
+    // Interview progress is the brief version chain, not the attempt count:
+    // every successful turn appends exactly one version, so failed attempts
+    // never consume budget.
+    const completedTurns = turn.currentBrief.version - 1;
     const agentInput = {
       briefContent: briefContentOf(turn.currentBrief),
       operatorAnswers: turn.operatorAnswers,
-      turnNumber: turn.turnNumber,
-      remainingTurns: Math.max(turn.maxTurns - turn.turnNumber, 0),
+      turnNumber: completedTurns + 1,
+      remainingTurns: Math.max(turn.maxTurns - completedTurns - 1, 0),
     };
 
     let agentRunArtifactId: string | null = null;
@@ -244,7 +266,7 @@ export class IntakeSessionController {
     const status = deriveIntakeStatus(
       resultingBrief,
       output,
-      turn.turnNumber,
+      resultingBrief.version - 1,
       turn.maxTurns,
     );
 
