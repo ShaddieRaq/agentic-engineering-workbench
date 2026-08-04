@@ -432,6 +432,14 @@ explicit and auditable. The manifest and registration contracts form the later
 extraction boundary for separate packages; dynamic plugins and a database
 catalog are not required at the current local-first scale.
 
+The Workbench is the private authoring and evaluation control plane, not the
+required runtime product for interactive consumers. A future export boundary
+will project an approved canonical agent into runner-specific packages while
+preserving version, policy, permissions, and evidence provenance. The Workbench
+runner remains available for reviewed CI automation. Workspace registrations,
+credentials, run artifacts, and employer evidence remain machine-local and are
+not part of agent export.
+
 ### Harness Definition
 
 A harness definition contains reusable execution or evaluation policy.
@@ -954,6 +962,15 @@ excluded, invoke the tool-free `agent-improvement-analyst`, validate its exact
 evidence citations, and persist a specialized proposal artifact. The proposal
 view exposes failure modes, recommendations, evidence IDs, policy results,
 model usage, and raw evidence without changing the subject agent.
+
+Improvement prompts define explicit disposition and recommendation-category
+boundaries. Subject instructions, context, workflow, tool capability, output
+contract, and implementation changes route to engineering work when no revision
+surface exists. Measurement-only evaluator or dataset deficiencies route to
+evaluation-gap. Subjects without revision surfaces must return a null candidate
+patch; candidate-enabled subjects must replace complete allowlisted top-level
+fields rather than emitting nested patch paths. Deterministic proposal policy
+remains authoritative when model output violates these instructions.
 
 Registrations may now opt into a runtime-validated revision surface containing
 a frozen baseline policy, an exact top-level mutable-field allowlist, and a

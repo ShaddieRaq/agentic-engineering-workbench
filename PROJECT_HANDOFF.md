@@ -11,6 +11,13 @@ The project combines two ideas:
 
 The goal is to learn how reliable agent systems are built around a model while creating reusable engineering infrastructure.
 
+The Workbench is the user's private authoring, evaluation, and improvement lab.
+The eventual distributable product is an approved agent, repository-native
+bundle, or CI runner integration—not a requirement that another team adopt the
+Workbench. Employer repositories, datasets, credentials, and run evidence must
+remain in employer-controlled environments and outside this personal source
+repository.
+
 The project is not intended to be:
 
 - a ChatGPT web workflow
@@ -316,6 +323,13 @@ The project currently supports:
 - operator-triggered Change Risk Reviewer handoffs that inspect bounded staged,
   unstaged, and untracked workspace evidence, preserve proposal and optional
   Tool Builder lineage, and skip model calls for empty or incomplete evidence
+- explicit Improvement Analyst disposition routing, recommendation-category
+  boundaries, complete top-level candidate replacements, and mandatory null
+  candidate patches for subjects without revision surfaces
+- an evidence-tested `agent-improvement-analyst@0.2.0` that passes all five
+  hidden cross-agent disposition cases
+- live cross-agent improvement validation covering candidate-ready,
+  engineering-change-required, evaluation-gap, and self-evaluation outcomes
 
 ## Current Evaluators
 
@@ -408,6 +422,8 @@ Phase 40 Slice D candidate workflow and promotion decisions: complete
 Phase 40 Slice D Tool Builder handoff: complete
 Phase 40 Slice D Change Risk Reviewer handoff: complete
 Documentation Auditor protected non-regression coverage: complete
+General-agent live improvement validation matrix: complete
+Playwright Failure Triage live improvement validation: deliberately deferred
 ```
 
 Verified test state:
@@ -415,7 +431,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 121 test files passed
-385 tests passed
+386 tests passed
 ```
 
 This state must be verified before continuing:
@@ -443,9 +459,10 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Harden candidate-patch guidance so the Improvement Analyst reliably emits
-complete top-level revision fields without requiring an operator retry. Keep
-Playwright Failure Triage as the final agent validation milestone.
+Prepare private-laptop portability and standalone agent delivery. The Workbench
+is the personal authoring and evaluation lab; the distributable product is an
+approved agent or runner-specific package. Keep Playwright Failure Triage as
+the final agent validation milestone.
 
 ## Broader Roadmap
 
@@ -453,8 +470,10 @@ Playwright Failure Triage as the final agent validation milestone.
    first executable candidate subject.
 2. Add protected evaluation cases, frozen candidate comparison, and promotion
    decision evidence.
-3. Exercise Playwright Failure Triage against reviewed real failures.
-4. Add isolated compilation and tests for approved Tool Builder proposals.
-5. Export proven agents to runner-specific packages when ready for use.
-6. Extract agents or replace filesystem persistence only when demonstrated
+3. Prepare a clean-clone setup and portability verification on the other laptop.
+4. Export proven agents to runner-specific packages without a Workbench runtime
+   dependency for interactive use.
+5. Add isolated compilation and tests for approved Tool Builder proposals.
+6. Exercise Playwright Failure Triage against reviewed real failures.
+7. Extract agents or replace filesystem persistence only when demonstrated
    ownership, deployment, permission, or query requirements demand it.

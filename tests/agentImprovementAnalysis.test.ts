@@ -123,8 +123,46 @@ describe("buildAgentImprovementPrompt", () => {
       "Evidence-packet omission or truncation describes analyst context selection only",
     );
     expect(prompt).toContain("Do not return candidate-ready");
+    expect(prompt).toContain("candidatePolicyPatch MUST be exactly null");
+    expect(prompt).toContain(
+      "evaluator/dataset work alone is not an engineering-change-required disposition",
+    );
+    expect(prompt).toContain(
+      "Do not use evaluation-gap when evidence already supports a narrower change",
+    );
+    expect(prompt).toContain(
+      "include a no-change recommendation because no modification is currently justified",
+    );
+    expect(prompt).toContain(
+      "context-policy: context selection, ordering, prioritization",
+    );
+    expect(prompt).toContain(
+      "tool-capability over workflow-policy or evaluator when the required capability itself is absent",
+    );
     expect(prompt).toContain("case:documentation-health");
     expect(prompt).toContain("Do not add tools.");
+  });
+
+  it("requires complete top-level replacements for candidate patches", () => {
+    const input = packet();
+    input.revisionSurface = {
+      mutableFields: ["instructions"],
+      baselinePolicy: {
+        instructions: {
+          roleLines: ["Use supplied evidence."],
+          defaultTaskInstruction: "Audit documentation.",
+        },
+      },
+    };
+
+    const prompt = buildAgentImprovementPrompt(input);
+
+    expect(prompt).toContain(
+      "change.field MUST exactly equal one listed top-level field",
+    );
+    expect(prompt).toContain(
+      "complete replacement value for that top-level field",
+    );
   });
 });
 

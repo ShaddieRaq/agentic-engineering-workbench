@@ -837,6 +837,10 @@ Delivery:
    read-only Tool Builder run.
 9. **Complete:** Operator-triggered Change Risk Reviewer handoff over the real
    bounded workspace diff, with proposal and optional Tool Builder lineage.
+10. **Complete:** Live general-agent validation across Documentation Auditor,
+    Tool Builder, Change Risk Reviewer, Repository Assistant, and Improvement
+    Analyst. Explicit routing guidance raised the Analyst hidden-case result
+    from 1/5 to 5/5; Playwright remains deliberately deferred.
 
 Required safeguards:
 
@@ -860,11 +864,39 @@ Deferred deliberately:
 - Jenkins- or Playwright-specific improvement architecture
 - production feedback ingestion before the local loop is proven
 
+## Phase 41 — Portable Agent Delivery
+
+Status: Planned
+
+Goal:
+
+Make the private Workbench reproducible on another approved laptop while
+delivering proven agents independently of the Workbench for interactive use.
+
+Delivery:
+
+1. Clean-clone setup and health-check path covering install, typecheck, tests,
+   local environment configuration, server startup, and workspace registration.
+2. Machine-local workspace registry and run evidence with explicit exclusions
+   for credentials, employer repositories, datasets, and artifacts.
+3. Acceptance checks using existing registered agents against a sanitized
+   project before connecting an employer-controlled repository.
+4. A canonical agent export contract followed by runner-specific packaging for
+   Claude Code, Cursor, and Codex without requiring the Workbench at runtime.
+5. Workbench runner use for reviewed CI integrations such as Jenkins or GitHub
+   Actions after interactive agent behavior is proven.
+6. Playwright Failure Triage validation against reviewed real failures as the
+   final agent milestone, after a controlled failure set exists.
+
+Detailed boundary:
+
+- [`docs/portable-agent-delivery.md`](portable-agent-delivery.md)
+
 ## Current Priorities
 
-1. Harden Improvement Analyst patch guidance around complete top-level revision
-   fields using the observed Documentation Auditor retry.
-2. Continue proving source-controlled releases without auto-promotion.
-3. Export proven agents into Claude Code and other runner-specific packages.
-4. Exercise Playwright Failure Triage against reviewed real failures as the
+1. Build and verify the clean-clone portability path.
+2. Run the existing-agent acceptance checks on a sanitized external workspace.
+3. Define the canonical standalone-agent export contract.
+4. Export one proven agent without a Workbench runtime dependency.
+5. Exercise Playwright Failure Triage against reviewed real failures as the
    final agent validation milestone.

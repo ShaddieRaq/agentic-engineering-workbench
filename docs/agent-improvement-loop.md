@@ -460,6 +460,32 @@ Status: Complete
 
 Outcome: the complete loop is usable while release remains deliberate.
 
+### Live General-Agent Validation
+
+Status: Complete except deliberately deferred Playwright validation
+
+- **Documentation Auditor:** candidate-ready proposal improved a controlled
+  context-policy failure from 0% to 100%, passed applicable gates, received
+  operator approval, and produced the released AsciiDoc policy.
+- **Tool Builder:** a saved 2/3 evaluation produced a grounded
+  engineering-change-required proposal with workflow and output-contract
+  recommendations and no candidate patch.
+- **Change Risk Reviewer:** a clean-workspace failure produced a grounded
+  evaluation-gap proposal rather than inventing unobserved source risks.
+- **Repository Assistant:** a minimal documentation-only workspace produced a
+  grounded evaluation-gap proposal for non-Git/non-package coverage and better
+  failure traces, with no executable candidate.
+- **Improvement Analyst:** its first hidden five-case run passed 1/5. Explicit
+  no-revision output boundaries, disposition routing, and recommendation
+  category precedence raised subsequent runs to 2/5, 4/5, and finally 5/5.
+- **Playwright Failure Triage:** intentionally deferred until a reviewed failure
+  set exists in the approved target environment.
+
+The live runs also demonstrated why deterministic policy validation remains
+necessary: model outputs repeatedly attached candidate patches to subjects
+without revision surfaces, and those proposals were rejected before any
+candidate execution.
+
 ### Slice E — Experience Intake
 
 - reviewed operational feedback contract

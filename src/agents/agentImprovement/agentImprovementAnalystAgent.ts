@@ -53,7 +53,7 @@ export const agentImprovementAnalystAgent = defineAgent({
   manifest: {
     id: "agent-improvement-analyst",
     name: "Agent Improvement Analyst",
-    version: "0.1.0",
+    version: "0.2.0",
     status: "experimental",
     description:
       "Analyzes bounded evaluation evidence and produces grounded, policy-checked agent improvement proposals.",

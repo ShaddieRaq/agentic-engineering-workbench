@@ -2279,3 +2279,40 @@ do not represent equivalent work.
 - differing success outcomes retain evidence but produce no operational ratio
 - promotion still requires a measured improvement and no applicable regression
 - absolute latency or cost budgets would require a separate future policy
+
+---
+
+## Decision 082 — Distribute Agents, Not The Private Workbench
+
+Status: Accepted
+
+### Decision
+
+Treat the Agentic Engineering Workbench as the user's private authoring,
+evaluation, improvement, and CI-runner environment. Deliver approved agents for
+interactive use as runner-specific, repository-native packages that do not
+require consumers to adopt the Workbench. Preserve the Workbench runner as an
+option for reviewed Jenkins or GitHub Actions integrations.
+
+Keep workspace registrations, provider credentials, run artifacts, and
+employer-specific source or evidence machine-local. Employer material may be
+processed only in an approved employer-controlled environment and is never
+embedded in this personal repository or a generic agent export.
+
+### Rationale
+
+The reusable product is the agent's reviewed behavior, contracts, and bounded
+capabilities. Requiring the complete development lab would create unnecessary
+adoption and confidentiality coupling. Separate exports allow each interactive
+host to use its normal runner while the Workbench continues to supply evidence,
+evaluation, and controlled automation.
+
+### Consequences
+
+- clean-clone portability is verified separately from agent export
+- exports must preserve version, policy, permissions, and approval provenance
+- host adapters may not silently broaden tools or alter agent behavior
+- local registries and historical evidence do not transfer through Git
+- provider approval remains necessary because local execution may still send
+  selected context to an external model service
+- Playwright and Jenkins evidence remains in employer-controlled storage
