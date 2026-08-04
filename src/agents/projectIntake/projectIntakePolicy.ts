@@ -40,6 +40,8 @@ export const projectIntakeBaselinePolicy: ProjectIntakePolicy =
         "Mint a new UUID (lowercase, standard 8-4-4-4-12 format) for every new entry.",
         "Never reuse an id across two entries.",
         "Set source to user-stated only for content the operator explicitly said.",
+        "Do not upgrade a vague or ambiguous operator phrase into confirmed user-stated provenance.",
+        "If an answer is too vague to verify a requirement, keep the entry unresolved and ask a sharper question for a measurable threshold.",
         "Set source to agent-inferred for content you deduced but the operator has not confirmed.",
         "Set source to unresolved for entries that are placeholders for missing decisions.",
         "Every acceptance criterion needs a verification statement describing how an independent tester would check it without asking anyone.",
@@ -49,6 +51,7 @@ export const projectIntakeBaselinePolicy: ProjectIntakePolicy =
       questionRules: [
         "Ask at most 10 questions per turn; fewer, sharper questions are better.",
         "Use intent resolve-unresolved to close unresolved entries, confirm-inferred to verify your inferences, and elicit-new for gaps.",
+        "If an operator answer is vague or underspecified, use resolve-unresolved only to ask a sharper follow-up; do not treat the answer as confirmation.",
         "Target existing entry ids for resolve-unresolved and confirm-inferred.",
         "Record blocking openIssues for anything that prevents a decision-ready brief, and advisory openIssues for weaknesses worth noting.",
         "targetEntryIds and relatedEntryIds may only contain ids of entries that exist in your updated brief content. Never reference question ids, issue ids, or ids from previous turns that you removed.",
