@@ -22,6 +22,7 @@
     "inspect-repository": "tsx src/runRepositoryInspection.ts",
     "analyze-repository": "tsx src/runRepositoryAnalysis.ts",
     "assist-repository": "tsx src/runRepositoryAssistant.ts",
+    "foundry": "tsx src/runFoundry.ts",
     "replay": "tsx src/runReplay.ts",
     "report": "tsx src/runReport.ts",
     "portability:preflight": "tsx src/runPortabilityPreflight.ts",
