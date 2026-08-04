@@ -14,6 +14,13 @@ export const toolBuilderInputSchema = z
       .optional(),
     allowSideEffects: z.boolean().default(false),
     additionalConstraints: z.array(z.string().min(1)).max(20).default([]),
+    sourceImprovement: z
+      .object({
+        artifactId: z.string().min(1),
+        recommendationIndex: z.number().int().nonnegative(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 

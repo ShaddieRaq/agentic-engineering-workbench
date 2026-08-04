@@ -110,6 +110,11 @@ export interface AgentCandidateEvaluationEvidence {
   datasetRunArtifactIds: string[];
 }
 
+export interface ToolBuilderHandoffRequest {
+  proposalArtifactId: string;
+  recommendationIndex: number;
+}
+
 export interface RecordPromotionDecisionRequest {
   candidateEvaluationId: string;
   decision: AgentPromotionDecisionKind;
@@ -262,6 +267,91 @@ export class AgentApplicationService {
       );
     }
     return stored.artifact;
+  }
+
+  async handoffImprovementToToolBuilder(
+    request: ToolBuilderHandoffRequest,
+  ): Promise<RunAgentResponse> {
+    if (
+      !Number.isInteger(request.recommendationIndex) ||
+      request.recommendationIndex < 0
+    ) {
+      throw new Error(
+        "Tool Builder handoff recommendation index must be a nonnegative integer.",
+      );
+    }
+    const stored = await this.artifacts.load(request.proposalArtifactId);
+    if (stored.kind !== "agent-improvement-proposal") {
+      throw new Error(
+        `Artifact ${request.proposalArtifactId} is not an improvement proposal.`,
+      );
+    }
+    const analysis = stored.artifact;
+    if (
+      !analysis.succeeded ||
+      analysis.parsedOutput === null ||
+      analysis.policyEvaluation?.passed !== true
+    ) {
+      throw new Error(
+        "Only a successful, policy-valid improvement proposal can create a Tool Builder handoff.",
+      );
+    }
+    if (analysis.parsedOutput.disposition !== "engineering-change-required") {
+      throw new Error(
+        "Only an engineering-change-required proposal can create a Tool Builder handoff.",
+      );
+    }
+    const recommendation =
+      analysis.parsedOutput.recommendations[request.recommendationIndex];
+    if (!recommendation) {
+      throw new Error(
+        `Improvement recommendation index is out of range: ${request.recommendationIndex}.`,
+      );
+    }
+    if (recommendation.category !== "tool-capability") {
+      throw new Error(
+        "Only a tool-capability recommendation can create a Tool Builder handoff.",
+      );
+    }
+    const evidenceById = new Map(
+      analysis.packet.evidenceItems.map((item) => [item.id, item]),
+    );
+    const citedEvidence = recommendation.evidenceIds.map((evidenceId) => {
+      const evidence = evidenceById.get(evidenceId);
+      if (!evidence) {
+        throw new Error(
+          `Tool Builder handoff cites unavailable evidence: ${evidenceId}.`,
+        );
+      }
+      return evidence;
+    });
+    const subject = analysis.packet.subject;
+    const toolRequest = [
+      `Subject agent: ${subject.agentId}@${subject.agentVersion}`,
+      `Capability recommendation: ${recommendation.title}`,
+      `Rationale: ${recommendation.rationale}`,
+      `Requested change: ${recommendation.proposedChange}`,
+      "Cited improvement evidence:",
+      ...citedEvidence.map(
+        ({ id, summary }) => `- ${id}: ${summary}`,
+      ),
+    ].join("\n");
+
+    return this.run({
+      agentId: "tool-builder",
+      workspaceId: analysis.packet.execution.workspaceId,
+      input: {
+        request: toolRequest,
+        allowSideEffects: false,
+        additionalConstraints: [
+          ...analysis.packet.objective.constraints,
+        ],
+        sourceImprovement: {
+          artifactId: request.proposalArtifactId,
+          recommendationIndex: request.recommendationIndex,
+        },
+      },
+    });
   }
 
   async evaluateImprovementProposal(

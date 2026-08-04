@@ -10,6 +10,7 @@ import {
 } from "./helpers/candidateComparisonFixture.js";
 import {
   createCandidateReadyImprovementAnalysis,
+  createToolCapabilityImprovementAnalysis,
 } from "./helpers/improvementProposalFixture.js";
 
 async function waitForCompletion(app: Awaited<ReturnType<typeof buildAgentWebServer>>, id: string) {
@@ -317,6 +318,63 @@ describe("agent web server", () => {
     expect(
       (await service.artifacts.load(completed.result.artifactId)).kind,
     ).toBe("agent-candidate-evaluation");
+    await app.close();
+  });
+
+  it("runs a cited tool-capability recommendation through Tool Builder", async () => {
+    const { service } = await createConsoleTestService(true, {
+      includeToolBuilder: true,
+    });
+    const proposal = createToolCapabilityImprovementAnalysis();
+    const proposalReference =
+      await service.artifacts.saveAgentImprovementProposal(proposal);
+    const app = await buildAgentWebServer({
+      service,
+      apiKeyConfigured: true,
+    });
+
+    const invalid = await app.inject({
+      method: "POST",
+      url:
+        `/api/improvement-proposals/${proposalReference.id}/tool-builder-handoffs`,
+      payload: { recommendationIndex: -1 },
+    });
+    expect(invalid.statusCode).toBe(422);
+
+    const response = await app.inject({
+      method: "POST",
+      url:
+        `/api/improvement-proposals/${proposalReference.id}/tool-builder-handoffs`,
+      payload: { recommendationIndex: 0 },
+    });
+    expect(response.statusCode).toBe(202);
+    expect(response.json()).toMatchObject({
+      kind: "agent-run",
+      agentId: "tool-builder",
+    });
+
+    const completed = await waitForCompletion(
+      app,
+      response.json().operationId,
+    );
+    expect(completed).toMatchObject({
+      status: "completed",
+      result: {
+        run: {
+          input: {
+            allowSideEffects: false,
+            sourceImprovement: {
+              artifactId: proposalReference.id,
+              recommendationIndex: 0,
+            },
+          },
+          configuration: { permittedToolIds: [] },
+        },
+      },
+    });
+    expect(
+      (await service.artifacts.load(completed.result.artifactId)).kind,
+    ).toBe("agent-run");
     await app.close();
   });
 });

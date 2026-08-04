@@ -801,7 +801,7 @@ Deferred deliberately:
 
 ## Phase 40 — Evidence-Driven Agent Improvement
 
-Status: In progress — Slices A–D executable workflow complete; handoffs remain
+Status: In progress — Slices A–D and Tool Builder handoff complete; Change Risk handoff remains
 
 Goal:
 
@@ -832,8 +832,10 @@ Delivery:
 7. **Complete:** Candidate-ready proposal execution through the subject-owned
    revision surface, frozen baseline/candidate runs, immutable comparison,
    promotion gates, and the operator decision page.
-8. Linked handoffs to Tool Builder and Change Risk Reviewer when a proposal
-   requires capabilities or source changes.
+8. **Complete:** Operator-triggered Tool Builder handoff for policy-valid
+   tool-capability recommendations, preserving proposal lineage in a normal
+   read-only Tool Builder run.
+9. Link reviewed source changes to Change Risk Reviewer evidence.
 
 Required safeguards:
 
@@ -859,8 +861,7 @@ Deferred deliberately:
 
 ## Current Priorities
 
-1. Link Tool Builder and Change Risk Reviewer handoffs when proposals need
-   capabilities or source changes.
+1. Link reviewed source changes to Change Risk Reviewer evidence.
 2. Keep approval as a source-controlled release task without auto-promotion.
 3. Exercise Playwright Failure Triage against reviewed real failures after the
    general improvement loop is established.

@@ -258,6 +258,123 @@ describe("agent workbench web interface", () => {
     ).toHaveAttribute("href", "/runs/candidate-comparison");
   });
 
+  it("runs only eligible tool-capability recommendations through Tool Builder", async () => {
+    const proposal = {
+      analysisRunId: "tool-handoff-proposal",
+      succeeded: true,
+      packet: {
+        subject: {
+          agentId: "documentation-auditor",
+          agentVersion: "1.0.0",
+        },
+        execution: {
+          workspaceId: "workbench",
+          model: "test-model",
+          repetitions: 1,
+          concurrency: 1,
+        },
+      },
+      parsedOutput: {
+        disposition: "engineering-change-required",
+        candidatePolicyPatch: null,
+        recommendations: [
+          {
+            category: "tool-capability",
+            title: "Add bounded reference inventory",
+            rationale: "Deterministic reference evidence is missing.",
+            proposedChange: "Propose one read-only inventory tool.",
+            priority: "high",
+            evidenceIds: ["case:documentation-health"],
+          },
+          {
+            category: "implementation",
+            title: "Refactor the workflow",
+            rationale: "A workflow change may also be needed.",
+            proposedChange: "Review the workflow implementation.",
+            priority: "medium",
+            evidenceIds: ["case:documentation-health"],
+          },
+        ],
+      },
+      policyEvaluation: {
+        passed: true,
+        message: "Proposal passed policy evaluation.",
+      },
+    };
+    const presentation = {
+      artifactId: "tool-handoff-proposal",
+      artifactKind: "agent-improvement-proposal",
+      presentationKind: "agent-improvement",
+      title: "Documentation Auditor Improvement Proposal",
+      agentId: "documentation-auditor",
+      agentVersion: "1.0.0",
+      workspaceId: "workbench",
+      succeeded: true,
+      assessment: "Proposal passed policy evaluation.",
+      overview: "A bounded tool capability is required.",
+      completedAt: "2026-08-03T23:10:00.000Z",
+      durationMs: 1,
+      metrics: [],
+      findings: [],
+      coverageGaps: [],
+      prioritizedActions: [],
+      sources: [],
+      timeline: [],
+      usage: null,
+      warnings: [],
+      improvement: null,
+    };
+    let submittedBody: unknown = null;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      const body = path.endsWith("/api/workspaces")
+        ? { workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-03T23:10:00.000Z", builtIn: true }] }
+        : path.endsWith("/api/artifacts/tool-handoff-proposal/presentation")
+          ? presentation
+          : path.endsWith("/api/artifacts/tool-handoff-proposal")
+            ? { kind: "agent-improvement-proposal", artifact: proposal }
+            : path.endsWith("/api/improvement-proposals/tool-handoff-proposal/tool-builder-handoffs") && init?.method === "POST"
+              ? (
+                  submittedBody = JSON.parse(String(init.body)),
+                  { operationId: "tool-builder-operation" }
+                )
+              : path.endsWith("/api/operations/tool-builder-operation")
+                ? {
+                    operationId: "tool-builder-operation",
+                    kind: "agent-run",
+                    agentId: "tool-builder",
+                    status: "completed",
+                    events: [],
+                    result: { artifactId: "tool-builder-run" },
+                    error: null,
+                    createdAt: "2026-08-03T23:10:01.000Z",
+                    completedAt: "2026-08-03T23:10:02.000Z",
+                  }
+                : {};
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }));
+
+    window.history.replaceState(null, "", "/runs/tool-handoff-proposal");
+    render(<AppRoutes />);
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Request a Tool Builder proposal",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Run Tool Builder" })).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Run Tool Builder" }));
+    await waitFor(() =>
+      expect(submittedBody).toEqual({ recommendationIndex: 0 })
+    );
+    expect(
+      await screen.findByRole("link", { name: "Inspect Tool Builder proposal" }),
+    ).toHaveAttribute("href", "/runs/tool-builder-run");
+  });
+
   it("connects experiment history, comparison, case results, and trial evidence", async () => {
     const experiment = {
       experimentId: "candidate-evaluation", agentId: "evaluation-agent", agentVersion: "1.1.0",

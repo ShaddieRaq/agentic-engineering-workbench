@@ -143,3 +143,44 @@ export function createCandidateReadyImprovementAnalysis(
     completedAt: "2026-08-03T23:00:00.000Z",
   });
 }
+
+export function createToolCapabilityImprovementAnalysis(
+  options: {
+    analysisRunId?: string;
+    workspaceId?: string;
+  } = {},
+): AgentImprovementAnalysisResult {
+  const candidateReady = createCandidateReadyImprovementAnalysis({
+    analysisRunId:
+      options.analysisRunId ??
+      "00000000-0000-4000-8000-000000000050",
+    ...(options.workspaceId ? { workspaceId: options.workspaceId } : {}),
+  });
+  const proposal = agentImprovementProposalOutputSchema.parse({
+    ...candidateReady.parsedOutput!,
+    disposition: "engineering-change-required",
+    summary: "The subject requires a bounded read-only repository capability.",
+    candidatePolicyPatch: null,
+    recommendations: [{
+      category: "tool-capability",
+      title: "Add a bounded documentation-reference inventory tool",
+      rationale:
+        "The failed case needs deterministic repository reference evidence.",
+      proposedChange:
+        "Propose a read-only tool that inventories documentation references within the registered workspace.",
+      priority: "high",
+      evidenceIds: ["case:documentation-health"],
+    }],
+  });
+  const policyEvaluation = evaluateAgentImprovementProposal(
+    candidateReady.packet,
+    proposal,
+  );
+  return agentImprovementAnalysisResultSchema.parse({
+    ...candidateReady,
+    parsedOutput: proposal,
+    rawOutput: JSON.stringify(proposal),
+    policyEvaluation,
+    succeeded: policyEvaluation.passed,
+  });
+}

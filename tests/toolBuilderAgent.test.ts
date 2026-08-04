@@ -35,6 +35,10 @@ describe("toolBuilderAgent", () => {
       {
         request:
           "Create a tool that updates our external project system without a defined API.",
+        sourceImprovement: {
+          artifactId: "proposal-artifact",
+          recommendationIndex: 2,
+        },
       },
       {
         agents: platformAgentRegistry,
@@ -57,6 +61,13 @@ describe("toolBuilderAgent", () => {
         disposition: "needs-clarification",
         toolId: null,
         policyEvaluation: { passed: true },
+      },
+      input: {
+        allowSideEffects: false,
+        sourceImprovement: {
+          artifactId: "proposal-artifact",
+          recommendationIndex: 2,
+        },
       },
     });
   });

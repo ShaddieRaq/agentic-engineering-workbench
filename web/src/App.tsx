@@ -193,6 +193,90 @@ function CandidateEvaluationPanel({
   );
 }
 
+function ToolBuilderHandoffPanel({
+  proposalArtifactId,
+  recommendations,
+}: {
+  proposalArtifactId: string;
+  recommendations: Array<{
+    index: number;
+    recommendation: NonNullable<
+      ImprovementProposalArtifact["parsedOutput"]
+    >["recommendations"][number];
+  }>;
+}) {
+  const [operationId, setOperationId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const operation = useOperation(operationId);
+
+  async function runHandoff(recommendationIndex: number) {
+    try {
+      const started = await api<Operation>(
+        `/api/improvement-proposals/${encodeURIComponent(proposalArtifactId)}/tool-builder-handoffs`,
+        {
+          method: "POST",
+          body: JSON.stringify({ recommendationIndex }),
+        },
+      );
+      setOperationId(started.operationId);
+      setError(null);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  return (
+    <section className="panel">
+      <div className="section-heading">
+        <div>
+          <span className="eyebrow">Explicit engineering handoff</span>
+          <h2>Request a Tool Builder proposal</h2>
+        </div>
+        <StatusBadge value="engineering-change-required" />
+      </div>
+      <p>
+        Each action derives one cited, read-only request for the proposal-only
+        Tool Builder. It cannot write files, run commands, add permissions, or
+        register the proposed tool.
+      </p>
+      <div className="finding-list">
+        {recommendations.map(({ index, recommendation }) => (
+          <article className="detail-block" key={index}>
+            <div className="finding-heading">
+              <div>
+                <span className="eyebrow">tool capability</span>
+                <h3>{recommendation.title}</h3>
+              </div>
+              <StatusBadge value={recommendation.priority} />
+            </div>
+            <p>{recommendation.rationale}</p>
+            <div className="recommendation">
+              <strong>Derived request</strong>
+              <p>{recommendation.proposedChange}</p>
+            </div>
+            <div className="tag-row">
+              {recommendation.evidenceIds.map((id) => (
+                <code className="tag" key={id}>{id}</code>
+              ))}
+            </div>
+            {!operation.data && (
+              <button
+                className="button button-secondary"
+                type="button"
+                onClick={() => void runHandoff(index)}
+              >
+                Run Tool Builder
+              </button>
+            )}
+          </article>
+        ))}
+      </div>
+      {error && <ErrorNotice message={error} />}
+      {operation.data && <OperationTrace operation={operation.data} />}
+    </section>
+  );
+}
+
 function PromotionDecisionPanel({
   candidateEvaluationId,
   gatesPassed,
@@ -342,6 +426,16 @@ function RunDetailPage() {
       proposal.parsedOutput.candidatePolicyPatch !== null
       ? proposal
       : null;
+  const toolBuilderRecommendations =
+    proposal?.succeeded === true &&
+      proposal.policyEvaluation?.passed === true &&
+      proposal.parsedOutput?.disposition === "engineering-change-required"
+      ? proposal.parsedOutput.recommendations
+        .map((recommendation, index) => ({ recommendation, index }))
+        .filter(({ recommendation }) =>
+          recommendation.category === "tool-capability"
+        )
+      : [];
   return (
     <>
       <ArtifactPresentationView presentation={presentation.data} rawArtifact={resource.data.artifact} />
@@ -349,6 +443,12 @@ function RunDetailPage() {
         <CandidateEvaluationPanel
           proposalArtifactId={artifactId}
           proposal={candidateReadyProposal}
+        />
+      )}
+      {artifactId && toolBuilderRecommendations.length > 0 && (
+        <ToolBuilderHandoffPanel
+          proposalArtifactId={artifactId}
+          recommendations={toolBuilderRecommendations}
         />
       )}
       {candidate && (

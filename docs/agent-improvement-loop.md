@@ -59,8 +59,8 @@ The current platform already provides:
 
 The remaining boundaries are:
 
-- linked Tool Builder and Change Risk Reviewer handoffs when proposals need
-  capabilities or source changes
+- linked Change Risk Reviewer evidence after an operator applies a reviewed
+  source change
 
 ## Roles and Responsibilities
 
@@ -346,10 +346,12 @@ Use Documentation Auditor as the first subject:
 7. Confirm that a protected regression, permission expansion, evaluator change,
    invalid citation, or insufficient-evidence proposal is blocked.
 
-The Tool Builder and Change Risk Reviewer are later collaborators, not hidden
-substeps. A tool-gap recommendation can become a Tool Builder request. A
-reviewed source change can be examined by Change Risk Reviewer. Their evidence
-remains separate and linked.
+The Tool Builder and Change Risk Reviewer are explicit collaborators, not
+hidden substeps. A policy-valid `engineering-change-required` tool-capability
+recommendation can become an operator-triggered, read-only Tool Builder run.
+Its validated input preserves the source proposal artifact and recommendation
+index. A reviewed source change can later be examined by Change Risk Reviewer.
+Their evidence remains separate and linked.
 
 ## Verification Strategy
 
@@ -445,7 +447,9 @@ Status: Executable candidate and decision workflow complete; handoffs remain
 - **Complete:** candidate-ready proposal action that freezes the saved
   workspace, model, datasets, graders, and execution policy; runs baseline and
   candidate; persists the comparison; and links to operator review
-- linked Tool Builder and Change Risk Reviewer handoffs
+- **Complete:** proposal-to-Tool-Builder handoff with cited recommendation
+  derivation, forced no-side-effect execution, and structural source lineage
+- linked Change Risk Reviewer evidence after reviewed source changes
 
 Outcome: the complete loop is usable while release remains deliberate.
 

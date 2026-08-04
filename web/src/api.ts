@@ -378,6 +378,24 @@ export interface ImprovementProposalArtifact {
     candidatePolicyPatch: {
       changes: Array<{ field: string; valueJson: string }>;
     } | null;
+    recommendations: Array<{
+      category:
+        | "instructions"
+        | "context-policy"
+        | "workflow-policy"
+        | "model-policy"
+        | "tool-capability"
+        | "output-contract"
+        | "evaluator"
+        | "dataset"
+        | "implementation"
+        | "no-change";
+      title: string;
+      rationale: string;
+      proposedChange: string;
+      priority: "low" | "medium" | "high";
+      evidenceIds: string[];
+    }>;
   } | null;
   policyEvaluation: { passed: boolean; message: string } | null;
 }

@@ -1011,8 +1011,8 @@ evidence may inform proposals, while protected evaluation evidence remains
 available only to these gates and promotion decisions.
 
 A candidate-ready proposal artifact exposes the executable bridge into this
-comparison boundary. `POST
-/api/improvement-proposals/:id/candidate-evaluations` validates the saved
+comparison boundary.
+`POST /api/improvement-proposals/:id/candidate-evaluations` validates the saved
 proposal and current released manifest, rebuilds the candidate only through the
 subject-owned revision surface, and freezes the workspace, model, datasets,
 graders, repetitions, and concurrency captured in the proposal packet. The
@@ -1069,6 +1069,16 @@ test file, registry guidance, and explicit verification commands. Generated
 file paths are restricted to safe, flat TypeScript files under `src/tools/`
 and matching Vitest files under `tests/`. Side effects must be explicitly
 authorized.
+
+An eligible improvement proposal can enter Tool Builder through
+`POST /api/improvement-proposals/:id/tool-builder-handoffs`. The service accepts
+only a recommendation index, reloads the immutable proposal, requires a
+successful policy-valid `engineering-change-required` analysis and a cited
+`tool-capability` recommendation, and derives the request server-side. The
+result runs with `allowSideEffects: false`, Tool Builder's empty tool allowlist,
+its own default model, and the proposal workspace. The normal `agent-run` input
+preserves the source proposal artifact ID and recommendation index, so no new
+artifact kind is required and generated files remain proposals only.
 
 Clarification and rejection are first-class successful dispositions when no
 installable files are emitted. A later installation workflow must remain a

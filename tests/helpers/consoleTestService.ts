@@ -14,6 +14,7 @@ import {
 import { FileWorkspaceStore } from "../../src/workspaces/fileWorkspaceStore.js";
 import { agentImprovementAnalystAgent } from "../../src/agents/agentImprovement/agentImprovementAnalystAgent.js";
 import { documentationAuditorAgent } from "../../src/agents/documentationAuditor/documentationAuditorAgent.js";
+import { toolBuilderAgent } from "../../src/agents/toolBuilder/toolBuilderAgent.js";
 
 export const consoleTestAgent = defineAgent({
   manifest: {
@@ -36,12 +37,18 @@ export const consoleTestAgent = defineAgent({
 
 export async function createConsoleTestService(
   apiKeyConfigured = true,
-  options: { includeCandidateWorkflow?: boolean } = {},
+  options: {
+    includeCandidateWorkflow?: boolean;
+    includeToolBuilder?: boolean;
+  } = {},
 ) {
   const directory = await mkdtemp(join(tmpdir(), "agent-console-"));
   const registrations = [agentImprovementAnalystAgent, consoleTestAgent];
   if (options.includeCandidateWorkflow) {
     registrations.push(documentationAuditorAgent);
+  }
+  if (options.includeToolBuilder) {
+    registrations.push(toolBuilderAgent);
   }
   return {
     directory,

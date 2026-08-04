@@ -304,6 +304,9 @@ The project currently supports:
 - candidate-ready proposal execution from its artifact page through candidate
   construction, frozen baseline/candidate evaluation, comparison persistence,
   promotion gates, and the existing operator decision boundary
+- operator-triggered Tool Builder handoffs from policy-valid
+  `engineering-change-required` tool-capability recommendations, with exact
+  proposal/recommendation lineage and forced read-only proposal generation
 
 ## Current Evaluators
 
@@ -393,6 +396,7 @@ Phase 40 Slice C frozen comparative execution: complete foundation
 Phase 40 Slice C immutable comparison evidence: complete foundation
 Phase 40 Slice C deterministic promotion gates: complete
 Phase 40 Slice D candidate workflow and promotion decisions: complete
+Phase 40 Slice D Tool Builder handoff: complete
 ```
 
 Verified test state:
@@ -400,7 +404,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 121 test files passed
-373 tests passed
+377 tests passed
 ```
 
 This state must be verified before continuing:
@@ -428,9 +432,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Link Tool Builder and Change Risk Reviewer handoffs when a proposal needs
-capabilities or source changes. Keep approval as a source-controlled release
-task, not an automatic registry or source mutation.
+Link reviewed source changes to Change Risk Reviewer evidence. Keep Tool Builder
+outputs proposal-only and approval as a source-controlled release task, not an
+automatic registry or source mutation.
 
 ## Broader Roadmap
 

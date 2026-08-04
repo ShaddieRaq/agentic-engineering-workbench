@@ -2187,3 +2187,34 @@ and manifest identity.
 - baseline and candidate execute under one inspectable frozen plan
 - the proposal page can start the workflow without exposing policy drift inputs
 - a promotion decision may link only the exact proposal in candidate lineage
+
+---
+
+## Decision 079 — Preserve Tool Handoffs In Normal Agent-Run Input
+
+Status: Accepted
+
+### Decision
+
+Allow an operator to hand one cited `tool-capability` recommendation from a
+successful, policy-valid `engineering-change-required` improvement proposal to
+Tool Builder. Derive the request server-side, force `allowSideEffects: false`,
+and preserve the source proposal artifact ID and recommendation index in an
+optional Tool Builder input field. Persist the result as an ordinary
+`agent-run`.
+
+### Rationale
+
+Tool Builder is already a proposal-only agent with no tool permissions, and
+agent-run input is immutable validated evidence. Structural lineage in that
+input links the two artifacts without adding another artifact kind or trusting
+client-authored request text. One recommendation per handoff keeps scope
+reviewable and machine-checkable.
+
+### Consequences
+
+- only cited tool-capability recommendations can enter this handoff
+- Tool Builder uses its own default model and the proposal workspace
+- no handoff can authorize writes, commands, dependencies, or registration
+- historical direct Tool Builder inputs remain valid because lineage is optional
+- generated files remain reviewable proposal evidence, not applied changes

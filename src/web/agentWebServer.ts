@@ -43,6 +43,12 @@ const improvementRequestSchema = z
   })
   .strict();
 
+const toolBuilderHandoffRequestSchema = z
+  .object({
+    recommendationIndex: z.number().int().nonnegative(),
+  })
+  .strict();
+
 const promotionDecisionRequestSchema = z
   .object({
     decision: z.enum(["approve", "reject", "revise"]),
@@ -296,6 +302,71 @@ export async function buildAgentWebServer(
           emit(
             "persistence",
             `Candidate comparison saved as ${result.artifactId}.`,
+          );
+          return result;
+        },
+      );
+      return reply.code(202).send(operation);
+    },
+  );
+  app.post<{ Params: { proposalArtifactId: string } }>(
+    "/api/improvement-proposals/:proposalArtifactId/tool-builder-handoffs",
+    async (request, reply) => {
+      const parsed = toolBuilderHandoffRequestSchema.safeParse(
+        request.body ?? {},
+      );
+      if (!parsed.success) {
+        return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+      }
+      if (!options.apiKeyConfigured) {
+        return reply.code(503).send({ error: "OPENAI_API_KEY is not configured." });
+      }
+      try {
+        const stored = await options.service.artifacts.load(
+          request.params.proposalArtifactId,
+        );
+        if (stored.kind !== "agent-improvement-proposal") {
+          return reply.code(404).send({
+            error:
+              `Artifact ${request.params.proposalArtifactId} is not an improvement proposal.`,
+          });
+        }
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+      const operation = operations.start(
+        "agent-run",
+        "tool-builder",
+        async (emit) => {
+          emit(
+            "catalog",
+            "Resolved the saved improvement proposal and proposal-only Tool Builder.",
+          );
+          emit(
+            "input",
+            "Derived one cited tool-capability request from immutable proposal evidence.",
+          );
+          emit(
+            "permissions",
+            "Forced read-only proposal generation with no Tool Builder tool permissions.",
+          );
+          emit(
+            "workflow",
+            "Generating a reviewable tool contract, implementation proposal, and tests.",
+          );
+          const result =
+            await options.service.handoffImprovementToToolBuilder({
+              proposalArtifactId: request.params.proposalArtifactId,
+              recommendationIndex: parsed.data.recommendationIndex,
+            });
+          emit(
+            "assessment",
+            result.run.assessment?.message ??
+              "No Tool Builder assessment was produced.",
+          );
+          emit(
+            "persistence",
+            `Linked Tool Builder run saved as ${result.artifactId}.`,
           );
           return result;
         },
