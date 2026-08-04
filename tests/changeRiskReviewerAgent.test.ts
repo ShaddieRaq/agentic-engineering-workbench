@@ -30,6 +30,7 @@ describe("changeRiskReviewerAgent", () => {
       "change-risk-reviewer",
       "documentation-auditor",
       "playwright-failure-triage",
+      "project-intake",
       "repository-assistant",
       "tool-builder",
     ]);

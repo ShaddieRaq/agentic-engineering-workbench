@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { intakeTurnOutputSchema } from "../src/foundry/intakeTurnOutput.js";
 import {
+  briefContentOf,
   createInitialProjectBrief,
   type BriefEntry,
 } from "../src/foundry/projectBrief.js";
@@ -17,11 +18,13 @@ function entry(overrides: Partial<BriefEntry> = {}): BriefEntry {
 
 function draftWithGoal() {
   const goal = entry();
-  const draft = createInitialProjectBrief({
-    title: "Recipe planner",
-    ideaSummary: "Plan weekly meals from pantry contents.",
-    goals: [goal],
-  });
+  const draft = briefContentOf(
+    createInitialProjectBrief({
+      title: "Recipe planner",
+      ideaSummary: "Plan weekly meals from pantry contents.",
+      goals: [goal],
+    }),
+  );
   return { draft, goal };
 }
 
@@ -55,6 +58,22 @@ describe("intakeTurnOutputSchema", () => {
     });
 
     expect(turn.nextQuestions).toHaveLength(2);
+  });
+
+  it("rejects a full versioned brief as the updated draft", () => {
+    const { draft } = draftWithGoal();
+    const fullBrief = createInitialProjectBrief({
+      title: draft.title,
+      ideaSummary: draft.ideaSummary,
+    });
+
+    expect(() =>
+      intakeTurnOutputSchema.parse({
+        updatedBriefDraft: fullBrief,
+        nextQuestions: [],
+        openIssues: [],
+      }),
+    ).toThrowError();
   });
 
   it("rejects a question that targets an unknown entry", () => {

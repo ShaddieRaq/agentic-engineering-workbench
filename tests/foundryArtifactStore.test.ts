@@ -7,6 +7,7 @@ import {
   FoundryArtifactStore,
   projectBriefArtifactId,
 } from "../src/foundry/foundryArtifactStore.js";
+import { intakeTurnRecordSchema } from "../src/foundry/intakeTurn.js";
 import { createInitialProjectBrief } from "../src/foundry/projectBrief.js";
 import { createProjectBriefDecision } from "../src/foundry/projectBriefDecision.js";
 
@@ -31,6 +32,24 @@ function brief() {
   return createInitialProjectBrief({
     title: "Recipe planner",
     ideaSummary: "Plan weekly meals from pantry contents.",
+  });
+}
+
+function turnRecord(briefId: string, turnNumber = 1) {
+  return intakeTurnRecordSchema.parse({
+    turnId: randomUUID(),
+    briefId,
+    turnNumber,
+    maxTurns: 5,
+    agentRunArtifactId: "agent-run-artifact",
+    operatorAnswers: [],
+    resultingBriefVersion: turnNumber + 1,
+    resultingBriefArtifactId: `${briefId}-v${turnNumber + 1}`,
+    nextQuestions: [],
+    openIssues: [],
+    status: "awaiting-answers",
+    startedAt: new Date().toISOString(),
+    completedAt: new Date().toISOString(),
   });
 }
 
@@ -108,6 +127,47 @@ describe("FoundryArtifactStore", () => {
     await writeFile(reference.path, JSON.stringify(raw), "utf8");
 
     await expect(store.load(reference.id)).rejects.toThrowError();
+  });
+
+  it("round-trips an intake turn record with deterministic IDs", async () => {
+    const { store } = await createStore();
+    const briefId = randomUUID();
+    const record = turnRecord(briefId);
+
+    const reference = await store.saveIntakeTurnRecord(record);
+    expect(reference.id).toBe(`${briefId}-t1`);
+    expect(reference.kind).toBe("intake-turn");
+
+    const loaded = await store.load(reference.id);
+    expect(loaded.kind).toBe("intake-turn");
+    expect(loaded.artifact).toEqual(record);
+  });
+
+  it("refuses duplicate intake turn numbers for the same brief", async () => {
+    const { store } = await createStore();
+    const briefId = randomUUID();
+    await store.saveIntakeTurnRecord(turnRecord(briefId));
+
+    await expect(
+      store.saveIntakeTurnRecord(turnRecord(briefId)),
+    ).rejects.toThrowError(/EEXIST/);
+  });
+
+  it("lists intake turns alongside briefs with kind filtering intact", async () => {
+    const { store } = await createStore();
+    const saved = brief();
+    await store.saveProjectBrief(saved);
+    await store.saveIntakeTurnRecord(turnRecord(saved.briefId));
+    await store.saveIntakeTurnRecord(turnRecord(saved.briefId, 2));
+
+    const turnsOnly = await store.list({ kind: "intake-turn" });
+    expect(turnsOnly.artifacts).toHaveLength(2);
+    expect(
+      turnsOnly.artifacts.every(({ briefId }) => briefId === saved.briefId),
+    ).toBe(true);
+
+    const briefsOnly = await store.list({ kind: "project-brief" });
+    expect(briefsOnly.artifacts).toHaveLength(1);
   });
 
   it("filters listings by kind and brief ID", async () => {

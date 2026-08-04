@@ -100,4 +100,102 @@ describe("parseFoundryArgs", () => {
   it("rejects unknown commands", () => {
     expect(() => parseFoundryArgs(["brief-delete"])).toThrowError(/expected one of/i);
   });
+
+  it("parses intake-start with optional max turns and model", () => {
+    expect(
+      parseFoundryArgs(["intake-start", "--title", "Planner", "--idea", "Meals"]),
+    ).toEqual({
+      command: "intake-start",
+      title: "Planner",
+      idea: "Meals",
+      maxTurns: null,
+      model: null,
+    });
+    expect(
+      parseFoundryArgs([
+        "intake-start",
+        "--title",
+        "Planner",
+        "--idea",
+        "Meals",
+        "--max-turns",
+        "3",
+        "--model",
+        "gpt-5.4",
+      ]),
+    ).toEqual({
+      command: "intake-start",
+      title: "Planner",
+      idea: "Meals",
+      maxTurns: 3,
+      model: "gpt-5.4",
+    });
+  });
+
+  it("parses intake-turn answers including equals signs in the text", () => {
+    const questionId = "3649333b-8114-460c-8839-4fae3e6c8e17";
+    expect(
+      parseFoundryArgs([
+        "intake-turn",
+        "--brief-id",
+        "abc",
+        "--answer",
+        `${questionId}=Latency budget = 200ms`,
+        "--answer",
+        "new=Also support offline mode",
+      ]),
+    ).toEqual({
+      command: "intake-turn",
+      briefId: "abc",
+      answers: [
+        { questionId, answer: "Latency budget = 200ms" },
+        { questionId: null, answer: "Also support offline mode" },
+      ],
+      answersFile: null,
+      model: null,
+    });
+  });
+
+  it("accepts an answers file instead of inline answers", () => {
+    expect(
+      parseFoundryArgs([
+        "intake-turn",
+        "--brief-id",
+        "abc",
+        "--answers-file",
+        "answers.json",
+      ]),
+    ).toEqual({
+      command: "intake-turn",
+      briefId: "abc",
+      answers: [],
+      answersFile: "answers.json",
+      model: null,
+    });
+  });
+
+  it("rejects intake-turn without any answer source", () => {
+    expect(() =>
+      parseFoundryArgs(["intake-turn", "--brief-id", "abc"]),
+    ).toThrowError(/at least one --answer/i);
+  });
+
+  it("rejects malformed --answer values", () => {
+    expect(() =>
+      parseFoundryArgs([
+        "intake-turn",
+        "--brief-id",
+        "abc",
+        "--answer",
+        "missing-separator",
+      ]),
+    ).toThrowError(/--answer must use the form/i);
+  });
+
+  it("parses intake-status", () => {
+    expect(parseFoundryArgs(["intake-status", "--brief-id", "abc"])).toEqual({
+      command: "intake-status",
+      briefId: "abc",
+    });
+  });
 });

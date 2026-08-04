@@ -1,5 +1,6 @@
 import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
+import { intakeTurnRecordSchema, type IntakeTurnRecord } from "./intakeTurn.js";
 import { projectBriefSchema, type ProjectBrief } from "./projectBrief.js";
 import {
   projectBriefDecisionSchema,
@@ -8,7 +9,10 @@ import {
 
 const MAXIMUM_ARTIFACT_BYTES = 8 * 1024 * 1024;
 
-export type FoundryArtifactKind = "project-brief" | "project-brief-decision";
+export type FoundryArtifactKind =
+  | "project-brief"
+  | "project-brief-decision"
+  | "intake-turn";
 
 export interface FoundryArtifactReference {
   id: string;
@@ -18,7 +22,8 @@ export interface FoundryArtifactReference {
 
 export type FoundryStoredArtifact =
   | { kind: "project-brief"; artifact: ProjectBrief }
-  | { kind: "project-brief-decision"; artifact: ProjectBriefDecision };
+  | { kind: "project-brief-decision"; artifact: ProjectBriefDecision }
+  | { kind: "intake-turn"; artifact: IntakeTurnRecord };
 
 export interface FoundryArtifactSummary {
   id: string;
@@ -80,6 +85,24 @@ const kindDefinitions: Record<FoundryArtifactKind, FoundryKindDefinition> = {
       };
     },
   },
+  "intake-turn": {
+    parse: (value) => ({
+      kind: "intake-turn",
+      artifact: intakeTurnRecordSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const turn = stored.artifact as IntakeTurnRecord;
+      return {
+        id,
+        kind: "intake-turn",
+        path,
+        briefId: turn.briefId,
+        // Failed turns produce no brief version; 0 marks that explicitly.
+        briefVersion: turn.resultingBriefVersion ?? 0,
+        createdAt: turn.completedAt,
+      };
+    },
+  },
 };
 
 // The decision pattern must be tested before the brief pattern because
@@ -87,6 +110,7 @@ const kindDefinitions: Record<FoundryArtifactKind, FoundryKindDefinition> = {
 const orderedKinds: FoundryArtifactKind[] = [
   "project-brief-decision",
   "project-brief",
+  "intake-turn",
 ];
 
 function descriptor(
@@ -120,6 +144,17 @@ export class FoundryArtifactStore {
   ): Promise<FoundryArtifactReference> {
     const validated = projectBriefDecisionSchema.parse(decision);
     return this.#write("project-brief-decision", validated.decisionId, validated);
+  }
+
+  async saveIntakeTurnRecord(
+    record: IntakeTurnRecord,
+  ): Promise<FoundryArtifactReference> {
+    const validated = intakeTurnRecordSchema.parse(record);
+    return this.#write(
+      "intake-turn",
+      `${validated.briefId}-t${validated.turnNumber}`,
+      validated,
+    );
   }
 
   async load(id: string): Promise<FoundryStoredArtifact> {
@@ -183,7 +218,7 @@ export class FoundryArtifactStore {
   async #write(
     kind: FoundryArtifactKind,
     id: string,
-    artifact: ProjectBrief | ProjectBriefDecision,
+    artifact: ProjectBrief | ProjectBriefDecision | IntakeTurnRecord,
   ): Promise<FoundryArtifactReference> {
     await mkdir(this.#root, { recursive: true });
     const path = join(this.#root, `${kind}-${id}.json`);

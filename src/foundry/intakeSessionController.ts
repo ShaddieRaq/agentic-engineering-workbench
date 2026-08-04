@@ -1,0 +1,310 @@
+import { randomUUID } from "node:crypto";
+import type { FoundryArtifactStore } from "./foundryArtifactStore.js";
+import { intakeTurnRecordSchema, type IntakeTurnRecord } from "./intakeTurn.js";
+import type { IntakeOperatorAnswer } from "./intakeTurnInput.js";
+import {
+  intakeTurnOutputSchema,
+  type IntakeTurnOutput,
+} from "./intakeTurnOutput.js";
+import {
+  briefContentOf,
+  computeProvenanceConversion,
+  type ProjectBrief,
+  type ProvenanceConversionSummary,
+} from "./projectBrief.js";
+import type { ProjectBriefService } from "./projectBriefService.js";
+
+export const PROJECT_INTAKE_AGENT_ID = "project-intake";
+
+// Structural subset of AgentApplicationService.run so tests can script turns
+// without fabricating complete agent-run artifacts.
+export interface IntakeAgentRunService {
+  run(request: { agentId: string; input: unknown; model?: string }): Promise<{
+    artifactId: string;
+    run: {
+      succeeded: boolean;
+      output: unknown;
+      failure: { message: string } | null;
+    };
+  }>;
+}
+
+export interface IntakeTurnResult {
+  brief: ProjectBrief;
+  record: IntakeTurnRecord;
+}
+
+export interface IntakeStatusReport {
+  briefId: string;
+  briefVersion: number;
+  status: IntakeTurnRecord["status"];
+  turnNumber: number;
+  maxTurns: number;
+  nextQuestions: IntakeTurnRecord["nextQuestions"];
+  openIssues: IntakeTurnRecord["openIssues"];
+  provenanceConversion: ProvenanceConversionSummary | null;
+}
+
+export function deriveIntakeStatus(
+  brief: ProjectBrief,
+  output: IntakeTurnOutput,
+  turnNumber: number,
+  maxTurns: number,
+): IntakeTurnRecord["status"] {
+  const hasBlockingIssues = output.openIssues.some(
+    ({ severity }) => severity === "blocking",
+  );
+  const hasUnresolvedEntries = [
+    brief.goals,
+    brief.users,
+    brief.constraints,
+    brief.risks,
+    brief.nonGoals,
+    brief.assumptions,
+    brief.acceptanceCriteria,
+  ].some((section) => section.some(({ source }) => source === "unresolved"));
+
+  if (
+    !hasBlockingIssues &&
+    !hasUnresolvedEntries &&
+    brief.openQuestions.length === 0
+  ) {
+    return "ready-for-decision";
+  }
+  if (turnNumber >= maxTurns) return "turn-budget-exhausted";
+  return "awaiting-answers";
+}
+
+export class IntakeSessionController {
+  readonly #agentService: IntakeAgentRunService;
+  readonly #briefService: ProjectBriefService;
+  readonly #store: FoundryArtifactStore;
+  readonly #model: string | null;
+
+  constructor(dependencies: {
+    agentService: IntakeAgentRunService;
+    briefService: ProjectBriefService;
+    store: FoundryArtifactStore;
+    model?: string | null;
+  }) {
+    this.#agentService = dependencies.agentService;
+    this.#briefService = dependencies.briefService;
+    this.#store = dependencies.store;
+    this.#model = dependencies.model ?? null;
+  }
+
+  async startIntake(input: {
+    title: string;
+    idea: string;
+    maxTurns?: number;
+  }): Promise<IntakeTurnResult> {
+    const maxTurns = input.maxTurns ?? 10;
+    if (!Number.isInteger(maxTurns) || maxTurns < 1) {
+      throw new Error("maxTurns must be a positive integer.");
+    }
+
+    const { brief } = await this.#briefService.initiateBrief({
+      title: input.title,
+      ideaSummary: input.idea,
+    });
+
+    return this.#executeTurn({
+      briefId: brief.briefId,
+      currentBrief: brief,
+      operatorAnswers: [],
+      turnNumber: 1,
+      maxTurns,
+    });
+  }
+
+  async runTurn(input: {
+    briefId: string;
+    answers: IntakeOperatorAnswer[];
+  }): Promise<IntakeTurnResult> {
+    const previous = await this.#loadLatestTurnRecord(input.briefId);
+    if (previous === null) {
+      throw new Error(
+        `Brief ${input.briefId} has no intake turns. Use startIntake first.`,
+      );
+    }
+    if (previous.status !== "awaiting-answers") {
+      throw new Error(
+        `Intake for brief ${input.briefId} is ${previous.status} and cannot accept answers.`,
+      );
+    }
+
+    const knownQuestionIds = new Set(previous.nextQuestions.map(({ id }) => id));
+    for (const answer of input.answers) {
+      if (answer.questionId !== null && !knownQuestionIds.has(answer.questionId)) {
+        throw new Error(
+          `Answer references unknown question ${answer.questionId} from turn ${previous.turnNumber}.`,
+        );
+      }
+    }
+
+    const currentBrief = await this.#briefService.loadBrief(input.briefId);
+    return this.#executeTurn({
+      briefId: input.briefId,
+      currentBrief,
+      operatorAnswers: input.answers,
+      turnNumber: previous.turnNumber + 1,
+      maxTurns: previous.maxTurns,
+    });
+  }
+
+  async status(briefId: string): Promise<IntakeStatusReport> {
+    const record = await this.#loadLatestTurnRecord(briefId);
+    if (record === null) {
+      throw new Error(`Brief ${briefId} has no intake turns.`);
+    }
+
+    const brief = await this.#briefService.loadBrief(briefId);
+    let provenanceConversion: ProvenanceConversionSummary | null = null;
+    if (brief.version > 1) {
+      const previousBrief = await this.#briefService.loadBrief(
+        briefId,
+        brief.version - 1,
+      );
+      provenanceConversion = computeProvenanceConversion(previousBrief, brief);
+    }
+
+    return {
+      briefId,
+      briefVersion: brief.version,
+      status: record.status,
+      turnNumber: record.turnNumber,
+      maxTurns: record.maxTurns,
+      nextQuestions: record.nextQuestions,
+      openIssues: record.openIssues,
+      provenanceConversion,
+    };
+  }
+
+  async #executeTurn(turn: {
+    briefId: string;
+    currentBrief: ProjectBrief;
+    operatorAnswers: IntakeOperatorAnswer[];
+    turnNumber: number;
+    maxTurns: number;
+  }): Promise<IntakeTurnResult> {
+    const startedAt = new Date().toISOString();
+    const agentInput = {
+      briefContent: briefContentOf(turn.currentBrief),
+      operatorAnswers: turn.operatorAnswers,
+      turnNumber: turn.turnNumber,
+      remainingTurns: Math.max(turn.maxTurns - turn.turnNumber, 0),
+    };
+
+    let agentRunArtifactId: string | null = null;
+    let output: IntakeTurnOutput;
+    try {
+      const response = await this.#agentService.run({
+        agentId: PROJECT_INTAKE_AGENT_ID,
+        input: agentInput,
+        ...(this.#model ? { model: this.#model } : {}),
+      });
+      agentRunArtifactId = response.artifactId;
+
+      if (!response.run.succeeded || response.run.output === null) {
+        throw new Error(
+          response.run.failure?.message ??
+            "Intake agent run did not produce a valid turn output.",
+        );
+      }
+      output = intakeTurnOutputSchema.parse(response.run.output);
+    } catch (error: unknown) {
+      await this.#persistTurnRecord({
+        ...turn,
+        agentRunArtifactId,
+        resultingBrief: null,
+        output: { nextQuestions: [], openIssues: [] },
+        status: "model-failure",
+        startedAt,
+      });
+      throw new Error(
+        `Intake turn ${turn.turnNumber} for brief ${turn.briefId} failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+
+    const { brief: resultingBrief } = await this.#briefService.appendBriefVersion(
+      turn.briefId,
+      output.updatedBriefDraft,
+    );
+    const status = deriveIntakeStatus(
+      resultingBrief,
+      output,
+      turn.turnNumber,
+      turn.maxTurns,
+    );
+
+    const record = await this.#persistTurnRecord({
+      ...turn,
+      agentRunArtifactId,
+      resultingBrief,
+      output: {
+        nextQuestions: output.nextQuestions,
+        openIssues: output.openIssues,
+      },
+      status,
+      startedAt,
+    });
+
+    return { brief: resultingBrief, record };
+  }
+
+  async #persistTurnRecord(turn: {
+    briefId: string;
+    operatorAnswers: IntakeOperatorAnswer[];
+    turnNumber: number;
+    maxTurns: number;
+    agentRunArtifactId: string | null;
+    resultingBrief: ProjectBrief | null;
+    output: {
+      nextQuestions: IntakeTurnRecord["nextQuestions"];
+      openIssues: IntakeTurnRecord["openIssues"];
+    };
+    status: IntakeTurnRecord["status"];
+    startedAt: string;
+  }): Promise<IntakeTurnRecord> {
+    const record = intakeTurnRecordSchema.parse({
+      turnId: randomUUID(),
+      briefId: turn.briefId,
+      turnNumber: turn.turnNumber,
+      maxTurns: turn.maxTurns,
+      agentRunArtifactId: turn.agentRunArtifactId,
+      operatorAnswers: turn.operatorAnswers,
+      resultingBriefVersion: turn.resultingBrief?.version ?? null,
+      resultingBriefArtifactId: turn.resultingBrief
+        ? `${turn.resultingBrief.briefId}-v${turn.resultingBrief.version}`
+        : null,
+      nextQuestions: turn.output.nextQuestions,
+      openIssues: turn.output.openIssues,
+      status: turn.status,
+      startedAt: turn.startedAt,
+      completedAt: new Date().toISOString(),
+    });
+    await this.#store.saveIntakeTurnRecord(record);
+    return record;
+  }
+
+  async #loadLatestTurnRecord(briefId: string): Promise<IntakeTurnRecord | null> {
+    const { artifacts } = await this.#store.list({
+      kind: "intake-turn",
+      briefId,
+      limit: 500,
+    });
+    if (artifacts.length === 0) return null;
+
+    let latest: IntakeTurnRecord | null = null;
+    for (const summary of artifacts) {
+      const stored = await this.#store.load(summary.id);
+      if (stored.kind !== "intake-turn") continue;
+      if (latest === null || stored.artifact.turnNumber > latest.turnNumber) {
+        latest = stored.artifact;
+      }
+    }
+    return latest;
+  }
+}

@@ -42,20 +42,91 @@ const briefEntrySections = [
   "assumptions",
 ] as const;
 
+const briefContentShape = {
+  title: z.string().min(1).max(200),
+  ideaSummary: z.string().min(1).max(4_000),
+  goals: z.array(briefEntrySchema).max(50),
+  users: z.array(briefEntrySchema).max(50),
+  constraints: z.array(briefEntrySchema).max(50),
+  risks: z.array(briefEntrySchema).max(50),
+  nonGoals: z.array(briefEntrySchema).max(50),
+  assumptions: z.array(briefEntrySchema).max(50),
+  acceptanceCriteria: z.array(acceptanceCriterionSchema).max(50),
+  openQuestions: z.array(openQuestionSchema).max(50),
+};
+
+interface BriefContentLike {
+  goals: BriefEntry[];
+  users: BriefEntry[];
+  constraints: BriefEntry[];
+  risks: BriefEntry[];
+  nonGoals: BriefEntry[];
+  assumptions: BriefEntry[];
+  acceptanceCriteria: AcceptanceCriterion[];
+  openQuestions: OpenQuestion[];
+}
+
+function refineBriefContent(
+  content: BriefContentLike,
+  context: z.core.$RefinementCtx,
+): void {
+  const seenIds = new Set<string>();
+  const entryIds = new Set<string>();
+  for (const section of briefEntrySections) {
+    for (const entry of content[section]) {
+      if (seenIds.has(entry.id)) {
+        context.addIssue({
+          code: "custom",
+          path: [section],
+          message: `Duplicate brief entry ID: ${entry.id}.`,
+        });
+      }
+      seenIds.add(entry.id);
+      entryIds.add(entry.id);
+    }
+  }
+  for (const criterion of content.acceptanceCriteria) {
+    if (seenIds.has(criterion.id)) {
+      context.addIssue({
+        code: "custom",
+        path: ["acceptanceCriteria"],
+        message: `Duplicate brief entry ID: ${criterion.id}.`,
+      });
+    }
+    seenIds.add(criterion.id);
+    entryIds.add(criterion.id);
+  }
+  for (const question of content.openQuestions) {
+    if (seenIds.has(question.id)) {
+      context.addIssue({
+        code: "custom",
+        path: ["openQuestions"],
+        message: `Duplicate brief entry ID: ${question.id}.`,
+      });
+    }
+    seenIds.add(question.id);
+    for (const relatedId of question.relatedEntryIds) {
+      if (!entryIds.has(relatedId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["openQuestions"],
+          message: `Open question ${question.id} references unknown entry ${relatedId}.`,
+        });
+      }
+    }
+  }
+}
+
+export const projectBriefDraftContentSchema = z
+  .object(briefContentShape)
+  .strict()
+  .superRefine(refineBriefContent);
+
 export const projectBriefSchema = z
   .object({
     briefId: z.uuid(),
     version: z.number().int().min(1),
-    title: z.string().min(1).max(200),
-    ideaSummary: z.string().min(1).max(4_000),
-    goals: z.array(briefEntrySchema).max(50),
-    users: z.array(briefEntrySchema).max(50),
-    constraints: z.array(briefEntrySchema).max(50),
-    risks: z.array(briefEntrySchema).max(50),
-    nonGoals: z.array(briefEntrySchema).max(50),
-    assumptions: z.array(briefEntrySchema).max(50),
-    acceptanceCriteria: z.array(acceptanceCriterionSchema).max(50),
-    openQuestions: z.array(openQuestionSchema).max(50),
+    ...briefContentShape,
     previousVersionArtifactId: z.string().min(1).nullable(),
     previousVersionDigest: z
       .string()
@@ -65,6 +136,8 @@ export const projectBriefSchema = z
   })
   .strict()
   .superRefine((brief, context) => {
+    refineBriefContent(brief, context);
+
     const isInitial = brief.version === 1;
     if (isInitial && brief.previousVersionArtifactId !== null) {
       context.addIssue({
@@ -94,59 +167,31 @@ export const projectBriefSchema = z
         message: "A later brief version must pin its previous digest.",
       });
     }
-
-    const seenIds = new Set<string>();
-    const entryIds = new Set<string>();
-    for (const section of briefEntrySections) {
-      for (const entry of brief[section]) {
-        if (seenIds.has(entry.id)) {
-          context.addIssue({
-            code: "custom",
-            path: [section],
-            message: `Duplicate brief entry ID: ${entry.id}.`,
-          });
-        }
-        seenIds.add(entry.id);
-        entryIds.add(entry.id);
-      }
-    }
-    for (const criterion of brief.acceptanceCriteria) {
-      if (seenIds.has(criterion.id)) {
-        context.addIssue({
-          code: "custom",
-          path: ["acceptanceCriteria"],
-          message: `Duplicate brief entry ID: ${criterion.id}.`,
-        });
-      }
-      seenIds.add(criterion.id);
-      entryIds.add(criterion.id);
-    }
-    for (const question of brief.openQuestions) {
-      if (seenIds.has(question.id)) {
-        context.addIssue({
-          code: "custom",
-          path: ["openQuestions"],
-          message: `Duplicate brief entry ID: ${question.id}.`,
-        });
-      }
-      seenIds.add(question.id);
-      for (const relatedId of question.relatedEntryIds) {
-        if (!entryIds.has(relatedId)) {
-          context.addIssue({
-            code: "custom",
-            path: ["openQuestions"],
-            message: `Open question ${question.id} references unknown entry ${relatedId}.`,
-          });
-        }
-      }
-    }
   });
 
 export type BriefProvenanceSource = z.infer<typeof briefProvenanceSourceSchema>;
 export type BriefEntry = z.infer<typeof briefEntrySchema>;
 export type AcceptanceCriterion = z.infer<typeof acceptanceCriterionSchema>;
 export type OpenQuestion = z.infer<typeof openQuestionSchema>;
+export type ProjectBriefDraftContent = z.infer<
+  typeof projectBriefDraftContentSchema
+>;
 export type ProjectBrief = z.infer<typeof projectBriefSchema>;
+
+export function briefContentOf(brief: ProjectBrief): ProjectBriefDraftContent {
+  return projectBriefDraftContentSchema.parse({
+    title: brief.title,
+    ideaSummary: brief.ideaSummary,
+    goals: brief.goals,
+    users: brief.users,
+    constraints: brief.constraints,
+    risks: brief.risks,
+    nonGoals: brief.nonGoals,
+    assumptions: brief.assumptions,
+    acceptanceCriteria: brief.acceptanceCriteria,
+    openQuestions: brief.openQuestions,
+  });
+}
 
 export function createInitialProjectBrief(input: {
   title: string;

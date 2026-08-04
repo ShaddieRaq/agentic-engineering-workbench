@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { projectBriefSchema, type ProjectBrief } from "./projectBrief.js";
+import {
+  projectBriefDraftContentSchema,
+  type ProjectBriefDraftContent,
+} from "./projectBrief.js";
 
 export const intakeQuestionIntentSchema = z.enum([
   "resolve-unresolved",
@@ -25,7 +28,7 @@ export const intakeOpenIssueSchema = z
   })
   .strict();
 
-function collectBriefEntryIds(brief: ProjectBrief): Set<string> {
+function collectBriefEntryIds(brief: ProjectBriefDraftContent): Set<string> {
   const ids = new Set<string>();
   for (const section of [
     brief.goals,
@@ -43,7 +46,7 @@ function collectBriefEntryIds(brief: ProjectBrief): Set<string> {
 
 export const intakeTurnOutputSchema = z
   .object({
-    updatedBriefDraft: projectBriefSchema,
+    updatedBriefDraft: projectBriefDraftContentSchema,
     nextQuestions: z.array(intakeNextQuestionSchema).max(10),
     openIssues: z.array(intakeOpenIssueSchema).max(50),
   })
