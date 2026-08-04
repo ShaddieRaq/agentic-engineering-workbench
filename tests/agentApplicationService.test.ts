@@ -95,7 +95,7 @@ describe("AgentApplicationService", () => {
       plan: {
         subject: {
           agentId: "documentation-auditor",
-          agentVersion: "1.0.0",
+          agentVersion: "1.1.0",
         },
         candidate: { proposalId: proposalReference.id },
         workspaceId: proposal.packet.execution.workspaceId,

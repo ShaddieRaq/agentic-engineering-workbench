@@ -59,7 +59,7 @@ export function createDocumentationAuditorAgent(
     manifest: {
       id: "documentation-auditor",
       name: "Documentation Auditor",
-      version: "1.0.0",
+      version: "1.1.0",
       status: "active",
       description: "Finds stale, inconsistent, missing, and accurate repository documentation using cited local evidence.",
       owner: "local-platform",

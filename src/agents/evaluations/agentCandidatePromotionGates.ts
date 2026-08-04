@@ -179,10 +179,23 @@ export function evaluateAgentCandidatePromotionGates(
       classification === "improved",
   );
 
+  const executionStatesComparable =
+    baselineRuns.length === candidateRuns.length &&
+    baselineRuns.every(
+      ({ agentRun }, index) =>
+        agentRun.succeeded === candidateRuns[index]?.agentRun.succeeded,
+    );
+  const baselineSucceededRuns = baselineRuns.filter(
+    ({ agentRun }) => agentRun.succeeded,
+  ).length;
+  const candidateSucceededRuns = candidateRuns.filter(
+    ({ agentRun }) => agentRun.succeeded,
+  ).length;
   const baselineLatency = totalDurationMs(execution.baseline);
   const candidateLatency = totalDurationMs(execution.candidate);
   const latencyRegressionRatio =
-    baselineLatency.meanDurationMs === null ||
+    !executionStatesComparable ||
+      baselineLatency.meanDurationMs === null ||
       candidateLatency.meanDurationMs === null ||
       baselineLatency.meanDurationMs === 0
       ? null
@@ -191,6 +204,11 @@ export function evaluateAgentCandidatePromotionGates(
       ) / baselineLatency.meanDurationMs;
   const latencyPassed = latencyRegressionRatio === null ||
     latencyRegressionRatio <= policy.maximumLatencyRegressionRatio;
+  const latencyStatus = !executionStatesComparable
+    ? "not-applicable"
+    : latencyPassed
+      ? "passed"
+      : "failed";
 
   const baselineCost = summarizeTokenCosts(
     baselineRuns.map(({ agentRun }) => agentRun.provider ?? null),
@@ -200,13 +218,15 @@ export function evaluateAgentCandidatePromotionGates(
   );
   const costComparison = compareTokenCostSummaries(baselineCost, candidateCost);
   const costRegressionRatio =
-    costComparison.estimatedCostDeltaUsd === null ||
+    !executionStatesComparable ||
+      costComparison.estimatedCostDeltaUsd === null ||
       baselineCost.estimatedCostUsd === null ||
       baselineCost.estimatedCostUsd === 0
       ? null
       : costComparison.estimatedCostDeltaUsd / baselineCost.estimatedCostUsd;
   const costStatus =
-    costComparison.costClassification === "insufficient-evidence"
+    !executionStatesComparable ||
+      costComparison.costClassification === "insufficient-evidence"
       ? "not-applicable"
       : costRegressionRatio === null
       ? baselineCost.estimatedCostUsd === 0 &&
@@ -289,13 +309,18 @@ export function evaluateAgentCandidatePromotionGates(
     },
     {
       gateId: "latency",
-      status: latencyPassed ? "passed" : "failed",
-      message: latencyPassed
-        ? "Mean candidate latency stayed within the configured tolerance."
-        : "Mean candidate latency exceeded the configured tolerance.",
+      status: latencyStatus,
+      message: !executionStatesComparable
+        ? "Baseline and candidate execution outcomes differ, so latency is not comparable."
+        : latencyPassed
+          ? "Mean candidate latency stayed within the configured tolerance."
+          : "Mean candidate latency exceeded the configured tolerance.",
       details: {
         baseline: baselineLatency,
         candidate: candidateLatency,
+        executionStatesComparable,
+        baselineSucceededRuns,
+        candidateSucceededRuns,
         regressionRatio: latencyRegressionRatio,
         maximumRegressionRatio: policy.maximumLatencyRegressionRatio,
       },
@@ -304,7 +329,9 @@ export function evaluateAgentCandidatePromotionGates(
       gateId: "cost",
       status: costStatus,
       message: costStatus === "not-applicable"
-        ? "Comparable provider usage or cost evidence is unavailable."
+        ? !executionStatesComparable
+          ? "Baseline and candidate execution outcomes differ, so cost is not comparable."
+          : "Comparable provider usage or cost evidence is unavailable."
         : costStatus === "passed"
         ? "Estimated candidate cost stayed within the configured tolerance."
         : "Estimated candidate cost exceeded the configured tolerance.",
@@ -332,6 +359,9 @@ export function evaluateAgentCandidatePromotionGates(
           pricingIds: [...candidateCost.pricingIds],
         },
         estimatedCostDeltaUsd: costComparison.estimatedCostDeltaUsd,
+        executionStatesComparable,
+        baselineSucceededRuns,
+        candidateSucceededRuns,
         regressionRatio: costRegressionRatio,
         maximumRegressionRatio: policy.maximumCostRegressionRatio,
         costClassification: costComparison.costClassification,

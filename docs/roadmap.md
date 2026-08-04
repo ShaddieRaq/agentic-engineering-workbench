@@ -862,7 +862,9 @@ Deferred deliberately:
 
 ## Current Priorities
 
-1. Exercise Playwright Failure Triage against reviewed real failures after the
-   general improvement loop is established.
-2. Keep approval as a source-controlled release task without auto-promotion.
+1. Add protected Documentation Auditor non-regression coverage for the
+   evidence-approved AsciiDoc context policy.
+2. Continue proving source-controlled releases without auto-promotion.
 3. Export proven agents into Claude Code and other runner-specific packages.
+4. Exercise Playwright Failure Triage against reviewed real failures as the
+   final agent validation milestone.

@@ -1001,6 +1001,10 @@ and cost gates run automatically when the comparison is created. Agent runs
 optionally preserve aggregated provider usage collected through a runner-owned
 provider wrapper. When every compared run has priced usage, the cost gate
 enforces its configured regression ratio; otherwise it remains not-applicable.
+Latency and cost are also not-applicable when corresponding baseline and
+candidate runs have different success outcomes. A failed pre-model run is not a
+valid performance baseline for a repaired model-backed run; behavioral recovery
+remains governed by improvement, regression, and protected gates.
 Gate passage still does not promote a candidate. Operators record immutable
 `agent-promotion-decision` artifacts that approve, reject, or request revision
 against a saved comparison through the application service and Evaluation

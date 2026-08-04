@@ -286,6 +286,11 @@ The foundation gate requires:
 - no material latency or cost regression beyond configured tolerances
 - explicit operator approval
 
+Latency and cost comparisons require matching baseline and candidate execution
+outcomes. If one side fails before model execution while the other succeeds,
+those operational gates are not applicable rather than treating restored
+behavior as a performance regression.
+
 Statistical confidence is reported when sample size permits it; small samples
 are not described as proof.
 

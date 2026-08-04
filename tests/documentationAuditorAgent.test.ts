@@ -17,7 +17,7 @@ describe("DocumentationAuditor", () => {
   it("audits local documentation through bounded tools and citation validation", async () => {
     const root = await mkdtemp(join(tmpdir(), "documentation-auditor-"));
     await mkdir(join(root, "src"));
-    await writeFile(join(root, "README.md"), "Run npm run old-command.");
+    await writeFile(join(root, "README.adoc"), "Run npm run old-command.");
     await writeFile(join(root, "package.json"), JSON.stringify({ scripts: { test: "vitest" } }));
     await writeFile(join(root, "src", "index.ts"), "export const active = true;");
     const provider: AIProvider = {
@@ -31,7 +31,7 @@ describe("DocumentationAuditor", () => {
               category: "stale",
               severity: "high",
               explanation: "The documented command is absent from package scripts.",
-              evidencePaths: ["README.md", "package.json"],
+              evidencePaths: ["README.adoc", "package.json"],
               recommendation: "Replace it with a registered command.",
             }],
             coverageGaps: [],

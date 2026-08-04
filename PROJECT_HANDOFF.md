@@ -274,6 +274,8 @@ The project currently supports:
 - opt-in runtime-validated agent revision surfaces
 - frozen baseline policies with exact mutable-field allowlists
 - a Documentation Auditor instruction and context-selection revision policy
+- an evidence-approved Documentation Auditor `1.1.0` baseline that recognizes
+  AsciiDoc `.adoc` files without expanding tool permissions
 - subject-owned in-memory candidate construction without source mutation
 - revision-surface projection into improvement evidence for registered subjects
 - deterministic baseline and effective-policy digests
@@ -294,6 +296,8 @@ The project currently supports:
 - candidate-comparison listing, loading, export, and generic presentation
 - deterministic completeness, scope, regression, protected, improvement,
   latency, and cost promotion gates
+- outcome-aware latency and cost gates that do not compare failed pre-model
+  runs with successful model-backed runs
 - optional provider usage aggregated into agent-run evidence
 - cost gate enforced from comparable estimated-cost evidence when available
 - gate outcomes embedded in candidate-comparison artifacts and presentations
@@ -436,9 +440,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Exercise Playwright Failure Triage against reviewed real failures. Keep Tool
-Builder outputs proposal-only and approval as a source-controlled release task,
-not an automatic registry or source mutation.
+Add protected Documentation Auditor non-regression coverage for the released
+AsciiDoc context policy, then continue exercising the general improvement loop.
+Keep Playwright Failure Triage as the final agent validation milestone.
 
 ## Broader Roadmap
 

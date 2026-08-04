@@ -248,12 +248,38 @@ describe("createFrozenAgentCandidateEvaluationPlan", () => {
       expect.objectContaining({ gateId: "scope", status: "failed" }),
     );
 
+    const executionOutcomeMismatch = structuredClone(result);
+    for (const run of executionOutcomeMismatch.baseline.datasetRuns[0]!.runs) {
+      run.agentRun.succeeded = false;
+    }
+    for (const run of executionOutcomeMismatch.candidate.datasetRuns[0]!.runs) {
+      run.agentRun.succeeded = true;
+    }
+    expect(
+      evaluateAgentCandidatePromotionGates(executionOutcomeMismatch).results,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          gateId: "latency",
+          status: "not-applicable",
+          message: expect.stringContaining("execution outcomes differ"),
+        }),
+        expect.objectContaining({
+          gateId: "cost",
+          status: "not-applicable",
+          message: expect.stringContaining("execution outcomes differ"),
+        }),
+      ]),
+    );
+
     const latencyRegression = structuredClone(result);
     for (const run of latencyRegression.baseline.datasetRuns[0]!.runs) {
       run.agentRun.durationMs = 1;
+      run.agentRun.succeeded = true;
     }
     for (const run of latencyRegression.candidate.datasetRuns[0]!.runs) {
       run.agentRun.durationMs = 2;
+      run.agentRun.succeeded = true;
     }
     expect(
       evaluateAgentCandidatePromotionGates(latencyRegression, {
@@ -289,6 +315,13 @@ describe("createFrozenAgentCandidateEvaluationPlan", () => {
     );
 
     const withUsage = structuredClone(result);
+    for (const side of [withUsage.baseline, withUsage.candidate]) {
+      for (const datasetRun of side.datasetRuns) {
+        for (const run of datasetRun.runs) {
+          run.agentRun.succeeded = true;
+        }
+      }
+    }
     const assignUsage = (
       side: typeof withUsage.baseline,
       totalTokens: number,

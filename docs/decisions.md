@@ -2250,3 +2250,32 @@ through raw patch text.
 - optional Tool Builder evidence must match proposal, recommendation, and workspace
 - clean or incomplete repositories produce persisted failed evidence without a model call
 - Change Risk Reviewer remains read-only and cannot apply, verify, or release changes
+
+---
+
+## Decision 081 — Compare Operational Gates Only Across Matching Outcomes
+
+Status: Accepted
+
+### Decision
+
+Mark candidate latency and cost gates as not-applicable when corresponding
+baseline and candidate runs have different success outcomes. Preserve run
+counts, success counts, timings, usage, and the explicit comparability decision
+in gate details. Continue to evaluate behavioral recovery through improvement,
+regression, protected, completeness, and scope gates.
+
+### Rationale
+
+A baseline that fails before model execution can complete in milliseconds and
+consume no tokens. Comparing that run with a repaired candidate that reaches
+normal model-backed execution incorrectly labels restored behavior as a severe
+latency and cost regression. The measurements remain useful evidence, but they
+do not represent equivalent work.
+
+### Consequences
+
+- matching successful or matching failed runs retain configured ratio checks
+- differing success outcomes retain evidence but produce no operational ratio
+- promotion still requires a measured improvement and no applicable regression
+- absolute latency or cost budgets would require a separate future policy

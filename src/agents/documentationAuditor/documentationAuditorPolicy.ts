@@ -58,7 +58,7 @@ export const documentationAuditorBaselinePolicy =
         "Audit this repository's documentation for stale, inconsistent, missing, and accurate guidance.",
     },
     contextSelection: {
-      documentationExtensions: [".md", ".mdx", ".rst"],
+      documentationExtensions: [".md", ".mdx", ".rst", ".adoc"],
       sourceExtensions: [
         ".ts",
         ".tsx",
