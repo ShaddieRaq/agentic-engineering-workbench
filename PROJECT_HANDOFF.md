@@ -274,8 +274,10 @@ The project currently supports:
 - opt-in runtime-validated agent revision surfaces
 - frozen baseline policies with exact mutable-field allowlists
 - a Documentation Auditor instruction and context-selection revision policy
-- an evidence-approved Documentation Auditor `1.1.0` baseline that recognizes
+- an evidence-approved Documentation Auditor `1.1.1` baseline that recognizes
   AsciiDoc `.adoc` files without expanding tool permissions
+- a registered protected Documentation Auditor dataset that participates in
+  every frozen candidate comparison while remaining outside optimizer context
 - subject-owned in-memory candidate construction without source mutation
 - revision-surface projection into improvement evidence for registered subjects
 - deterministic baseline and effective-policy digests
@@ -405,6 +407,7 @@ Phase 40 Slice C deterministic promotion gates: complete
 Phase 40 Slice D candidate workflow and promotion decisions: complete
 Phase 40 Slice D Tool Builder handoff: complete
 Phase 40 Slice D Change Risk Reviewer handoff: complete
+Documentation Auditor protected non-regression coverage: complete
 ```
 
 Verified test state:
@@ -412,7 +415,7 @@ Verified test state:
 ```text
 npm run typecheck passed
 121 test files passed
-384 tests passed
+385 tests passed
 ```
 
 This state must be verified before continuing:
@@ -440,9 +443,9 @@ When a scenario exposes an output schema, the CLI passes it through
 
 ## Immediate Next Step
 
-Add protected Documentation Auditor non-regression coverage for the released
-AsciiDoc context policy, then continue exercising the general improvement loop.
-Keep Playwright Failure Triage as the final agent validation milestone.
+Harden candidate-patch guidance so the Improvement Analyst reliably emits
+complete top-level revision fields without requiring an operator retry. Keep
+Playwright Failure Triage as the final agent validation milestone.
 
 ## Broader Roadmap
 

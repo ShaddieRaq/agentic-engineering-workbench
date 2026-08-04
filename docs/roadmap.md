@@ -862,8 +862,8 @@ Deferred deliberately:
 
 ## Current Priorities
 
-1. Add protected Documentation Auditor non-regression coverage for the
-   evidence-approved AsciiDoc context policy.
+1. Harden Improvement Analyst patch guidance around complete top-level revision
+   fields using the observed Documentation Auditor retry.
 2. Continue proving source-controlled releases without auto-promotion.
 3. Export proven agents into Claude Code and other runner-specific packages.
 4. Exercise Playwright Failure Triage against reviewed real failures as the

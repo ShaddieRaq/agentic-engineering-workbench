@@ -95,7 +95,7 @@ describe("AgentApplicationService", () => {
       plan: {
         subject: {
           agentId: "documentation-auditor",
-          agentVersion: "1.1.0",
+          agentVersion: "1.1.1",
         },
         candidate: { proposalId: proposalReference.id },
         workspaceId: proposal.packet.execution.workspaceId,
@@ -104,9 +104,15 @@ describe("AgentApplicationService", () => {
           repetitions: proposal.packet.execution.repetitions,
           concurrency: proposal.packet.execution.concurrency,
         },
+        datasets: expect.arrayContaining([
+          expect.objectContaining({
+            datasetId: "documentation-auditor-protected",
+            purpose: "protected",
+          }),
+        ]),
       },
     });
-    expect(result.datasetRunArtifactIds).toHaveLength(2);
+    expect(result.datasetRunArtifactIds).toHaveLength(4);
     expect(
       (await service.artifacts.load(result.artifactId)).kind,
     ).toBe("agent-candidate-evaluation");

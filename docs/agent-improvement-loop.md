@@ -429,6 +429,8 @@ Status: Protected evidence boundary complete
 - **Complete:** dataset purposes frozen into run and evaluation evidence
 - **Complete:** protected inputs, expectations, outcomes, trials, and aggregate
   signals excluded from optimizer context
+- **Complete:** concrete Documentation Auditor protected non-regression dataset
+  included in its released verification manifest
 - **Complete:** immutable plan snapshot and digest
 - **Complete:** frozen baseline/candidate execution using baseline graders
 - **Complete:** immutable candidate comparison artifact and evidence references

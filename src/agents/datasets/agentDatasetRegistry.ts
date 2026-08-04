@@ -2,6 +2,9 @@ import type { AgentDatasetDefinition } from "./agentDatasetDefinition.js";
 import { repositoryAssistantDataset } from "./repositoryAssistantDataset.js";
 import { changeRiskReviewerDataset } from "./changeRiskReviewerDataset.js";
 import { documentationAuditorDataset } from "./documentationAuditorDataset.js";
+import {
+  documentationAuditorProtectedDataset,
+} from "./documentationAuditorProtectedDataset.js";
 import { toolBuilderDataset } from "./toolBuilderDataset.js";
 import { playwrightFailureTriageDataset } from "./playwrightFailureTriageDataset.js";
 import { agentImprovementAnalystDataset } from "./agentImprovementAnalystDataset.js";
@@ -10,6 +13,8 @@ const datasets: Record<string, AgentDatasetDefinition> = {
   [agentImprovementAnalystDataset.id]: agentImprovementAnalystDataset,
   [changeRiskReviewerDataset.id]: changeRiskReviewerDataset,
   [documentationAuditorDataset.id]: documentationAuditorDataset,
+  [documentationAuditorProtectedDataset.id]:
+    documentationAuditorProtectedDataset,
   [repositoryAssistantDataset.id]: repositoryAssistantDataset,
   [toolBuilderDataset.id]: toolBuilderDataset,
   [playwrightFailureTriageDataset.id]: playwrightFailureTriageDataset,

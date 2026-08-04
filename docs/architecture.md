@@ -1016,6 +1016,10 @@ source, datasets, evaluators, or the agent registry. Development and regression
 evidence may inform proposals, while protected evaluation evidence remains
 available only to these gates and promotion decisions.
 
+Documentation Auditor registers both regression and protected datasets. The
+protected case runs on both sides of every frozen comparison but its input,
+outcome, and trial evidence are excluded from Improvement Analyst packets.
+
 A candidate-ready proposal artifact exposes the executable bridge into this
 comparison boundary.
 `POST /api/improvement-proposals/:id/candidate-evaluations` validates the saved

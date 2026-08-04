@@ -5,6 +5,9 @@ import { describe, expect, it } from "vitest";
 import { documentationAuditorAgent } from "../src/agents/documentationAuditor/documentationAuditorAgent.js";
 import type { DocumentationAuditorPolicy } from "../src/agents/documentationAuditor/documentationAuditorPolicy.js";
 import { AgentRegistry } from "../src/agents/agentRegistry.js";
+import {
+  getAgentDatasetDefinition,
+} from "../src/agents/datasets/agentDatasetRegistry.js";
 import { platformAgentRegistry } from "../src/agents/platformAgentRegistry.js";
 import { runAgent } from "../src/agents/agentRunner.js";
 import type {
@@ -14,6 +17,27 @@ import type {
 import { createPlatformToolRegistry } from "../src/tools/toolRegistry.js";
 
 describe("DocumentationAuditor", () => {
+  it("registers protected non-regression coverage in released verification", () => {
+    expect(documentationAuditorAgent.manifest.verification.datasetIds).toEqual([
+      "documentation-auditor-smoke",
+      "documentation-auditor-protected",
+    ]);
+    expect(
+      getAgentDatasetDefinition("documentation-auditor-protected"),
+    ).toMatchObject({
+      agentId: "documentation-auditor",
+      purpose: "protected",
+      cases: [
+        {
+          id: "grounded-documentation-audit",
+          input: {
+            maximumContextFiles: 16,
+          },
+        },
+      ],
+    });
+  });
+
   it("audits local documentation through bounded tools and citation validation", async () => {
     const root = await mkdtemp(join(tmpdir(), "documentation-auditor-"));
     await mkdir(join(root, "src"));
