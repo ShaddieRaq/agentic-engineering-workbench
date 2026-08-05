@@ -10,6 +10,7 @@ import type {
   FoundryArtifactStore,
   FoundryStoredArtifact,
 } from "../foundry/foundryArtifactStore.js";
+import type { ArchitectService } from "../foundry/architectService.js";
 import type {
   IntakeSessionController,
   IntakeTurnResult,
@@ -50,6 +51,7 @@ export interface WorkbenchMcpDependencies {
   promotionDecisions: McpPromotionDecisionService;
   intake: Pick<IntakeSessionController, "startIntake" | "runTurn" | "status">;
   briefs: Pick<ProjectBriefService, "recordDecision">;
+  architect: Pick<ArchitectService, "createPlan" | "recordPlanDecision">;
 }
 
 function intakeTurnView(result: IntakeTurnResult) {
@@ -222,6 +224,44 @@ export function createWorkbenchMcpTools(deps: WorkbenchMcpDependencies) {
       const saved = await deps.briefs.recordDecision({
         briefId: input.briefId,
         version: input.version,
+        decision: input.decision,
+        operatorId: input.operatorId,
+        rationale: input.rationale,
+        requestedRevisions:
+          input.requestedRevisions && input.requestedRevisions.length > 0
+            ? input.requestedRevisions
+            : null,
+      });
+      return { decision: saved.decision, artifactPath: saved.reference.path };
+    },
+
+    async architectPlan(input: {
+      briefId: string;
+      model?: string | undefined;
+    }) {
+      const saved = await deps.architect.createPlan({
+        briefId: input.briefId,
+        ...(input.model ? { model: input.model } : {}),
+      });
+      return {
+        planId: saved.plan.planId,
+        briefId: saved.plan.briefId,
+        briefVersion: saved.plan.briefVersion,
+        content: saved.plan.content,
+        reconciliation: saved.plan.reconciliation,
+        artifactPath: saved.reference.path,
+      };
+    },
+
+    async recordPlanDecision(input: {
+      planId: string;
+      decision: "approve" | "reject" | "revise";
+      operatorId: string;
+      rationale: string;
+      requestedRevisions?: string[] | undefined;
+    }) {
+      const saved = await deps.architect.recordPlanDecision({
+        planId: input.planId,
         decision: input.decision,
         operatorId: input.operatorId,
         rationale: input.rationale,

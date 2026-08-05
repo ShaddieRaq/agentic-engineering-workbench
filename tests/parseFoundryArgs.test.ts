@@ -244,6 +244,43 @@ describe("parseFoundryArgs", () => {
     );
   });
 
+  it("parses architect commands", () => {
+    expect(parseFoundryArgs(["architect-plan", "--brief-id", "abc"])).toEqual({
+      command: "architect-plan",
+      briefId: "abc",
+      model: null,
+    });
+    expect(parseFoundryArgs(["plan-show", "--plan-id", "p1"])).toEqual({
+      command: "plan-show",
+      planId: "p1",
+    });
+    expect(
+      parseFoundryArgs([
+        "plan-decide",
+        "--plan-id",
+        "p1",
+        "--decision",
+        "revise",
+        "--operator",
+        "op-1",
+        "--rationale",
+        "Needs work",
+        "--revision",
+        "Fix coverage",
+      ]),
+    ).toEqual({
+      command: "plan-decide",
+      planId: "p1",
+      decision: "revise",
+      operatorId: "op-1",
+      rationale: "Needs work",
+      requestedRevisions: ["Fix coverage"],
+    });
+    expect(() =>
+      parseFoundryArgs(["plan-decide", "--plan-id", "p1", "--decision", "maybe", "--operator", "o", "--rationale", "r"]),
+    ).toThrowError(/--decision must be one of/i);
+  });
+
   it("parses intake-status", () => {
     expect(parseFoundryArgs(["intake-status", "--brief-id", "abc"])).toEqual({
       command: "intake-status",

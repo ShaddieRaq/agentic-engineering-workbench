@@ -5,6 +5,7 @@ import { documentationAuditorAgent } from "./documentationAuditor/documentationA
 import { toolBuilderAgent } from "./toolBuilder/toolBuilderAgent.js";
 import { playwrightFailureTriageAgent } from "./playwrightFailureTriage/playwrightFailureTriageAgent.js";
 import { agentImprovementAnalystAgent } from "./agentImprovement/agentImprovementAnalystAgent.js";
+import { projectArchitectAgent } from "./projectArchitect/projectArchitectAgent.js";
 import { projectIntakeAgent } from "./projectIntake/projectIntakeAgent.js";
 
 export const platformAgentRegistry = new AgentRegistry([
@@ -12,6 +13,7 @@ export const platformAgentRegistry = new AgentRegistry([
   changeRiskReviewerAgent,
   documentationAuditorAgent,
   playwrightFailureTriageAgent,
+  projectArchitectAgent,
   projectIntakeAgent,
   repositoryAssistantAgent,
   toolBuilderAgent,

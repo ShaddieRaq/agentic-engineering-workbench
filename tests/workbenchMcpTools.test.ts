@@ -96,6 +96,14 @@ async function createTools(options: {
       } satisfies McpPromotionDecisionService),
     intake,
     briefs: briefService,
+    architect: {
+      async createPlan() {
+        throw new Error("No architect scripted.");
+      },
+      async recordPlanDecision() {
+        throw new Error("No architect scripted.");
+      },
+    },
   });
   return { tools, foundry, exportsRoot };
 }
@@ -172,7 +180,7 @@ describe("workbench MCP tools", () => {
     const { tools } = await createTools();
     const agents = await tools.listAgents();
 
-    expect(agents).toHaveLength(7);
+    expect(agents).toHaveLength(8);
     expect(agents).toContainEqual(
       expect.objectContaining({ id: "project-intake", version: "0.3.0" }),
     );

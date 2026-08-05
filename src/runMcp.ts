@@ -5,6 +5,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { AgentApplicationService } from "./agents/agentApplicationService.js";
 import { platformAgentRegistry } from "./agents/platformAgentRegistry.js";
 import { FileArtifactStore } from "./artifacts/fileArtifactStore.js";
+import { ArchitectService } from "./foundry/architectService.js";
 import { FoundryArtifactStore } from "./foundry/foundryArtifactStore.js";
 import { IntakeSessionController } from "./foundry/intakeSessionController.js";
 import { ProjectBriefService } from "./foundry/projectBriefService.js";
@@ -56,6 +57,11 @@ async function main(): Promise<void> {
         store: foundry,
       }),
       briefs: briefService,
+      architect: new ArchitectService({
+        agentService,
+        briefService,
+        store: foundry,
+      }),
     },
     packageJson.version ?? "0.0.0",
   );

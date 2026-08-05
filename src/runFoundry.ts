@@ -187,6 +187,74 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (
+    args.command === "architect-plan" ||
+    args.command === "plan-show" ||
+    args.command === "plan-decide"
+  ) {
+    const { ArchitectService } = await import("./foundry/architectService.js");
+    const workspaceRoot = process.cwd();
+    const workspaces = new FileWorkspaceStore(
+      resolve(workspaceRoot, ".workbench", "workspaces.json"),
+      workspaceRoot,
+    );
+    const apiKey = process.env.OPENAI_API_KEY;
+    const agentService = new AgentApplicationService(
+      platformAgentRegistry,
+      new FileArtifactStore(),
+      workspaces,
+      createPlatformToolRegistry,
+      (requestedModel) => {
+        if (!apiKey) throw new Error("OPENAI_API_KEY is missing from .env");
+        return new OpenAIProvider(apiKey, { model: requestedModel });
+      },
+    );
+    const architect = new ArchitectService({
+      agentService,
+      briefService: service,
+      store,
+    });
+
+    if (args.command === "architect-plan") {
+      const saved = await architect.createPlan({
+        briefId: args.briefId,
+        ...(args.model ? { model: args.model } : {}),
+      });
+      console.log(`Plan: ${saved.plan.planId} (brief ${saved.plan.briefId} v${saved.plan.briefVersion})`);
+      console.log(
+        `Components: ${saved.plan.content.components.length}, ` +
+          `slices: ${saved.plan.content.implementationSlices.length}, ` +
+          `acceptance mappings: ${saved.plan.content.acceptancePlan.length}, ` +
+          `concerns: ${saved.plan.content.concerns.length}`,
+      );
+      if (saved.plan.reconciliation) {
+        console.log(
+          `Structural repairs applied: ${saved.plan.reconciliation.removedReferences.length} removed reference(s).`,
+        );
+      }
+      console.log(`Evidence saved: ${saved.reference.path}`);
+      return;
+    }
+
+    if (args.command === "plan-show") {
+      const plan = await architect.loadPlan(args.planId);
+      const status = await architect.derivePlanStatus(args.planId);
+      console.log(JSON.stringify({ plan, status }, null, 2));
+      return;
+    }
+
+    const saved = await architect.recordPlanDecision({
+      planId: args.planId,
+      decision: args.decision,
+      operatorId: args.operatorId,
+      rationale: args.rationale,
+      requestedRevisions:
+        args.requestedRevisions.length > 0 ? args.requestedRevisions : null,
+    });
+    console.log(JSON.stringify({ decision: saved.decision, reference: saved.reference }, null, 2));
+    return;
+  }
+
   if (args.command === "export-claude-code") {
     const { writeClaudeCodeIntakeExport } = await import(
       "./foundry/exporters/claudeCodeIntakeExporter.js"

@@ -1,6 +1,14 @@
 import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import {
+  architecturePlanSchema,
+  type ArchitecturePlan,
+} from "./architecturePlan.js";
+import {
+  architecturePlanDecisionSchema,
+  type ArchitecturePlanDecision,
+} from "./architecturePlanDecision.js";
+import {
   exportFeedbackRecordSchema,
   type ExportFeedbackRecord,
 } from "./exportFeedback.js";
@@ -17,7 +25,9 @@ export type FoundryArtifactKind =
   | "project-brief"
   | "project-brief-decision"
   | "intake-turn"
-  | "export-feedback";
+  | "export-feedback"
+  | "architecture-plan"
+  | "architecture-plan-decision";
 
 export interface FoundryArtifactReference {
   id: string;
@@ -29,7 +39,9 @@ export type FoundryStoredArtifact =
   | { kind: "project-brief"; artifact: ProjectBrief }
   | { kind: "project-brief-decision"; artifact: ProjectBriefDecision }
   | { kind: "intake-turn"; artifact: IntakeTurnRecord }
-  | { kind: "export-feedback"; artifact: ExportFeedbackRecord };
+  | { kind: "export-feedback"; artifact: ExportFeedbackRecord }
+  | { kind: "architecture-plan"; artifact: ArchitecturePlan }
+  | { kind: "architecture-plan-decision"; artifact: ArchitecturePlanDecision };
 
 export interface FoundryArtifactSummary {
   id: string;
@@ -128,6 +140,40 @@ const kindDefinitions: Record<FoundryArtifactKind, FoundryKindDefinition> = {
       };
     },
   },
+  "architecture-plan": {
+    parse: (value) => ({
+      kind: "architecture-plan",
+      artifact: architecturePlanSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const plan = stored.artifact as ArchitecturePlan;
+      return {
+        id,
+        kind: "architecture-plan",
+        path,
+        briefId: plan.briefId,
+        briefVersion: plan.briefVersion,
+        createdAt: plan.createdAt,
+      };
+    },
+  },
+  "architecture-plan-decision": {
+    parse: (value) => ({
+      kind: "architecture-plan-decision",
+      artifact: architecturePlanDecisionSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const decision = stored.artifact as ArchitecturePlanDecision;
+      return {
+        id,
+        kind: "architecture-plan-decision",
+        path,
+        briefId: decision.briefId,
+        briefVersion: decision.briefVersion,
+        createdAt: decision.decidedAt,
+      };
+    },
+  },
 };
 
 // The decision pattern must be tested before the brief pattern because
@@ -137,6 +183,8 @@ const orderedKinds: FoundryArtifactKind[] = [
   "project-brief",
   "intake-turn",
   "export-feedback",
+  "architecture-plan-decision",
+  "architecture-plan",
 ];
 
 function descriptor(
@@ -188,6 +236,24 @@ export class FoundryArtifactStore {
   ): Promise<FoundryArtifactReference> {
     const validated = exportFeedbackRecordSchema.parse(record);
     return this.#write("export-feedback", validated.feedbackId, validated);
+  }
+
+  async saveArchitecturePlan(
+    plan: ArchitecturePlan,
+  ): Promise<FoundryArtifactReference> {
+    const validated = architecturePlanSchema.parse(plan);
+    return this.#write("architecture-plan", validated.planId, validated);
+  }
+
+  async saveArchitecturePlanDecision(
+    decision: ArchitecturePlanDecision,
+  ): Promise<FoundryArtifactReference> {
+    const validated = architecturePlanDecisionSchema.parse(decision);
+    return this.#write(
+      "architecture-plan-decision",
+      validated.decisionId,
+      validated,
+    );
   }
 
   async load(id: string): Promise<FoundryStoredArtifact> {
@@ -255,7 +321,9 @@ export class FoundryArtifactStore {
       | ProjectBrief
       | ProjectBriefDecision
       | IntakeTurnRecord
-      | ExportFeedbackRecord,
+      | ExportFeedbackRecord
+      | ArchitecturePlan
+      | ArchitecturePlanDecision,
   ): Promise<FoundryArtifactReference> {
     await mkdir(this.#root, { recursive: true });
     const path = join(this.#root, `${kind}-${id}.json`);

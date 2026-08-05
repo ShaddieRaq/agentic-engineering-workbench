@@ -33,7 +33,17 @@ export type FoundryCliArgs =
     }
   | { command: "intake-status"; briefId: string }
   | { command: "export-claude-code"; decisionArtifactId: string; out: string | null }
-  | { command: "import-feedback"; bundlePath: string; exportDir: string | null };
+  | { command: "import-feedback"; bundlePath: string; exportDir: string | null }
+  | { command: "architect-plan"; briefId: string; model: string | null }
+  | { command: "plan-show"; planId: string }
+  | {
+      command: "plan-decide";
+      planId: string;
+      decision: "approve" | "reject" | "revise";
+      operatorId: string;
+      rationale: string;
+      requestedRevisions: string[];
+    };
 
 function option(args: string[], name: string): string | null {
   const index = args.indexOf(name);
@@ -195,6 +205,33 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
     };
   }
 
+  if (command === "architect-plan") {
+    return {
+      command,
+      briefId: requiredOption(args, "--brief-id"),
+      model: option(args, "--model"),
+    };
+  }
+
+  if (command === "plan-show") {
+    return { command, planId: requiredOption(args, "--plan-id") };
+  }
+
+  if (command === "plan-decide") {
+    const decision = requiredOption(args, "--decision");
+    if (decision !== "approve" && decision !== "reject" && decision !== "revise") {
+      throw new Error("--decision must be one of: approve, reject, revise.");
+    }
+    return {
+      command,
+      planId: requiredOption(args, "--plan-id"),
+      decision,
+      operatorId: requiredOption(args, "--operator"),
+      rationale: requiredOption(args, "--rationale"),
+      requestedRevisions: repeatedOption(args, "--revision"),
+    };
+  }
+
   throw new Error(
     "Expected one of: brief-create --title <title> --idea <summary>, " +
       "brief-show --brief-id <id> [--version <n>], brief-list [--brief-id <id>], " +
@@ -204,6 +241,8 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
       'intake-turn --brief-id <id> [--answer "<questionId>=<text>"] ... [--answers-file <path>] [--model <id>], ' +
       "intake-status --brief-id <id>, " +
       "export-claude-code --decision <artifact-id> [--out <directory>], " +
-      "import-feedback --bundle <path> [--export-dir <directory>].",
+      "import-feedback --bundle <path> [--export-dir <directory>], " +
+      "architect-plan --brief-id <id> [--model <id>], plan-show --plan-id <id>, " +
+      "plan-decide --plan-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...].",
   );
 }

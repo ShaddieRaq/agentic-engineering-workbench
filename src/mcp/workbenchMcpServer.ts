@@ -164,6 +164,42 @@ export function buildWorkbenchMcpServer(
   );
 
   server.registerTool(
+    "architect_plan",
+    {
+      description:
+        "Writes evidence. Run the Project Architect on an APPROVED project " +
+        "brief, producing an architecture and acceptance plan with " +
+        "deterministic coverage validation against the brief. Refuses briefs " +
+        "whose latest decision is not approve. Requires the Workbench " +
+        "machine's provider key. Never modifies agent policy.",
+      inputSchema: {
+        briefId: z.uuid(),
+        model: z.string().min(1).optional(),
+      },
+    },
+    async (input) => asText(await tools.architectPlan(input)),
+  );
+
+  server.registerTool(
+    "record_plan_decision",
+    {
+      description:
+        "Writes an operator decision. Record approve, reject, or revise on an " +
+        "architecture plan, pinned to its exact digest. Recorded with the " +
+        "named operator's identity; approval is blocked while blocking " +
+        "concerns remain.",
+      inputSchema: {
+        planId: z.uuid(),
+        decision: z.enum(["approve", "reject", "revise"]),
+        operatorId: z.string().min(1).max(200),
+        rationale: z.string().min(1).max(8_000),
+        requestedRevisions: z.array(z.string().min(1).max(2_000)).max(20).optional(),
+      },
+    },
+    async (input) => asText(await tools.recordPlanDecision(input)),
+  );
+
+  server.registerTool(
     "record_brief_decision",
     {
       description:
