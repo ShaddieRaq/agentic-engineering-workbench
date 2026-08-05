@@ -42,6 +42,8 @@ export const projectArchitectBaselinePolicy: ProjectArchitectPolicy =
         "Never reuse an id across two plan elements.",
         "When citing brief entries, echo their exact ids from the brief; never invent or alter brief ids.",
         "Record a blocking concern for anything that prevents a buildable plan, and advisory concerns for weaknesses worth noting.",
+        "If a brief leaves an implementation choice open, treat it as advisory unless the omission prevents a buildable plan or makes a criterion untestable.",
+        "Do not mark a concern blocking just because the brief omits a design detail that can be reasonably chosen for the plan.",
         "Do not include version numbers, digests, or timestamps in the plan content.",
       ],
       coverageRules: [
