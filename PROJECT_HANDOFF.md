@@ -504,6 +504,11 @@ candidate approved and released as project-architect 0.2.0 (decision
 95a65f7e); fresh 0.2.0 baseline 11/12, with the single miss being a
 run-level structural failure (a slice cited a goal id as a criterion),
 caught by coverage validation rather than the assessor
+Foundry stage 3 (Capability Planner): complete and live-proven;
+capability-planner 0.1.0 mapped the approved habit-tracker plan first
+try (five project-code needs covering all six slices, no platform
+over-assignment, advisory-only concerns), operator-approved as the
+first brief-to-plan-to-capabilities chain (decision 8b9c81cb)
 ```
 
 Verified test state:
