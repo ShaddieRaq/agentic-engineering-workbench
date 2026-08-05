@@ -10,12 +10,59 @@ import type {
   FoundryArtifactStore,
   FoundryStoredArtifact,
 } from "../foundry/foundryArtifactStore.js";
+import type {
+  IntakeSessionController,
+  IntakeTurnResult,
+} from "../foundry/intakeSessionController.js";
+import type { ProjectBriefService } from "../foundry/projectBriefService.js";
+
+// Structural subsets of AgentApplicationService so tests can inject scripted
+// fakes without provider construction (precedent: IntakeAgentRunService).
+export interface McpAgentRunner {
+  run(request: { agentId: string; input: unknown; model?: string }): Promise<{
+    run: {
+      succeeded: boolean;
+      output: unknown;
+      failure: { message: string } | null;
+      assessment: { passed: boolean; message: string } | null;
+    };
+    artifactId: string;
+    artifactPath: string;
+  }>;
+}
+
+export interface McpPromotionDecisionService {
+  recordPromotionDecision(request: {
+    candidateEvaluationId: string;
+    decision: "approve" | "reject" | "revise";
+    operatorId: string;
+    rationale: string;
+    proposalArtifactId?: string;
+  }): Promise<{ decision: unknown; artifactId: string }>;
+}
 
 export interface WorkbenchMcpDependencies {
   agents: AgentRegistry;
   artifacts: FileArtifactStore;
   foundry: FoundryArtifactStore;
   exportsRoot: string;
+  agentRunner: McpAgentRunner;
+  promotionDecisions: McpPromotionDecisionService;
+  intake: Pick<IntakeSessionController, "startIntake" | "runTurn" | "status">;
+  briefs: Pick<ProjectBriefService, "recordDecision">;
+}
+
+function intakeTurnView(result: IntakeTurnResult) {
+  return {
+    briefId: result.brief.briefId,
+    briefVersion: result.brief.version,
+    turnNumber: result.record.turnNumber,
+    maxTurns: result.record.maxTurns,
+    status: result.record.status,
+    nextQuestions: result.record.nextQuestions,
+    openIssues: result.record.openIssues,
+    reconciliation: result.reconciliation,
+  };
 }
 
 export interface ExportedPackageFile {
@@ -112,6 +159,96 @@ export function createWorkbenchMcpTools(deps: WorkbenchMcpDependencies) {
         issuesObserved: record.bundle.issuesObserved,
         observations: record.bundle.observations,
       };
+    },
+
+    async runAgent(input: {
+      agentId: string;
+      inputJson: string;
+      model?: string | undefined;
+    }) {
+      const parsed: unknown = JSON.parse(input.inputJson);
+      const response = await deps.agentRunner.run({
+        agentId: input.agentId,
+        input: parsed,
+        ...(input.model ? { model: input.model } : {}),
+      });
+      return {
+        agentId: input.agentId,
+        succeeded: response.run.succeeded,
+        assessment: response.run.assessment,
+        failure: response.run.failure,
+        artifactId: response.artifactId,
+        artifactPath: response.artifactPath,
+        output: response.run.output,
+      };
+    },
+
+    async intakeStart(input: {
+      title: string;
+      idea: string;
+      maxTurns?: number | undefined;
+    }) {
+      const result = await deps.intake.startIntake({
+        title: input.title,
+        idea: input.idea,
+        ...(input.maxTurns !== undefined ? { maxTurns: input.maxTurns } : {}),
+      });
+      return intakeTurnView(result);
+    },
+
+    async intakeTurn(input: {
+      briefId: string;
+      answers: { questionId: string | null; answer: string }[];
+    }) {
+      const result = await deps.intake.runTurn({
+        briefId: input.briefId,
+        answers: input.answers,
+      });
+      return intakeTurnView(result);
+    },
+
+    async intakeStatus(input: { briefId: string }) {
+      return deps.intake.status(input.briefId);
+    },
+
+    async recordBriefDecision(input: {
+      briefId: string;
+      version: number;
+      decision: "approve" | "reject" | "revise";
+      operatorId: string;
+      rationale: string;
+      requestedRevisions?: string[] | undefined;
+    }) {
+      const saved = await deps.briefs.recordDecision({
+        briefId: input.briefId,
+        version: input.version,
+        decision: input.decision,
+        operatorId: input.operatorId,
+        rationale: input.rationale,
+        requestedRevisions:
+          input.requestedRevisions && input.requestedRevisions.length > 0
+            ? input.requestedRevisions
+            : null,
+      });
+      return { decision: saved.decision, artifactPath: saved.reference.path };
+    },
+
+    async recordPromotionDecision(input: {
+      candidateEvaluationId: string;
+      decision: "approve" | "reject" | "revise";
+      operatorId: string;
+      rationale: string;
+      proposalArtifactId?: string | undefined;
+    }) {
+      return deps.promotionDecisions.recordPromotionDecision({
+        candidateEvaluationId: input.candidateEvaluationId,
+        decision: input.decision,
+        operatorId: input.operatorId,
+        rationale: input.rationale,
+        ...(input.proposalArtifactId
+          ? { proposalArtifactId: input.proposalArtifactId }
+          : {}),
+      });
     },
 
     async getApprovedExport(input: {

@@ -110,6 +110,22 @@ approved package files for local installation). The server needs no provider
 credentials and never writes agent policy or source. Claude Code sessions in
 this repository pick it up from `.mcp.json`; other projects register it with
 `claude mcp add agentic-workbench -- npm --prefix <workbench-path> run
---silent mcp`. Deferred to the next Phase 42 iteration: gate runs, agent
-runs, improvement-analysis starts (operation polling over MCP), and the
-operator decision-write tool.
+--silent mcp`.
+
+The second Phase 42 iteration makes MCP the primary local agent channel:
+`run_agent` executes any registered agent on the Workbench's measured model
+with full run evidence; `intake_start`, `intake_turn`, and `intake_status`
+drive evidence-grade project-intake interviews through the controller from
+any IDE session; `record_brief_decision` and `record_promotion_decision`
+record operator-attributed decisions under the same constraints as the CLI
+and web boundaries. The stdio server starts without provider credentials;
+model-invoking tools require the machine's `OPENAI_API_KEY` at call time.
+
+Division of labor: on the Workbench machine, MCP is the primary channel
+(always the current approved behavior, evidence persisted); the exported
+package remains the distribution channel for machines and people without the
+Workbench, fetched fresh via `get_approved_export` rather than permanently
+installed. Deferred to iteration three: gate runs and improvement-analysis
+starts with operation polling, and the feedback-verification lineage policy
+(bundles currently verify only against the exact exportId, so re-exports
+orphan unimported bundles by design).

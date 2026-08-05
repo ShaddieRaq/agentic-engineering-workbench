@@ -549,13 +549,16 @@ final-turn blocking reports without questions are legitimate.
 
 ## Immediate Next Step
 
-Phase 42 second iteration: extend the shipped `agentic-workbench` MCP server
-(stdio, `.mcp.json`, six tools: reads, provenance-verified `submit_feedback`,
-`get_approved_export`) with the deferred tools — gate runs, agent runs, and
-improvement-analysis starts with operation polling, plus the
-operator-attributed `record_decision` write. Permission model fixed by
-Decision 084: read everything; write evidence freely; write decisions with a
-human attached; never write policy or source.
+Phase 42 third iteration: extend the `agentic-workbench` MCP server (now
+twelve tools: reads, provenance-verified `submit_feedback`,
+`get_approved_export`, `run_agent`, the intake interview trio, and both
+operator decision writes) with long-running evidence operations — gate runs
+and improvement-analysis starts backed by operation polling — and decide the
+feedback-verification lineage policy (exact exportId vs approved lineage).
+Permission model fixed by Decision 084: read everything; write evidence
+freely; write decisions with a human attached; never write policy or source.
+MCP is the primary agent channel on the Workbench machine; exports remain
+the distribution channel elsewhere.
 
 ## Broader Roadmap
 

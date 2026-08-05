@@ -94,6 +94,116 @@ export function buildWorkbenchMcpServer(
   );
 
   server.registerTool(
+    "run_agent",
+    {
+      description:
+        "Writes evidence. Run a registered Workbench agent once against a " +
+        "JSON input, on the Workbench's own provider and measured model, " +
+        "persisting a complete agent-run evidence artifact. Requires the " +
+        "Workbench machine's provider key. Never modifies agent policy.",
+      inputSchema: {
+        agentId: z.string().min(1),
+        inputJson: z.string().min(2),
+        model: z.string().min(1).optional(),
+      },
+    },
+    async (input) => asText(await tools.runAgent(input)),
+  );
+
+  server.registerTool(
+    "intake_start",
+    {
+      description:
+        "Writes evidence. Start an evidence-grade project-intake interview " +
+        "through the Workbench controller: creates a versioned brief, runs " +
+        "turn 1 on the measured model, persists brief and turn evidence, and " +
+        "returns the questions to relay to the user.",
+      inputSchema: {
+        title: z.string().min(1).max(200),
+        idea: z.string().min(1).max(4_000),
+        maxTurns: z.number().int().min(1).max(20).optional(),
+      },
+    },
+    async (input) => asText(await tools.intakeStart(input)),
+  );
+
+  server.registerTool(
+    "intake_turn",
+    {
+      description:
+        "Writes evidence. Submit the user's answers for the next intake " +
+        "turn. Answers may reference question ids from the previous turn " +
+        "(questionId) or volunteer new information (questionId null). " +
+        "Produces the next brief version and turn evidence.",
+      inputSchema: {
+        briefId: z.uuid(),
+        answers: z
+          .array(
+            z.object({
+              questionId: z.uuid().nullable(),
+              answer: z.string().min(1).max(8_000),
+            }),
+          )
+          .min(1)
+          .max(50),
+      },
+    },
+    async (input) => asText(await tools.intakeTurn(input)),
+  );
+
+  server.registerTool(
+    "intake_status",
+    {
+      description:
+        "Read-only. Report an intake interview's progress: brief version, " +
+        "turn status, pending questions, open issues, and provenance " +
+        "conversion metrics.",
+      inputSchema: { briefId: z.uuid() },
+    },
+    async (input) => asText(await tools.intakeStatus(input)),
+  );
+
+  server.registerTool(
+    "record_brief_decision",
+    {
+      description:
+        "Writes an operator decision. Record approve, reject, or revise on a " +
+        "specific project-brief version, pinned to its exact content digest. " +
+        "Recorded with the named operator's identity; approval is blocked " +
+        "while unresolved entries or open questions remain, identical to the " +
+        "CLI boundary.",
+      inputSchema: {
+        briefId: z.uuid(),
+        version: z.number().int().min(1),
+        decision: z.enum(["approve", "reject", "revise"]),
+        operatorId: z.string().min(1).max(200),
+        rationale: z.string().min(1).max(8_000),
+        requestedRevisions: z.array(z.string().min(1).max(2_000)).max(20).optional(),
+      },
+    },
+    async (input) => asText(await tools.recordBriefDecision(input)),
+  );
+
+  server.registerTool(
+    "record_promotion_decision",
+    {
+      description:
+        "Writes an operator decision. Record approve, reject, or revise " +
+        "against a saved candidate comparison. Recorded with the named " +
+        "operator's identity; approval requires passed promotion gates, " +
+        "identical to the web boundary. Never mutates the agent registry.",
+      inputSchema: {
+        candidateEvaluationId: z.string().min(1),
+        decision: z.enum(["approve", "reject", "revise"]),
+        operatorId: z.string().min(1).max(200),
+        rationale: z.string().min(1).max(8_000),
+        proposalArtifactId: z.string().min(1).optional(),
+      },
+    },
+    async (input) => asText(await tools.recordPromotionDecision(input)),
+  );
+
+  server.registerTool(
     "get_approved_export",
     {
       description:

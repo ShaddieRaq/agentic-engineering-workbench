@@ -902,13 +902,15 @@ remain planned.
 
 ## Phase 42 — IDE Connection via MCP
 
-Status: Planned (Decision 084 accepted)
+Status: In progress (Decision 084 accepted; iterations one and two shipped)
 
 Goal:
 
 Connect IDE sessions (Claude Code, Cursor) to the Workbench through an MCP
 server over the existing loopback application service, so evidence flows both
-ways without opening a policy side door.
+ways without opening a policy side door. On the Workbench machine, MCP is the
+primary agent channel; exported packages remain the distribution channel for
+environments without the Workbench.
 
 Permission model (fixed by Decision 084):
 
@@ -920,14 +922,20 @@ Permission model (fixed by Decision 084):
 
 Delivery:
 
-1. MCP server wrapping `AgentApplicationService` read operations and artifact
-   browsing.
-2. Evidence-write tools: feedback-bundle submission (replacing the manual file
-   carry proven clunky in the first round trip), gate runs, agent runs, and
-   improvement-analysis starts with operation polling.
-3. Decision-write tool mirroring the web boundary's operator constraints.
-4. Registration guidance for Claude Code and Cursor, keeping the server
-   loopback-only and credentials machine-local.
+1. **Shipped (iteration one):** stdio MCP server (`npm run mcp`, `.mcp.json`)
+   with catalog and artifact reads, provenance-verified feedback-bundle
+   submission, and approved-export package delivery.
+2. **Shipped (iteration two):** `run_agent` on the measured model with full
+   run evidence; `intake_start`/`intake_turn`/`intake_status` driving
+   evidence-grade interviews through the controller; operator-attributed
+   `record_brief_decision` and `record_promotion_decision` under the same
+   constraints as the CLI and web boundaries. Stale installed skill copies
+   retired in favor of fetch-on-demand delivery.
+3. Gate runs and improvement-analysis starts with operation polling over MCP.
+4. Feedback-verification lineage policy: decide whether bundles may verify
+   against an export's approved lineage rather than only the exact exportId.
+5. Registration guidance for Cursor, keeping the server loopback-only and
+   credentials machine-local.
 
 Deferred deliberately:
 
@@ -937,8 +945,9 @@ Deferred deliberately:
 
 ## Current Priorities
 
-1. Build the Phase 42 MCP server with the Decision 084 permission model,
-   starting with feedback-bundle submission from IDE sessions.
+1. Phase 42 iteration three: long-running evidence operations over MCP
+   (gate runs, improvement-analysis starts with operation polling) and the
+   feedback-verification lineage decision.
 2. Route imported export-feedback evidence into improvement-loop packets so
    field reports become optimizer input.
 3. Build the Agent Improvement Analyst disposition dataset from the recorded
