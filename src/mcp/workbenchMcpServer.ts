@@ -200,6 +200,43 @@ export function buildWorkbenchMcpServer(
   );
 
   server.registerTool(
+    "capability_plan",
+    {
+      description:
+        "Writes evidence. Run the Capability Planner on an APPROVED " +
+        "architecture plan, mapping every implementation slice to existing " +
+        "agents, tools, project code, or proposed missing capabilities, with " +
+        "deterministic catalog and coverage validation. Refuses plans whose " +
+        "latest decision is not approve. Requires the Workbench machine's " +
+        "provider key. Never modifies agent policy.",
+      inputSchema: {
+        planId: z.uuid(),
+        model: z.string().min(1).optional(),
+      },
+    },
+    async (input) => asText(await tools.capabilityPlan(input)),
+  );
+
+  server.registerTool(
+    "record_capability_decision",
+    {
+      description:
+        "Writes an operator decision. Record approve, reject, or revise on a " +
+        "capability plan, pinned to its exact digest. Recorded with the named " +
+        "operator's identity; approval is blocked while blocking concerns " +
+        "remain.",
+      inputSchema: {
+        capabilityPlanId: z.uuid(),
+        decision: z.enum(["approve", "reject", "revise"]),
+        operatorId: z.string().min(1).max(200),
+        rationale: z.string().min(1).max(8_000),
+        requestedRevisions: z.array(z.string().min(1).max(2_000)).max(20).optional(),
+      },
+    },
+    async (input) => asText(await tools.recordCapabilityDecision(input)),
+  );
+
+  server.registerTool(
     "record_brief_decision",
     {
       description:

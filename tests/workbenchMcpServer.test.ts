@@ -64,6 +64,14 @@ describe("workbench MCP server", () => {
             throw new Error("Not scripted.");
           },
         },
+        capability: {
+          async createCapabilityPlan() {
+            throw new Error("Not scripted.");
+          },
+          async recordCapabilityDecision() {
+            throw new Error("Not scripted.");
+          },
+        },
       },
       "0.0.0-test",
     );
@@ -79,6 +87,7 @@ describe("workbench MCP server", () => {
     const names = listed.tools.map(({ name }) => name).sort();
     expect(names).toEqual([
       "architect_plan",
+      "capability_plan",
       "describe_agent",
       "get_approved_export",
       "get_artifact",
@@ -88,6 +97,7 @@ describe("workbench MCP server", () => {
       "list_agents",
       "list_artifacts",
       "record_brief_decision",
+      "record_capability_decision",
       "record_plan_decision",
       "record_promotion_decision",
       "run_agent",

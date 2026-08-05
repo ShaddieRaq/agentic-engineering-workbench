@@ -190,9 +190,13 @@ async function main(): Promise<void> {
   if (
     args.command === "architect-plan" ||
     args.command === "plan-show" ||
-    args.command === "plan-decide"
+    args.command === "plan-decide" ||
+    args.command === "capability-plan" ||
+    args.command === "capability-show" ||
+    args.command === "capability-decide"
   ) {
     const { ArchitectService } = await import("./foundry/architectService.js");
+    const { CapabilityService } = await import("./foundry/capabilityService.js");
     const workspaceRoot = process.cwd();
     const workspaces = new FileWorkspaceStore(
       resolve(workspaceRoot, ".workbench", "workspaces.json"),
@@ -213,6 +217,20 @@ async function main(): Promise<void> {
       agentService,
       briefService: service,
       store,
+    });
+    const tools = createPlatformToolRegistry(workspaceRoot);
+    const capability = new CapabilityService({
+      agentService,
+      architect,
+      store,
+      catalogFactory: () => ({
+        agents: platformAgentRegistry
+          .list()
+          .map(({ id, description }) => ({ id, description })),
+        tools: tools
+          .ids()
+          .map((id) => ({ id, description: tools.get(id).description })),
+      }),
     });
 
     if (args.command === "architect-plan") {
@@ -243,8 +261,55 @@ async function main(): Promise<void> {
       return;
     }
 
-    const saved = await architect.recordPlanDecision({
-      planId: args.planId,
+    if (args.command === "plan-decide") {
+      const saved = await architect.recordPlanDecision({
+        planId: args.planId,
+        decision: args.decision,
+        operatorId: args.operatorId,
+        rationale: args.rationale,
+        requestedRevisions:
+          args.requestedRevisions.length > 0 ? args.requestedRevisions : null,
+      });
+      console.log(JSON.stringify({ decision: saved.decision, reference: saved.reference }, null, 2));
+      return;
+    }
+
+    if (args.command === "capability-plan") {
+      const saved = await capability.createCapabilityPlan({
+        planId: args.planId,
+        ...(args.model ? { model: args.model } : {}),
+      });
+      const { content } = saved.capabilityPlan;
+      console.log(
+        `Capability plan: ${saved.capabilityPlan.capabilityPlanId} ` +
+          `(architecture plan ${saved.capabilityPlan.planId})`,
+      );
+      console.log(
+        `Needs: ${content.needs.length}, proposals: ${content.proposedCapabilities.length}, concerns: ${content.concerns.length}`,
+      );
+      if (saved.capabilityPlan.reconciliation) {
+        const r = saved.capabilityPlan.reconciliation;
+        console.log(
+          `Structural repairs applied: ${r.removedReferences.length} removed reference(s), ${r.droppedNeedIds.length} dropped need(s).`,
+        );
+      }
+      console.log(`Evidence saved: ${saved.reference.path}`);
+      return;
+    }
+
+    if (args.command === "capability-show") {
+      const capabilityPlan = await capability.loadCapabilityPlan(
+        args.capabilityPlanId,
+      );
+      const status = await capability.deriveCapabilityPlanStatus(
+        args.capabilityPlanId,
+      );
+      console.log(JSON.stringify({ capabilityPlan, status }, null, 2));
+      return;
+    }
+
+    const saved = await capability.recordCapabilityDecision({
+      capabilityPlanId: args.capabilityPlanId,
       decision: args.decision,
       operatorId: args.operatorId,
       rationale: args.rationale,

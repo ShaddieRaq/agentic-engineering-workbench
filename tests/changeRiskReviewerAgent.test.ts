@@ -27,6 +27,7 @@ describe("changeRiskReviewerAgent", () => {
   it("registers a second independently versioned agent product", () => {
     expect(platformAgentRegistry.list().map(({ id }) => id)).toEqual([
       "agent-improvement-analyst",
+      "capability-planner",
       "change-risk-reviewer",
       "documentation-auditor",
       "playwright-failure-triage",

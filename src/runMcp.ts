@@ -6,6 +6,7 @@ import { AgentApplicationService } from "./agents/agentApplicationService.js";
 import { platformAgentRegistry } from "./agents/platformAgentRegistry.js";
 import { FileArtifactStore } from "./artifacts/fileArtifactStore.js";
 import { ArchitectService } from "./foundry/architectService.js";
+import { CapabilityService } from "./foundry/capabilityService.js";
 import { FoundryArtifactStore } from "./foundry/foundryArtifactStore.js";
 import { IntakeSessionController } from "./foundry/intakeSessionController.js";
 import { ProjectBriefService } from "./foundry/projectBriefService.js";
@@ -42,6 +43,12 @@ async function main(): Promise<void> {
     },
   );
   const briefService = new ProjectBriefService(foundry);
+  const architectService = new ArchitectService({
+    agentService,
+    briefService,
+    store: foundry,
+  });
+  const toolRegistry = createPlatformToolRegistry(workspaceRoot);
 
   const server = buildWorkbenchMcpServer(
     {
@@ -57,10 +64,19 @@ async function main(): Promise<void> {
         store: foundry,
       }),
       briefs: briefService,
-      architect: new ArchitectService({
+      architect: architectService,
+      capability: new CapabilityService({
         agentService,
-        briefService,
+        architect: architectService,
         store: foundry,
+        catalogFactory: () => ({
+          agents: platformAgentRegistry
+            .list()
+            .map(({ id, description }) => ({ id, description })),
+          tools: toolRegistry
+            .ids()
+            .map((id) => ({ id, description: toolRegistry.get(id).description })),
+        }),
       }),
     },
     packageJson.version ?? "0.0.0",

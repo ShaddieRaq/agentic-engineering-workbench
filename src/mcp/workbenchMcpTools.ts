@@ -11,6 +11,7 @@ import type {
   FoundryStoredArtifact,
 } from "../foundry/foundryArtifactStore.js";
 import type { ArchitectService } from "../foundry/architectService.js";
+import type { CapabilityService } from "../foundry/capabilityService.js";
 import type {
   IntakeSessionController,
   IntakeTurnResult,
@@ -52,6 +53,10 @@ export interface WorkbenchMcpDependencies {
   intake: Pick<IntakeSessionController, "startIntake" | "runTurn" | "status">;
   briefs: Pick<ProjectBriefService, "recordDecision">;
   architect: Pick<ArchitectService, "createPlan" | "recordPlanDecision">;
+  capability: Pick<
+    CapabilityService,
+    "createCapabilityPlan" | "recordCapabilityDecision"
+  >;
 }
 
 function intakeTurnView(result: IntakeTurnResult) {
@@ -262,6 +267,44 @@ export function createWorkbenchMcpTools(deps: WorkbenchMcpDependencies) {
     }) {
       const saved = await deps.architect.recordPlanDecision({
         planId: input.planId,
+        decision: input.decision,
+        operatorId: input.operatorId,
+        rationale: input.rationale,
+        requestedRevisions:
+          input.requestedRevisions && input.requestedRevisions.length > 0
+            ? input.requestedRevisions
+            : null,
+      });
+      return { decision: saved.decision, artifactPath: saved.reference.path };
+    },
+
+    async capabilityPlan(input: {
+      planId: string;
+      model?: string | undefined;
+    }) {
+      const saved = await deps.capability.createCapabilityPlan({
+        planId: input.planId,
+        ...(input.model ? { model: input.model } : {}),
+      });
+      return {
+        capabilityPlanId: saved.capabilityPlan.capabilityPlanId,
+        planId: saved.capabilityPlan.planId,
+        briefId: saved.capabilityPlan.briefId,
+        content: saved.capabilityPlan.content,
+        reconciliation: saved.capabilityPlan.reconciliation,
+        artifactPath: saved.reference.path,
+      };
+    },
+
+    async recordCapabilityDecision(input: {
+      capabilityPlanId: string;
+      decision: "approve" | "reject" | "revise";
+      operatorId: string;
+      rationale: string;
+      requestedRevisions?: string[] | undefined;
+    }) {
+      const saved = await deps.capability.recordCapabilityDecision({
+        capabilityPlanId: input.capabilityPlanId,
         decision: input.decision,
         operatorId: input.operatorId,
         rationale: input.rationale,

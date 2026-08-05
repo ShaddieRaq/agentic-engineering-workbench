@@ -281,6 +281,37 @@ describe("parseFoundryArgs", () => {
     ).toThrowError(/--decision must be one of/i);
   });
 
+  it("parses capability commands", () => {
+    expect(parseFoundryArgs(["capability-plan", "--plan-id", "p1"])).toEqual({
+      command: "capability-plan",
+      planId: "p1",
+      model: null,
+    });
+    expect(
+      parseFoundryArgs(["capability-show", "--capability-plan-id", "c1"]),
+    ).toEqual({ command: "capability-show", capabilityPlanId: "c1" });
+    expect(
+      parseFoundryArgs([
+        "capability-decide",
+        "--capability-plan-id",
+        "c1",
+        "--decision",
+        "approve",
+        "--operator",
+        "op-1",
+        "--rationale",
+        "Mapped fully",
+      ]),
+    ).toEqual({
+      command: "capability-decide",
+      capabilityPlanId: "c1",
+      decision: "approve",
+      operatorId: "op-1",
+      rationale: "Mapped fully",
+      requestedRevisions: [],
+    });
+  });
+
   it("parses intake-status", () => {
     expect(parseFoundryArgs(["intake-status", "--brief-id", "abc"])).toEqual({
       command: "intake-status",

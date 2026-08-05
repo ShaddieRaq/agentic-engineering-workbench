@@ -104,6 +104,14 @@ async function createTools(options: {
         throw new Error("No architect scripted.");
       },
     },
+    capability: {
+      async createCapabilityPlan() {
+        throw new Error("No capability planner scripted.");
+      },
+      async recordCapabilityDecision() {
+        throw new Error("No capability planner scripted.");
+      },
+    },
   });
   return { tools, foundry, exportsRoot };
 }
@@ -180,7 +188,7 @@ describe("workbench MCP tools", () => {
     const { tools } = await createTools();
     const agents = await tools.listAgents();
 
-    expect(agents).toHaveLength(8);
+    expect(agents).toHaveLength(9);
     expect(agents).toContainEqual(
       expect.objectContaining({ id: "project-intake", version: "0.3.0" }),
     );
