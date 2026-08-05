@@ -308,6 +308,23 @@ export function buildWorkbenchMcpServer(
   );
 
   server.registerTool(
+    "prepare_builder_workspace",
+    {
+      description:
+        "Writes files into a project workspace. Prepare an ISOLATED builder " +
+        "workspace for a work order: visible acceptance tests, a .mcp.json " +
+        "wiring the workbench-builder server with a pinned project root, " +
+        "Claude Code deny/sandbox settings blocking Workbench reads, and a " +
+        "BUILDER.md rendered without holdout paths (Decision 087).",
+      inputSchema: {
+        workOrderId: z.uuid(),
+        projectRoot: z.string().min(1),
+      },
+    },
+    async (input) => asText(await tools.prepareBuilderWorkspace(input)),
+  );
+
+  server.registerTool(
     "submit_slice",
     {
       description:

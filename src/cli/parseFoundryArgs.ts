@@ -87,6 +87,7 @@ export type FoundryCliArgs =
     }
   | { command: "work-order-show"; workOrderId: string }
   | { command: "materialize-tests"; workOrderId: string; projectRoot: string }
+  | { command: "builder-workspace"; workOrderId: string; projectRoot: string }
   | { command: "submit-slice"; workOrderId: string; projectRoot: string }
   | {
       command: "submission-decide";
@@ -370,6 +371,14 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
     };
   }
 
+  if (command === "builder-workspace") {
+    return {
+      command,
+      workOrderId: requiredOption(args, "--work-order-id"),
+      projectRoot: requiredOption(args, "--project-root"),
+    };
+  }
+
   if (command === "submit-slice") {
     return {
       command,
@@ -411,6 +420,7 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
       "tests-decide --test-suite-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...], " +
       "work-order --test-suite-id <id> (--slice-id <id> | --next), work-order-show --work-order-id <id>, " +
       "materialize-tests --work-order-id <id> --project-root <path>, submit-slice --work-order-id <id> --project-root <path>, " +
+      "builder-workspace --work-order-id <id> --project-root <path>, " +
       "submission-decide --submission-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...].",
   );
 }

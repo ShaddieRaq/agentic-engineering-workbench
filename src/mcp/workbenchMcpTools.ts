@@ -66,8 +66,9 @@ export interface WorkbenchMcpDependencies {
   >;
   workOrders: Pick<
     WorkOrderService,
-    "createWorkOrder" | "nextSlice" | "materializeVisibleTests"
+    "createWorkOrder" | "nextSlice" | "materializeVisibleTests" | "loadWorkOrder"
   >;
+  suiteReads: Pick<TestDesignService, "loadTestSuite">;
   submissions: Pick<
     SubmissionService,
     "submitSlice" | "recordSubmissionDecision"
@@ -405,6 +406,24 @@ export function createWorkbenchMcpTools(deps: WorkbenchMcpDependencies) {
         projectRoot: input.projectRoot,
       });
       return { written };
+    },
+
+    async prepareBuilderWorkspace(input: {
+      workOrderId: string;
+      projectRoot: string;
+    }) {
+      const { prepareBuilderWorkspace } = await import(
+        "../foundry/builderWorkspace.js"
+      );
+      const prepared = await prepareBuilderWorkspace(
+        { workOrders: deps.workOrders, testDesign: deps.suiteReads },
+        {
+          workOrderId: input.workOrderId,
+          projectRoot: input.projectRoot,
+          workbenchRoot: process.cwd(),
+        },
+      );
+      return prepared;
     },
 
     async submitSlice(input: { workOrderId: string; projectRoot: string }) {

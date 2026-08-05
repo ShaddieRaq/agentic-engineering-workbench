@@ -200,6 +200,7 @@ async function main(): Promise<void> {
     args.command === "work-order" ||
     args.command === "work-order-show" ||
     args.command === "materialize-tests" ||
+    args.command === "builder-workspace" ||
     args.command === "submit-slice" ||
     args.command === "submission-decide"
   ) {
@@ -441,6 +442,27 @@ async function main(): Promise<void> {
         projectRoot: args.projectRoot,
       });
       for (const path of written) console.log(`Written: ${path}`);
+      return;
+    }
+
+    if (args.command === "builder-workspace") {
+      const { prepareBuilderWorkspace } = await import(
+        "./foundry/builderWorkspace.js"
+      );
+      const prepared = await prepareBuilderWorkspace(
+        { workOrders, testDesign },
+        {
+          workOrderId: args.workOrderId,
+          projectRoot: args.projectRoot,
+          workbenchRoot: workspaceRoot,
+        },
+      );
+      console.log(`Builder workspace prepared at ${prepared.projectRoot}`);
+      for (const path of prepared.writtenTestFiles) console.log(`Test: ${path}`);
+      for (const path of prepared.writtenConfigFiles) console.log(`Config: ${path}`);
+      console.log(
+        `Work order "${prepared.workOrder.sliceTitle}": ${prepared.workOrder.visibleTestFilePaths.length} visible file(s), ${prepared.workOrder.holdoutTestFileCount} withheld holdout file(s).`,
+      );
       return;
     }
 

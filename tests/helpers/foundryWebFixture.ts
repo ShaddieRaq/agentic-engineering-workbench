@@ -220,6 +220,57 @@ export async function persistFoundryChain(
   };
 }
 
+// A slice-2 work order on top of a persisted chain whose applicable set
+// includes every file — visible and holdout — pinned to the STORED suite's
+// digest. The redaction test bed for the builder channel.
+export async function persistSliceTwoWorkOrder(
+  store: FoundryArtifactStore,
+  chain: PersistedFoundryChain,
+  overrides: { testSuiteDigest?: string; createdAt?: string } = {},
+): Promise<{ workOrderId: string }> {
+  const storedSuite = await store.load(chain.testSuiteId);
+  if (storedSuite.kind !== "test-suite") {
+    throw new Error("Fixture chain is missing its test suite.");
+  }
+  const secondSlice = chain.fixture.plan.content.implementationSlices[1]!;
+  const workOrder = workOrderSchema.parse({
+    workOrderId: randomUUID(),
+    testSuiteId: chain.testSuiteId,
+    testSuiteDigest:
+      overrides.testSuiteDigest ?? digestJsonEvidence(storedSuite.artifact),
+    planId: chain.planBId,
+    briefId: chain.fixture.brief.briefId,
+    briefVersion: chain.fixture.brief.version,
+    sliceId: secondSlice.id,
+    sliceTitle: secondSlice.title,
+    sliceDelivers: secondSlice.delivers,
+    dependsOnSliceIds: secondSlice.dependsOnSliceIds,
+    criteria: [
+      {
+        id: chain.fixture.criterionIds[2],
+        text: "Criterion 3.",
+        verification: "Verify criterion 3 with a fixture.",
+      },
+      {
+        id: chain.fixture.criterionIds[3],
+        text: "Criterion 4.",
+        verification: "Verify criterion 4 with a fixture.",
+      },
+    ],
+    applicableTestFilePaths: [
+      chain.fixture.filePaths.visibleOnly,
+      chain.fixture.filePaths.crossSlice,
+      chain.fixture.filePaths.holdout,
+    ],
+    interfaceContract: chain.fixture.suite.content.interfaceContract,
+    builderInstructions: BUILDER_INSTRUCTIONS,
+    forbiddenPaths: ["acceptance-tests/"],
+    createdAt: overrides.createdAt ?? "2026-08-05T12:00:00.000Z",
+  });
+  await store.saveWorkOrder(workOrder);
+  return { workOrderId: workOrder.workOrderId };
+}
+
 // A brief plus an APPROVED suite whose planId references a plan that was
 // never persisted — exercises the dangling-anchor tolerance of the chain view.
 export async function persistDanglingSuite(

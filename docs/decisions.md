@@ -2471,3 +2471,57 @@ for agents authored anywhere.
 - model qualification rises in priority ahead of further export targets
 - the export manifest format is the natural declarative-registration format
   in reverse
+
+## Decision 087 — The Builder Channel Is a Redacted Projection with Structural Isolation
+
+Status: Accepted (2026-08-05)
+
+### Decision
+
+The governed external builder (Decision 085) gets its own connection tier,
+separate from the operator channels:
+
+- **Builder tier**: read your own work orders (redacted), materialize
+  visible tests, submit slices for verification, read your own submissions
+  and their operator decisions. Never read Workbench evidence, test suites,
+  agent policy, or source through any channel.
+
+Enforcement is layered, none of it resting on the builder's honesty:
+
+1. **A separate MCP server** (`workbench-builder`, `npm run mcp:builder`,
+   keyless) whose responses are allowlist projections. The pinned test
+   suite is the visibility authority for every path-shaped value: holdout
+   paths become ordinals, holdout output sections are withheld from
+   excerpts, holdout-path scope failures collapse to one aggregate
+   instruction. Redaction failures fall toward over-redaction. The project
+   root is pinned by the scaffolded workspace's `.mcp.json` env
+   (`BUILDER_PROJECT_ROOT`), so the builder cannot aim Workbench-process
+   writes at arbitrary paths.
+2. **Checked-in workspace permission rules**: `permissions.deny` on reading
+   the Workbench root (deny wins over every settings scope) plus Edit
+   denies on `.claude/**`, `.mcp.json`, and `acceptance-tests/**`.
+3. **OS sandbox**: filesystem `denyRead` of the Workbench root with
+   unsandboxed commands disabled, containing Bash subprocesses.
+
+Workspaces are prepared by the Workbench (`builder-workspace` CLI /
+`prepare_builder_workspace` operator MCP tool) and are regenerable
+artifacts; `BUILDER.md` renders through the same redaction function as the
+MCP channel.
+
+### Recorded residuals
+
+- **Verification executes builder-authored code while holdouts are on
+  disk** (pretest hooks, module side effects, background processes started
+  in the workspace). This is the primary remaining exfiltration channel;
+  the sketched mitigation is running verification from an out-of-tree copy
+  under the denied Workbench root (deferred: needs dependency-install
+  handling).
+- A killed verification can strand holdout files in the workspace; the
+  redacted aggregate scope message instructs deletion without naming them.
+- Claude Code `Write` path denies do not work; operators must not grant
+  the builder blanket Write approvals outside its source directories.
+- Operator decision rationales pass to the builder verbatim by design;
+  the operator convention is to paraphrase holdout expectations, never
+  quote file content.
+- The OS sandbox is macOS Seatbelt / Linux bubblewrap; the human user owns
+  the machine and is outside the threat model.

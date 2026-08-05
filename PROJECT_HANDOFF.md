@@ -588,12 +588,29 @@ is now fully drivable from the browser; only the builder session and
 its materialize/submit commands remain on the CLI/MCP channel by
 design.
 
+Builder-session isolation (2026-08-05, Decision 087): builders get a
+dedicated keyless MCP server (workbench-builder, npm run mcp:builder,
+five tools) whose responses are allowlist projections — holdout paths
+become ordinals, holdout output is withheld from excerpts, holdout
+scope failures aggregate to one instruction, and the project root is
+pinned via the scaffolded .mcp.json env so Workbench-side writes cannot
+be aimed elsewhere. `builder-workspace` (CLI) and
+`prepare_builder_workspace` (operator MCP, 23 tools) scaffold a
+workspace with visible tests, the MCP wiring, checked-in permission
+deny rules (Workbench root unreadable; .claude/, .mcp.json, and
+acceptance-tests/ uneditable), an OS sandbox denying Workbench reads to
+subprocesses, and a BUILDER.md rendered through the same redaction as
+the MCP channel. Recorded residuals (see Decision 087): verification
+executes builder code while holdouts are on disk (out-of-tree copy is
+the planned fix), crash-stranded holdouts, the Write-tool deny gap, and
+verbatim operator rationales.
+
 Verified test state:
 
 ```text
 npm run typecheck passed
-158 test files passed
-830 tests passed
+160 test files passed
+888 tests passed
 npm run agents -- validate passed (10 agents)
 project-intake 0.3.0 live gate: 14/15 (vague-answer 3/3 after the
 released provenance policy; the single miss was one behavioral

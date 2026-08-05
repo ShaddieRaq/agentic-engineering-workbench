@@ -90,6 +90,14 @@ describe("workbench MCP server", () => {
           async materializeVisibleTests() {
             throw new Error("Not scripted.");
           },
+          async loadWorkOrder() {
+            throw new Error("Not scripted.");
+          },
+        },
+        suiteReads: {
+          async loadTestSuite() {
+            throw new Error("Not scripted.");
+          },
         },
         submissions: {
           async submitSlice() {
@@ -126,6 +134,7 @@ describe("workbench MCP server", () => {
       "list_agents",
       "list_artifacts",
       "materialize_tests",
+      "prepare_builder_workspace",
       "record_brief_decision",
       "record_capability_decision",
       "record_plan_decision",

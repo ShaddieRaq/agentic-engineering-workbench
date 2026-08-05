@@ -130,6 +130,14 @@ async function createTools(options: {
       async materializeVisibleTests() {
         throw new Error("No work order service scripted.");
       },
+      async loadWorkOrder() {
+        throw new Error("No work order service scripted.");
+      },
+    },
+    suiteReads: {
+      async loadTestSuite() {
+        throw new Error("No suite reads scripted.");
+      },
     },
     submissions: {
       async submitSlice() {

@@ -23,6 +23,7 @@
     "analyze-repository": "tsx src/runRepositoryAnalysis.ts",
     "assist-repository": "tsx src/runRepositoryAssistant.ts",
     "foundry": "tsx src/runFoundry.ts",
+    "mcp:builder": "tsx src/runBuilderMcp.ts",
     "mcp": "tsx src/runMcp.ts",
     "replay": "tsx src/runReplay.ts",
     "report": "tsx src/runReport.ts",

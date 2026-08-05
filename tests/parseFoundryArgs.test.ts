@@ -427,6 +427,19 @@ describe("parseFoundryArgs", () => {
     });
     expect(
       parseFoundryArgs([
+        "builder-workspace",
+        "--work-order-id",
+        "w1",
+        "--project-root",
+        "/tmp/project",
+      ]),
+    ).toEqual({
+      command: "builder-workspace",
+      workOrderId: "w1",
+      projectRoot: "/tmp/project",
+    });
+    expect(
+      parseFoundryArgs([
         "submission-decide",
         "--submission-id",
         "sub-1",

@@ -106,6 +106,7 @@ async function main(): Promise<void> {
       architect: architectService,
       capability: capabilityService,
       testDesign: testDesignService,
+      suiteReads: testDesignService,
       workOrders: workOrderService,
       submissions: submissionService,
     },

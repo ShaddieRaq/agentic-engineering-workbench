@@ -1,0 +1,175 @@
+import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { prepareBuilderWorkspace } from "../src/foundry/builderWorkspace.js";
+import { FoundryArtifactStore } from "../src/foundry/foundryArtifactStore.js";
+import type { TestSuite } from "../src/foundry/testSuite.js";
+import { WorkOrderService } from "../src/foundry/workOrderService.js";
+import {
+  persistFoundryChain,
+  persistSliceTwoWorkOrder,
+} from "./helpers/foundryWebFixture.js";
+
+const createdDirectories: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(
+    createdDirectories.map((directory) =>
+      rm(directory, { recursive: true, force: true }),
+    ),
+  );
+  createdDirectories.length = 0;
+});
+
+async function workspaceHarness() {
+  const storeDirectory = await mkdtemp(join(tmpdir(), "builder-ws-store-"));
+  const projectRoot = await mkdtemp(join(tmpdir(), "builder-ws-project-"));
+  createdDirectories.push(storeDirectory, projectRoot);
+
+  const store = new FoundryArtifactStore(storeDirectory);
+  const chain = await persistFoundryChain(store);
+  const { workOrderId } = await persistSliceTwoWorkOrder(store, chain);
+
+  const testDesign = {
+    async loadTestSuite(testSuiteId: string): Promise<TestSuite> {
+      const stored = await store.load(testSuiteId);
+      if (stored.kind !== "test-suite") {
+        throw new Error(`Artifact ${testSuiteId} is not a test suite.`);
+      }
+      return stored.artifact;
+    },
+    async deriveTestSuiteStatus(): Promise<
+      "draft" | "approved" | "rejected" | "revision-requested"
+    > {
+      throw new Error("Not needed.");
+    },
+  };
+  const workOrders = new WorkOrderService({
+    testDesign,
+    architect: {
+      async loadPlan() {
+        throw new Error("Not needed.");
+      },
+    },
+    briefs: {
+      async loadBrief() {
+        throw new Error("Not needed.");
+      },
+    },
+    store,
+  });
+
+  return { store, chain, workOrderId, projectRoot, workOrders, testDesign };
+}
+
+const WORKBENCH_ROOT = "/fake/workbench/root";
+
+describe("prepareBuilderWorkspace", () => {
+  it("writes isolation settings, pinned MCP wiring, and a redacted BUILDER.md", async () => {
+    const harness = await workspaceHarness();
+    const prepared = await prepareBuilderWorkspace(
+      { workOrders: harness.workOrders, testDesign: harness.testDesign },
+      {
+        workOrderId: harness.workOrderId,
+        projectRoot: harness.projectRoot,
+        workbenchRoot: WORKBENCH_ROOT,
+      },
+    );
+
+    expect(prepared.writtenConfigFiles).toEqual([
+      ".mcp.json",
+      ".claude/settings.json",
+      "BUILDER.md",
+    ]);
+    expect(prepared.writtenTestFiles.sort()).toEqual(
+      [
+        harness.chain.fixture.filePaths.visibleOnly,
+        harness.chain.fixture.filePaths.crossSlice,
+      ].sort(),
+    );
+
+    const settings = JSON.parse(
+      await readFile(join(harness.projectRoot, ".claude/settings.json"), "utf8"),
+    );
+    expect(settings).toEqual({
+      permissions: {
+        deny: [
+          `Read(//fake/workbench/root/**)`,
+          "Edit(.claude/**)",
+          "Edit(.mcp.json)",
+          "Edit(acceptance-tests/**)",
+        ],
+      },
+      sandbox: {
+        enabled: true,
+        filesystem: {
+          denyRead: [`${WORKBENCH_ROOT}/**`],
+          allowRead: ["."],
+        },
+        allowUnsandboxedCommands: false,
+      },
+    });
+
+    const mcp = JSON.parse(
+      await readFile(join(harness.projectRoot, ".mcp.json"), "utf8"),
+    );
+    expect(mcp.mcpServers["workbench-builder"]).toEqual({
+      type: "stdio",
+      command: "npm",
+      args: ["--prefix", WORKBENCH_ROOT, "run", "--silent", "mcp:builder"],
+      env: { BUILDER_PROJECT_ROOT: harness.projectRoot },
+    });
+
+    const readme = await readFile(
+      join(harness.projectRoot, "BUILDER.md"),
+      "utf8",
+    );
+    expect(readme).toContain(prepared.workOrder.sliceTitle);
+    expect(readme).toContain(harness.chain.fixture.filePaths.visibleOnly);
+    expect(readme).toContain("1 withheld holdout test file(s)");
+    expect(readme).not.toContain(harness.chain.fixture.filePaths.holdout);
+
+    // The holdout is never materialized by preparation.
+    await expect(
+      access(join(harness.projectRoot, harness.chain.fixture.filePaths.holdout)),
+    ).rejects.toThrowError();
+  });
+
+  it("merges .mcp.json preserving foreign servers and reruns idempotently", async () => {
+    const harness = await workspaceHarness();
+    await writeFile(
+      join(harness.projectRoot, ".mcp.json"),
+      `${JSON.stringify(
+        { mcpServers: { "project-own-server": { type: "stdio", command: "deno" } } },
+        null,
+        2,
+      )}\n`,
+      "utf8",
+    );
+
+    const run = () =>
+      prepareBuilderWorkspace(
+        { workOrders: harness.workOrders, testDesign: harness.testDesign },
+        {
+          workOrderId: harness.workOrderId,
+          projectRoot: harness.projectRoot,
+          workbenchRoot: WORKBENCH_ROOT,
+        },
+      );
+    await run();
+    await run();
+
+    const mcp = JSON.parse(
+      await readFile(join(harness.projectRoot, ".mcp.json"), "utf8"),
+    );
+    expect(Object.keys(mcp.mcpServers).sort()).toEqual([
+      "project-own-server",
+      "workbench-builder",
+    ]);
+    expect(mcp.mcpServers["project-own-server"]).toEqual({
+      type: "stdio",
+      command: "deno",
+    });
+  });
+});
