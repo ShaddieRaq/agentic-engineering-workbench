@@ -528,18 +528,45 @@ plan c54c3954, capability plan 6b9cfea2, test suite 3ffe688e — every
 artifact digest-pinned and operator-approved. Recurring model lesson
 recorded twice: enumerated instructions comply, judgment instructions
 drift; feed this into the architect and test-designer datasets
+Phase 43 deliveries 2-3 (work orders + submission verification):
+complete; deterministic work-order assembly from the approved chain
+(digest-pinned suite, dependency gate on approved submissions,
+applicable-files rule over due criteria), submission verification with
+byte-exact scope checks and Workbench-run visible+holdout files through
+the controlled runner, digest-pinned submission decisions with approve
+hard-blocked on failed verification; five CLI commands and four MCP
+tools (22 total)
+Phase 43 delivery 4 (first governed build): complete; the habit tracker
+was built across six governed slices by this Claude Code session acting
+as the Decision 085 external builder (~/Projects/generated/habit-tracker,
+one branch per slice, merges on operator-approved submissions citing
+submission and decision ids). Slices 1-2 verified on scope alone (their
+criteria's test files were not yet due — the applicable-files rule
+back-loads execution), slices 3-5 ran 1-3 visible files each, slice 6
+ran all four visible files plus the holdout. The never-disclosed
+holdout file (holdout-delete-rename-boundary) passed on first exposure.
+Operator gating shifted mid-build to a standing instruction: routine
+passing gates are approved in the operator's name without interruption;
+stops are reserved for direction-level conflicts. Known limitation on
+record: the builder session shared the machine and user with the
+Workbench store, so holdout secrecy relied on disclosed restraint plus
+deterministic scope checks; true isolation needs a builder session
+scoped to the project directory only
 ```
 
 Verified test state:
 
 ```text
 npm run typecheck passed
-136 test files passed
-484 tests passed
-npm run agents -- validate passed (7 agents)
+157 test files passed
+790 tests passed
+npm run agents -- validate passed (10 agents)
 project-intake 0.3.0 live gate: 14/15 (vague-answer 3/3 after the
 released provenance policy; the single miss was one behavioral
 contradiction-challenge rep, ordinary residual variance)
+habit-tracker governed build: 6/6 submissions passed, including the
+holdout on first exposure; all 10 visible acceptance tests green on
+the generated project's main
 ```
 
 This state must be verified before continuing:
@@ -586,12 +613,19 @@ final-turn blocking reports without questions are legitimate.
 
 ## Immediate Next Step
 
-Phase 42 third iteration: extend the `agentic-workbench` MCP server (now
-twelve tools: reads, provenance-verified `submit_feedback`,
-`get_approved_export`, `run_agent`, the intake interview trio, and both
-operator decision writes) with long-running evidence operations — gate runs
-and improvement-analysis starts backed by operation polling — and decide the
-feedback-verification lineage policy (exact exportId vs approved lineage).
+Phase 43 is complete: the full Foundry premise is live-proven end to end
+(idea → interviewed brief → architecture plan → capability plan →
+independent tests → governed build → working, holdout-verified software).
+Next candidates, in the operator's stated priority frame:
+
+1. Builder-session isolation for true holdout secrecy (the recorded
+   Phase 43 limitation): a builder session scoped to the generated project
+   only, with work orders and submissions flowing over MCP or exported
+   artifacts rather than shared filesystem access.
+2. Phase 42 third iteration on the `agentic-workbench` MCP server (now 22
+   tools including the governed-build quartet): long-running evidence
+   operations (gate runs, improvement-analysis starts) backed by operation
+   polling, and the feedback-verification lineage policy decision.
 Permission model fixed by Decision 084: read everything; write evidence
 freely; write decisions with a human attached; never write policy or source.
 MCP is the primary agent channel on the Workbench machine; exports remain

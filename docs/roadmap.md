@@ -945,7 +945,7 @@ Deferred deliberately:
 
 ## Phase 43 — Foundry Build Pipeline (Decision 085)
 
-Status: Planned
+Status: Complete (2026-08-05)
 
 Goal:
 
@@ -958,19 +958,32 @@ Delivery:
 1. Test Designer agent: approved acceptance plan → executable acceptance
    tests (visible set plus protected holdout subset), authored without
    sight of any implementation; gated like every other foundry agent.
-2. Slice work orders: per-slice artifacts carrying plan context, target
-   criteria, and allowed file paths for an isolated project workspace
-   (separate repository, one branch per slice).
-3. Slice submission verification: Workbench-run acceptance tests via the
-   controlled verification-command runner, deterministic diff checks
-   (allowed paths only; acceptance-test paths untouchable), advisory
-   Change Risk Reviewer input, and a per-slice operator merge decision.
-4. First live build: the habit tracker from its approved capability plan.
+   Shipped: suite 3ffe688e approved after two evidence-driven revision
+   rounds.
+2. Slice work orders: deterministic per-slice assembly from the approved
+   chain (digest-pinned suite, dependency gate on approved submissions,
+   applicable-files rule over due criteria). Shipped in slice 15.
+3. Slice submission verification: byte-exact scope check of
+   acceptance-tests/, Workbench-run applicable visible and holdout files
+   through the controlled runner (holdouts materialized only for the run),
+   digest-pinned submission evidence, and a per-slice operator merge
+   decision. Advisory Change Risk Reviewer input deferred. Shipped in
+   slice 15.
+4. First live build: the habit tracker built across six governed slices by
+   an external Claude Code builder session (Decision 085 roles). All six
+   submissions passed; the never-disclosed holdout file passed on first
+   exposure at slice 6. Working CLI on generated-project main with per-slice
+   merge lineage citing submission and decision ids.
+
+Known limitation carried forward: the builder session shared a machine and
+user with the Workbench store, so holdout secrecy relied on disclosed
+restraint plus deterministic checks; true isolation needs a builder session
+scoped to the project directory only.
 
 ## Current Priorities
 
-1. Phase 43 delivery 1: the Test Designer agent (agent, contract, gates —
-   the established foundry-stage rhythm), then deliveries 2–3.
+1. Builder-session isolation for true holdout secrecy (Phase 43 carry-over),
+   then Foundry frontend views for work orders and submissions.
 2. Capability Planner verification dataset and gate (same rhythm as intake
    and architect).
 3. Evidence-backed model qualification, promoted per Decision 086: add an
