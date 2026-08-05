@@ -187,20 +187,47 @@ async function main(): Promise<void> {
     return;
   }
 
-  const { writeClaudeCodeIntakeExport } = await import(
-    "./foundry/exporters/claudeCodeIntakeExporter.js"
+  if (args.command === "export-claude-code") {
+    const { writeClaudeCodeIntakeExport } = await import(
+      "./foundry/exporters/claudeCodeIntakeExporter.js"
+    );
+    const result = await writeClaudeCodeIntakeExport({
+      decisionArtifactId: args.decisionArtifactId,
+      outputDirectory: args.out ?? "exports/claude-code/project-intake",
+    });
+    console.log(
+      `Exported ${result.manifest.subject.agentId}@${result.manifest.subject.agentVersion} for Claude Code.`,
+    );
+    for (const path of result.createdPaths) console.log(`Created: ${path}`);
+    console.log(
+      "Next: copy the package into ~/.claude/skills/project-intake and run a real interview; return the feedback bundle to the Workbench.",
+    );
+    return;
+  }
+
+  const { importExportFeedback } = await import("./foundry/exportFeedback.js");
+  const exportDir = args.exportDir ?? "exports/claude-code/project-intake";
+  const bundle: unknown = JSON.parse(
+    await readFile(resolve(process.cwd(), args.bundlePath), "utf8"),
   );
-  const result = await writeClaudeCodeIntakeExport({
-    decisionArtifactId: args.decisionArtifactId,
-    outputDirectory: args.out ?? "exports/claude-code/project-intake",
-  });
+  const provenance: unknown = JSON.parse(
+    await readFile(resolve(process.cwd(), exportDir, "provenance.json"), "utf8"),
+  );
+  const record = importExportFeedback({ bundle, provenance });
+  const reference = await store.saveExportFeedback(record);
   console.log(
-    `Exported ${result.manifest.subject.agentId}@${result.manifest.subject.agentVersion} for Claude Code.`,
+    `Imported feedback ${record.feedbackId} for export ${record.exportId} ` +
+      `(${record.subject.agentId}@${record.subject.agentVersion}, provenance verified).`,
   );
-  for (const path of result.createdPaths) console.log(`Created: ${path}`);
-  console.log(
-    "Next: copy the package into ~/.claude/skills/project-intake and run a real interview; return the feedback bundle to the Workbench.",
-  );
+  console.log(`Evidence saved: ${reference.path}`);
+  if (record.bundle.issuesObserved.length > 0) {
+    console.log("Issues observed:");
+    for (const issue of record.bundle.issuesObserved) console.log(`  - ${issue}`);
+  }
+  if (record.bundle.observations.length > 0) {
+    console.log("Observations:");
+    for (const note of record.bundle.observations) console.log(`  - ${note}`);
+  }
 }
 
 main().catch((error: unknown) => {

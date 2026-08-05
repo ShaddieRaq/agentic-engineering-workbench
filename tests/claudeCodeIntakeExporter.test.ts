@@ -161,6 +161,7 @@ describe("claude code renderers", () => {
     const skill = renderIntakeSkillMarkdown(manifest);
     expect(skill).toMatch(/^---\nname: project-intake\ndescription: /);
     expect(skill).toContain("project-brief/brief-v1.json");
+    expect(skill).toContain("references/turn-output.schema.json");
     expect(skill).toContain("Never write application code");
     expect(skill).toContain("Never modify this skill package");
     expect(skill).toContain(manifest.approval.decisionArtifactId);
@@ -193,7 +194,7 @@ describe("writeClaudeCodeIntakeExport", () => {
       runsDirectory,
     });
 
-    expect(result.createdPaths).toHaveLength(5);
+    expect(result.createdPaths).toHaveLength(6);
     const provenance = JSON.parse(
       await readFile(join(target, "provenance.json"), "utf8"),
     );
@@ -204,6 +205,10 @@ describe("writeClaudeCodeIntakeExport", () => {
       await readFile(join(target, "references", "project-brief.schema.json"), "utf8"),
     );
     expect(briefSchema).toEqual(result.manifest.briefContentJsonSchema);
+    const turnSchema = JSON.parse(
+      await readFile(join(target, "references", "turn-output.schema.json"), "utf8"),
+    );
+    expect(turnSchema).toEqual(result.manifest.turnOutputJsonSchema);
 
     await expect(
       writeClaudeCodeIntakeExport({

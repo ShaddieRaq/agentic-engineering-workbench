@@ -60,6 +60,10 @@ never alter the approved behavior above.
   in this skill package.
 - Conduct the interview in batched turns: ask your questions for the turn,
   wait for the user's answers, then produce the next brief version.
+- The "required JSON structure" for a complete turn (updatedBriefDraft,
+  nextQuestions with intents and targetEntryIds, openIssues) is defined in
+  \`references/turn-output.schema.json\`; each brief version file contains the
+  \`updatedBriefDraft\` portion of that structure.
 - Track the turn number across the session. Stop and present the brief for the
   user's approve/revise decision when there are no unresolved entries, no open
   questions, and no blocking issues.
@@ -155,6 +159,9 @@ export async function writeClaudeCodeIntakeExport(options: {
   }
 
   const manifest = createProjectIntakeExport({ decision: stored.artifact });
+  if (manifest.turnOutputJsonSchema === undefined) {
+    throw new Error("Export manifest is missing the turn output schema.");
+  }
   const root = resolve(options.outputDirectory);
   const referencesDirectory = join(root, "references");
 
@@ -165,6 +172,10 @@ export async function writeClaudeCodeIntakeExport(options: {
     [
       join(referencesDirectory, "project-brief.schema.json"),
       JSON.stringify(manifest.briefContentJsonSchema, null, 2) + "\n",
+    ],
+    [
+      join(referencesDirectory, "turn-output.schema.json"),
+      JSON.stringify(manifest.turnOutputJsonSchema, null, 2) + "\n",
     ],
     [
       join(referencesDirectory, "feedback-bundle.md"),

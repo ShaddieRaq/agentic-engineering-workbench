@@ -374,9 +374,14 @@ The project currently supports:
   approved promotion decision whose effective-policy digest matches the
   current baseline policy
 - the first runner adapter: `export-claude-code` packages project-intake as a
-  standalone Claude Code skill (verbatim approved instructions, brief JSON
-  schema, provenance, feedback-bundle contract, no Workbench runtime
-  dependency) in `exports/claude-code/project-intake/`
+  standalone Claude Code skill (verbatim approved instructions, brief and
+  turn-output JSON schemas, provenance, feedback-bundle contract, no Workbench
+  runtime dependency) in `exports/claude-code/project-intake/`
+- provenance-verified feedback import: `import-feedback` validates a returned
+  bundle against the export's provenance (exportId, subject identity, policy
+  digest) and persists it as `export-feedback` evidence; the first real
+  Claude Code interview round trip is ingested, and its reported packaging
+  gap (missing turn-output schema) drove the re-export
 
 ## Current Evaluators
 

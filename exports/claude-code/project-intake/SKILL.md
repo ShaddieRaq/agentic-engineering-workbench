@@ -12,7 +12,7 @@ Exported from the Agentic Engineering Workbench as a standalone agent.
 - Agent: project-intake@0.3.0
 - Approved by promotion decision f135b4dc-4ac3-439f-a7ff-17b000bfa37e (all promotion gates passed)
 - Policy digest: b2ff55512ebee23a133b63c9bd15c6b4c92e46dfd89d99c32800d73809780b90
-- Export: 0e197fa8-f00b-4b62-9eb7-8864fc4341e6 (2026-08-05T00:22:43.178Z)
+- Export: 9b76d533-5519-4bb0-ab01-54edd1754b33 (2026-08-05T00:59:19.640Z)
 
 Never modify this skill package by hand. Behavior changes must go through the
 Workbench improvement loop and a re-export.
@@ -67,6 +67,10 @@ never alter the approved behavior above.
   in this skill package.
 - Conduct the interview in batched turns: ask your questions for the turn,
   wait for the user's answers, then produce the next brief version.
+- The "required JSON structure" for a complete turn (updatedBriefDraft,
+  nextQuestions with intents and targetEntryIds, openIssues) is defined in
+  `references/turn-output.schema.json`; each brief version file contains the
+  `updatedBriefDraft` portion of that structure.
 - Track the turn number across the session. Stop and present the brief for the
   user's approve/revise decision when there are no unresolved entries, no open
   questions, and no blocking issues.

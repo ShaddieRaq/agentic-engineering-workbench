@@ -218,6 +218,32 @@ describe("parseFoundryArgs", () => {
     );
   });
 
+  it("parses import-feedback", () => {
+    expect(
+      parseFoundryArgs(["import-feedback", "--bundle", "feedback.json"]),
+    ).toEqual({
+      command: "import-feedback",
+      bundlePath: "feedback.json",
+      exportDir: null,
+    });
+    expect(
+      parseFoundryArgs([
+        "import-feedback",
+        "--bundle",
+        "feedback.json",
+        "--export-dir",
+        "exports/custom",
+      ]),
+    ).toEqual({
+      command: "import-feedback",
+      bundlePath: "feedback.json",
+      exportDir: "exports/custom",
+    });
+    expect(() => parseFoundryArgs(["import-feedback"])).toThrowError(
+      /missing required --bundle/i,
+    );
+  });
+
   it("parses intake-status", () => {
     expect(parseFoundryArgs(["intake-status", "--brief-id", "abc"])).toEqual({
       command: "intake-status",

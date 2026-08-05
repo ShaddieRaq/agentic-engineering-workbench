@@ -170,6 +170,56 @@ describe("FoundryArtifactStore", () => {
     expect(briefsOnly.artifacts).toHaveLength(1);
   });
 
+  it("round-trips an export feedback record", async () => {
+    const { store } = await createStore();
+    const record = {
+      feedbackId: randomUUID(),
+      importedAt: new Date().toISOString(),
+      exportId: randomUUID(),
+      subject: {
+        agentId: "project-intake",
+        agentVersion: "0.3.0",
+        policyDigest: "b".repeat(64),
+      },
+      bundle: {
+        exportIdentity: {
+          agentId: "project-intake",
+          agentVersion: "0.3.0",
+          policyDigest: "b".repeat(64),
+          exportId: randomUUID(),
+        },
+        sessionDate: "2026-08-04",
+        turnCount: 1,
+        finalBriefVersion: 1,
+        finalBrief: {
+          title: "Example",
+          ideaSummary: "An example idea.",
+          goals: [],
+          users: [],
+          constraints: [],
+          risks: [],
+          nonGoals: [],
+          assumptions: [],
+          acceptanceCriteria: [],
+          openQuestions: [],
+        },
+        issuesObserved: [],
+        observations: [],
+      },
+      provenanceVerified: true as const,
+    };
+
+    const reference = await store.saveExportFeedback(record);
+    expect(reference.kind).toBe("export-feedback");
+    const loaded = await store.load(reference.id);
+    expect(loaded.kind).toBe("export-feedback");
+    expect(loaded.artifact).toEqual(record);
+
+    const listed = await store.list({ kind: "export-feedback" });
+    expect(listed.artifacts).toHaveLength(1);
+    expect(listed.artifacts[0]?.briefId).toBe(record.exportId);
+  });
+
   it("filters listings by kind and brief ID", async () => {
     const { store } = await createStore();
     const first = brief();

@@ -4,6 +4,7 @@ import { digestJsonEvidence } from "../agents/agentEvidenceDigest.js";
 import type { AgentPromotionDecision } from "../agents/evaluations/agentPromotionDecision.js";
 import { projectIntakeAgent } from "../agents/projectIntake/projectIntakeAgent.js";
 import { projectIntakeBaselinePolicy } from "../agents/projectIntake/projectIntakePolicy.js";
+import { intakeTurnModelOutputSchema } from "./intakeTurnOutput.js";
 import { projectBriefDraftContentShapeSchema } from "./projectBrief.js";
 
 export const agentExportManifestSchema = z
@@ -36,6 +37,9 @@ export const agentExportManifestSchema = z
       })
       .strict(),
     briefContentJsonSchema: z.json(),
+    // Optional so first-generation provenance files (exported before the turn
+    // schema shipped) remain importable evidence; new exports always set it.
+    turnOutputJsonSchema: z.json().optional(),
     feedbackBundle: z
       .object({
         formatVersion: z.literal(1),
@@ -89,6 +93,7 @@ export function createProjectIntakeExport(input: {
     },
     instructions: projectIntakeBaselinePolicy.instructions,
     briefContentJsonSchema: z.toJSONSchema(projectBriefDraftContentShapeSchema),
+    turnOutputJsonSchema: z.toJSONSchema(intakeTurnModelOutputSchema),
     feedbackBundle: {
       formatVersion: 1,
       fileName: "project-intake-feedback.json",

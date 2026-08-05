@@ -1,5 +1,9 @@
 import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
+import {
+  exportFeedbackRecordSchema,
+  type ExportFeedbackRecord,
+} from "./exportFeedback.js";
 import { intakeTurnRecordSchema, type IntakeTurnRecord } from "./intakeTurn.js";
 import { projectBriefSchema, type ProjectBrief } from "./projectBrief.js";
 import {
@@ -12,7 +16,8 @@ const MAXIMUM_ARTIFACT_BYTES = 8 * 1024 * 1024;
 export type FoundryArtifactKind =
   | "project-brief"
   | "project-brief-decision"
-  | "intake-turn";
+  | "intake-turn"
+  | "export-feedback";
 
 export interface FoundryArtifactReference {
   id: string;
@@ -23,7 +28,8 @@ export interface FoundryArtifactReference {
 export type FoundryStoredArtifact =
   | { kind: "project-brief"; artifact: ProjectBrief }
   | { kind: "project-brief-decision"; artifact: ProjectBriefDecision }
-  | { kind: "intake-turn"; artifact: IntakeTurnRecord };
+  | { kind: "intake-turn"; artifact: IntakeTurnRecord }
+  | { kind: "export-feedback"; artifact: ExportFeedbackRecord };
 
 export interface FoundryArtifactSummary {
   id: string;
@@ -103,6 +109,25 @@ const kindDefinitions: Record<FoundryArtifactKind, FoundryKindDefinition> = {
       };
     },
   },
+  "export-feedback": {
+    parse: (value) => ({
+      kind: "export-feedback",
+      artifact: exportFeedbackRecordSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const feedback = stored.artifact as ExportFeedbackRecord;
+      return {
+        id,
+        kind: "export-feedback",
+        path,
+        // Feedback scopes to an export, not a brief; briefId carries the
+        // export id so listings remain filterable.
+        briefId: feedback.exportId,
+        briefVersion: feedback.bundle.finalBriefVersion,
+        createdAt: feedback.importedAt,
+      };
+    },
+  },
 };
 
 // The decision pattern must be tested before the brief pattern because
@@ -111,6 +136,7 @@ const orderedKinds: FoundryArtifactKind[] = [
   "project-brief-decision",
   "project-brief",
   "intake-turn",
+  "export-feedback",
 ];
 
 function descriptor(
@@ -155,6 +181,13 @@ export class FoundryArtifactStore {
       `${validated.briefId}-t${validated.turnNumber}`,
       validated,
     );
+  }
+
+  async saveExportFeedback(
+    record: ExportFeedbackRecord,
+  ): Promise<FoundryArtifactReference> {
+    const validated = exportFeedbackRecordSchema.parse(record);
+    return this.#write("export-feedback", validated.feedbackId, validated);
   }
 
   async load(id: string): Promise<FoundryStoredArtifact> {
@@ -218,7 +251,11 @@ export class FoundryArtifactStore {
   async #write(
     kind: FoundryArtifactKind,
     id: string,
-    artifact: ProjectBrief | ProjectBriefDecision | IntakeTurnRecord,
+    artifact:
+      | ProjectBrief
+      | ProjectBriefDecision
+      | IntakeTurnRecord
+      | ExportFeedbackRecord,
   ): Promise<FoundryArtifactReference> {
     await mkdir(this.#root, { recursive: true });
     const path = join(this.#root, `${kind}-${id}.json`);

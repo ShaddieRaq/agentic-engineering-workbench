@@ -93,4 +93,10 @@ current baseline policy digest no longer matches the approved effective-policy
 digest. The package embeds the approved instruction lines verbatim, the brief
 content JSON schema, full provenance, and a versioned feedback-bundle contract
 (`project-intake-feedback.json`) so real usage returns as evaluation evidence.
-Feedback-bundle import and the Cursor adapter remain planned.
+Feedback-bundle import is implemented: `npm run foundry -- import-feedback
+--bundle <path>` verifies the bundle's export identity (exportId, agent
+identity, and policy digest) against the package's `provenance.json` and
+persists a verified `export-feedback` evidence record in `runs/foundry/`.
+The first real round trip completed on 2026-08-04: a genuine Claude Code
+interview returned a bundle whose observed packaging gap (missing turn-output
+schema) was fixed and re-exported. The Cursor adapter remains planned.
