@@ -509,6 +509,15 @@ capability-planner 0.1.0 mapped the approved habit-tracker plan first
 try (five project-code needs covering all six slices, no platform
 over-assignment, advisory-only concerns), operator-approved as the
 first brief-to-plan-to-capabilities chain (decision 8b9c81cb)
+Phase 43 delivery 1 (Test Designer): complete; test-designer 0.1.0
+produced a live suite for the habit tracker (4 files, 3 visible plus 1
+holdout, real subprocess-spawning Vitest integration tests) that the
+operator sent to revise for three review findings: an unimported
+Vitest hook (the syntax-valid-but-broken gap, observed live), an
+unratified JSON filename honestly raised as a blocking concern, and
+manual checks auditing the brief instead of the product. Known gap
+promoted by three occurrences: revise decisions do not yet feed
+requested revisions into re-runs at any foundry stage
 ```
 
 Verified test state:
