@@ -196,11 +196,20 @@ async function main(): Promise<void> {
     args.command === "capability-decide" ||
     args.command === "design-tests" ||
     args.command === "tests-show" ||
-    args.command === "tests-decide"
+    args.command === "tests-decide" ||
+    args.command === "work-order" ||
+    args.command === "work-order-show" ||
+    args.command === "materialize-tests" ||
+    args.command === "submit-slice" ||
+    args.command === "submission-decide"
   ) {
     const { ArchitectService } = await import("./foundry/architectService.js");
     const { CapabilityService } = await import("./foundry/capabilityService.js");
     const { TestDesignService } = await import("./foundry/testDesignService.js");
+    const { WorkOrderService } = await import("./foundry/workOrderService.js");
+    const { SubmissionService, createProcessSubmissionRunner } = await import(
+      "./foundry/submissionService.js"
+    );
     const workspaceRoot = process.cwd();
     const workspaces = new FileWorkspaceStore(
       resolve(workspaceRoot, ".workbench", "workspaces.json"),
@@ -369,8 +378,96 @@ async function main(): Promise<void> {
       return;
     }
 
-    const saved = await testDesign.recordTestSuiteDecision({
-      testSuiteId: args.testSuiteId,
+    if (args.command === "tests-decide") {
+      const saved = await testDesign.recordTestSuiteDecision({
+        testSuiteId: args.testSuiteId,
+        decision: args.decision,
+        operatorId: args.operatorId,
+        rationale: args.rationale,
+        requestedRevisions:
+          args.requestedRevisions.length > 0 ? args.requestedRevisions : null,
+      });
+      console.log(JSON.stringify({ decision: saved.decision, reference: saved.reference }, null, 2));
+      return;
+    }
+
+    const workOrders = new WorkOrderService({
+      testDesign,
+      architect,
+      briefs: service,
+      store,
+    });
+    const submissions = new SubmissionService({
+      workOrders,
+      testDesign,
+      store,
+      runner: createProcessSubmissionRunner(),
+    });
+
+    if (args.command === "work-order") {
+      let sliceId = args.sliceId;
+      if (!sliceId) {
+        const next = await workOrders.nextSlice({ testSuiteId: args.testSuiteId });
+        if (!next) {
+          console.log("Every slice has an approved submission; nothing to build.");
+          return;
+        }
+        console.log(`Next slice: ${next.sliceTitle} (${next.sliceId})`);
+        sliceId = next.sliceId;
+      }
+      const saved = await workOrders.createWorkOrder({
+        testSuiteId: args.testSuiteId,
+        sliceId,
+      });
+      console.log(
+        `Work order: ${saved.workOrder.workOrderId} for slice "${saved.workOrder.sliceTitle}"`,
+      );
+      console.log(
+        `Criteria: ${saved.workOrder.criteria.length}, applicable test files: ${saved.workOrder.applicableTestFilePaths.length}`,
+      );
+      console.log(`Evidence saved: ${saved.reference.path}`);
+      return;
+    }
+
+    if (args.command === "work-order-show") {
+      const workOrder = await workOrders.loadWorkOrder(args.workOrderId);
+      console.log(JSON.stringify(workOrder, null, 2));
+      return;
+    }
+
+    if (args.command === "materialize-tests") {
+      const written = await workOrders.materializeVisibleTests({
+        workOrderId: args.workOrderId,
+        projectRoot: args.projectRoot,
+      });
+      for (const path of written) console.log(`Written: ${path}`);
+      return;
+    }
+
+    if (args.command === "submit-slice") {
+      const saved = await submissions.submitSlice({
+        workOrderId: args.workOrderId,
+        projectRoot: args.projectRoot,
+      });
+      const { submission } = saved;
+      console.log(`Submission: ${submission.submissionId} (${submission.status})`);
+      console.log(
+        `Scope check: ${submission.scopeCheck.passed ? "passed" : "FAILED"}`,
+      );
+      for (const failure of submission.scopeCheck.failures) {
+        console.log(`  - ${failure}`);
+      }
+      for (const file of submission.testRun.files) {
+        console.log(
+          `  [${file.visibility}] ${file.path}: ${file.passed ? "passed" : "FAILED"} (exit ${file.exitCode})`,
+        );
+      }
+      console.log(`Evidence saved: ${saved.reference.path}`);
+      return;
+    }
+
+    const saved = await submissions.recordSubmissionDecision({
+      submissionId: args.submissionId,
       decision: args.decision,
       operatorId: args.operatorId,
       rationale: args.rationale,

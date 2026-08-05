@@ -17,7 +17,9 @@ import type {
   IntakeTurnResult,
 } from "../foundry/intakeSessionController.js";
 import type { ProjectBriefService } from "../foundry/projectBriefService.js";
+import type { SubmissionService } from "../foundry/submissionService.js";
 import type { TestDesignService } from "../foundry/testDesignService.js";
+import type { WorkOrderService } from "../foundry/workOrderService.js";
 
 // Structural subsets of AgentApplicationService so tests can inject scripted
 // fakes without provider construction (precedent: IntakeAgentRunService).
@@ -61,6 +63,14 @@ export interface WorkbenchMcpDependencies {
   testDesign: Pick<
     TestDesignService,
     "createTestSuite" | "recordTestSuiteDecision"
+  >;
+  workOrders: Pick<
+    WorkOrderService,
+    "createWorkOrder" | "nextSlice" | "materializeVisibleTests"
+  >;
+  submissions: Pick<
+    SubmissionService,
+    "submitSlice" | "recordSubmissionDecision"
   >;
 }
 
@@ -354,6 +364,69 @@ export function createWorkbenchMcpTools(deps: WorkbenchMcpDependencies) {
     }) {
       const saved = await deps.testDesign.recordTestSuiteDecision({
         testSuiteId: input.testSuiteId,
+        decision: input.decision,
+        operatorId: input.operatorId,
+        rationale: input.rationale,
+        requestedRevisions:
+          input.requestedRevisions && input.requestedRevisions.length > 0
+            ? input.requestedRevisions
+            : null,
+      });
+      return { decision: saved.decision, artifactPath: saved.reference.path };
+    },
+
+    async createWorkOrder(input: {
+      testSuiteId: string;
+      sliceId?: string | undefined;
+    }) {
+      let sliceId = input.sliceId;
+      if (!sliceId) {
+        const next = await deps.workOrders.nextSlice({
+          testSuiteId: input.testSuiteId,
+        });
+        if (!next) {
+          return { done: true, message: "Every slice has an approved submission." };
+        }
+        sliceId = next.sliceId;
+      }
+      const saved = await deps.workOrders.createWorkOrder({
+        testSuiteId: input.testSuiteId,
+        sliceId,
+      });
+      return { workOrder: saved.workOrder, artifactPath: saved.reference.path };
+    },
+
+    async materializeTests(input: {
+      workOrderId: string;
+      projectRoot: string;
+    }) {
+      const written = await deps.workOrders.materializeVisibleTests({
+        workOrderId: input.workOrderId,
+        projectRoot: input.projectRoot,
+      });
+      return { written };
+    },
+
+    async submitSlice(input: { workOrderId: string; projectRoot: string }) {
+      const saved = await deps.submissions.submitSlice({
+        workOrderId: input.workOrderId,
+        projectRoot: input.projectRoot,
+      });
+      return {
+        submission: saved.submission,
+        artifactPath: saved.reference.path,
+      };
+    },
+
+    async recordSubmissionDecision(input: {
+      submissionId: string;
+      decision: "approve" | "reject" | "revise";
+      operatorId: string;
+      rationale: string;
+      requestedRevisions?: string[] | undefined;
+    }) {
+      const saved = await deps.submissions.recordSubmissionDecision({
+        submissionId: input.submissionId,
         decision: input.decision,
         operatorId: input.operatorId,
         rationale: input.rationale,

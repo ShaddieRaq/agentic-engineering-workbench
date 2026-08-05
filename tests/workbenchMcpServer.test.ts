@@ -80,6 +80,25 @@ describe("workbench MCP server", () => {
             throw new Error("Not scripted.");
           },
         },
+        workOrders: {
+          async createWorkOrder() {
+            throw new Error("Not scripted.");
+          },
+          async nextSlice() {
+            throw new Error("Not scripted.");
+          },
+          async materializeVisibleTests() {
+            throw new Error("Not scripted.");
+          },
+        },
+        submissions: {
+          async submitSlice() {
+            throw new Error("Not scripted.");
+          },
+          async recordSubmissionDecision() {
+            throw new Error("Not scripted.");
+          },
+        },
       },
       "0.0.0-test",
     );
@@ -96,6 +115,7 @@ describe("workbench MCP server", () => {
     expect(names).toEqual([
       "architect_plan",
       "capability_plan",
+      "create_work_order",
       "describe_agent",
       "design_tests",
       "get_approved_export",
@@ -105,13 +125,16 @@ describe("workbench MCP server", () => {
       "intake_turn",
       "list_agents",
       "list_artifacts",
+      "materialize_tests",
       "record_brief_decision",
       "record_capability_decision",
       "record_plan_decision",
       "record_promotion_decision",
+      "record_submission_decision",
       "record_test_decision",
       "run_agent",
       "submit_feedback",
+      "submit_slice",
     ]);
 
     const submit = listed.tools.find(({ name }) => name === "submit_feedback");

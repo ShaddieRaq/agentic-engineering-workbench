@@ -10,7 +10,12 @@ import { CapabilityService } from "./foundry/capabilityService.js";
 import { FoundryArtifactStore } from "./foundry/foundryArtifactStore.js";
 import { IntakeSessionController } from "./foundry/intakeSessionController.js";
 import { ProjectBriefService } from "./foundry/projectBriefService.js";
+import {
+  createProcessSubmissionRunner,
+  SubmissionService,
+} from "./foundry/submissionService.js";
 import { TestDesignService } from "./foundry/testDesignService.js";
+import { WorkOrderService } from "./foundry/workOrderService.js";
 import { buildWorkbenchMcpServer } from "./mcp/workbenchMcpServer.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { createPlatformToolRegistry } from "./tools/toolRegistry.js";
@@ -64,6 +69,26 @@ async function main(): Promise<void> {
     }),
   });
 
+  const testDesignService = new TestDesignService({
+    agentService,
+    capability: capabilityService,
+    architect: architectService,
+    briefs: briefService,
+    store: foundry,
+  });
+  const workOrderService = new WorkOrderService({
+    testDesign: testDesignService,
+    architect: architectService,
+    briefs: briefService,
+    store: foundry,
+  });
+  const submissionService = new SubmissionService({
+    workOrders: workOrderService,
+    testDesign: testDesignService,
+    store: foundry,
+    runner: createProcessSubmissionRunner(),
+  });
+
   const server = buildWorkbenchMcpServer(
     {
       agents: platformAgentRegistry,
@@ -80,13 +105,9 @@ async function main(): Promise<void> {
       briefs: briefService,
       architect: architectService,
       capability: capabilityService,
-      testDesign: new TestDesignService({
-        agentService,
-        capability: capabilityService,
-        architect: architectService,
-        briefs: briefService,
-        store: foundry,
-      }),
+      testDesign: testDesignService,
+      workOrders: workOrderService,
+      submissions: submissionService,
     },
     packageJson.version ?? "0.0.0",
   );

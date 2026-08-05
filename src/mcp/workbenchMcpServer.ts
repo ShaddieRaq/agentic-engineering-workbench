@@ -277,6 +277,73 @@ export function buildWorkbenchMcpServer(
   );
 
   server.registerTool(
+    "create_work_order",
+    {
+      description:
+        "Writes evidence. Deterministically assemble a builder work order for " +
+        "one implementation slice from the approved chain (no model call). " +
+        "Requires an approved test suite and approved submissions for every " +
+        "dependency slice. Omit sliceId to select the next buildable slice.",
+      inputSchema: {
+        testSuiteId: z.uuid(),
+        sliceId: z.uuid().optional(),
+      },
+    },
+    async (input) => asText(await tools.createWorkOrder(input)),
+  );
+
+  server.registerTool(
+    "materialize_tests",
+    {
+      description:
+        "Writes files into a project workspace. Copy the approved suite's " +
+        "VISIBLE acceptance test files into the given project root exactly " +
+        "canonically. Holdout files are never materialized by this tool.",
+      inputSchema: {
+        workOrderId: z.uuid(),
+        projectRoot: z.string().min(1),
+      },
+    },
+    async (input) => asText(await tools.materializeTests(input)),
+  );
+
+  server.registerTool(
+    "submit_slice",
+    {
+      description:
+        "Writes evidence. Verify a builder's slice submission: byte-exact " +
+        "scope check of acceptance-tests/, then Workbench-run applicable " +
+        "visible and holdout tests through the controlled npm runner. " +
+        "Persists the submission evidence regardless of outcome. Never " +
+        "modifies agent policy.",
+      inputSchema: {
+        workOrderId: z.uuid(),
+        projectRoot: z.string().min(1),
+      },
+    },
+    async (input) => asText(await tools.submitSlice(input)),
+  );
+
+  server.registerTool(
+    "record_submission_decision",
+    {
+      description:
+        "Writes an operator decision. Record approve, reject, or revise on a " +
+        "slice submission, pinned to its digest. Approval requires the " +
+        "Workbench verification to have passed and authorizes the merge; the " +
+        "merge itself remains a human git action.",
+      inputSchema: {
+        submissionId: z.uuid(),
+        decision: z.enum(["approve", "reject", "revise"]),
+        operatorId: z.string().min(1).max(200),
+        rationale: z.string().min(1).max(8_000),
+        requestedRevisions: z.array(z.string().min(1).max(2_000)).max(20).optional(),
+      },
+    },
+    async (input) => asText(await tools.recordSubmissionDecision(input)),
+  );
+
+  server.registerTool(
     "record_brief_decision",
     {
       description:

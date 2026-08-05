@@ -20,7 +20,14 @@ import {
   exportFeedbackRecordSchema,
   type ExportFeedbackRecord,
 } from "./exportFeedback.js";
+import {
+  sliceSubmissionSchema,
+  submissionDecisionSchema,
+  type SliceSubmission,
+  type SubmissionDecision,
+} from "./sliceSubmission.js";
 import { testSuiteSchema, type TestSuite } from "./testSuite.js";
+import { workOrderSchema, type WorkOrder } from "./workOrder.js";
 import {
   testSuiteDecisionSchema,
   type TestSuiteDecision,
@@ -44,7 +51,10 @@ export type FoundryArtifactKind =
   | "capability-plan"
   | "capability-plan-decision"
   | "test-suite"
-  | "test-suite-decision";
+  | "test-suite-decision"
+  | "work-order"
+  | "slice-submission"
+  | "submission-decision";
 
 export interface FoundryArtifactReference {
   id: string;
@@ -62,7 +72,10 @@ export type FoundryStoredArtifact =
   | { kind: "capability-plan"; artifact: CapabilityPlan }
   | { kind: "capability-plan-decision"; artifact: CapabilityPlanDecision }
   | { kind: "test-suite"; artifact: TestSuite }
-  | { kind: "test-suite-decision"; artifact: TestSuiteDecision };
+  | { kind: "test-suite-decision"; artifact: TestSuiteDecision }
+  | { kind: "work-order"; artifact: WorkOrder }
+  | { kind: "slice-submission"; artifact: SliceSubmission }
+  | { kind: "submission-decision"; artifact: SubmissionDecision };
 
 export interface FoundryArtifactSummary {
   id: string;
@@ -263,6 +276,57 @@ const kindDefinitions: Record<FoundryArtifactKind, FoundryKindDefinition> = {
       };
     },
   },
+  "work-order": {
+    parse: (value) => ({
+      kind: "work-order",
+      artifact: workOrderSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const workOrder = stored.artifact as WorkOrder;
+      return {
+        id,
+        kind: "work-order",
+        path,
+        briefId: workOrder.briefId,
+        briefVersion: workOrder.briefVersion,
+        createdAt: workOrder.createdAt,
+      };
+    },
+  },
+  "slice-submission": {
+    parse: (value) => ({
+      kind: "slice-submission",
+      artifact: sliceSubmissionSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const submission = stored.artifact as SliceSubmission;
+      return {
+        id,
+        kind: "slice-submission",
+        path,
+        briefId: submission.briefId,
+        briefVersion: submission.briefVersion,
+        createdAt: submission.createdAt,
+      };
+    },
+  },
+  "submission-decision": {
+    parse: (value) => ({
+      kind: "submission-decision",
+      artifact: submissionDecisionSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const decision = stored.artifact as SubmissionDecision;
+      return {
+        id,
+        kind: "submission-decision",
+        path,
+        briefId: decision.briefId,
+        briefVersion: decision.briefVersion,
+        createdAt: decision.decidedAt,
+      };
+    },
+  },
 };
 
 // The decision pattern must be tested before the brief pattern because
@@ -278,6 +342,9 @@ const orderedKinds: FoundryArtifactKind[] = [
   "capability-plan",
   "test-suite-decision",
   "test-suite",
+  "work-order",
+  "slice-submission",
+  "submission-decision",
 ];
 
 function descriptor(
@@ -379,6 +446,25 @@ export class FoundryArtifactStore {
     return this.#write("test-suite-decision", validated.decisionId, validated);
   }
 
+  async saveWorkOrder(workOrder: WorkOrder): Promise<FoundryArtifactReference> {
+    const validated = workOrderSchema.parse(workOrder);
+    return this.#write("work-order", validated.workOrderId, validated);
+  }
+
+  async saveSliceSubmission(
+    submission: SliceSubmission,
+  ): Promise<FoundryArtifactReference> {
+    const validated = sliceSubmissionSchema.parse(submission);
+    return this.#write("slice-submission", validated.submissionId, validated);
+  }
+
+  async saveSubmissionDecision(
+    decision: SubmissionDecision,
+  ): Promise<FoundryArtifactReference> {
+    const validated = submissionDecisionSchema.parse(decision);
+    return this.#write("submission-decision", validated.decisionId, validated);
+  }
+
   async load(id: string): Promise<FoundryStoredArtifact> {
     if (!/^[a-zA-Z0-9-]+$/.test(id)) {
       throw new Error("Artifact ID contains unsupported characters.");
@@ -450,7 +536,10 @@ export class FoundryArtifactStore {
       | CapabilityPlan
       | CapabilityPlanDecision
       | TestSuite
-      | TestSuiteDecision,
+      | TestSuiteDecision
+      | WorkOrder
+      | SliceSubmission
+      | SubmissionDecision,
   ): Promise<FoundryArtifactReference> {
     await mkdir(this.#root, { recursive: true });
     const path = join(this.#root, `${kind}-${id}.json`);

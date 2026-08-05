@@ -369,4 +369,83 @@ describe("parseFoundryArgs", () => {
       briefId: "abc",
     });
   });
+
+  it("parses the governed-build commands", () => {
+    expect(
+      parseFoundryArgs(["work-order", "--test-suite-id", "s1", "--next"]),
+    ).toEqual({
+      command: "work-order",
+      testSuiteId: "s1",
+      sliceId: null,
+      next: true,
+    });
+    expect(
+      parseFoundryArgs([
+        "work-order",
+        "--test-suite-id",
+        "s1",
+        "--slice-id",
+        "slice-9",
+      ]),
+    ).toEqual({
+      command: "work-order",
+      testSuiteId: "s1",
+      sliceId: "slice-9",
+      next: false,
+    });
+    expect(() =>
+      parseFoundryArgs(["work-order", "--test-suite-id", "s1"]),
+    ).toThrowError(/--slice-id.*--next/);
+    expect(
+      parseFoundryArgs(["work-order-show", "--work-order-id", "w1"]),
+    ).toEqual({ command: "work-order-show", workOrderId: "w1" });
+    expect(
+      parseFoundryArgs([
+        "materialize-tests",
+        "--work-order-id",
+        "w1",
+        "--project-root",
+        "/tmp/project",
+      ]),
+    ).toEqual({
+      command: "materialize-tests",
+      workOrderId: "w1",
+      projectRoot: "/tmp/project",
+    });
+    expect(
+      parseFoundryArgs([
+        "submit-slice",
+        "--work-order-id",
+        "w1",
+        "--project-root",
+        "/tmp/project",
+      ]),
+    ).toEqual({
+      command: "submit-slice",
+      workOrderId: "w1",
+      projectRoot: "/tmp/project",
+    });
+    expect(
+      parseFoundryArgs([
+        "submission-decide",
+        "--submission-id",
+        "sub-1",
+        "--decision",
+        "revise",
+        "--operator",
+        "op-1",
+        "--rationale",
+        "Tests were tampered with",
+        "--revision",
+        "Restore the acceptance tests",
+      ]),
+    ).toEqual({
+      command: "submission-decide",
+      submissionId: "sub-1",
+      decision: "revise",
+      operatorId: "op-1",
+      rationale: "Tests were tampered with",
+      requestedRevisions: ["Restore the acceptance tests"],
+    });
+  });
 });

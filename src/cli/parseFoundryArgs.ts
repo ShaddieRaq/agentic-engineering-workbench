@@ -78,6 +78,23 @@ export type FoundryCliArgs =
       operatorId: string;
       rationale: string;
       requestedRevisions: string[];
+    }
+  | {
+      command: "work-order";
+      testSuiteId: string;
+      sliceId: string | null;
+      next: boolean;
+    }
+  | { command: "work-order-show"; workOrderId: string }
+  | { command: "materialize-tests"; workOrderId: string; projectRoot: string }
+  | { command: "submit-slice"; workOrderId: string; projectRoot: string }
+  | {
+      command: "submission-decide";
+      submissionId: string;
+      decision: "approve" | "reject" | "revise";
+      operatorId: string;
+      rationale: string;
+      requestedRevisions: string[];
     };
 
 function option(args: string[], name: string): string | null {
@@ -327,6 +344,55 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
     };
   }
 
+  if (command === "work-order") {
+    const sliceId = option(args, "--slice-id");
+    const next = args.includes("--next");
+    if (!sliceId && !next) {
+      throw new Error("work-order requires --slice-id <id> or --next.");
+    }
+    return {
+      command,
+      testSuiteId: requiredOption(args, "--test-suite-id"),
+      sliceId,
+      next,
+    };
+  }
+
+  if (command === "work-order-show") {
+    return { command, workOrderId: requiredOption(args, "--work-order-id") };
+  }
+
+  if (command === "materialize-tests") {
+    return {
+      command,
+      workOrderId: requiredOption(args, "--work-order-id"),
+      projectRoot: requiredOption(args, "--project-root"),
+    };
+  }
+
+  if (command === "submit-slice") {
+    return {
+      command,
+      workOrderId: requiredOption(args, "--work-order-id"),
+      projectRoot: requiredOption(args, "--project-root"),
+    };
+  }
+
+  if (command === "submission-decide") {
+    const decision = requiredOption(args, "--decision");
+    if (decision !== "approve" && decision !== "reject" && decision !== "revise") {
+      throw new Error("--decision must be one of: approve, reject, revise.");
+    }
+    return {
+      command,
+      submissionId: requiredOption(args, "--submission-id"),
+      decision,
+      operatorId: requiredOption(args, "--operator"),
+      rationale: requiredOption(args, "--rationale"),
+      requestedRevisions: repeatedOption(args, "--revision"),
+    };
+  }
+
   throw new Error(
     "Expected one of: brief-create --title <title> --idea <summary>, " +
       "brief-show --brief-id <id> [--version <n>], brief-list [--brief-id <id>], " +
@@ -342,6 +408,9 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
       "capability-plan --plan-id <id> [--model <id>], capability-show --capability-plan-id <id>, " +
       "capability-decide --capability-plan-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...], " +
       "design-tests --capability-plan-id <id> [--model <id>], tests-show --test-suite-id <id>, " +
-      "tests-decide --test-suite-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...].",
+      "tests-decide --test-suite-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...], " +
+      "work-order --test-suite-id <id> (--slice-id <id> | --next), work-order-show --work-order-id <id>, " +
+      "materialize-tests --work-order-id <id> --project-root <path>, submit-slice --work-order-id <id> --project-root <path>, " +
+      "submission-decide --submission-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...].",
   );
 }

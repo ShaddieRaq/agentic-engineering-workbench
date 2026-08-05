@@ -120,6 +120,25 @@ async function createTools(options: {
         throw new Error("No test designer scripted.");
       },
     },
+    workOrders: {
+      async createWorkOrder() {
+        throw new Error("No work order service scripted.");
+      },
+      async nextSlice() {
+        throw new Error("No work order service scripted.");
+      },
+      async materializeVisibleTests() {
+        throw new Error("No work order service scripted.");
+      },
+    },
+    submissions: {
+      async submitSlice() {
+        throw new Error("No submission service scripted.");
+      },
+      async recordSubmissionDecision() {
+        throw new Error("No submission service scripted.");
+      },
+    },
   });
   return { tools, foundry, exportsRoot };
 }
