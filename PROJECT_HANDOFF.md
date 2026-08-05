@@ -549,22 +549,26 @@ final-turn blocking reports without questions are legitimate.
 
 ## Immediate Next Step
 
-Foundry Slice 3: version-matched `project-intake` verification datasets with
-hidden expectations, encoding the observed live failure modes (invalid entry
-references, provenance honesty, entry-id preservation, final-turn behavior),
-wired into `manifest.verification` so `npm run agents -- test project-intake`
-becomes a meaningful gate.
+Phase 42 (Decision 084): a Workbench MCP server over the existing loopback
+`AgentApplicationService`, connecting IDE sessions with a fixed permission
+model — read everything; write evidence freely (feedback-bundle submission
+first, replacing the manual file carry); write promotion decisions only with
+operator identity and rationale; never write policy or source. See
+`docs/roadmap.md` Phase 42 and `docs/decisions.md` Decision 084.
 
 ## Broader Roadmap
 
-1. Add opt-in agent revision surfaces and use Documentation Auditor as the
-   first executable candidate subject.
-2. Add protected evaluation cases, frozen candidate comparison, and promotion
-   decision evidence.
-3. Prepare a clean-clone setup and portability verification on the other laptop.
-4. Export proven agents to runner-specific packages without a Workbench runtime
-   dependency for interactive use.
-5. Add isolated compilation and tests for approved Tool Builder proposals.
-6. Exercise Playwright Failure Triage against reviewed real failures.
+See `docs/roadmap.md` Current Priorities for the ordered list. In summary:
+
+1. Phase 42 MCP server (IDE evidence connection, Decision 084 model).
+2. Route imported export-feedback evidence into improvement-loop packets.
+3. Improvement Analyst disposition dataset from recorded live misroutes, then
+   its own improvement loop.
+4. Next Foundry stage: architecture-and-acceptance-plan agent consuming
+   approved Project Briefs.
+5. Clean-clone portability verification on the second laptop, covering the
+   new foundry, export, and import surfaces.
+6. Evidence-backed model qualification; Playwright Failure Triage validation
+   against reviewed real failures.
 7. Extract agents or replace filesystem persistence only when demonstrated
    ownership, deployment, permission, or query requirements demand it.

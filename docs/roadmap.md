@@ -894,15 +894,60 @@ Detailed boundary:
 
 - [`docs/portable-agent-delivery.md`](portable-agent-delivery.md)
 
+Progress (2026-08-04): the canonical export contract and the first Claude Code
+adapter shipped; `project-intake@0.3.0` completed the full round trip (export,
+real interview in Claude Code, provenance-verified feedback import, packaging
+fix, re-export). The Cursor and Codex adapters and CI-runner integration
+remain planned.
+
+## Phase 42 — IDE Connection via MCP
+
+Status: Planned (Decision 084 accepted)
+
+Goal:
+
+Connect IDE sessions (Claude Code, Cursor) to the Workbench through an MCP
+server over the existing loopback application service, so evidence flows both
+ways without opening a policy side door.
+
+Permission model (fixed by Decision 084):
+
+- read everything (catalog, evidence, evaluations, gates, decisions)
+- write evidence freely (submit feedback bundles, run agents, run gates,
+  start improvement analyses)
+- write promotion decisions only with explicit operator identity and rationale
+- never write policy or source; releases remain the only behavior-change path
+
+Delivery:
+
+1. MCP server wrapping `AgentApplicationService` read operations and artifact
+   browsing.
+2. Evidence-write tools: feedback-bundle submission (replacing the manual file
+   carry proven clunky in the first round trip), gate runs, agent runs, and
+   improvement-analysis starts with operation polling.
+3. Decision-write tool mirroring the web boundary's operator constraints.
+4. Registration guidance for Claude Code and Cursor, keeping the server
+   loopback-only and credentials machine-local.
+
+Deferred deliberately:
+
+- any prompt or policy synchronization between IDE and Workbench
+- remote or multi-user access; the server remains loopback-only
+- streaming Builder-stage evidence (designed later with the Foundry Builder)
+
 ## Current Priorities
 
-1. Push privately and verify the clean-clone portability path on the approved
-   second laptop.
-2. Re-run Documentation Auditor on the blind `test_app` workspace with its
-   fixture `apps/` tree explicitly excluded, then measure scoped coverage.
-3. Add evidence-backed model qualification before treating a cheaper model as
+1. Build the Phase 42 MCP server with the Decision 084 permission model,
+   starting with feedback-bundle submission from IDE sessions.
+2. Route imported export-feedback evidence into improvement-loop packets so
+   field reports become optimizer input.
+3. Build the Agent Improvement Analyst disposition dataset from the recorded
+   live misroutes and run its own improvement loop.
+4. Begin the next Foundry stage: an architecture-and-acceptance-plan agent
+   consuming approved Project Briefs, now that the export lifecycle is proven.
+5. Verify the clean-clone portability path on the approved second laptop,
+   including the new foundry, export, and import surfaces.
+6. Add evidence-backed model qualification before treating a cheaper model as
    approved for an agent and task profile.
-4. Define the canonical standalone-agent export contract.
-5. Export one proven agent without a Workbench runtime dependency.
-6. Exercise Playwright Failure Triage against reviewed real failures as the
+7. Exercise Playwright Failure Triage against reviewed real failures as the
    final agent validation milestone.

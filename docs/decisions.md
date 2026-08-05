@@ -2346,3 +2346,50 @@ agent behavior across different repository structures.
 - exclusions reduce context and cost but cannot grant additional access
 - generated-directory defaults remain a separate cross-project policy decision
 - exhaustive batching is considered only after irrelevant paths are removed
+
+## Decision 084 — Connect IDEs Through Evidence, Never Through Policy
+
+Status: Accepted
+
+### Decision
+
+Expose the Workbench to IDE sessions (Claude Code, Cursor) through an MCP
+server wrapping the existing loopback application service, with four fixed
+permission categories:
+
+1. **Read — everything.** Catalog, manifests, run evidence, evaluations,
+   comparisons, gate outcomes, and promotion decisions are queryable.
+2. **Evidence writes — free.** Submitting feedback bundles, running agents,
+   running verification gates, and starting improvement analyses may be
+   invoked from an IDE; each produces ordinary immutable artifacts.
+3. **Decision writes — human-attributed.** Approve, reject, and revise
+   promotion decisions may be recorded from an IDE only with an explicit
+   operator identity and rationale, identical to the web boundary.
+4. **Policy writes — never.** Agent instructions, permissions, schemas, and
+   source change only through the existing path: proposal, frozen comparison,
+   promotion gates, operator approval, and a source-controlled release commit.
+
+### Rationale
+
+Commercial platforms (Braintrust prompt push/pull, LangGraph Studio hot
+reload) synchronize prompt and code edits bidirectionally between UI and IDE.
+That model makes silent behavior change the default, which Decision 082
+forbids. The Workbench's differentiator is that every behavioral change is
+evidence-gated and human-approved. The first real export round trip showed
+the manual gap clearly: the feedback bundle had to be carried between
+directories by hand. Evidence, operational, and decision write-back from the
+IDE removes that friction without opening a policy side door, and the
+evidence channel is the prototype for future Foundry Builder stages that must
+stream slice results back continuously.
+
+### Consequences
+
+- the MCP server is a protocol adapter over `AgentApplicationService`; no new
+  authority is created, and the loopback-only boundary is preserved
+- feedback bundles can be submitted from the session that produced them
+- IDE-recorded promotion decisions carry the same operator identity,
+  rationale, and gate constraints as web-recorded ones
+- prompt-sync convenience is deliberately rejected; re-export after an
+  approved release remains the only way IDE-visible agent behavior changes
+- exported skills remain standalone; the MCP connection is optional telemetry
+  and evidence return, never a runtime dependency
