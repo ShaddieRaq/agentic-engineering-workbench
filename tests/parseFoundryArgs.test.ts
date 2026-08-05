@@ -192,6 +192,32 @@ describe("parseFoundryArgs", () => {
     ).toThrowError(/--answer must use the form/i);
   });
 
+  it("parses export-claude-code", () => {
+    expect(
+      parseFoundryArgs(["export-claude-code", "--decision", "abc"]),
+    ).toEqual({
+      command: "export-claude-code",
+      decisionArtifactId: "abc",
+      out: null,
+    });
+    expect(
+      parseFoundryArgs([
+        "export-claude-code",
+        "--decision",
+        "abc",
+        "--out",
+        "exports/custom",
+      ]),
+    ).toEqual({
+      command: "export-claude-code",
+      decisionArtifactId: "abc",
+      out: "exports/custom",
+    });
+    expect(() => parseFoundryArgs(["export-claude-code"])).toThrowError(
+      /missing required --decision/i,
+    );
+  });
+
   it("parses intake-status", () => {
     expect(parseFoundryArgs(["intake-status", "--brief-id", "abc"])).toEqual({
       command: "intake-status",

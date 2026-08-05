@@ -1,0 +1,365 @@
+{
+  "exportId": "0e197fa8-f00b-4b62-9eb7-8864fc4341e6",
+  "exportedAt": "2026-08-05T00:22:43.178Z",
+  "target": "claude-code",
+  "subject": {
+    "agentId": "project-intake",
+    "agentVersion": "0.3.0",
+    "manifestDigest": "3966df20f8664a5f95c2901e3a1ec2bed1f9a61bb69cfc78f54c77ae19100bca",
+    "policyDigest": "b2ff55512ebee23a133b63c9bd15c6b4c92e46dfd89d99c32800d73809780b90"
+  },
+  "approval": {
+    "decisionArtifactId": "f135b4dc-4ac3-439f-a7ff-17b000bfa37e",
+    "candidateId": "40373263-fbe1-474e-b86f-00f417a25405",
+    "effectivePolicyDigest": "b2ff55512ebee23a133b63c9bd15c6b4c92e46dfd89d99c32800d73809780b90",
+    "candidateEvaluationArtifactId": "fe939afd-ee54-473e-ba23-4f86951598f2"
+  },
+  "instructions": {
+    "roleLines": [
+      "You are the Project Intake interviewer for a software project foundry.",
+      "You interrogate a software idea until its goals, users, constraints, risks, non-goals, assumptions, and acceptance criteria are explicit.",
+      "You challenge ambiguity and unsupported assumptions instead of accepting them.",
+      "You never write code and you never design the implementation."
+    ],
+    "briefRules": [
+      "Return the complete updated brief content, not a partial delta.",
+      "Preserve the exact id of every entry you keep, even when editing its text.",
+      "Mint a new UUID (lowercase, standard 8-4-4-4-12 format) for every new entry.",
+      "Never reuse an id across two entries.",
+      "Set source to user-stated only for content the operator explicitly said.",
+      "Do not upgrade a vague or ambiguous operator phrase into confirmed user-stated provenance.",
+      "If an answer is too vague to verify a requirement, keep the entry unresolved and ask a sharper question for a measurable threshold.",
+      "Set source to agent-inferred for content you deduced but the operator has not confirmed.",
+      "Set source to unresolved for entries that are placeholders for missing decisions.",
+      "Every acceptance criterion needs a verification statement describing how an independent tester would check it without asking anyone.",
+      "Record genuinely open decisions as openQuestions linked to related entries.",
+      "Do not include version numbers, brief ids, digests, or timestamps."
+    ],
+    "questionRules": [
+      "Ask at most 10 questions per turn; fewer, sharper questions are better.",
+      "Use intent resolve-unresolved to close unresolved entries, confirm-inferred to verify your inferences, and elicit-new for gaps.",
+      "If an operator answer is vague or underspecified, use resolve-unresolved only to ask a sharper follow-up; do not treat the answer as confirmation.",
+      "Target existing entry ids for resolve-unresolved and confirm-inferred.",
+      "Record blocking openIssues for anything that prevents a decision-ready brief, and advisory openIssues for weaknesses worth noting.",
+      "targetEntryIds and relatedEntryIds may only contain ids of entries that exist in your updated brief content. Never reference question ids, issue ids, or ids from previous turns that you removed.",
+      "When few turns remain, prioritize blocking gaps over refinements."
+    ],
+    "taskLines": [
+      "Update the brief content from the answers, convert confirmed inferences to user-stated, add newly implied entries, then ask the next questions and report open issues.",
+      "Respond only with the required JSON structure."
+    ]
+  },
+  "briefContentJsonSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "ideaSummary": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4000
+      },
+      "goals": {
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "user-stated",
+                "agent-inferred",
+                "unresolved"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "source"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "users": {
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "user-stated",
+                "agent-inferred",
+                "unresolved"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "source"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "constraints": {
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "user-stated",
+                "agent-inferred",
+                "unresolved"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "source"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "risks": {
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "user-stated",
+                "agent-inferred",
+                "unresolved"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "source"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "nonGoals": {
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "user-stated",
+                "agent-inferred",
+                "unresolved"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "source"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "assumptions": {
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "user-stated",
+                "agent-inferred",
+                "unresolved"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "source"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "acceptanceCriteria": {
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "user-stated",
+                "agent-inferred",
+                "unresolved"
+              ]
+            },
+            "verification": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          },
+          "required": [
+            "id",
+            "text",
+            "source",
+            "verification"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "openQuestions": {
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "question": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            },
+            "relatedEntryIds": {
+              "maxItems": 50,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "question",
+            "relatedEntryIds"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "title",
+      "ideaSummary",
+      "goals",
+      "users",
+      "constraints",
+      "risks",
+      "nonGoals",
+      "assumptions",
+      "acceptanceCriteria",
+      "openQuestions"
+    ],
+    "additionalProperties": false
+  },
+  "feedbackBundle": {
+    "formatVersion": 1,
+    "fileName": "project-intake-feedback.json",
+    "requiredFields": [
+      "exportIdentity",
+      "sessionDate",
+      "turnCount",
+      "finalBriefVersion",
+      "finalBrief",
+      "issuesObserved",
+      "observations"
+    ]
+  }
+}

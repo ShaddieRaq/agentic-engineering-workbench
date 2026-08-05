@@ -31,7 +31,8 @@ export type FoundryCliArgs =
       answersFile: string | null;
       model: string | null;
     }
-  | { command: "intake-status"; briefId: string };
+  | { command: "intake-status"; briefId: string }
+  | { command: "export-claude-code"; decisionArtifactId: string; out: string | null };
 
 function option(args: string[], name: string): string | null {
   const index = args.indexOf(name);
@@ -177,6 +178,14 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
     return { command, briefId: requiredOption(args, "--brief-id") };
   }
 
+  if (command === "export-claude-code") {
+    return {
+      command,
+      decisionArtifactId: requiredOption(args, "--decision"),
+      out: option(args, "--out"),
+    };
+  }
+
   throw new Error(
     "Expected one of: brief-create --title <title> --idea <summary>, " +
       "brief-show --brief-id <id> [--version <n>], brief-list [--brief-id <id>], " +
@@ -184,6 +193,7 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
       "--decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...], " +
       "intake-start --title <title> --idea <summary> [--max-turns <n>] [--model <id>], " +
       'intake-turn --brief-id <id> [--answer "<questionId>=<text>"] ... [--answers-file <path>] [--model <id>], ' +
-      "intake-status --brief-id <id>.",
+      "intake-status --brief-id <id>, " +
+      "export-claude-code --decision <artifact-id> [--out <directory>].",
   );
 }

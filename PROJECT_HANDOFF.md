@@ -370,6 +370,13 @@ The project currently supports:
   entry ids re-minted and dangling references removed between structural model
   parsing and strict contract validation, with complete repair evidence on the
   output and visible in the intake CLI
+- a canonical agent-export contract with an approval gate: exports require an
+  approved promotion decision whose effective-policy digest matches the
+  current baseline policy
+- the first runner adapter: `export-claude-code` packages project-intake as a
+  standalone Claude Code skill (verbatim approved instructions, brief JSON
+  schema, provenance, feedback-bundle contract, no Workbench runtime
+  dependency) in `exports/claude-code/project-intake/`
 
 ## Current Evaluators
 

@@ -180,9 +180,27 @@ async function main(): Promise<void> {
     return;
   }
 
-  const controller = createIntakeController(null);
-  const report = await controller.status(args.briefId);
-  console.log(JSON.stringify(report, null, 2));
+  if (args.command === "intake-status") {
+    const controller = createIntakeController(null);
+    const report = await controller.status(args.briefId);
+    console.log(JSON.stringify(report, null, 2));
+    return;
+  }
+
+  const { writeClaudeCodeIntakeExport } = await import(
+    "./foundry/exporters/claudeCodeIntakeExporter.js"
+  );
+  const result = await writeClaudeCodeIntakeExport({
+    decisionArtifactId: args.decisionArtifactId,
+    outputDirectory: args.out ?? "exports/claude-code/project-intake",
+  });
+  console.log(
+    `Exported ${result.manifest.subject.agentId}@${result.manifest.subject.agentVersion} for Claude Code.`,
+  );
+  for (const path of result.createdPaths) console.log(`Created: ${path}`);
+  console.log(
+    "Next: copy the package into ~/.claude/skills/project-intake and run a real interview; return the feedback bundle to the Workbench.",
+  );
 }
 
 main().catch((error: unknown) => {

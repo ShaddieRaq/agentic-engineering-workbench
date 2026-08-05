@@ -85,4 +85,12 @@ An agent is ready for standalone export only when:
 - provenance links the export to the approved Workbench evidence
 - no employer-specific evidence is embedded in the generic package
 
-Export adapters are planned; they are not yet implemented.
+The first export adapter is implemented: `npm run foundry -- export-claude-code
+--decision <promotion-decision-artifact-id>` packages `project-intake` as a
+standalone Claude Code skill in `exports/claude-code/project-intake/`. The
+export factory refuses non-approved decisions and refuses to export when the
+current baseline policy digest no longer matches the approved effective-policy
+digest. The package embeds the approved instruction lines verbatim, the brief
+content JSON schema, full provenance, and a versioned feedback-bundle contract
+(`project-intake-feedback.json`) so real usage returns as evaluation evidence.
+Feedback-bundle import and the Cursor adapter remain planned.
