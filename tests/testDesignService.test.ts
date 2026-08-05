@@ -73,8 +73,10 @@ async function createHarness(options: { withBlockingConcern?: boolean } = {}) {
     store,
     catalogFactory: catalogFixture,
   });
+  const capturedInputs: unknown[] = [];
   const testDesignRunner: TestDesignAgentRunService = {
     async run(request) {
+      capturedInputs.push(request.input);
       const { brief, plan } = request.input as { brief: never; plan: never };
       const content = suiteContentFor(brief);
       if (options.withBlockingConcern) {
@@ -102,7 +104,7 @@ async function createHarness(options: { withBlockingConcern?: boolean } = {}) {
     briefs: briefService,
     store,
   });
-  return { store, briefService, architect, capability, testDesign };
+  return { store, briefService, architect, capability, testDesign, capturedInputs };
 }
 
 async function approvedCapabilityPlan(harness: {
@@ -170,6 +172,53 @@ describe("TestDesignService", () => {
 
     const listed = await harness.store.list({ kind: "test-suite" });
     expect(listed.artifacts).toHaveLength(1);
+  });
+
+  it("consumes a revise decision through revise-from with lineage", async () => {
+    const harness = await createHarness();
+    const capabilityPlan = await approvedCapabilityPlan(harness);
+    await harness.capability.recordCapabilityDecision({
+      capabilityPlanId: capabilityPlan.capabilityPlanId,
+      decision: "approve",
+      operatorId: "operator-1",
+      rationale: "Mapped fully.",
+    });
+    const first = await harness.testDesign.createTestSuite({
+      capabilityPlanId: capabilityPlan.capabilityPlanId,
+    });
+
+    await expect(
+      harness.testDesign.createTestSuite({
+        capabilityPlanId: capabilityPlan.capabilityPlanId,
+        reviseFromId: first.testSuite.testSuiteId,
+      }),
+    ).rejects.toThrowError(/no revise decision to consume/i);
+
+    const revise = await harness.testDesign.recordTestSuiteDecision({
+      testSuiteId: first.testSuite.testSuiteId,
+      decision: "revise",
+      operatorId: "operator-1",
+      rationale: "Fix the hook import.",
+      requestedRevisions: ["Import every Vitest hook used."],
+    });
+
+    const second = await harness.testDesign.createTestSuite({
+      capabilityPlanId: capabilityPlan.capabilityPlanId,
+      reviseFromId: first.testSuite.testSuiteId,
+    });
+    expect(second.testSuite.revisedFromArtifactId).toBe(
+      first.testSuite.testSuiteId,
+    );
+    expect(second.testSuite.revisionDecisionId).toBe(
+      revise.decision.decisionId,
+    );
+
+    const lastInput = harness.capturedInputs.at(-1) as {
+      revision?: { requestedRevisions: string[] };
+    };
+    expect(lastInput.revision?.requestedRevisions).toEqual([
+      "Import every Vitest hook used.",
+    ]);
   });
 
   it("blocks approval on blocking concerns and derives status", async () => {

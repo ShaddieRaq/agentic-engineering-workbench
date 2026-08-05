@@ -6,6 +6,7 @@ import {
   capabilityPlanOutputSchema,
 } from "../../foundry/capabilityPlan.js";
 import { reconcileCapabilityPlanContent } from "../../foundry/capabilityReconciliation.js";
+import { revisionContextSchema } from "../../foundry/revisionContext.js";
 import { defineAgent, type AgentRegistration } from "../agentRegistration.js";
 import { defineAgentRevisionSurface } from "../agentRevisionSurface.js";
 import {
@@ -19,6 +20,7 @@ export const capabilityPlannerInputSchema = z
   .object({
     plan: architecturePlanSchema,
     catalog: capabilityCatalogSchema,
+    revision: revisionContextSchema.optional(),
   })
   .strict();
 
@@ -63,6 +65,7 @@ export function createCapabilityPlannerAgent(
           input.plan,
           input.catalog,
           effectivePolicy,
+          input.revision,
         ),
         outputSchema: capabilityPlanContentShapeSchema,
       });

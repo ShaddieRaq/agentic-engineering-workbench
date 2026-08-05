@@ -130,6 +130,9 @@ export const testSuiteSchema = z
     content: testSuiteContentSchema,
     reconciliation: testSuiteReconciliationSchema.nullable(),
     createdAt: z.string().min(1),
+    // Optional so artifacts persisted before revision lineage existed load.
+    revisedFromArtifactId: z.string().min(1).optional(),
+    revisionDecisionId: z.uuid().optional(),
   })
   .strict();
 

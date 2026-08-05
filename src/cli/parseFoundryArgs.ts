@@ -34,7 +34,12 @@ export type FoundryCliArgs =
   | { command: "intake-status"; briefId: string }
   | { command: "export-claude-code"; decisionArtifactId: string; out: string | null }
   | { command: "import-feedback"; bundlePath: string; exportDir: string | null }
-  | { command: "architect-plan"; briefId: string; model: string | null }
+  | {
+      command: "architect-plan";
+      briefId: string;
+      model: string | null;
+      reviseFrom: string | null;
+    }
   | { command: "plan-show"; planId: string }
   | {
       command: "plan-decide";
@@ -44,7 +49,12 @@ export type FoundryCliArgs =
       rationale: string;
       requestedRevisions: string[];
     }
-  | { command: "capability-plan"; planId: string; model: string | null }
+  | {
+      command: "capability-plan";
+      planId: string;
+      model: string | null;
+      reviseFrom: string | null;
+    }
   | { command: "capability-show"; capabilityPlanId: string }
   | {
       command: "capability-decide";
@@ -54,7 +64,12 @@ export type FoundryCliArgs =
       rationale: string;
       requestedRevisions: string[];
     }
-  | { command: "design-tests"; capabilityPlanId: string; model: string | null }
+  | {
+      command: "design-tests";
+      capabilityPlanId: string;
+      model: string | null;
+      reviseFrom: string | null;
+    }
   | { command: "tests-show"; testSuiteId: string }
   | {
       command: "tests-decide";
@@ -230,6 +245,7 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
       command,
       briefId: requiredOption(args, "--brief-id"),
       model: option(args, "--model"),
+      reviseFrom: option(args, "--revise-from"),
     };
   }
 
@@ -257,6 +273,7 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
       command,
       planId: requiredOption(args, "--plan-id"),
       model: option(args, "--model"),
+      reviseFrom: option(args, "--revise-from"),
     };
   }
 
@@ -287,6 +304,7 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
       command,
       capabilityPlanId: requiredOption(args, "--capability-plan-id"),
       model: option(args, "--model"),
+      reviseFrom: option(args, "--revise-from"),
     };
   }
 

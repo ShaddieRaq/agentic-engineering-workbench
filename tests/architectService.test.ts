@@ -105,6 +105,45 @@ describe("ArchitectService", () => {
     expect(listed.artifacts[0]?.briefId).toBe(brief.briefId);
   });
 
+  it("consumes a revise decision through revise-from with lineage", async () => {
+    const { service, briefService } = await createHarness({
+      async run(request) {
+        const brief = (request.input as { brief: never }).brief;
+        return {
+          artifactId: "agent-run-r",
+          run: {
+            succeeded: true,
+            output: reconcileArchitecturePlanContent(planContentFor(brief), brief),
+            failure: null,
+          },
+        };
+      },
+    });
+    const brief = await approvedBrief(briefService);
+    const first = await service.createPlan({ briefId: brief.briefId });
+
+    await expect(
+      service.createPlan({
+        briefId: brief.briefId,
+        reviseFromId: first.plan.planId,
+      }),
+    ).rejects.toThrowError(/no revise decision to consume/i);
+
+    const revise = await service.recordPlanDecision({
+      planId: first.plan.planId,
+      decision: "revise",
+      operatorId: "operator-1",
+      rationale: "Tighten the slices.",
+      requestedRevisions: ["Split the largest slice."],
+    });
+    const second = await service.createPlan({
+      briefId: brief.briefId,
+      reviseFromId: first.plan.planId,
+    });
+    expect(second.plan.revisedFromArtifactId).toBe(first.plan.planId);
+    expect(second.plan.revisionDecisionId).toBe(revise.decision.decisionId);
+  });
+
   it("records plan decisions and blocks approval on blocking concerns", async () => {
     const { service, briefService } = await createHarness({
       async run(request) {

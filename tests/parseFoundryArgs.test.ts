@@ -249,6 +249,21 @@ describe("parseFoundryArgs", () => {
       command: "architect-plan",
       briefId: "abc",
       model: null,
+      reviseFrom: null,
+    });
+    expect(
+      parseFoundryArgs([
+        "architect-plan",
+        "--brief-id",
+        "abc",
+        "--revise-from",
+        "p0",
+      ]),
+    ).toEqual({
+      command: "architect-plan",
+      briefId: "abc",
+      model: null,
+      reviseFrom: "p0",
     });
     expect(parseFoundryArgs(["plan-show", "--plan-id", "p1"])).toEqual({
       command: "plan-show",
@@ -286,6 +301,7 @@ describe("parseFoundryArgs", () => {
       command: "capability-plan",
       planId: "p1",
       model: null,
+      reviseFrom: null,
     });
     expect(
       parseFoundryArgs(["capability-show", "--capability-plan-id", "c1"]),
@@ -315,7 +331,12 @@ describe("parseFoundryArgs", () => {
   it("parses test-design commands", () => {
     expect(
       parseFoundryArgs(["design-tests", "--capability-plan-id", "c1"]),
-    ).toEqual({ command: "design-tests", capabilityPlanId: "c1", model: null });
+    ).toEqual({
+      command: "design-tests",
+      capabilityPlanId: "c1",
+      model: null,
+      reviseFrom: null,
+    });
     expect(parseFoundryArgs(["tests-show", "--test-suite-id", "t1"])).toEqual({
       command: "tests-show",
       testSuiteId: "t1",

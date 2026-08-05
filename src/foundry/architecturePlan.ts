@@ -181,6 +181,9 @@ export const architecturePlanSchema = z
     content: architecturePlanContentSchema,
     reconciliation: architectureReconciliationSchema.nullable(),
     createdAt: z.string().min(1),
+    // Optional so artifacts persisted before revision lineage existed load.
+    revisedFromArtifactId: z.string().min(1).optional(),
+    revisionDecisionId: z.uuid().optional(),
   })
   .strict();
 

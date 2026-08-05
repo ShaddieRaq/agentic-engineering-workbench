@@ -115,4 +115,18 @@ describe("testDesignerAgent", () => {
       "table-driven cases",
     );
   });
+
+  it("appends the revision section when a revision context is provided", () => {
+    const { brief, plan } = suiteFixtures();
+    const withRevision = buildTestDesignerPrompt(brief, plan, undefined, {
+      previous: { interfaceContract: "the prior contract" },
+      requestedRevisions: ["Import every Vitest hook used."],
+    });
+    expect(withRevision).toContain("REVISION REQUEST:");
+    expect(withRevision).toContain("the prior contract");
+    expect(withRevision).toContain("- Import every Vitest hook used.");
+    expect(buildTestDesignerPrompt(brief, plan)).not.toContain(
+      "REVISION REQUEST:",
+    );
+  });
 });

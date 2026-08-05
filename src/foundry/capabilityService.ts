@@ -61,6 +61,7 @@ export class CapabilityService {
   async createCapabilityPlan(input: {
     planId: string;
     model?: string | undefined;
+    reviseFromId?: string | undefined;
   }): Promise<SavedCapabilityPlan> {
     const status = await this.#architect.derivePlanStatus(input.planId);
     if (status !== "approved") {
@@ -71,9 +72,35 @@ export class CapabilityService {
     const plan = await this.#architect.loadPlan(input.planId);
     const catalog = this.#catalogFactory();
 
+    let revision: { previous: unknown; requestedRevisions: string[] } | null =
+      null;
+    let revisionDecisionId: string | null = null;
+    if (input.reviseFromId) {
+      const prior = await this.loadCapabilityPlan(input.reviseFromId);
+      if (prior.planId !== input.planId) {
+        throw new Error(
+          `Capability plan ${input.reviseFromId} belongs to a different architecture plan and cannot seed this revision.`,
+        );
+      }
+      const decision = await this.#latestDecisionFor(
+        prior.capabilityPlanId,
+        prior.briefId,
+      );
+      if (!decision || decision.decision !== "revise") {
+        throw new Error(
+          `Capability plan ${input.reviseFromId} has no revise decision to consume.`,
+        );
+      }
+      revision = {
+        previous: prior.content,
+        requestedRevisions: decision.requestedRevisions ?? [],
+      };
+      revisionDecisionId = decision.decisionId;
+    }
+
     const response = await this.#agentService.run({
       agentId: CAPABILITY_PLANNER_AGENT_ID,
-      input: { plan, catalog },
+      input: { plan, catalog, ...(revision ? { revision } : {}) },
       ...(input.model ? { model: input.model } : {}),
     });
     if (!response.run.succeeded || response.run.output === null) {
@@ -97,6 +124,10 @@ export class CapabilityService {
       content,
       reconciliation,
       createdAt: new Date().toISOString(),
+      ...(input.reviseFromId
+        ? { revisedFromArtifactId: input.reviseFromId }
+        : {}),
+      ...(revisionDecisionId ? { revisionDecisionId } : {}),
     });
     const reference = await this.#store.saveCapabilityPlan(capabilityPlan);
     return { capabilityPlan, reference };
@@ -134,9 +165,24 @@ export class CapabilityService {
     capabilityPlanId: string,
   ): Promise<"draft" | "approved" | "rejected" | "revision-requested"> {
     const capabilityPlan = await this.loadCapabilityPlan(capabilityPlanId);
+    const latest = await this.#latestDecisionFor(
+      capabilityPlanId,
+      capabilityPlan.briefId,
+    );
+
+    if (!latest) return "draft";
+    if (latest.decision === "approve") return "approved";
+    if (latest.decision === "reject") return "rejected";
+    return "revision-requested";
+  }
+
+  async #latestDecisionFor(
+    capabilityPlanId: string,
+    briefId: string,
+  ): Promise<CapabilityPlanDecision | null> {
     const { artifacts } = await this.#store.list({
       kind: "capability-plan-decision",
-      briefId: capabilityPlan.briefId,
+      briefId,
       limit: 500,
     });
 
@@ -152,10 +198,6 @@ export class CapabilityService {
         latest = stored.artifact;
       }
     }
-
-    if (!latest) return "draft";
-    if (latest.decision === "approve") return "approved";
-    if (latest.decision === "reject") return "rejected";
-    return "revision-requested";
+    return latest;
   }
 }

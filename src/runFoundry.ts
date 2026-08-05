@@ -241,6 +241,7 @@ async function main(): Promise<void> {
       const saved = await architect.createPlan({
         briefId: args.briefId,
         ...(args.model ? { model: args.model } : {}),
+        ...(args.reviseFrom ? { reviseFromId: args.reviseFrom } : {}),
       });
       console.log(`Plan: ${saved.plan.planId} (brief ${saved.plan.briefId} v${saved.plan.briefVersion})`);
       console.log(
@@ -282,6 +283,7 @@ async function main(): Promise<void> {
       const saved = await capability.createCapabilityPlan({
         planId: args.planId,
         ...(args.model ? { model: args.model } : {}),
+        ...(args.reviseFrom ? { reviseFromId: args.reviseFrom } : {}),
       });
       const { content } = saved.capabilityPlan;
       console.log(
@@ -337,6 +339,7 @@ async function main(): Promise<void> {
       const saved = await testDesign.createTestSuite({
         capabilityPlanId: args.capabilityPlanId,
         ...(args.model ? { model: args.model } : {}),
+        ...(args.reviseFrom ? { reviseFromId: args.reviseFrom } : {}),
       });
       const { content } = saved.testSuite;
       const visible = content.testFiles.filter(

@@ -185,6 +185,9 @@ export const capabilityPlanSchema = z
     content: capabilityPlanContentSchema,
     reconciliation: capabilityReconciliationSchema.nullable(),
     createdAt: z.string().min(1),
+    // Optional so artifacts persisted before revision lineage existed load.
+    revisedFromArtifactId: z.string().min(1).optional(),
+    revisionDecisionId: z.uuid().optional(),
   })
   .strict();
 

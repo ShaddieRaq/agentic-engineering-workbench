@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { architecturePlanSchema } from "../../foundry/architecturePlan.js";
 import { projectBriefSchema } from "../../foundry/projectBrief.js";
+import { revisionContextSchema } from "../../foundry/revisionContext.js";
 import {
   testSuiteContentShapeSchema,
   testSuiteOutputSchema,
@@ -19,6 +20,7 @@ export const testDesignerInputSchema = z
   .object({
     brief: projectBriefSchema,
     plan: architecturePlanSchema,
+    revision: revisionContextSchema.optional(),
   })
   .strict();
 
@@ -58,7 +60,12 @@ export function createTestDesignerAgent(
     }),
     async execute(input, services) {
       const result = await services.provider.generate({
-        prompt: buildTestDesignerPrompt(input.brief, input.plan, effectivePolicy),
+        prompt: buildTestDesignerPrompt(
+          input.brief,
+          input.plan,
+          effectivePolicy,
+          input.revision,
+        ),
         outputSchema: testSuiteContentShapeSchema,
       });
 

@@ -5,6 +5,7 @@ import {
 } from "../../foundry/architecturePlan.js";
 import { reconcileArchitecturePlanContent } from "../../foundry/architectureReconciliation.js";
 import { projectBriefSchema } from "../../foundry/projectBrief.js";
+import { revisionContextSchema } from "../../foundry/revisionContext.js";
 import { defineAgent, type AgentRegistration } from "../agentRegistration.js";
 import { defineAgentRevisionSurface } from "../agentRevisionSurface.js";
 import { assessProjectArchitectExpectation } from "./projectArchitectExpectation.js";
@@ -16,7 +17,10 @@ import {
 import { buildProjectArchitectPrompt } from "./projectArchitectPrompt.js";
 
 export const projectArchitectInputSchema = z
-  .object({ brief: projectBriefSchema })
+  .object({
+    brief: projectBriefSchema,
+    revision: revisionContextSchema.optional(),
+  })
   .strict();
 
 export function createProjectArchitectAgent(
@@ -58,7 +62,11 @@ export function createProjectArchitectAgent(
     }),
     async execute(input, services) {
       const result = await services.provider.generate({
-        prompt: buildProjectArchitectPrompt(input.brief, effectivePolicy),
+        prompt: buildProjectArchitectPrompt(
+          input.brief,
+          effectivePolicy,
+          input.revision,
+        ),
         outputSchema: architecturePlanContentShapeSchema,
       });
 

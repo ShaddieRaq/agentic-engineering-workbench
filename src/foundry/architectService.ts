@@ -58,6 +58,7 @@ export class ArchitectService {
   async createPlan(input: {
     briefId: string;
     model?: string | undefined;
+    reviseFromId?: string | undefined;
   }): Promise<SavedArchitecturePlan> {
     const status = await this.#briefService.deriveBriefStatus(input.briefId);
     if (status !== "approved") {
@@ -67,9 +68,32 @@ export class ArchitectService {
     }
     const brief = await this.#briefService.loadBrief(input.briefId);
 
+    let revision: { previous: unknown; requestedRevisions: string[] } | null =
+      null;
+    let revisionDecisionId: string | null = null;
+    if (input.reviseFromId) {
+      const prior = await this.loadPlan(input.reviseFromId);
+      if (prior.briefId !== input.briefId) {
+        throw new Error(
+          `Plan ${input.reviseFromId} belongs to a different brief and cannot seed this revision.`,
+        );
+      }
+      const decision = await this.#latestDecisionFor(prior.planId, prior.briefId);
+      if (!decision || decision.decision !== "revise") {
+        throw new Error(
+          `Plan ${input.reviseFromId} has no revise decision to consume.`,
+        );
+      }
+      revision = {
+        previous: prior.content,
+        requestedRevisions: decision.requestedRevisions ?? [],
+      };
+      revisionDecisionId = decision.decisionId;
+    }
+
     const response = await this.#agentService.run({
       agentId: PROJECT_ARCHITECT_AGENT_ID,
-      input: { brief },
+      input: { brief, ...(revision ? { revision } : {}) },
       ...(input.model ? { model: input.model } : {}),
     });
     if (!response.run.succeeded || response.run.output === null) {
@@ -91,6 +115,10 @@ export class ArchitectService {
       content,
       reconciliation,
       createdAt: new Date().toISOString(),
+      ...(input.reviseFromId
+        ? { revisedFromArtifactId: input.reviseFromId }
+        : {}),
+      ...(revisionDecisionId ? { revisionDecisionId } : {}),
     });
     const reference = await this.#store.saveArchitecturePlan(plan);
     return { plan, reference };
@@ -128,9 +156,21 @@ export class ArchitectService {
     planId: string,
   ): Promise<"draft" | "approved" | "rejected" | "revision-requested"> {
     const plan = await this.loadPlan(planId);
+    const latest = await this.#latestDecisionFor(planId, plan.briefId);
+
+    if (!latest) return "draft";
+    if (latest.decision === "approve") return "approved";
+    if (latest.decision === "reject") return "rejected";
+    return "revision-requested";
+  }
+
+  async #latestDecisionFor(
+    planId: string,
+    briefId: string,
+  ): Promise<ArchitecturePlanDecision | null> {
     const { artifacts } = await this.#store.list({
       kind: "architecture-plan-decision",
-      briefId: plan.briefId,
+      briefId,
       limit: 500,
     });
 
@@ -146,10 +186,6 @@ export class ArchitectService {
         latest = stored.artifact;
       }
     }
-
-    if (!latest) return "draft";
-    if (latest.decision === "approve") return "approved";
-    if (latest.decision === "reject") return "rejected";
-    return "revision-requested";
+    return latest;
   }
 }

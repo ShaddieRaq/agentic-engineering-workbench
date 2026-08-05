@@ -248,10 +248,12 @@ export function createWorkbenchMcpTools(deps: WorkbenchMcpDependencies) {
     async architectPlan(input: {
       briefId: string;
       model?: string | undefined;
+      reviseFromId?: string | undefined;
     }) {
       const saved = await deps.architect.createPlan({
         briefId: input.briefId,
         ...(input.model ? { model: input.model } : {}),
+        ...(input.reviseFromId ? { reviseFromId: input.reviseFromId } : {}),
       });
       return {
         planId: saved.plan.planId,
@@ -286,10 +288,12 @@ export function createWorkbenchMcpTools(deps: WorkbenchMcpDependencies) {
     async capabilityPlan(input: {
       planId: string;
       model?: string | undefined;
+      reviseFromId?: string | undefined;
     }) {
       const saved = await deps.capability.createCapabilityPlan({
         planId: input.planId,
         ...(input.model ? { model: input.model } : {}),
+        ...(input.reviseFromId ? { reviseFromId: input.reviseFromId } : {}),
       });
       return {
         capabilityPlanId: saved.capabilityPlan.capabilityPlanId,
@@ -324,10 +328,12 @@ export function createWorkbenchMcpTools(deps: WorkbenchMcpDependencies) {
     async designTests(input: {
       capabilityPlanId: string;
       model?: string | undefined;
+      reviseFromId?: string | undefined;
     }) {
       const saved = await deps.testDesign.createTestSuite({
         capabilityPlanId: input.capabilityPlanId,
         ...(input.model ? { model: input.model } : {}),
+        ...(input.reviseFromId ? { reviseFromId: input.reviseFromId } : {}),
       });
       return {
         testSuiteId: saved.testSuite.testSuiteId,

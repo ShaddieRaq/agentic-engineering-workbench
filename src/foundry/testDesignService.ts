@@ -71,6 +71,7 @@ export class TestDesignService {
   async createTestSuite(input: {
     capabilityPlanId: string;
     model?: string | undefined;
+    reviseFromId?: string | undefined;
   }): Promise<SavedTestSuite> {
     const status = await this.#capability.deriveCapabilityPlanStatus(
       input.capabilityPlanId,
@@ -94,9 +95,35 @@ export class TestDesignService {
       capabilityPlan.briefVersion,
     );
 
+    let revision: { previous: unknown; requestedRevisions: string[] } | null =
+      null;
+    let revisionDecisionId: string | null = null;
+    if (input.reviseFromId) {
+      const prior = await this.loadTestSuite(input.reviseFromId);
+      if (prior.capabilityPlanId !== input.capabilityPlanId) {
+        throw new Error(
+          `Test suite ${input.reviseFromId} belongs to a different capability plan and cannot seed this revision.`,
+        );
+      }
+      const decision = await this.#latestDecisionFor(
+        prior.testSuiteId,
+        prior.briefId,
+      );
+      if (!decision || decision.decision !== "revise") {
+        throw new Error(
+          `Test suite ${input.reviseFromId} has no revise decision to consume.`,
+        );
+      }
+      revision = {
+        previous: prior.content,
+        requestedRevisions: decision.requestedRevisions ?? [],
+      };
+      revisionDecisionId = decision.decisionId;
+    }
+
     const response = await this.#agentService.run({
       agentId: TEST_DESIGNER_AGENT_ID,
-      input: { brief, plan },
+      input: { brief, plan, ...(revision ? { revision } : {}) },
       ...(input.model ? { model: input.model } : {}),
     });
     if (!response.run.succeeded || response.run.output === null) {
@@ -119,6 +146,10 @@ export class TestDesignService {
       content,
       reconciliation,
       createdAt: new Date().toISOString(),
+      ...(input.reviseFromId
+        ? { revisedFromArtifactId: input.reviseFromId }
+        : {}),
+      ...(revisionDecisionId ? { revisionDecisionId } : {}),
     });
     const reference = await this.#store.saveTestSuite(testSuite);
     return { testSuite, reference };
@@ -156,9 +187,21 @@ export class TestDesignService {
     testSuiteId: string,
   ): Promise<"draft" | "approved" | "rejected" | "revision-requested"> {
     const testSuite = await this.loadTestSuite(testSuiteId);
+    const latest = await this.#latestDecisionFor(testSuiteId, testSuite.briefId);
+
+    if (!latest) return "draft";
+    if (latest.decision === "approve") return "approved";
+    if (latest.decision === "reject") return "rejected";
+    return "revision-requested";
+  }
+
+  async #latestDecisionFor(
+    testSuiteId: string,
+    briefId: string,
+  ): Promise<TestSuiteDecision | null> {
     const { artifacts } = await this.#store.list({
       kind: "test-suite-decision",
-      briefId: testSuite.briefId,
+      briefId,
       limit: 500,
     });
 
@@ -174,10 +217,6 @@ export class TestDesignService {
         latest = stored.artifact;
       }
     }
-
-    if (!latest) return "draft";
-    if (latest.decision === "approve") return "approved";
-    if (latest.decision === "reject") return "rejected";
-    return "revision-requested";
+    return latest;
   }
 }

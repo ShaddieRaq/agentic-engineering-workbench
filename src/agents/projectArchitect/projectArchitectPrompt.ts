@@ -1,5 +1,9 @@
 import type { ProjectBrief } from "../../foundry/projectBrief.js";
 import {
+  renderRevisionSection,
+  type RevisionContext,
+} from "../../foundry/revisionContext.js";
+import {
   projectArchitectBaselinePolicy,
   type ProjectArchitectPolicy,
 } from "./projectArchitectPolicy.js";
@@ -7,6 +11,7 @@ import {
 export function buildProjectArchitectPrompt(
   brief: ProjectBrief,
   policy: ProjectArchitectPolicy = projectArchitectBaselinePolicy,
+  revision?: RevisionContext | undefined,
 ): string {
   const { instructions } = policy;
 
@@ -22,6 +27,7 @@ export function buildProjectArchitectPrompt(
     "",
     "APPROVED PROJECT BRIEF:",
     JSON.stringify(brief, null, 2),
+    ...(revision ? renderRevisionSection(revision) : []),
     "",
     "TASK:",
     ...instructions.taskLines,

@@ -175,6 +175,7 @@ export function buildWorkbenchMcpServer(
       inputSchema: {
         briefId: z.uuid(),
         model: z.string().min(1).optional(),
+        reviseFromId: z.string().min(1).optional(),
       },
     },
     async (input) => asText(await tools.architectPlan(input)),
@@ -212,6 +213,7 @@ export function buildWorkbenchMcpServer(
       inputSchema: {
         planId: z.uuid(),
         model: z.string().min(1).optional(),
+        reviseFromId: z.string().min(1).optional(),
       },
     },
     async (input) => asText(await tools.capabilityPlan(input)),
@@ -249,6 +251,7 @@ export function buildWorkbenchMcpServer(
       inputSchema: {
         capabilityPlanId: z.uuid(),
         model: z.string().min(1).optional(),
+        reviseFromId: z.string().min(1).optional(),
       },
     },
     async (input) => asText(await tools.designTests(input)),
