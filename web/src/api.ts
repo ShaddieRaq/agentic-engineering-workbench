@@ -429,6 +429,160 @@ export interface PromotionDecisionEvidence {
   artifactPath: string;
 }
 
+export type FoundryStageStatus = "draft" | "approved" | "rejected" | "revision-requested";
+
+export type FoundrySliceStatus =
+  | "not-started"
+  | "ordered"
+  | "submitted-passed"
+  | "submitted-failed"
+  | "approved"
+  | "rejected"
+  | "revision-requested";
+
+export interface FoundryDecisionView {
+  decisionId: string;
+  decision: "approve" | "reject" | "revise";
+  operatorId: string;
+  rationale: string;
+  requestedRevisions: string[] | null;
+  decidedAt: string;
+}
+
+export interface FoundryBriefVersionView {
+  version: number;
+  artifactId: string;
+  title: string;
+  createdAt: string;
+  status: FoundryStageStatus;
+  decisions: FoundryDecisionView[];
+}
+
+export interface FoundryPlanView {
+  planId: string;
+  createdAt: string;
+  status: FoundryStageStatus;
+  componentCount: number;
+  sliceCount: number;
+  blockingConcerns: number;
+  advisoryConcerns: number;
+  decisions: FoundryDecisionView[];
+  revisedFromArtifactId?: string;
+}
+
+export interface FoundryCapabilityPlanView {
+  capabilityPlanId: string;
+  planId: string;
+  createdAt: string;
+  status: FoundryStageStatus;
+  needCount: number;
+  proposedCapabilityCount: number;
+  blockingConcerns: number;
+  advisoryConcerns: number;
+  decisions: FoundryDecisionView[];
+  revisedFromArtifactId?: string;
+}
+
+export interface FoundryTestFileView {
+  path: string;
+  visibility: "visible" | "holdout";
+  testType: string;
+  coveredCriterionIds: string[];
+}
+
+export interface FoundryTestSuiteView {
+  testSuiteId: string;
+  planId: string;
+  capabilityPlanId: string;
+  createdAt: string;
+  status: FoundryStageStatus;
+  interfaceContract: string;
+  files: FoundryTestFileView[];
+  decisions: FoundryDecisionView[];
+  revisedFromArtifactId?: string;
+}
+
+export interface FoundrySubmissionView {
+  submissionId: string;
+  createdAt: string;
+  status: "passed" | "failed";
+  scopeCheck: { passed: boolean; failures: string[] };
+  files: { path: string; visibility: "visible" | "holdout"; exitCode: number; passed: boolean }[];
+  outputExcerpt: string;
+  decisions: FoundryDecisionView[];
+}
+
+export interface FoundrySliceRow {
+  sliceId: string;
+  title: string;
+  delivers: string;
+  dependsOnSliceIds: string[];
+  status: FoundrySliceStatus;
+  workOrders: { workOrderId: string; createdAt: string; applicableTestFilePaths: string[] }[];
+  submissions: FoundrySubmissionView[];
+}
+
+export interface FoundryBuildView {
+  anchorTestSuiteId: string;
+  anchorPlanId: string;
+  planAvailable: boolean;
+  approvedSliceCount: number;
+  slices: FoundrySliceRow[];
+}
+
+export interface FoundryChainView {
+  briefId: string;
+  title: string;
+  latestVersion: number;
+  status: FoundryStageStatus;
+  latestActivityAt: string;
+  intakeTurnCount: number;
+  briefVersions: FoundryBriefVersionView[];
+  plans: FoundryPlanView[];
+  capabilityPlans: FoundryCapabilityPlanView[];
+  testSuites: FoundryTestSuiteView[];
+  build: FoundryBuildView | null;
+  buildNote?: string;
+}
+
+export interface FoundryProjectSummary {
+  briefId: string;
+  title: string;
+  latestVersion: number;
+  status: FoundryStageStatus;
+  latestActivityAt: string;
+  stages: {
+    plan: FoundryStageStatus | "missing";
+    capability: FoundryStageStatus | "missing";
+    tests: FoundryStageStatus | "missing";
+    build: { approved: number; total: number } | null;
+  };
+}
+
+export interface FoundryProjectIndex {
+  projects: FoundryProjectSummary[];
+  rejected: { path: string; reason: string }[];
+}
+
+export interface FoundryArtifactSummary {
+  id: string;
+  kind: string;
+  path: string;
+  briefId: string;
+  briefVersion: number;
+  createdAt: string;
+}
+
+export interface FoundryArtifactList {
+  artifacts: FoundryArtifactSummary[];
+  rejected: { path: string; reason: string }[];
+}
+
+export interface FoundryStoredArtifact {
+  kind: string;
+  artifact: unknown;
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,

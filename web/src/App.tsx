@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type ImprovementProposalArtifact, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type ToolDescription, type ToolSummary } from "./api.js";
 import { ArtifactPresentationView } from "./artifactPresentation.js";
-import { AgentCard, EmptyState, ErrorNotice, Loading, OperationTrace, RunAgentPanel, StatusBadge } from "./components.js";
+import { AgentCard, EmptyState, ErrorNotice, Loading, OperationTrace, PageHeader, RunAgentPanel, StatusBadge } from "./components.js";
+import { FoundryArtifactPage, FoundryProjectPage, FoundryProjectsPage } from "./foundry.js";
 import { useOperation, useResource } from "./hooks.js";
 import { LocalLink as Link, LocalNavLink as NavLink, usePathname } from "./router.js";
 import { WorkspaceProvider, useWorkspace } from "./workspace.js";
@@ -17,6 +18,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <NavLink to="/agents">Agents</NavLink>
           <NavLink to="/tools">Tools</NavLink>
           <NavLink to="/workspaces">Workspaces</NavLink>
+          <NavLink to="/foundry">Foundry</NavLink>
           <NavLink to="/runs">Evidence</NavLink>
           <NavLink to="/evaluations">Evaluation Studio</NavLink>
           <NavLink to="/authoring">Authoring</NavLink>
@@ -27,10 +29,6 @@ function Shell({ children }: { children: React.ReactNode }) {
       <main>{children}</main>
     </div>
   );
-}
-
-function PageHeader({ eyebrow, title, children }: { eyebrow: string; title: string; children?: React.ReactNode }) {
-  return <header className="page-header"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1></div>{children}</header>;
 }
 
 function OverviewPage() {
@@ -692,6 +690,9 @@ function RoutedContent() {
   else if (/^\/agents\/[^/]+$/.test(pathname)) page = <AgentDetailPage />;
   else if (pathname === "/runs") page = <RunsPage />;
   else if (/^\/runs\/[^/]+$/.test(pathname)) page = <RunDetailPage />;
+  else if (pathname === "/foundry") page = <FoundryProjectsPage />;
+  else if (/^\/foundry\/artifacts\/[^/]+$/.test(pathname)) page = <FoundryArtifactPage />;
+  else if (/^\/foundry\/[^/]+$/.test(pathname)) page = <FoundryProjectPage />;
   else if (pathname === "/evaluations" || pathname === "/verification") page = <EvaluationStudioPage />;
   else if (/^\/evaluations\/[^/]+\/cases\/[^/]+\/[^/]+$/.test(pathname)) page = <EvaluationCasePage />;
   else if (/^\/evaluations\/[^/]+$/.test(pathname)) page = <EvaluationDetailPage />;

@@ -554,12 +554,24 @@ deterministic scope checks; true isolation needs a builder session
 scoped to the project directory only
 ```
 
+Foundry console (2026-08-05): the web console now renders all Foundry
+evidence read-only at /foundry — a project index (per-brief chain status
+strip), a chain view per project (brief versions, plans, capability plans,
+and suites with statuses, revision lineage, and full decision histories;
+governed-build slice rows with scope checks, per-file test results, and
+submission decisions), and raw artifact pages (holdout content displayed
+to the operator with an explicit disclosure). Served by four /api/foundry
+GET routes over a pure view-model builder (src/web/foundryChainView.ts)
+that mirrors the service status-derivation semantics without constructing
+services; works without OPENAI_API_KEY. Operator ACTIONS from the UI
+(decisions, stage runs) are the next slice.
+
 Verified test state:
 
 ```text
 npm run typecheck passed
-157 test files passed
-790 tests passed
+158 test files passed
+825 tests passed
 npm run agents -- validate passed (10 agents)
 project-intake 0.3.0 live gate: 14/15 (vague-answer 3/3 after the
 released provenance policy; the single miss was one behavioral

@@ -5,6 +5,14 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AgentApplicationService } from "../agents/agentApplicationService.js";
 import type { ArtifactKind, ArtifactQuery } from "../artifacts/artifactStore.js";
+import type {
+  FoundryArtifactKind,
+  FoundryArtifactStore,
+} from "../foundry/foundryArtifactStore.js";
+import {
+  buildFoundryChainView,
+  buildFoundryProjectIndex,
+} from "./foundryChainView.js";
 import { OperationStore } from "./operationStore.js";
 
 const runRequestSchema = z
@@ -77,8 +85,31 @@ export interface AgentWebServerOptions {
   service: AgentApplicationService;
   apiKeyConfigured: boolean;
   operations?: OperationStore;
+  foundry?: FoundryArtifactStore;
   clientDirectory?: string;
   logger?: boolean;
+}
+
+const foundryArtifactKinds: readonly FoundryArtifactKind[] = [
+  "project-brief",
+  "project-brief-decision",
+  "intake-turn",
+  "export-feedback",
+  "architecture-plan",
+  "architecture-plan-decision",
+  "capability-plan",
+  "capability-plan-decision",
+  "test-suite",
+  "test-suite-decision",
+  "work-order",
+  "slice-submission",
+  "submission-decision",
+];
+
+function parseFoundryKind(value: string): FoundryArtifactKind | null {
+  return (foundryArtifactKinds as readonly string[]).includes(value)
+    ? (value as FoundryArtifactKind)
+    : null;
 }
 
 function localHostname(value: string): boolean {
@@ -637,6 +668,60 @@ export async function buildAgentWebServer(
       }
     },
   );
+
+  if (options.foundry) {
+    const foundry = options.foundry;
+
+    app.get("/api/foundry/projects", async () => {
+      return buildFoundryProjectIndex(foundry);
+    });
+
+    app.get<{ Params: { briefId: string } }>(
+      "/api/foundry/projects/:briefId",
+      async (request, reply) => {
+        const chain = await buildFoundryChainView(foundry, request.params.briefId);
+        if (!chain) {
+          return reply
+            .code(404)
+            .send({ error: `Unknown foundry project: ${request.params.briefId}.` });
+        }
+        return chain;
+      },
+    );
+
+    app.get<{ Querystring: { kind?: string; briefId?: string; limit?: string } }>(
+      "/api/foundry/artifacts",
+      async (request, reply) => {
+        const kind = request.query.kind
+          ? parseFoundryKind(request.query.kind)
+          : undefined;
+        if (kind === null) {
+          return reply.code(400).send({ error: "Unsupported foundry artifact kind." });
+        }
+        const limit =
+          request.query.limit === undefined ? undefined : Number(request.query.limit);
+        if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) {
+          return reply.code(400).send({ error: "limit must be a positive integer." });
+        }
+        return foundry.list({
+          ...(kind ? { kind } : {}),
+          ...(request.query.briefId ? { briefId: request.query.briefId } : {}),
+          ...(limit === undefined ? {} : { limit }),
+        });
+      },
+    );
+
+    app.get<{ Params: { artifactId: string } }>(
+      "/api/foundry/artifacts/:artifactId",
+      async (request, reply) => {
+        try {
+          return await foundry.load(request.params.artifactId);
+        } catch (error: unknown) {
+          return reply.code(404).send({ error: errorMessage(error) });
+        }
+      },
+    );
+  }
 
   app.post<{ Params: { agentId: string } }>(
     "/api/agents/:agentId/runs",

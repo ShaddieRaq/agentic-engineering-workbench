@@ -982,8 +982,11 @@ scoped to the project directory only.
 
 ## Current Priorities
 
-1. Builder-session isolation for true holdout secrecy (Phase 43 carry-over),
-   then Foundry frontend views for work orders and submissions.
+1. Foundry UI part 2: operator actions from the console — decision recording
+   (approve/reject/revise forms), stage runs, and intake turns backed by
+   operation polling. Part 1 (read-only evidence views: project index, chain
+   view, raw artifacts at /foundry) shipped 2026-08-05.
+2. Builder-session isolation for true holdout secrecy (Phase 43 carry-over).
 2. Capability Planner verification dataset and gate (same rhythm as intake
    and architect).
 3. Evidence-backed model qualification, promoted per Decision 086: add an

@@ -80,6 +80,10 @@ section { margin-top: 34px; }
 .status-running, .status-queued { background: rgba(102, 217, 197, .12); color: var(--accent-2); }
 .status-failed, .status-retired, .status-regressed { background: rgba(255, 143, 125, .12); color: var(--danger); }
 .status-unchanged, .status-insufficient-evidence { background: rgba(147, 164, 159, .12); color: var(--muted); }
+.status-approved, .status-passed, .status-submitted-passed, .status-approve { background: rgba(184, 242, 105, .12); color: var(--accent); }
+.status-revision-requested, .status-ordered, .status-revise, .status-visible { background: rgba(102, 217, 197, .12); color: var(--accent-2); }
+.status-rejected, .status-submitted-failed, .status-reject, .status-holdout { background: rgba(255, 143, 125, .12); color: var(--danger); }
+.status-draft, .status-missing, .status-not-started { background: rgba(147, 164, 159, .12); color: var(--muted); }
 
 .panel, .concept-card, .trace-panel { padding: 25px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
@@ -228,3 +232,14 @@ tbody tr:last-child td { border-bottom: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+.foundry-stage { margin-top: 30px; display: grid; gap: 14px; }
+.foundry-panel { display: grid; gap: 12px; }
+.muted-note { color: var(--muted); font-size: 13px; margin: 0; }
+.decision-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.decision-list > li { border-left: 2px solid var(--line); padding-left: 12px; color: var(--muted); font-size: 13px; }
+.decision-list > li p { margin: 6px 0 0; color: #d7e0dc; }
+.decision-list > li ul { margin: 6px 0 0; padding-left: 18px; }
+.decision-list strong { color: #fff; }
+.submission-block { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 10px; }
+.submission-block h4 { margin: 0; }

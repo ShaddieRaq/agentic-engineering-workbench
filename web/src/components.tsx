@@ -8,6 +8,10 @@ export function StatusBadge({ value }: { value: string }) {
   return <span className={`status status-${value}`}>{value.replaceAll("-", " ")}</span>;
 }
 
+export function PageHeader({ eyebrow, title, children }: { eyebrow: string; title: string; children?: React.ReactNode }) {
+  return <header className="page-header"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1></div>{children}</header>;
+}
+
 export function EmptyState({ children }: { children: React.ReactNode }) {
   return <div className="empty-state">{children}</div>;
 }

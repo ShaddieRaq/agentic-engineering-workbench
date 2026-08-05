@@ -482,4 +482,84 @@ describe("agent workbench web interface", () => {
     expect(await screen.findByText("Expected a test defect.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Download regression-case draft" })).toBeInTheDocument();
   });
+
+  it("renders the foundry project index and navigates to the chain view", async () => {
+    const decision = {
+      decisionId: "d1000000-0000-4000-8000-000000000001",
+      decision: "approve", operatorId: "rashad",
+      rationale: "Chain verified end to end.", requestedRevisions: null,
+      decidedAt: "2026-08-05T10:11:00.000Z",
+    };
+    const chain = {
+      briefId: "b1000000-0000-4000-8000-000000000001",
+      title: "Habit tracker", latestVersion: 5, status: "approved",
+      latestActivityAt: "2026-08-05T10:11:00.000Z", intakeTurnCount: 6,
+      briefVersions: [{ version: 5, artifactId: "b1000000-0000-4000-8000-000000000001-v5", title: "Habit tracker", createdAt: "2026-08-04T10:00:00.000Z", status: "approved", decisions: [decision] }],
+      plans: [{ planId: "p1000000-0000-4000-8000-000000000001", createdAt: "2026-08-04T11:00:00.000Z", status: "approved", componentCount: 5, sliceCount: 2, blockingConcerns: 0, advisoryConcerns: 3, decisions: [decision] }],
+      capabilityPlans: [{ capabilityPlanId: "c1000000-0000-4000-8000-000000000001", planId: "p1000000-0000-4000-8000-000000000001", createdAt: "2026-08-04T12:00:00.000Z", status: "approved", needCount: 6, proposedCapabilityCount: 0, blockingConcerns: 0, advisoryConcerns: 0, decisions: [decision] }],
+      testSuites: [{ testSuiteId: "t1000000-0000-4000-8000-000000000001", planId: "p1000000-0000-4000-8000-000000000001", capabilityPlanId: "c1000000-0000-4000-8000-000000000001", createdAt: "2026-08-04T13:00:00.000Z", status: "approved", interfaceContract: "CLI via node ./dist/index.js", files: [{ path: "acceptance-tests/routing.test.ts", visibility: "visible", testType: "integration", coveredCriterionIds: ["x"] }, { path: "acceptance-tests/holdout.test.ts", visibility: "holdout", testType: "integration", coveredCriterionIds: ["y"] }], decisions: [decision] }],
+      build: {
+        anchorTestSuiteId: "t1000000-0000-4000-8000-000000000001",
+        anchorPlanId: "p1000000-0000-4000-8000-000000000001",
+        planAvailable: true, approvedSliceCount: 1,
+        slices: [
+          { sliceId: "s1", title: "CLI shell and command routing", delivers: "Routing.", dependsOnSliceIds: [], status: "approved", workOrders: [{ workOrderId: "w1000000-0000-4000-8000-000000000001", createdAt: "2026-08-05T09:00:00.000Z", applicableTestFilePaths: [] }], submissions: [{ submissionId: "u1000000-0000-4000-8000-000000000001", createdAt: "2026-08-05T10:00:00.000Z", status: "passed", scopeCheck: { passed: true, failures: [] }, files: [{ path: "acceptance-tests/routing.test.ts", visibility: "visible", exitCode: 0, passed: true }], outputExcerpt: "PASS", decisions: [decision] }] },
+          { sliceId: "s2", title: "Streak tracking", delivers: "Streaks.", dependsOnSliceIds: ["s1"], status: "not-started", workOrders: [], submissions: [] },
+        ],
+      },
+    };
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.endsWith("/api/workspaces")) {
+        return new Response(JSON.stringify({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (path.includes("/api/foundry/projects/")) {
+        return new Response(JSON.stringify(chain), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (path.endsWith("/api/foundry/projects")) {
+        return new Response(JSON.stringify({
+          projects: [{ briefId: chain.briefId, title: "Habit tracker", latestVersion: 5, status: "approved", latestActivityAt: chain.latestActivityAt, stages: { plan: "approved", capability: "approved", tests: "approved", build: { approved: 1, total: 2 } } }],
+          rejected: [],
+        }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      return new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } });
+    }));
+
+    window.history.replaceState(null, "", "/foundry");
+    render(<AppRoutes />);
+
+    expect(await screen.findByRole("heading", { name: "Foundry" })).toBeInTheDocument();
+    expect(await screen.findByText("1/2 slices")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("link", { name: "Habit tracker" }));
+    expect(window.location.pathname).toBe(`/foundry/${chain.briefId}`);
+    expect(await screen.findByRole("heading", { name: "Habit tracker" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Slice 1: CLI shell/ })).toBeInTheDocument();
+    expect(screen.getAllByText("Chain verified end to end.").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: /Slice 2: Streak tracking/ })).toBeInTheDocument();
+    expect(screen.getByText("not started")).toBeInTheDocument();
+  });
+
+  it("renders a raw foundry artifact with the holdout disclosure", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.endsWith("/api/workspaces")) {
+        return new Response(JSON.stringify({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (path.includes("/api/foundry/artifacts/")) {
+        return new Response(JSON.stringify({
+          kind: "test-suite",
+          artifact: { testSuiteId: "t1", content: { testFiles: [{ path: "acceptance-tests/holdout.test.ts", visibility: "holdout", content: "describe('secret')" }] } },
+        }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      return new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } });
+    }));
+
+    window.history.replaceState(null, "", "/foundry/artifacts/t1");
+    render(<AppRoutes />);
+
+    expect(await screen.findByRole("heading", { name: "test-suite" })).toBeInTheDocument();
+    expect(await screen.findByText(/holdout test content/i)).toBeInTheDocument();
+    expect(screen.getByText(/describe\('secret'\)/)).toBeInTheDocument();
+  });
 });

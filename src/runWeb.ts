@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { AgentApplicationService } from "./agents/agentApplicationService.js";
 import { platformAgentRegistry } from "./agents/platformAgentRegistry.js";
 import { FileArtifactStore } from "./artifacts/fileArtifactStore.js";
+import { FoundryArtifactStore } from "./foundry/foundryArtifactStore.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { createPlatformToolRegistry } from "./tools/toolRegistry.js";
 import { buildAgentWebServer } from "./web/agentWebServer.js";
@@ -28,6 +29,7 @@ async function main(): Promise<void> {
   const app = await buildAgentWebServer({
     service,
     apiKeyConfigured: Boolean(apiKey),
+    foundry: new FoundryArtifactStore(resolve(workspaceRoot, "runs/foundry")),
     clientDirectory: resolve(workspaceRoot, "web/dist"),
     logger: true,
   });
