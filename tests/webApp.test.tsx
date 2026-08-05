@@ -494,7 +494,7 @@ describe("agent workbench web interface", () => {
       briefId: "b1000000-0000-4000-8000-000000000001",
       title: "Habit tracker", latestVersion: 5, status: "approved",
       latestActivityAt: "2026-08-05T10:11:00.000Z", intakeTurnCount: 6,
-      briefVersions: [{ version: 5, artifactId: "b1000000-0000-4000-8000-000000000001-v5", title: "Habit tracker", createdAt: "2026-08-04T10:00:00.000Z", status: "approved", decisions: [decision] }],
+      briefVersions: [{ version: 5, artifactId: "b1000000-0000-4000-8000-000000000001-v5", title: "Habit tracker", createdAt: "2026-08-04T10:00:00.000Z", status: "approved", openQuestions: [], decisions: [decision] }],
       plans: [{ planId: "p1000000-0000-4000-8000-000000000001", createdAt: "2026-08-04T11:00:00.000Z", status: "approved", componentCount: 5, sliceCount: 2, blockingConcerns: 0, advisoryConcerns: 3, decisions: [decision] }],
       capabilityPlans: [{ capabilityPlanId: "c1000000-0000-4000-8000-000000000001", planId: "p1000000-0000-4000-8000-000000000001", createdAt: "2026-08-04T12:00:00.000Z", status: "approved", needCount: 6, proposedCapabilityCount: 0, blockingConcerns: 0, advisoryConcerns: 0, decisions: [decision] }],
       testSuites: [{ testSuiteId: "t1000000-0000-4000-8000-000000000001", planId: "p1000000-0000-4000-8000-000000000001", capabilityPlanId: "c1000000-0000-4000-8000-000000000001", createdAt: "2026-08-04T13:00:00.000Z", status: "approved", interfaceContract: "CLI via node ./dist/index.js", files: [{ path: "acceptance-tests/routing.test.ts", visibility: "visible", testType: "integration", coveredCriterionIds: ["x"] }, { path: "acceptance-tests/holdout.test.ts", visibility: "holdout", testType: "integration", coveredCriterionIds: ["y"] }], decisions: [decision] }],
@@ -545,7 +545,7 @@ describe("agent workbench web interface", () => {
       briefId: "b2000000-0000-4000-8000-000000000002",
       title: "Note taker", latestVersion: 1, status: "draft",
       latestActivityAt: "2026-08-05T10:00:00.000Z", intakeTurnCount: 0,
-      briefVersions: [{ version: 1, artifactId: "b2000000-0000-4000-8000-000000000002-v1", title: "Note taker", createdAt: "2026-08-05T09:00:00.000Z", status: "draft", decisions: [] }],
+      briefVersions: [{ version: 1, artifactId: "b2000000-0000-4000-8000-000000000002-v1", title: "Note taker", createdAt: "2026-08-05T09:00:00.000Z", status: "draft", openQuestions: [], decisions: [] }],
       plans: [], capabilityPlans: [], testSuites: [], build: null,
       buildNote: "No approved test suite yet.",
     };
@@ -583,6 +583,95 @@ describe("agent workbench web interface", () => {
       rationale: "Complete and buildable.",
     });
     await waitFor(() => expect(chainFetches).toBeGreaterThan(1));
+  });
+
+  it("starts a stage run from the chain view and answers intake questions", async () => {
+    const questionId = "q1000000-0000-4000-8000-000000000001";
+    const chainPayload = {
+      briefId: "b3000000-0000-4000-8000-000000000003",
+      title: "Recipe box", latestVersion: 2, status: "approved",
+      latestActivityAt: "2026-08-05T10:00:00.000Z", intakeTurnCount: 2,
+      briefVersions: [
+        { version: 1, artifactId: "b3000000-0000-4000-8000-000000000003-v1", title: "Recipe box", createdAt: "2026-08-05T08:00:00.000Z", status: "draft", openQuestions: [{ id: questionId, question: "Which storage should recipes use?" }], decisions: [] },
+        { version: 2, artifactId: "b3000000-0000-4000-8000-000000000003-v2", title: "Recipe box", createdAt: "2026-08-05T09:00:00.000Z", status: "approved", openQuestions: [], decisions: [] },
+      ],
+      plans: [], capabilityPlans: [], testSuites: [], build: null,
+      buildNote: "No approved test suite yet.",
+    };
+    // Version 2 (latest) has no open questions, so the intake panel must
+    // not render; the approved brief exposes the architect run control.
+    let postedPlanBody: unknown = null;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path.endsWith("/api/workspaces")) {
+        return new Response(JSON.stringify({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (path.endsWith("/api/foundry/plans") && init?.method === "POST") {
+        postedPlanBody = JSON.parse(String(init.body));
+        return new Response(JSON.stringify({ operationId: "op-plan-1", kind: "foundry-stage", agentId: "project-architect", status: "queued", events: [], result: null, error: null, createdAt: "2026-08-05T10:01:00.000Z", completedAt: null }), { status: 202, headers: { "content-type": "application/json" } });
+      }
+      if (path.endsWith("/api/operations/op-plan-1")) {
+        return new Response(JSON.stringify({ operationId: "op-plan-1", kind: "foundry-stage", agentId: "project-architect", status: "completed", events: [{ sequence: 1, stage: "persistence", message: "Plan recorded.", occurredAt: "2026-08-05T10:01:01.000Z" }], result: { planId: "p9" }, error: null, createdAt: "2026-08-05T10:01:00.000Z", completedAt: "2026-08-05T10:01:01.000Z" }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (path.includes("/api/foundry/projects/")) {
+        return new Response(JSON.stringify(chainPayload), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      return new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } });
+    }));
+
+    window.history.replaceState(null, "", `/foundry/${chainPayload.briefId}`);
+    render(<AppRoutes />);
+
+    expect(await screen.findByRole("heading", { name: "Recipe box" })).toBeInTheDocument();
+    expect(screen.queryByText("Which storage should recipes use?")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate architecture plan" }));
+    await waitFor(() => expect(postedPlanBody).not.toBeNull());
+    expect(postedPlanBody).toEqual({ briefId: chainPayload.briefId });
+    expect(await screen.findByText("Plan recorded.")).toBeInTheDocument();
+  });
+
+  it("shows the intake turn panel when the latest brief version has open questions", async () => {
+    const chainPayload = {
+      briefId: "b4000000-0000-4000-8000-000000000004",
+      title: "Trip planner", latestVersion: 1, status: "draft",
+      latestActivityAt: "2026-08-05T10:00:00.000Z", intakeTurnCount: 1,
+      briefVersions: [
+        { version: 1, artifactId: "b4000000-0000-4000-8000-000000000004-v1", title: "Trip planner", createdAt: "2026-08-05T09:00:00.000Z", status: "draft", openQuestions: [{ id: "q1", question: "Which airports matter?" }], decisions: [] },
+      ],
+      plans: [], capabilityPlans: [], testSuites: [], build: null,
+      buildNote: "No approved test suite yet.",
+    };
+    let postedTurnBody: unknown = null;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path.endsWith("/api/workspaces")) {
+        return new Response(JSON.stringify({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (path.endsWith("/turns") && init?.method === "POST") {
+        postedTurnBody = JSON.parse(String(init.body));
+        return new Response(JSON.stringify({ operationId: "op-turn-1", kind: "foundry-stage", agentId: "project-intake", status: "queued", events: [], result: null, error: null, createdAt: "2026-08-05T10:01:00.000Z", completedAt: null }), { status: 202, headers: { "content-type": "application/json" } });
+      }
+      if (path.endsWith("/api/operations/op-turn-1")) {
+        return new Response(JSON.stringify({ operationId: "op-turn-1", kind: "foundry-stage", agentId: "project-intake", status: "completed", events: [], result: { briefId: chainPayload.briefId, briefVersion: 2 }, error: null, createdAt: "2026-08-05T10:01:00.000Z", completedAt: "2026-08-05T10:01:01.000Z" }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (path.includes("/api/foundry/projects/")) {
+        return new Response(JSON.stringify(chainPayload), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      return new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } });
+    }));
+
+    window.history.replaceState(null, "", `/foundry/${chainPayload.briefId}`);
+    render(<AppRoutes />);
+
+    const question = await screen.findByLabelText("Which airports matter?");
+    fireEvent.change(question, { target: { value: "Tweed and JFK via train." } });
+    fireEvent.click(screen.getByRole("button", { name: "Submit answers" }));
+
+    await waitFor(() => expect(postedTurnBody).not.toBeNull());
+    expect(postedTurnBody).toEqual({
+      answers: [{ questionId: "q1", answer: "Tweed and JFK via train." }],
+    });
   });
 
   it("renders a raw foundry artifact with the holdout disclosure", async () => {

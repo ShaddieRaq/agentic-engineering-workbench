@@ -1,15 +1,17 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   api,
+  type FoundryBriefVersionView,
   type FoundryChainView,
   type FoundryDecisionView,
   type FoundryProjectIndex,
   type FoundryStoredArtifact,
   type FoundrySubmissionView,
+  type Operation,
 } from "./api.js";
-import { EmptyState, ErrorNotice, Loading, PageHeader, StatusBadge } from "./components.js";
-import { useResource } from "./hooks.js";
-import { LocalLink as Link, usePathname } from "./router.js";
+import { EmptyState, ErrorNotice, Loading, OperationTrace, PageHeader, StatusBadge } from "./components.js";
+import { useOperation, useResource } from "./hooks.js";
+import { LocalLink as Link, navigate, usePathname } from "./router.js";
 
 function shortId(id: string): string {
   return id.slice(0, 8);
@@ -42,6 +44,244 @@ function DecisionList({ decisions }: { decisions: FoundryDecisionView[] }) {
 }
 
 const OPERATOR_STORAGE_KEY = "workbench-operator-id";
+
+// Starts a model-invoking foundry stage as a tracked operation and calls
+// onDone with the operation result once it completes. Stage gates live in
+// the services; a violation surfaces as a failed operation in the trace.
+function StageRunControl({
+  label,
+  action,
+  body,
+  onDone,
+}: {
+  label: string;
+  action: string;
+  body: unknown;
+  onDone: (result: unknown) => void;
+}) {
+  const [operationId, setOperationId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const operation = useOperation(operationId);
+  const completed = useRef(false);
+
+  useEffect(() => {
+    if (operation.data?.status === "completed" && !completed.current) {
+      completed.current = true;
+      onDone(operation.data.result);
+    }
+  }, [operation.data, onDone]);
+
+  async function start() {
+    try {
+      const started = await api<Operation>(action, {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+      completed.current = false;
+      setOperationId(started.operationId);
+      setError(null);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  const running =
+    operation.data?.status === "queued" || operation.data?.status === "running";
+  return (
+    <div className="stage-run">
+      <button className="button button-secondary" type="button" onClick={start} disabled={running}>
+        {label}
+      </button>
+      {error && <ErrorNotice message={error} />}
+      {operation.data && <OperationTrace operation={operation.data} />}
+    </div>
+  );
+}
+
+function IntakeStartPanel() {
+  const [title, setTitle] = useState("");
+  const [idea, setIdea] = useState("");
+  const [operationId, setOperationId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const operation = useOperation(operationId);
+  const navigated = useRef(false);
+
+  useEffect(() => {
+    if (operation.data?.status === "completed" && !navigated.current) {
+      navigated.current = true;
+      const result = operation.data.result as { briefId?: string } | null;
+      if (result?.briefId) navigate(`/foundry/${result.briefId}`);
+    }
+  }, [operation.data]);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    try {
+      const started = await api<Operation>("/api/foundry/intake", {
+        method: "POST",
+        body: JSON.stringify({ title, idea }),
+      });
+      navigated.current = false;
+      setOperationId(started.operationId);
+      setError(null);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  return (
+    <div className="panel foundry-panel">
+      <div className="section-heading">
+        <h3>Start a new project</h3>
+        <span className="eyebrow">Intake interview</span>
+      </div>
+      <form onSubmit={submit} className="decision-form-body">
+        <label>
+          Title
+          <input value={title} onChange={(event) => setTitle(event.target.value)} required />
+        </label>
+        <label>
+          Idea
+          <textarea rows={3} value={idea} onChange={(event) => setIdea(event.target.value)} required />
+        </label>
+        {error && <ErrorNotice message={error} />}
+        <button className="button" type="submit" disabled={operation.data?.status === "running" || operation.data?.status === "queued"}>
+          Start interview
+        </button>
+      </form>
+      {operation.data && <OperationTrace operation={operation.data} />}
+    </div>
+  );
+}
+
+// Answers the latest brief version's open questions; each answered question
+// becomes an operator answer, and the optional context field arrives as a
+// new (unkeyed) answer, matching the CLI's `new=` form.
+function IntakeTurnPanel({
+  briefId,
+  version,
+  onDone,
+}: {
+  briefId: string;
+  version: FoundryBriefVersionView;
+  onDone: () => void;
+}) {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [additional, setAdditional] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [operationId, setOperationId] = useState<string | null>(null);
+  const operation = useOperation(operationId);
+  const completed = useRef(false);
+
+  useEffect(() => {
+    if (operation.data?.status === "completed" && !completed.current) {
+      completed.current = true;
+      onDone();
+    }
+  }, [operation.data, onDone]);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const payload = [
+      ...version.openQuestions
+        .filter(({ id }) => (answers[id] ?? "").trim().length > 0)
+        .map(({ id }) => ({ questionId: id, answer: answers[id]!.trim() })),
+      ...(additional.trim().length > 0
+        ? [{ questionId: null, answer: additional.trim() }]
+        : []),
+    ];
+    if (payload.length === 0) {
+      setError("Answer at least one question or add context.");
+      return;
+    }
+    try {
+      const started = await api<Operation>(`/api/foundry/intake/${briefId}/turns`, {
+        method: "POST",
+        body: JSON.stringify({ answers: payload }),
+      });
+      completed.current = false;
+      setOperationId(started.operationId);
+      setError(null);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  return (
+    <div className="submission-block">
+      <div className="section-heading">
+        <h4>Open questions ({version.openQuestions.length})</h4>
+        <span className="eyebrow">Continue the interview</span>
+      </div>
+      <form onSubmit={submit} className="decision-form-body">
+        {version.openQuestions.map((question) => (
+          <label key={question.id}>
+            {question.question}
+            <textarea
+              rows={2}
+              value={answers[question.id] ?? ""}
+              onChange={(event) =>
+                setAnswers((current) => ({ ...current, [question.id]: event.target.value }))
+              }
+            />
+          </label>
+        ))}
+        <label>
+          Additional context (optional)
+          <textarea rows={2} value={additional} onChange={(event) => setAdditional(event.target.value)} />
+        </label>
+        {error && <ErrorNotice message={error} />}
+        <button className="button" type="submit" disabled={operation.data?.status === "running" || operation.data?.status === "queued"}>
+          Submit answers
+        </button>
+      </form>
+      {operation.data && <OperationTrace operation={operation.data} />}
+    </div>
+  );
+}
+
+function IssueWorkOrderButton({
+  testSuiteId,
+  onDone,
+}: {
+  testSuiteId: string;
+  onDone: () => void;
+}) {
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function issue() {
+    try {
+      const result = await api<{
+        done?: boolean;
+        message?: string;
+        workOrder?: { workOrderId: string; sliceTitle: string };
+      }>("/api/foundry/work-orders", {
+        method: "POST",
+        body: JSON.stringify({ testSuiteId }),
+      });
+      setMessage(
+        result.done
+          ? result.message ?? "Nothing left to build."
+          : `Issued work order ${result.workOrder?.workOrderId ?? ""} for "${result.workOrder?.sliceTitle ?? ""}".`,
+      );
+      setError(null);
+      onDone();
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  return (
+    <div className="stage-run">
+      <button className="button button-secondary" type="button" onClick={issue}>
+        Issue next work order
+      </button>
+      {message && <div className="notice">{message}</div>}
+      {error && <ErrorNotice message={error} />}
+    </div>
+  );
+}
 
 // Records an operator-attributed decision against a decisions endpoint.
 // Approval gates live server-side in the decision constructors; this form
@@ -155,6 +395,9 @@ export function FoundryProjectsPage() {
       {!!index?.rejected.length && (
         <div className="notice"><strong>{index.rejected.length} incompatible foundry artifact(s)</strong> were rejected store-wide and excluded from every view.</div>
       )}
+      <section className="foundry-stage">
+        <IntakeStartPanel />
+      </section>
     </>
   );
 }
@@ -231,6 +474,9 @@ export function FoundryProjectPage() {
               <StatusBadge value={version.status} />
             </div>
             <DecisionList decisions={version.decisions} />
+            {version.version === chain.latestVersion && version.openQuestions.length > 0 && (
+              <IntakeTurnPanel briefId={chain.briefId} version={version} onDone={resource.reload} />
+            )}
             <DecisionForm
               action={`/api/foundry/briefs/${chain.briefId}/versions/${version.version}/decisions`}
               onRecorded={resource.reload}
@@ -242,6 +488,14 @@ export function FoundryProjectPage() {
 
       <section className="foundry-stage">
         <div className="section-heading"><div><span className="eyebrow">Stage 2</span><h2>Architecture plans</h2></div></div>
+        {chain.status === "approved" && (
+          <StageRunControl
+            label="Generate architecture plan"
+            action="/api/foundry/plans"
+            body={{ briefId: chain.briefId }}
+            onDone={resource.reload}
+          />
+        )}
         {!chain.plans.length && <EmptyState>No architecture plan yet.</EmptyState>}
         {chain.plans.map((plan) => (
           <div className="panel foundry-panel" key={plan.planId}>
@@ -254,6 +508,14 @@ export function FoundryProjectPage() {
               {plan.revisedFromArtifactId && <> · revision of {shortId(plan.revisedFromArtifactId)}</>}
             </p>
             <DecisionList decisions={plan.decisions} />
+            {plan.status === "revision-requested" && (
+              <StageRunControl
+                label="Re-run with the requested revisions"
+                action="/api/foundry/plans"
+                body={{ briefId: chain.briefId, reviseFrom: plan.planId }}
+                onDone={resource.reload}
+              />
+            )}
             <DecisionForm
               action={`/api/foundry/plans/${plan.planId}/decisions`}
               onRecorded={resource.reload}
@@ -265,6 +527,14 @@ export function FoundryProjectPage() {
 
       <section className="foundry-stage">
         <div className="section-heading"><div><span className="eyebrow">Stage 3</span><h2>Capability plans</h2></div></div>
+        {chain.plans.some(({ status }) => status === "approved") && (
+          <StageRunControl
+            label="Generate capability plan"
+            action="/api/foundry/capability-plans"
+            body={{ planId: chain.plans.find(({ status }) => status === "approved")!.planId }}
+            onDone={resource.reload}
+          />
+        )}
         {!chain.capabilityPlans.length && <EmptyState>No capability plan yet.</EmptyState>}
         {chain.capabilityPlans.map((plan) => (
           <div className="panel foundry-panel" key={plan.capabilityPlanId}>
@@ -277,6 +547,14 @@ export function FoundryProjectPage() {
               {plan.revisedFromArtifactId && <> · revision of {shortId(plan.revisedFromArtifactId)}</>}
             </p>
             <DecisionList decisions={plan.decisions} />
+            {plan.status === "revision-requested" && (
+              <StageRunControl
+                label="Re-run with the requested revisions"
+                action="/api/foundry/capability-plans"
+                body={{ planId: plan.planId, reviseFrom: plan.capabilityPlanId }}
+                onDone={resource.reload}
+              />
+            )}
             <DecisionForm
               action={`/api/foundry/capability-plans/${plan.capabilityPlanId}/decisions`}
               onRecorded={resource.reload}
@@ -288,6 +566,16 @@ export function FoundryProjectPage() {
 
       <section className="foundry-stage">
         <div className="section-heading"><div><span className="eyebrow">Stage 4</span><h2>Acceptance test suites</h2></div></div>
+        {chain.capabilityPlans.some(({ status }) => status === "approved") && (
+          <StageRunControl
+            label="Design acceptance tests"
+            action="/api/foundry/test-suites"
+            body={{
+              capabilityPlanId: chain.capabilityPlans.find(({ status }) => status === "approved")!.capabilityPlanId,
+            }}
+            onDone={resource.reload}
+          />
+        )}
         {!chain.testSuites.length && <EmptyState>No test suite yet.</EmptyState>}
         {chain.testSuites.map((suite) => (
           <div className="panel foundry-panel" key={suite.testSuiteId}>
@@ -315,6 +603,14 @@ export function FoundryProjectPage() {
               <pre className="evidence-json">{suite.interfaceContract}</pre>
             </details>
             <DecisionList decisions={suite.decisions} />
+            {suite.status === "revision-requested" && (
+              <StageRunControl
+                label="Re-run with the requested revisions"
+                action="/api/foundry/test-suites"
+                body={{ capabilityPlanId: suite.capabilityPlanId, reviseFrom: suite.testSuiteId }}
+                onDone={resource.reload}
+              />
+            )}
             <DecisionForm
               action={`/api/foundry/test-suites/${suite.testSuiteId}/decisions`}
               onRecorded={resource.reload}
@@ -332,6 +628,10 @@ export function FoundryProjectPage() {
             <p className="muted-note">
               Anchored on approved suite {shortId(chain.build.anchorTestSuiteId)} · {chain.build.approvedSliceCount}/{chain.build.slices.length} slices approved
             </p>
+            <IssueWorkOrderButton
+              testSuiteId={chain.build.anchorTestSuiteId}
+              onDone={resource.reload}
+            />
             {chain.build.slices.map((slice, index) => (
               <div className="panel foundry-panel" key={slice.sliceId}>
                 <div className="section-heading">

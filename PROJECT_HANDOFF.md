@@ -572,15 +572,28 @@ one per line). Five POST /api/foundry/*/decisions routes reuse the
 create*Decision constructors, so every approval gate holds in the UI
 path: unresolved briefs, blocking concerns, and failed submissions
 cannot be approved (422); revise requires revisions. Decisions land as
-the same digest-pinned artifacts the CLI and MCP write. Stage runs and
-intake turns from the UI are the next slice.
+the same digest-pinned artifacts the CLI and MCP write.
+
+Foundry stage runs from the console (2026-08-05): the chain view now
+starts work, not just records verdicts. Intake interviews begin on the
+projects page and continue inline (open questions render as a form on
+the latest brief version); architect/capability/test-design runs launch
+from their stage sections — including revise-from re-runs on
+revision-requested artifacts — as tracked "foundry-stage" operations
+with live traces; work orders issue synchronously from the build
+section. Model routes require OPENAI_API_KEY (503 otherwise); stage
+gates surface as failed operations. The operator loop (interview →
+decide → plan → decide → ... → issue work orders → decide submissions)
+is now fully drivable from the browser; only the builder session and
+its materialize/submit commands remain on the CLI/MCP channel by
+design.
 
 Verified test state:
 
 ```text
 npm run typecheck passed
 158 test files passed
-827 tests passed
+830 tests passed
 npm run agents -- validate passed (10 agents)
 project-intake 0.3.0 live gate: 14/15 (vague-answer 3/3 after the
 released provenance policy; the single miss was one behavioral

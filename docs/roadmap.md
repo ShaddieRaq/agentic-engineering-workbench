@@ -982,12 +982,14 @@ scoped to the project directory only.
 
 ## Current Priorities
 
-1. Foundry UI part 3: stage runs and intake turns from the console backed by
-   operation polling (architect-plan, capability-plan, design-tests,
-   work-order issuance). Part 1 (read-only evidence views at /foundry) and
-   part 2 (operator decision recording on every stage and submission,
-   attributed via the form's operator field) shipped 2026-08-05.
-2. Builder-session isolation for true holdout secrecy (Phase 43 carry-over).
+1. Builder-session isolation for true holdout secrecy (Phase 43 carry-over).
+   The Foundry console is now full-loop for the operator: part 1 read-only
+   evidence views, part 2 decision recording, part 3 stage runs (intake
+   start/turns, architect, capability, test design as tracked operations;
+   deterministic work-order issuance synchronous) all shipped 2026-08-05.
+   Remaining outside the UI by design: the builder session itself and
+   builder-side commands (materialize-tests, submit-slice) on the CLI/MCP
+   channel.
 2. Capability Planner verification dataset and gate (same rhythm as intake
    and architect).
 3. Evidence-backed model qualification, promoted per Decision 086: add an

@@ -3,9 +3,15 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import type { ArchitectService } from "../src/foundry/architectService.js";
 import { FoundryArtifactStore } from "../src/foundry/foundryArtifactStore.js";
+import type { IntakeSessionController } from "../src/foundry/intakeSessionController.js";
 import { sliceSubmissionSchema } from "../src/foundry/sliceSubmission.js";
-import { buildAgentWebServer } from "../src/web/agentWebServer.js";
+import { WorkOrderService } from "../src/foundry/workOrderService.js";
+import {
+  buildAgentWebServer,
+  type FoundryActionServices,
+} from "../src/web/agentWebServer.js";
 import {
   buildFoundryChainView,
   buildFoundryProjectIndex,
@@ -17,6 +23,7 @@ import {
   persistDanglingSuite,
   persistFoundryChain,
 } from "./helpers/foundryWebFixture.js";
+import { chainDependencies } from "./workOrder.test.js";
 
 const createdDirectories: string[] = [];
 
@@ -325,6 +332,142 @@ describe("foundry web routes", () => {
     expect(wrongKind.statusCode).toBe(404);
     expect(wrongKind.json()).toMatchObject({
       error: expect.stringContaining("is not a architecture-plan"),
+    });
+
+    await app.close();
+  });
+
+  it("runs foundry stages as operations and enforces gates through them", async () => {
+    const store = await temporaryStore();
+    const chain = await persistFoundryChain(store);
+    const { service } = await createConsoleTestService(false);
+    const workOrders = new WorkOrderService(chainDependencies(chain.fixture, store));
+    const scriptedPlanId = randomUUID();
+    const foundryServices: FoundryActionServices = {
+      intake: {
+        async startIntake(input: { title: string }) {
+          return {
+            brief: { briefId: randomUUID(), version: 1, openQuestions: [{ id: randomUUID(), question: `About ${input.title}?` }] },
+          } as unknown as Awaited<ReturnType<IntakeSessionController["startIntake"]>>;
+        },
+        async runTurn() {
+          throw new Error("No turn scripted.");
+        },
+      },
+      architect: {
+        async createPlan(input: { briefId: string; reviseFromId?: string | undefined }) {
+          if (input.briefId !== chain.fixture.brief.briefId) {
+            throw new Error(`Brief ${input.briefId} is draft; only an approved brief can be planned.`);
+          }
+          return { plan: { planId: scriptedPlanId } } as unknown as Awaited<
+            ReturnType<ArchitectService["createPlan"]>
+          >;
+        },
+      },
+      capability: {
+        async createCapabilityPlan() {
+          throw new Error("Not scripted.");
+        },
+      },
+      testDesign: {
+        async createTestSuite() {
+          throw new Error("Not scripted.");
+        },
+      },
+      workOrders,
+    };
+
+    // Model routes refuse to start without a provider key.
+    const withoutKey = await buildAgentWebServer({
+      service,
+      apiKeyConfigured: false,
+      foundry: store,
+      foundryServices,
+    });
+    const refused = await withoutKey.inject({
+      method: "POST",
+      url: "/api/foundry/plans",
+      payload: { briefId: chain.fixture.brief.briefId },
+    });
+    expect(refused.statusCode).toBe(503);
+    await withoutKey.close();
+
+    const app = await buildAgentWebServer({
+      service,
+      apiKeyConfigured: true,
+      foundry: store,
+      foundryServices,
+    });
+    const pollUntilTerminal = async (operationId: string) => {
+      for (let attempt = 0; attempt < 50; attempt += 1) {
+        const snapshot = await app.inject({
+          method: "GET",
+          url: `/api/operations/${operationId}`,
+        });
+        const operation = snapshot.json() as { status: string };
+        if (operation.status === "completed" || operation.status === "failed") {
+          return operation as { status: string; result?: unknown; error?: string };
+        }
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      throw new Error("Operation did not finish.");
+    };
+
+    // A successful stage run resolves to the persisted artifact id.
+    const planRun = await app.inject({
+      method: "POST",
+      url: "/api/foundry/plans",
+      payload: { briefId: chain.fixture.brief.briefId },
+    });
+    expect(planRun.statusCode).toBe(202);
+    const planOperation = await pollUntilTerminal(
+      (planRun.json() as { operationId: string }).operationId,
+    );
+    expect(planOperation.status).toBe("completed");
+    expect(planOperation.result).toEqual({ planId: scriptedPlanId });
+
+    // A service gate violation surfaces as a failed operation.
+    const gated = await app.inject({
+      method: "POST",
+      url: "/api/foundry/plans",
+      payload: { briefId: randomUUID() },
+    });
+    const gatedOperation = await pollUntilTerminal(
+      (gated.json() as { operationId: string }).operationId,
+    );
+    expect(gatedOperation.status).toBe("failed");
+    expect(gatedOperation.error).toMatch(/only an approved brief/i);
+
+    // Intake start reports the new brief and its open questions.
+    const intake = await app.inject({
+      method: "POST",
+      url: "/api/foundry/intake",
+      payload: { title: "Note taker", idea: "A note taking CLI." },
+    });
+    expect(intake.statusCode).toBe(202);
+    const intakeOperation = await pollUntilTerminal(
+      (intake.json() as { operationId: string }).operationId,
+    );
+    expect(intakeOperation.status).toBe("completed");
+    expect(intakeOperation.result).toMatchObject({ openQuestionCount: 1 });
+
+    const emptyTurn = await app.inject({
+      method: "POST",
+      url: `/api/foundry/intake/${chain.fixture.brief.briefId}/turns`,
+      payload: { answers: [] },
+    });
+    expect(emptyTurn.statusCode).toBe(422);
+
+    // The deterministic work-order issuer is synchronous: slice 1 is
+    // approved in the fixture, so the next order targets slice 2.
+    const workOrder = await app.inject({
+      method: "POST",
+      url: "/api/foundry/work-orders",
+      payload: { testSuiteId: chain.testSuiteId },
+    });
+    expect(workOrder.statusCode).toBe(201);
+    expect(workOrder.json()).toMatchObject({
+      workOrder: { sliceId: chain.fixture.sliceIds.second },
     });
 
     await app.close();

@@ -99,7 +99,8 @@ export interface Operation {
     | "agent-run"
     | "agent-verification"
     | "agent-improvement"
-    | "agent-candidate-evaluation";
+    | "agent-candidate-evaluation"
+    | "foundry-stage";
   agentId: string;
   status: "queued" | "running" | "completed" | "failed";
   events: OperationEvent[];
@@ -455,6 +456,7 @@ export interface FoundryBriefVersionView {
   title: string;
   createdAt: string;
   status: FoundryStageStatus;
+  openQuestions: { id: string; question: string }[];
   decisions: FoundryDecisionView[];
 }
 

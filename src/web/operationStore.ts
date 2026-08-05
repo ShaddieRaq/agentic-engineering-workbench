@@ -4,7 +4,8 @@ export type OperationKind =
   | "agent-run"
   | "agent-verification"
   | "agent-improvement"
-  | "agent-candidate-evaluation";
+  | "agent-candidate-evaluation"
+  | "foundry-stage";
 export type OperationStatus = "queued" | "running" | "completed" | "failed";
 
 export interface OperationEvent {

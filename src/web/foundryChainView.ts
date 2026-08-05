@@ -46,6 +46,7 @@ export interface FoundryBriefVersionView {
   title: string;
   createdAt: string;
   status: FoundryStageStatus;
+  openQuestions: { id: string; question: string }[];
   decisions: FoundryDecisionView[];
 }
 
@@ -330,6 +331,10 @@ function buildViewFromBuckets(
         title: artifact.title,
         createdAt: artifact.createdAt,
         status: statusFromDecisions(decisions),
+        openQuestions: artifact.openQuestions.map(({ id, question }) => ({
+          id,
+          question,
+        })),
         decisions: decisionViews(decisions),
       };
     });

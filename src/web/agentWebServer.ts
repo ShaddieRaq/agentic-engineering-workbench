@@ -5,15 +5,20 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AgentApplicationService } from "../agents/agentApplicationService.js";
 import type { ArtifactKind, ArtifactQuery } from "../artifacts/artifactStore.js";
+import type { ArchitectService } from "../foundry/architectService.js";
 import { createArchitecturePlanDecision } from "../foundry/architecturePlanDecision.js";
+import type { CapabilityService } from "../foundry/capabilityService.js";
 import { createCapabilityPlanDecision } from "../foundry/capabilityPlanDecision.js";
 import type {
   FoundryArtifactKind,
   FoundryArtifactStore,
 } from "../foundry/foundryArtifactStore.js";
+import type { IntakeSessionController } from "../foundry/intakeSessionController.js";
 import { createProjectBriefDecision } from "../foundry/projectBriefDecision.js";
 import { createSubmissionDecision } from "../foundry/sliceSubmission.js";
+import type { TestDesignService } from "../foundry/testDesignService.js";
 import { createTestSuiteDecision } from "../foundry/testSuiteDecision.js";
+import type { WorkOrderService } from "../foundry/workOrderService.js";
 import {
   buildFoundryChainView,
   buildFoundryProjectIndex,
@@ -86,6 +91,58 @@ const addWorkspaceRequestSchema = z
   })
   .strict();
 
+const foundryIntakeStartSchema = z
+  .object({
+    title: z.string().min(1).max(200),
+    idea: z.string().min(1).max(4_000),
+    maxTurns: z.number().int().min(1).max(20).optional(),
+  })
+  .strict();
+
+const foundryIntakeTurnSchema = z
+  .object({
+    answers: z
+      .array(
+        z
+          .object({
+            questionId: z.string().min(1).nullable(),
+            answer: z.string().min(1).max(4_000),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(20),
+  })
+  .strict();
+
+const foundryArchitectRunSchema = z
+  .object({
+    briefId: z.uuid(),
+    reviseFrom: z.string().min(1).optional(),
+  })
+  .strict();
+
+const foundryCapabilityRunSchema = z
+  .object({
+    planId: z.uuid(),
+    reviseFrom: z.string().min(1).optional(),
+  })
+  .strict();
+
+const foundryTestDesignRunSchema = z
+  .object({
+    capabilityPlanId: z.uuid(),
+    reviseFrom: z.string().min(1).optional(),
+  })
+  .strict();
+
+const foundryWorkOrderRequestSchema = z
+  .object({
+    testSuiteId: z.uuid(),
+    sliceId: z.uuid().optional(),
+  })
+  .strict();
+
 // Foundry decisions are always attributed to the human operator submitting
 // the form (Decision 084: decision writes carry a human identity).
 const foundryDecisionRequestSchema = z
@@ -97,11 +154,23 @@ const foundryDecisionRequestSchema = z
   })
   .strict();
 
+// Model-invoking Foundry stages plus the deterministic work-order issuer.
+// All are optional so evidence-only deployments (and existing tests) keep
+// working; runWeb wires the full set.
+export interface FoundryActionServices {
+  intake: Pick<IntakeSessionController, "startIntake" | "runTurn">;
+  architect: Pick<ArchitectService, "createPlan">;
+  capability: Pick<CapabilityService, "createCapabilityPlan">;
+  testDesign: Pick<TestDesignService, "createTestSuite">;
+  workOrders: Pick<WorkOrderService, "createWorkOrder" | "nextSlice">;
+}
+
 export interface AgentWebServerOptions {
   service: AgentApplicationService;
   apiKeyConfigured: boolean;
   operations?: OperationStore;
   foundry?: FoundryArtifactStore;
+  foundryServices?: FoundryActionServices;
   clientDirectory?: string;
   logger?: boolean;
 }
@@ -894,6 +963,150 @@ export async function buildAgentWebServer(
           },
         ),
     );
+
+    if (options.foundryServices) {
+      const stages = options.foundryServices;
+
+      // Model-invoking stages run as tracked operations; the deterministic
+      // work-order issuer responds synchronously. Stage gates (approved
+      // upstream artifacts, revise-latest-decision) are enforced by the
+      // services and surface as failed operations.
+      const startStage = (
+        reply: { code: (status: number) => { send: (body: unknown) => unknown } },
+        agentId: string,
+        execute: (
+          emit: (stage: "workflow" | "persistence", message: string) => void,
+        ) => Promise<unknown>,
+      ): unknown => {
+        if (!options.apiKeyConfigured) {
+          return reply.code(503).send({ error: "OPENAI_API_KEY is not configured." });
+        }
+        const operation = operations.start("foundry-stage", agentId, execute);
+        return reply.code(202).send(operation);
+      };
+
+      app.post("/api/foundry/intake", async (request, reply) => {
+        const parsed = foundryIntakeStartSchema.safeParse(request.body ?? {});
+        if (!parsed.success) {
+          return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+        }
+        return startStage(reply, "project-intake", async (emit) => {
+          emit("workflow", "Starting the intake interview.");
+          const result = await stages.intake.startIntake({
+            title: parsed.data.title,
+            idea: parsed.data.idea,
+            ...(parsed.data.maxTurns === undefined
+              ? {}
+              : { maxTurns: parsed.data.maxTurns }),
+          });
+          emit("persistence", `Brief ${result.brief.briefId} v${result.brief.version} recorded.`);
+          return {
+            briefId: result.brief.briefId,
+            briefVersion: result.brief.version,
+            openQuestionCount: result.brief.openQuestions.length,
+          };
+        });
+      });
+
+      app.post<{ Params: { briefId: string } }>(
+        "/api/foundry/intake/:briefId/turns",
+        async (request, reply) => {
+          const parsed = foundryIntakeTurnSchema.safeParse(request.body ?? {});
+          if (!parsed.success) {
+            return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+          }
+          return startStage(reply, "project-intake", async (emit) => {
+            emit("workflow", "Applying operator answers to the interview.");
+            const result = await stages.intake.runTurn({
+              briefId: request.params.briefId,
+              answers: parsed.data.answers,
+            });
+            emit("persistence", `Brief ${result.brief.briefId} v${result.brief.version} recorded.`);
+            return {
+              briefId: result.brief.briefId,
+              briefVersion: result.brief.version,
+              openQuestionCount: result.brief.openQuestions.length,
+            };
+          });
+        },
+      );
+
+      app.post("/api/foundry/plans", async (request, reply) => {
+        const parsed = foundryArchitectRunSchema.safeParse(request.body ?? {});
+        if (!parsed.success) {
+          return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+        }
+        return startStage(reply, "project-architect", async (emit) => {
+          emit("workflow", "Generating the architecture plan.");
+          const saved = await stages.architect.createPlan({
+            briefId: parsed.data.briefId,
+            reviseFromId: parsed.data.reviseFrom,
+          });
+          emit("persistence", `Plan ${saved.plan.planId} recorded.`);
+          return { planId: saved.plan.planId };
+        });
+      });
+
+      app.post("/api/foundry/capability-plans", async (request, reply) => {
+        const parsed = foundryCapabilityRunSchema.safeParse(request.body ?? {});
+        if (!parsed.success) {
+          return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+        }
+        return startStage(reply, "capability-planner", async (emit) => {
+          emit("workflow", "Mapping the plan to capabilities.");
+          const saved = await stages.capability.createCapabilityPlan({
+            planId: parsed.data.planId,
+            reviseFromId: parsed.data.reviseFrom,
+          });
+          emit("persistence", `Capability plan ${saved.capabilityPlan.capabilityPlanId} recorded.`);
+          return { capabilityPlanId: saved.capabilityPlan.capabilityPlanId };
+        });
+      });
+
+      app.post("/api/foundry/test-suites", async (request, reply) => {
+        const parsed = foundryTestDesignRunSchema.safeParse(request.body ?? {});
+        if (!parsed.success) {
+          return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+        }
+        return startStage(reply, "test-designer", async (emit) => {
+          emit("workflow", "Designing acceptance tests.");
+          const saved = await stages.testDesign.createTestSuite({
+            capabilityPlanId: parsed.data.capabilityPlanId,
+            reviseFromId: parsed.data.reviseFrom,
+          });
+          emit("persistence", `Test suite ${saved.testSuite.testSuiteId} recorded.`);
+          return { testSuiteId: saved.testSuite.testSuiteId };
+        });
+      });
+
+      app.post("/api/foundry/work-orders", async (request, reply) => {
+        const parsed = foundryWorkOrderRequestSchema.safeParse(request.body ?? {});
+        if (!parsed.success) {
+          return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+        }
+        try {
+          let sliceId = parsed.data.sliceId;
+          if (!sliceId) {
+            const next = await stages.workOrders.nextSlice({
+              testSuiteId: parsed.data.testSuiteId,
+            });
+            if (!next) {
+              return reply
+                .code(200)
+                .send({ done: true, message: "Every slice has an approved submission." });
+            }
+            sliceId = next.sliceId;
+          }
+          const saved = await stages.workOrders.createWorkOrder({
+            testSuiteId: parsed.data.testSuiteId,
+            sliceId,
+          });
+          return reply.code(201).send(saved);
+        } catch (error: unknown) {
+          return reply.code(422).send({ error: errorMessage(error) });
+        }
+      });
+    }
   }
 
   app.post<{ Params: { agentId: string } }>(
