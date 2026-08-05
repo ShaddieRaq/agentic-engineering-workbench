@@ -100,3 +100,16 @@ persists a verified `export-feedback` evidence record in `runs/foundry/`.
 The first real round trip completed on 2026-08-04: a genuine Claude Code
 interview returned a bundle whose observed packaging gap (missing turn-output
 schema) was fixed and re-exported. The Cursor adapter remains planned.
+
+The Phase 42 MCP connection (Decision 084) has its first cut implemented:
+`npm run mcp` serves a stdio MCP server (`agentic-workbench`) over the
+existing stores with six tools — read tier (`list_agents`, `describe_agent`,
+`list_artifacts`, `get_artifact`), evidence-write tier (`submit_feedback`,
+provenance-verified), and delivery tier (`get_approved_export`, serving the
+approved package files for local installation). The server needs no provider
+credentials and never writes agent policy or source. Claude Code sessions in
+this repository pick it up from `.mcp.json`; other projects register it with
+`claude mcp add agentic-workbench -- npm --prefix <workbench-path> run
+--silent mcp`. Deferred to the next Phase 42 iteration: gate runs, agent
+runs, improvement-analysis starts (operation polling over MCP), and the
+operator decision-write tool.

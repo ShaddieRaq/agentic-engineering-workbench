@@ -549,12 +549,13 @@ final-turn blocking reports without questions are legitimate.
 
 ## Immediate Next Step
 
-Phase 42 (Decision 084): a Workbench MCP server over the existing loopback
-`AgentApplicationService`, connecting IDE sessions with a fixed permission
-model — read everything; write evidence freely (feedback-bundle submission
-first, replacing the manual file carry); write promotion decisions only with
-operator identity and rationale; never write policy or source. See
-`docs/roadmap.md` Phase 42 and `docs/decisions.md` Decision 084.
+Phase 42 second iteration: extend the shipped `agentic-workbench` MCP server
+(stdio, `.mcp.json`, six tools: reads, provenance-verified `submit_feedback`,
+`get_approved_export`) with the deferred tools — gate runs, agent runs, and
+improvement-analysis starts with operation polling, plus the
+operator-attributed `record_decision` write. Permission model fixed by
+Decision 084: read everything; write evidence freely; write decisions with a
+human attached; never write policy or source.
 
 ## Broader Roadmap
 

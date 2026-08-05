@@ -23,6 +23,7 @@
     "analyze-repository": "tsx src/runRepositoryAnalysis.ts",
     "assist-repository": "tsx src/runRepositoryAssistant.ts",
     "foundry": "tsx src/runFoundry.ts",
+    "mcp": "tsx src/runMcp.ts",
     "replay": "tsx src/runReplay.ts",
     "report": "tsx src/runReport.ts",
     "portability:preflight": "tsx src/runPortabilityPreflight.ts",
@@ -39,6 +40,7 @@
   "description": "",
   "dependencies": {
     "@fastify/static": "^10.1.2",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "dotenv": "^17.4.2",
     "fastify": "^5.11.0",
     "openai": "^6.48.0",
