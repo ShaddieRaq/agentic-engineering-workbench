@@ -982,10 +982,11 @@ scoped to the project directory only.
 
 ## Current Priorities
 
-1. Foundry UI part 2: operator actions from the console — decision recording
-   (approve/reject/revise forms), stage runs, and intake turns backed by
-   operation polling. Part 1 (read-only evidence views: project index, chain
-   view, raw artifacts at /foundry) shipped 2026-08-05.
+1. Foundry UI part 3: stage runs and intake turns from the console backed by
+   operation polling (architect-plan, capability-plan, design-tests,
+   work-order issuance). Part 1 (read-only evidence views at /foundry) and
+   part 2 (operator decision recording on every stage and submission,
+   attributed via the form's operator field) shipped 2026-08-05.
 2. Builder-session isolation for true holdout secrecy (Phase 43 carry-over).
 2. Capability Planner verification dataset and gate (same rhythm as intake
    and architect).

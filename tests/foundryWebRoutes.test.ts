@@ -1,8 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { FoundryArtifactStore } from "../src/foundry/foundryArtifactStore.js";
+import { sliceSubmissionSchema } from "../src/foundry/sliceSubmission.js";
 import { buildAgentWebServer } from "../src/web/agentWebServer.js";
 import {
   buildFoundryChainView,
@@ -218,6 +220,112 @@ describe("foundry web routes", () => {
       url: "/api/foundry/artifacts/00000000-0000-4000-8000-000000000000",
     });
     expect(unknownArtifact.statusCode).toBe(404);
+
+    await app.close();
+  });
+
+  it("records operator decisions with gates enforced by the constructors", async () => {
+    const store = await temporaryStore();
+    const chain = await persistFoundryChain(store);
+    const briefOnly = await persistBriefOnly(store);
+    const { service } = await createConsoleTestService(false);
+    const app = await buildAgentWebServer({
+      service,
+      apiKeyConfigured: false,
+      foundry: store,
+    });
+
+    // Approve the undecided brief from the browser-facing route.
+    const approve = await app.inject({
+      method: "POST",
+      url: `/api/foundry/briefs/${briefOnly.briefId}/versions/1/decisions`,
+      payload: {
+        decision: "approve",
+        operatorId: "rashad",
+        rationale: "Brief is complete.",
+      },
+    });
+    expect(approve.statusCode).toBe(201);
+    expect(approve.json()).toMatchObject({
+      decision: { decision: "approve", operatorId: "rashad", briefId: briefOnly.briefId },
+    });
+    const refreshed = await buildFoundryChainView(store, briefOnly.briefId);
+    expect(refreshed!.status).toBe("approved");
+
+    // A failed submission cannot be approved, but can be sent to revise.
+    const failedSubmission = sliceSubmissionSchema.parse({
+      submissionId: randomUUID(),
+      workOrderId: chain.workOrderId,
+      workOrderDigest: "d".repeat(64),
+      testSuiteId: chain.testSuiteId,
+      sliceId: chain.fixture.sliceIds.second,
+      briefId: chain.fixture.brief.briefId,
+      briefVersion: chain.fixture.brief.version,
+      projectRoot: "/tmp/generated/example-project",
+      scopeCheck: { passed: false, failures: ["Visible test file tampered."] },
+      testRun: { files: [], passed: false, outputExcerpt: "" },
+      status: "failed",
+      createdAt: "2026-08-05T11:00:00.000Z",
+    });
+    await store.saveSliceSubmission(failedSubmission);
+
+    const blockedApprove = await app.inject({
+      method: "POST",
+      url: `/api/foundry/submissions/${failedSubmission.submissionId}/decisions`,
+      payload: {
+        decision: "approve",
+        operatorId: "rashad",
+        rationale: "Looks fine.",
+      },
+    });
+    expect(blockedApprove.statusCode).toBe(422);
+    expect(blockedApprove.json()).toMatchObject({
+      error: expect.stringContaining("cannot be approved"),
+    });
+
+    const revise = await app.inject({
+      method: "POST",
+      url: `/api/foundry/submissions/${failedSubmission.submissionId}/decisions`,
+      payload: {
+        decision: "revise",
+        operatorId: "rashad",
+        rationale: "Restore the tampered acceptance test.",
+        requestedRevisions: ["Restore acceptance-tests/routing.test.ts."],
+      },
+    });
+    expect(revise.statusCode).toBe(201);
+
+    // Validation and target errors use the house conventions.
+    const badBody = await app.inject({
+      method: "POST",
+      url: `/api/foundry/plans/${chain.planBId}/decisions`,
+      payload: { decision: "approve", operatorId: "rashad" },
+    });
+    expect(badBody.statusCode).toBe(422);
+
+    const reviseWithoutRevisions = await app.inject({
+      method: "POST",
+      url: `/api/foundry/plans/${chain.planBId}/decisions`,
+      payload: { decision: "revise", operatorId: "rashad", rationale: "Needs work." },
+    });
+    expect(reviseWithoutRevisions.statusCode).toBe(422);
+
+    const unknownPlan = await app.inject({
+      method: "POST",
+      url: "/api/foundry/plans/00000000-0000-4000-8000-000000000000/decisions",
+      payload: { decision: "approve", operatorId: "rashad", rationale: "x" },
+    });
+    expect(unknownPlan.statusCode).toBe(404);
+
+    const wrongKind = await app.inject({
+      method: "POST",
+      url: `/api/foundry/plans/${chain.testSuiteId}/decisions`,
+      payload: { decision: "approve", operatorId: "rashad", rationale: "x" },
+    });
+    expect(wrongKind.statusCode).toBe(404);
+    expect(wrongKind.json()).toMatchObject({
+      error: expect.stringContaining("is not a architecture-plan"),
+    });
 
     await app.close();
   });

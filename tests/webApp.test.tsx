@@ -540,6 +540,51 @@ describe("agent workbench web interface", () => {
     expect(screen.getByText("not started")).toBeInTheDocument();
   });
 
+  it("records a decision from the chain view and refetches the chain", async () => {
+    const chainPayload = {
+      briefId: "b2000000-0000-4000-8000-000000000002",
+      title: "Note taker", latestVersion: 1, status: "draft",
+      latestActivityAt: "2026-08-05T10:00:00.000Z", intakeTurnCount: 0,
+      briefVersions: [{ version: 1, artifactId: "b2000000-0000-4000-8000-000000000002-v1", title: "Note taker", createdAt: "2026-08-05T09:00:00.000Z", status: "draft", decisions: [] }],
+      plans: [], capabilityPlans: [], testSuites: [], build: null,
+      buildNote: "No approved test suite yet.",
+    };
+    let chainFetches = 0;
+    let postedBody: unknown = null;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path.endsWith("/api/workspaces")) {
+        return new Response(JSON.stringify({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (path.endsWith("/decisions") && init?.method === "POST") {
+        postedBody = JSON.parse(String(init.body));
+        return new Response(JSON.stringify({ decision: { decisionId: "d2" } }), { status: 201, headers: { "content-type": "application/json" } });
+      }
+      if (path.includes("/api/foundry/projects/")) {
+        chainFetches += 1;
+        return new Response(JSON.stringify(chainPayload), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      return new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } });
+    }));
+
+    window.history.replaceState(null, "", `/foundry/${chainPayload.briefId}`);
+    render(<AppRoutes />);
+
+    expect(await screen.findByRole("heading", { name: "Note taker" })).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Record decision"));
+    fireEvent.change(screen.getByLabelText("Operator"), { target: { value: "rashad" } });
+    fireEvent.change(screen.getByLabelText("Rationale"), { target: { value: "Complete and buildable." } });
+    fireEvent.click(screen.getByRole("button", { name: "Record approve" }));
+
+    await waitFor(() => expect(postedBody).not.toBeNull());
+    expect(postedBody).toEqual({
+      decision: "approve",
+      operatorId: "rashad",
+      rationale: "Complete and buildable.",
+    });
+    await waitFor(() => expect(chainFetches).toBeGreaterThan(1));
+  });
+
   it("renders a raw foundry artifact with the holdout disclosure", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);

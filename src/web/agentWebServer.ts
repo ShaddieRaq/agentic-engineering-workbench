@@ -5,10 +5,15 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AgentApplicationService } from "../agents/agentApplicationService.js";
 import type { ArtifactKind, ArtifactQuery } from "../artifacts/artifactStore.js";
+import { createArchitecturePlanDecision } from "../foundry/architecturePlanDecision.js";
+import { createCapabilityPlanDecision } from "../foundry/capabilityPlanDecision.js";
 import type {
   FoundryArtifactKind,
   FoundryArtifactStore,
 } from "../foundry/foundryArtifactStore.js";
+import { createProjectBriefDecision } from "../foundry/projectBriefDecision.js";
+import { createSubmissionDecision } from "../foundry/sliceSubmission.js";
+import { createTestSuiteDecision } from "../foundry/testSuiteDecision.js";
 import {
   buildFoundryChainView,
   buildFoundryProjectIndex,
@@ -78,6 +83,17 @@ const addWorkspaceRequestSchema = z
     id: z.string().min(1),
     name: z.string().min(1).optional(),
     rootPath: z.string().min(1),
+  })
+  .strict();
+
+// Foundry decisions are always attributed to the human operator submitting
+// the form (Decision 084: decision writes carry a human identity).
+const foundryDecisionRequestSchema = z
+  .object({
+    decision: z.enum(["approve", "reject", "revise"]),
+    operatorId: z.string().min(1).max(200),
+    rationale: z.string().min(1).max(8_000),
+    requestedRevisions: z.array(z.string().min(1).max(2_000)).max(20).optional(),
   })
   .strict();
 
@@ -720,6 +736,163 @@ export async function buildAgentWebServer(
           return reply.code(404).send({ error: errorMessage(error) });
         }
       },
+    );
+
+    // Shared skeleton for the five decision-recording routes: validate the
+    // operator's request, load the target artifact (404 on miss/kind
+    // mismatch), then let the decision constructor enforce the approval
+    // gates (422 on violation, e.g. "cannot be approved").
+    const recordFoundryDecision = async (
+      request: { body: unknown },
+      reply: {
+        code: (status: number) => { send: (body: unknown) => unknown };
+      },
+      artifactId: string,
+      expectedKind: FoundryArtifactKind,
+      build: (
+        artifact: never,
+        input: {
+          decision: "approve" | "reject" | "revise";
+          operatorId: string;
+          rationale: string;
+          requestedRevisions: string[] | null;
+        },
+      ) => Promise<unknown>,
+    ): Promise<unknown> => {
+      const parsed = foundryDecisionRequestSchema.safeParse(request.body ?? {});
+      if (!parsed.success) {
+        return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+      }
+      let stored;
+      try {
+        stored = await foundry.load(artifactId);
+      } catch (error: unknown) {
+        return reply.code(404).send({ error: errorMessage(error) });
+      }
+      if (stored.kind !== expectedKind) {
+        return reply
+          .code(404)
+          .send({ error: `Artifact ${artifactId} is not a ${expectedKind}.` });
+      }
+      try {
+        const saved = await build(stored.artifact as never, {
+          decision: parsed.data.decision,
+          operatorId: parsed.data.operatorId,
+          rationale: parsed.data.rationale,
+          requestedRevisions:
+            parsed.data.requestedRevisions && parsed.data.requestedRevisions.length > 0
+              ? parsed.data.requestedRevisions
+              : null,
+        });
+        return reply.code(201).send(saved);
+      } catch (error: unknown) {
+        return reply.code(422).send({ error: errorMessage(error) });
+      }
+    };
+
+    app.post<{ Params: { briefId: string; version: string } }>(
+      "/api/foundry/briefs/:briefId/versions/:version/decisions",
+      async (request, reply) => {
+        const version = Number(request.params.version);
+        if (!Number.isInteger(version) || version < 1) {
+          return reply.code(400).send({ error: "version must be a positive integer." });
+        }
+        const artifactId = `${request.params.briefId}-v${version}`;
+        return recordFoundryDecision(
+          request,
+          reply,
+          artifactId,
+          "project-brief",
+          async (brief: never, input) => {
+            const decision = createProjectBriefDecision({
+              brief,
+              briefArtifactId: artifactId,
+              ...input,
+            });
+            const reference = await foundry.saveProjectBriefDecision(decision);
+            return { decision, reference };
+          },
+        );
+      },
+    );
+
+    app.post<{ Params: { planId: string } }>(
+      "/api/foundry/plans/:planId/decisions",
+      async (request, reply) =>
+        recordFoundryDecision(
+          request,
+          reply,
+          request.params.planId,
+          "architecture-plan",
+          async (plan: never, input) => {
+            const decision = createArchitecturePlanDecision({
+              plan,
+              planArtifactId: request.params.planId,
+              ...input,
+            });
+            const reference = await foundry.saveArchitecturePlanDecision(decision);
+            return { decision, reference };
+          },
+        ),
+    );
+
+    app.post<{ Params: { capabilityPlanId: string } }>(
+      "/api/foundry/capability-plans/:capabilityPlanId/decisions",
+      async (request, reply) =>
+        recordFoundryDecision(
+          request,
+          reply,
+          request.params.capabilityPlanId,
+          "capability-plan",
+          async (capabilityPlan: never, input) => {
+            const decision = createCapabilityPlanDecision({
+              capabilityPlan,
+              capabilityPlanArtifactId: request.params.capabilityPlanId,
+              ...input,
+            });
+            const reference = await foundry.saveCapabilityPlanDecision(decision);
+            return { decision, reference };
+          },
+        ),
+    );
+
+    app.post<{ Params: { testSuiteId: string } }>(
+      "/api/foundry/test-suites/:testSuiteId/decisions",
+      async (request, reply) =>
+        recordFoundryDecision(
+          request,
+          reply,
+          request.params.testSuiteId,
+          "test-suite",
+          async (testSuite: never, input) => {
+            const decision = createTestSuiteDecision({
+              testSuite,
+              testSuiteArtifactId: request.params.testSuiteId,
+              ...input,
+            });
+            const reference = await foundry.saveTestSuiteDecision(decision);
+            return { decision, reference };
+          },
+        ),
+    );
+
+    app.post<{ Params: { submissionId: string } }>(
+      "/api/foundry/submissions/:submissionId/decisions",
+      async (request, reply) =>
+        recordFoundryDecision(
+          request,
+          reply,
+          request.params.submissionId,
+          "slice-submission",
+          async (submission: never, input) => {
+            const decision = createSubmissionDecision({
+              submission,
+              ...input,
+            });
+            const reference = await foundry.saveSubmissionDecision(decision);
+            return { decision, reference };
+          },
+        ),
     );
   }
 

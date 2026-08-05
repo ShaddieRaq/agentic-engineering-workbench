@@ -243,3 +243,6 @@ tbody tr:last-child td { border-bottom: 0; }
 .decision-list strong { color: #fff; }
 .submission-block { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 10px; }
 .submission-block h4 { margin: 0; }
+.decision-form summary { cursor: pointer; color: var(--accent-2); font-size: 13px; }
+.decision-form form { margin-top: 12px; display: grid; gap: 12px; }
+.decision-form label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; }

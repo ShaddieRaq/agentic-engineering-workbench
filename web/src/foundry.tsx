@@ -1,4 +1,6 @@
+import { useState, type FormEvent } from "react";
 import {
+  api,
   type FoundryChainView,
   type FoundryDecisionView,
   type FoundryProjectIndex,
@@ -36,6 +38,83 @@ function DecisionList({ decisions }: { decisions: FoundryDecisionView[] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+const OPERATOR_STORAGE_KEY = "workbench-operator-id";
+
+// Records an operator-attributed decision against a decisions endpoint.
+// Approval gates live server-side in the decision constructors; this form
+// only collects the human identity, verdict, and rationale.
+function DecisionForm({ action, onRecorded }: { action: string; onRecorded: () => void }) {
+  const [decision, setDecision] = useState<"approve" | "reject" | "revise">("approve");
+  const [operatorId, setOperatorId] = useState(
+    () => window.localStorage.getItem(OPERATOR_STORAGE_KEY) ?? "",
+  );
+  const [rationale, setRationale] = useState("");
+  const [revisions, setRevisions] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      const requestedRevisions = revisions
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+      await api(action, {
+        method: "POST",
+        body: JSON.stringify({
+          decision,
+          operatorId,
+          rationale,
+          ...(decision === "revise" ? { requestedRevisions } : {}),
+        }),
+      });
+      window.localStorage.setItem(OPERATOR_STORAGE_KEY, operatorId);
+      setError(null);
+      setRationale("");
+      setRevisions("");
+      onRecorded();
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <details className="decision-form">
+      <summary>Record decision</summary>
+      <form className="panel" onSubmit={submit}>
+        <label>
+          Decision
+          <select value={decision} onChange={(event) => setDecision(event.target.value as "approve" | "reject" | "revise")}>
+            <option value="approve">approve</option>
+            <option value="reject">reject</option>
+            <option value="revise">revise</option>
+          </select>
+        </label>
+        <label>
+          Operator
+          <input value={operatorId} onChange={(event) => setOperatorId(event.target.value)} placeholder="who is deciding" required />
+        </label>
+        <label>
+          Rationale
+          <textarea rows={3} value={rationale} onChange={(event) => setRationale(event.target.value)} required />
+        </label>
+        {decision === "revise" && (
+          <label>
+            Requested revisions (one per line)
+            <textarea rows={3} value={revisions} onChange={(event) => setRevisions(event.target.value)} />
+          </label>
+        )}
+        {error && <ErrorNotice message={error} />}
+        <button className="button" type="submit" disabled={busy}>Record {decision}</button>
+      </form>
+    </details>
   );
 }
 
@@ -80,7 +159,7 @@ export function FoundryProjectsPage() {
   );
 }
 
-function SubmissionDetails({ submission }: { submission: FoundrySubmissionView }) {
+function SubmissionDetails({ submission, onRecorded }: { submission: FoundrySubmissionView; onRecorded: () => void }) {
   return (
     <div className="submission-block">
       <div className="section-heading">
@@ -119,6 +198,10 @@ function SubmissionDetails({ submission }: { submission: FoundrySubmissionView }
         </details>
       )}
       <DecisionList decisions={submission.decisions} />
+      <DecisionForm
+        action={`/api/foundry/submissions/${submission.submissionId}/decisions`}
+        onRecorded={onRecorded}
+      />
       <Link to={`/foundry/artifacts/${submission.submissionId}`}>Raw submission evidence →</Link>
     </div>
   );
@@ -148,6 +231,10 @@ export function FoundryProjectPage() {
               <StatusBadge value={version.status} />
             </div>
             <DecisionList decisions={version.decisions} />
+            <DecisionForm
+              action={`/api/foundry/briefs/${chain.briefId}/versions/${version.version}/decisions`}
+              onRecorded={resource.reload}
+            />
             <Link to={`/foundry/artifacts/${version.artifactId}`}>Raw brief →</Link>
           </div>
         ))}
@@ -167,6 +254,10 @@ export function FoundryProjectPage() {
               {plan.revisedFromArtifactId && <> · revision of {shortId(plan.revisedFromArtifactId)}</>}
             </p>
             <DecisionList decisions={plan.decisions} />
+            <DecisionForm
+              action={`/api/foundry/plans/${plan.planId}/decisions`}
+              onRecorded={resource.reload}
+            />
             <Link to={`/foundry/artifacts/${plan.planId}`}>Raw plan →</Link>
           </div>
         ))}
@@ -186,6 +277,10 @@ export function FoundryProjectPage() {
               {plan.revisedFromArtifactId && <> · revision of {shortId(plan.revisedFromArtifactId)}</>}
             </p>
             <DecisionList decisions={plan.decisions} />
+            <DecisionForm
+              action={`/api/foundry/capability-plans/${plan.capabilityPlanId}/decisions`}
+              onRecorded={resource.reload}
+            />
             <Link to={`/foundry/artifacts/${plan.capabilityPlanId}`}>Raw capability plan →</Link>
           </div>
         ))}
@@ -220,6 +315,10 @@ export function FoundryProjectPage() {
               <pre className="evidence-json">{suite.interfaceContract}</pre>
             </details>
             <DecisionList decisions={suite.decisions} />
+            <DecisionForm
+              action={`/api/foundry/test-suites/${suite.testSuiteId}/decisions`}
+              onRecorded={resource.reload}
+            />
             <Link to={`/foundry/artifacts/${suite.testSuiteId}`}>Raw suite (includes holdout content) →</Link>
           </div>
         ))}
@@ -247,7 +346,11 @@ export function FoundryProjectPage() {
                   </p>
                 )}
                 {slice.submissions.map((submission) => (
-                  <SubmissionDetails submission={submission} key={submission.submissionId} />
+                  <SubmissionDetails
+                    submission={submission}
+                    onRecorded={resource.reload}
+                    key={submission.submissionId}
+                  />
                 ))}
               </div>
             ))}

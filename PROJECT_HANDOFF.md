@@ -563,15 +563,24 @@ submission decisions), and raw artifact pages (holdout content displayed
 to the operator with an explicit disclosure). Served by four /api/foundry
 GET routes over a pure view-model builder (src/web/foundryChainView.ts)
 that mirrors the service status-derivation semantics without constructing
-services; works without OPENAI_API_KEY. Operator ACTIONS from the UI
-(decisions, stage runs) are the next slice.
+services; works without OPENAI_API_KEY.
+
+Foundry decisions from the console (2026-08-05): every stage panel and
+submission on the chain view carries a "Record decision" form
+(approve/reject/revise, operator identity, rationale, revise revisions
+one per line). Five POST /api/foundry/*/decisions routes reuse the
+create*Decision constructors, so every approval gate holds in the UI
+path: unresolved briefs, blocking concerns, and failed submissions
+cannot be approved (422); revise requires revisions. Decisions land as
+the same digest-pinned artifacts the CLI and MCP write. Stage runs and
+intake turns from the UI are the next slice.
 
 Verified test state:
 
 ```text
 npm run typecheck passed
 158 test files passed
-825 tests passed
+827 tests passed
 npm run agents -- validate passed (10 agents)
 project-intake 0.3.0 live gate: 14/15 (vague-answer 3/3 after the
 released provenance policy; the single miss was one behavioral
