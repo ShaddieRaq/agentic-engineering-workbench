@@ -515,9 +515,19 @@ holdout, real subprocess-spawning Vitest integration tests) that the
 operator sent to revise for three review findings: an unimported
 Vitest hook (the syntax-valid-but-broken gap, observed live), an
 unratified JSON filename honestly raised as a blocking concern, and
-manual checks auditing the brief instead of the product. Known gap
-promoted by three occurrences: revise decisions do not yet feed
-requested revisions into re-runs at any foundry stage
+manual checks auditing the brief instead of the product. The revision-consumption loop: revise-from re-runs consume the prior
+artifact and the operator's requested revisions with recorded lineage
+across the architect, capability, and test-design stages. Proven under
+fire on a full chain repair: the approved architecture plan's
+all-manual acceptance mappings were revised to automated types (two
+rounds; blunt enumerated instructions succeed where judgment-phrased
+ones fail), a circular capability need was revised out, and the test
+suite converged in two rounds after an explicit per-file criterion
+assignment. The approved chain now stands complete: brief 5f3a49bb v5,
+plan c54c3954, capability plan 6b9cfea2, test suite 3ffe688e — every
+artifact digest-pinned and operator-approved. Recurring model lesson
+recorded twice: enumerated instructions comply, judgment instructions
+drift; feed this into the architect and test-designer datasets
 ```
 
 Verified test state:
