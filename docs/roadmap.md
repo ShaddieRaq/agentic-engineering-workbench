@@ -943,20 +943,46 @@ Deferred deliberately:
 - remote or multi-user access; the server remains loopback-only
 - streaming Builder-stage evidence (designed later with the Foundry Builder)
 
+## Phase 43 — Foundry Build Pipeline (Decision 085)
+
+Status: Planned
+
+Goal:
+
+Turn approved capability plans into merged, verified code through governed
+external builder sessions, with independence enforced by structure rather
+than convention.
+
+Delivery:
+
+1. Test Designer agent: approved acceptance plan → executable acceptance
+   tests (visible set plus protected holdout subset), authored without
+   sight of any implementation; gated like every other foundry agent.
+2. Slice work orders: per-slice artifacts carrying plan context, target
+   criteria, and allowed file paths for an isolated project workspace
+   (separate repository, one branch per slice).
+3. Slice submission verification: Workbench-run acceptance tests via the
+   controlled verification-command runner, deterministic diff checks
+   (allowed paths only; acceptance-test paths untouchable), advisory
+   Change Risk Reviewer input, and a per-slice operator merge decision.
+4. First live build: the habit tracker from its approved capability plan.
+
 ## Current Priorities
 
-1. Phase 42 iteration three: long-running evidence operations over MCP
-   (gate runs, improvement-analysis starts with operation polling) and the
-   feedback-verification lineage decision.
-2. Route imported export-feedback evidence into improvement-loop packets so
-   field reports become optimizer input.
-3. Build the Agent Improvement Analyst disposition dataset from the recorded
-   live misroutes and run its own improvement loop.
-4. Begin the next Foundry stage: an architecture-and-acceptance-plan agent
-   consuming approved Project Briefs, now that the export lifecycle is proven.
-5. Verify the clean-clone portability path on the approved second laptop,
-   including the new foundry, export, and import surfaces.
-6. Add evidence-backed model qualification before treating a cheaper model as
-   approved for an agent and task profile.
-7. Exercise Playwright Failure Triage against reviewed real failures as the
+1. Phase 43 delivery 1: the Test Designer agent (agent, contract, gates —
+   the established foundry-stage rhythm), then deliveries 2–3.
+2. Capability Planner verification dataset and gate (same rhythm as intake
+   and architect).
+3. Evidence-backed model qualification, promoted per Decision 086: add an
+   Anthropic provider so evaluation can run on the model an agent serves on.
+4. Declarative agent registration via MCP as subjects under test
+   (Decision 086), converting the runner into a testing service for agents
+   authored anywhere.
+5. Phase 42 iteration three: long-running evidence operations over MCP and
+   the feedback-verification lineage decision.
+6. Route imported export-feedback evidence into improvement-loop packets;
+   Improvement Analyst disposition dataset from recorded live misroutes.
+7. Clean-clone portability verification on the second laptop, covering all
+   foundry, export, import, and MCP surfaces.
+8. Exercise Playwright Failure Triage against reviewed real failures as the
    final agent validation milestone.

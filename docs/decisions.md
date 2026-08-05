@@ -2393,3 +2393,81 @@ stream slice results back continuously.
   approved release remains the only way IDE-visible agent behavior changes
 - exported skills remain standalone; the MCP connection is optional telemetry
   and evidence return, never a runtime dependency
+
+## Decision 085 — The Builder Is Governed, Not Owned
+
+Status: Accepted
+
+### Decision
+
+The Foundry's Builder stage does not implement code with a Workbench-native
+agent. Implementation is performed by an external coding session (Claude
+Code) working from a Workbench-generated slice work order in an isolated,
+separately-registered project workspace. The Workbench treats the builder as
+untrusted labor: it verifies every slice submission itself by running
+independent acceptance tests through its own controlled runner, checking the
+diff against the work order's allowed paths, and requiring an operator merge
+decision per slice.
+
+Independent tests are authored by a separate Test Designer agent from the
+approved acceptance plan only, never from the implementation. They live in a
+path the builder may not modify, enforced by deterministic diff checks, and
+include a protected holdout subset withheld from the builder and run only at
+gate time.
+
+### Rationale
+
+Building a native coding agent means competing with mature agentic coding
+tools using a weaker single-shot model; live evidence in this repository
+shows that model class requires deterministic reconciliation to emit
+consistent structured output, let alone iterate on failing code. The
+platform's differentiated value is that code arrives tested, gated, and
+evidenced — the control plane — not code generation itself. This extends
+Decisions 082 and 084: hosts execute, the Workbench governs.
+
+### Consequences
+
+- the pipeline is not fully autonomous; a session performs implementation
+- Test Designer precedes any build machinery in delivery order
+- slice acceptance is defined by Workbench-run evidence, never builder claims
+- the holdout-test pattern mirrors protected datasets applied to generated code
+- work orders, submissions, verification runs, and merge decisions are
+  ordinary immutable foundry artifacts
+
+## Decision 086 — Author Anywhere, Test Here, Release Through Gates
+
+Status: Accepted
+
+### Decision
+
+The Workbench's identity is the confidence layer: registration, evaluation,
+evidence, and gated release. The native runner is retained as the evaluation
+rig — repeatable, frozen, repetition-controlled execution that no external
+session can provide — not as a serving runtime. Two extensions follow:
+
+1. Declarative agent registration: an agent definition (instruction policy,
+   input/output schemas, datasets) may be pushed from any session via MCP as
+   a subject under test, quarantined in an experimental tier with no standing
+   in the released catalog. Catalog entry still requires passed gates, an
+   operator approval, and a source-controlled commit, preserving Decision
+   084's no-policy-writes-via-MCP boundary.
+2. Multi-provider evaluation: the runner should execute tests on the model
+   an agent will actually use (Anthropic provider alongside OpenAI), because
+   observed cross-model behavioral drift weakens confidence measured on a
+   different model than the one serving.
+
+### Rationale
+
+Use-time already lives in host tools (exported skills, MCP channels). What
+cannot live anywhere else is trustworthy measurement. Deleting the runner
+would reduce testing to human-driven observation; generalizing it converts
+the Workbench from "tests its own hand-coded agents" into a testing service
+for agents authored anywhere.
+
+### Consequences
+
+- the runner's job is evaluation; serving happens in host tools
+- pushed subjects under test are evidence, not releases
+- model qualification rises in priority ahead of further export targets
+- the export manifest format is the natural declarative-registration format
+  in reverse
