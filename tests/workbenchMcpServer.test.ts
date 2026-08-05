@@ -72,6 +72,14 @@ describe("workbench MCP server", () => {
             throw new Error("Not scripted.");
           },
         },
+        testDesign: {
+          async createTestSuite() {
+            throw new Error("Not scripted.");
+          },
+          async recordTestSuiteDecision() {
+            throw new Error("Not scripted.");
+          },
+        },
       },
       "0.0.0-test",
     );
@@ -89,6 +97,7 @@ describe("workbench MCP server", () => {
       "architect_plan",
       "capability_plan",
       "describe_agent",
+      "design_tests",
       "get_approved_export",
       "get_artifact",
       "intake_start",
@@ -100,6 +109,7 @@ describe("workbench MCP server", () => {
       "record_capability_decision",
       "record_plan_decision",
       "record_promotion_decision",
+      "record_test_decision",
       "run_agent",
       "submit_feedback",
     ]);

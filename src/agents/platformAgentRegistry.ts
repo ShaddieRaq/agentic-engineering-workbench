@@ -8,6 +8,7 @@ import { agentImprovementAnalystAgent } from "./agentImprovement/agentImprovemen
 import { capabilityPlannerAgent } from "./capabilityPlanner/capabilityPlannerAgent.js";
 import { projectArchitectAgent } from "./projectArchitect/projectArchitectAgent.js";
 import { projectIntakeAgent } from "./projectIntake/projectIntakeAgent.js";
+import { testDesignerAgent } from "./testDesigner/testDesignerAgent.js";
 
 export const platformAgentRegistry = new AgentRegistry([
   agentImprovementAnalystAgent,
@@ -18,5 +19,6 @@ export const platformAgentRegistry = new AgentRegistry([
   projectArchitectAgent,
   projectIntakeAgent,
   repositoryAssistantAgent,
+  testDesignerAgent,
   toolBuilderAgent,
 ]);

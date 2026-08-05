@@ -20,6 +20,11 @@ import {
   exportFeedbackRecordSchema,
   type ExportFeedbackRecord,
 } from "./exportFeedback.js";
+import { testSuiteSchema, type TestSuite } from "./testSuite.js";
+import {
+  testSuiteDecisionSchema,
+  type TestSuiteDecision,
+} from "./testSuiteDecision.js";
 import { intakeTurnRecordSchema, type IntakeTurnRecord } from "./intakeTurn.js";
 import { projectBriefSchema, type ProjectBrief } from "./projectBrief.js";
 import {
@@ -37,7 +42,9 @@ export type FoundryArtifactKind =
   | "architecture-plan"
   | "architecture-plan-decision"
   | "capability-plan"
-  | "capability-plan-decision";
+  | "capability-plan-decision"
+  | "test-suite"
+  | "test-suite-decision";
 
 export interface FoundryArtifactReference {
   id: string;
@@ -53,7 +60,9 @@ export type FoundryStoredArtifact =
   | { kind: "architecture-plan"; artifact: ArchitecturePlan }
   | { kind: "architecture-plan-decision"; artifact: ArchitecturePlanDecision }
   | { kind: "capability-plan"; artifact: CapabilityPlan }
-  | { kind: "capability-plan-decision"; artifact: CapabilityPlanDecision };
+  | { kind: "capability-plan-decision"; artifact: CapabilityPlanDecision }
+  | { kind: "test-suite"; artifact: TestSuite }
+  | { kind: "test-suite-decision"; artifact: TestSuiteDecision };
 
 export interface FoundryArtifactSummary {
   id: string;
@@ -220,6 +229,40 @@ const kindDefinitions: Record<FoundryArtifactKind, FoundryKindDefinition> = {
       };
     },
   },
+  "test-suite": {
+    parse: (value) => ({
+      kind: "test-suite",
+      artifact: testSuiteSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const suite = stored.artifact as TestSuite;
+      return {
+        id,
+        kind: "test-suite",
+        path,
+        briefId: suite.briefId,
+        briefVersion: suite.briefVersion,
+        createdAt: suite.createdAt,
+      };
+    },
+  },
+  "test-suite-decision": {
+    parse: (value) => ({
+      kind: "test-suite-decision",
+      artifact: testSuiteDecisionSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const decision = stored.artifact as TestSuiteDecision;
+      return {
+        id,
+        kind: "test-suite-decision",
+        path,
+        briefId: decision.briefId,
+        briefVersion: decision.briefVersion,
+        createdAt: decision.decidedAt,
+      };
+    },
+  },
 };
 
 // The decision pattern must be tested before the brief pattern because
@@ -233,6 +276,8 @@ const orderedKinds: FoundryArtifactKind[] = [
   "architecture-plan",
   "capability-plan-decision",
   "capability-plan",
+  "test-suite-decision",
+  "test-suite",
 ];
 
 function descriptor(
@@ -322,6 +367,18 @@ export class FoundryArtifactStore {
     );
   }
 
+  async saveTestSuite(suite: TestSuite): Promise<FoundryArtifactReference> {
+    const validated = testSuiteSchema.parse(suite);
+    return this.#write("test-suite", validated.testSuiteId, validated);
+  }
+
+  async saveTestSuiteDecision(
+    decision: TestSuiteDecision,
+  ): Promise<FoundryArtifactReference> {
+    const validated = testSuiteDecisionSchema.parse(decision);
+    return this.#write("test-suite-decision", validated.decisionId, validated);
+  }
+
   async load(id: string): Promise<FoundryStoredArtifact> {
     if (!/^[a-zA-Z0-9-]+$/.test(id)) {
       throw new Error("Artifact ID contains unsupported characters.");
@@ -391,7 +448,9 @@ export class FoundryArtifactStore {
       | ArchitecturePlan
       | ArchitecturePlanDecision
       | CapabilityPlan
-      | CapabilityPlanDecision,
+      | CapabilityPlanDecision
+      | TestSuite
+      | TestSuiteDecision,
   ): Promise<FoundryArtifactReference> {
     await mkdir(this.#root, { recursive: true });
     const path = join(this.#root, `${kind}-${id}.json`);

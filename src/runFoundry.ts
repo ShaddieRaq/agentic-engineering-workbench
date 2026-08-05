@@ -193,10 +193,14 @@ async function main(): Promise<void> {
     args.command === "plan-decide" ||
     args.command === "capability-plan" ||
     args.command === "capability-show" ||
-    args.command === "capability-decide"
+    args.command === "capability-decide" ||
+    args.command === "design-tests" ||
+    args.command === "tests-show" ||
+    args.command === "tests-decide"
   ) {
     const { ArchitectService } = await import("./foundry/architectService.js");
     const { CapabilityService } = await import("./foundry/capabilityService.js");
+    const { TestDesignService } = await import("./foundry/testDesignService.js");
     const workspaceRoot = process.cwd();
     const workspaces = new FileWorkspaceStore(
       resolve(workspaceRoot, ".workbench", "workspaces.json"),
@@ -308,8 +312,62 @@ async function main(): Promise<void> {
       return;
     }
 
-    const saved = await capability.recordCapabilityDecision({
-      capabilityPlanId: args.capabilityPlanId,
+    if (args.command === "capability-decide") {
+      const saved = await capability.recordCapabilityDecision({
+        capabilityPlanId: args.capabilityPlanId,
+        decision: args.decision,
+        operatorId: args.operatorId,
+        rationale: args.rationale,
+        requestedRevisions:
+          args.requestedRevisions.length > 0 ? args.requestedRevisions : null,
+      });
+      console.log(JSON.stringify({ decision: saved.decision, reference: saved.reference }, null, 2));
+      return;
+    }
+
+    const testDesign = new TestDesignService({
+      agentService,
+      capability,
+      architect,
+      briefs: service,
+      store,
+    });
+
+    if (args.command === "design-tests") {
+      const saved = await testDesign.createTestSuite({
+        capabilityPlanId: args.capabilityPlanId,
+        ...(args.model ? { model: args.model } : {}),
+      });
+      const { content } = saved.testSuite;
+      const visible = content.testFiles.filter(
+        ({ visibility }) => visibility === "visible",
+      ).length;
+      console.log(
+        `Test suite: ${saved.testSuite.testSuiteId} (capability plan ${saved.testSuite.capabilityPlanId})`,
+      );
+      console.log(
+        `Files: ${content.testFiles.length} (${visible} visible, ` +
+          `${content.testFiles.length - visible} holdout), manual checks: ` +
+          `${content.manualChecks.length}, concerns: ${content.concerns.length}`,
+      );
+      if (saved.testSuite.reconciliation) {
+        console.log(
+          `Structural repairs applied: ${saved.testSuite.reconciliation.removedReferences.length} removed reference(s).`,
+        );
+      }
+      console.log(`Evidence saved: ${saved.reference.path}`);
+      return;
+    }
+
+    if (args.command === "tests-show") {
+      const testSuite = await testDesign.loadTestSuite(args.testSuiteId);
+      const status = await testDesign.deriveTestSuiteStatus(args.testSuiteId);
+      console.log(JSON.stringify({ testSuite, status }, null, 2));
+      return;
+    }
+
+    const saved = await testDesign.recordTestSuiteDecision({
+      testSuiteId: args.testSuiteId,
       decision: args.decision,
       operatorId: args.operatorId,
       rationale: args.rationale,

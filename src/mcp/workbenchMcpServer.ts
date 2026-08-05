@@ -237,6 +237,43 @@ export function buildWorkbenchMcpServer(
   );
 
   server.registerTool(
+    "design_tests",
+    {
+      description:
+        "Writes evidence. Run the Test Designer on an APPROVED capability " +
+        "plan, producing executable acceptance tests (visible plus protected " +
+        "holdout files) authored from the planning chain only, with " +
+        "deterministic coverage, path, and syntax validation. Refuses " +
+        "capability plans whose latest decision is not approve. Requires the " +
+        "Workbench machine's provider key. Never modifies agent policy.",
+      inputSchema: {
+        capabilityPlanId: z.uuid(),
+        model: z.string().min(1).optional(),
+      },
+    },
+    async (input) => asText(await tools.designTests(input)),
+  );
+
+  server.registerTool(
+    "record_test_decision",
+    {
+      description:
+        "Writes an operator decision. Record approve, reject, or revise on a " +
+        "test suite, pinned to its exact digest. Recorded with the named " +
+        "operator's identity; approval is blocked while blocking concerns " +
+        "remain.",
+      inputSchema: {
+        testSuiteId: z.uuid(),
+        decision: z.enum(["approve", "reject", "revise"]),
+        operatorId: z.string().min(1).max(200),
+        rationale: z.string().min(1).max(8_000),
+        requestedRevisions: z.array(z.string().min(1).max(2_000)).max(20).optional(),
+      },
+    },
+    async (input) => asText(await tools.recordTestDecision(input)),
+  );
+
+  server.registerTool(
     "record_brief_decision",
     {
       description:

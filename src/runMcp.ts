@@ -10,6 +10,7 @@ import { CapabilityService } from "./foundry/capabilityService.js";
 import { FoundryArtifactStore } from "./foundry/foundryArtifactStore.js";
 import { IntakeSessionController } from "./foundry/intakeSessionController.js";
 import { ProjectBriefService } from "./foundry/projectBriefService.js";
+import { TestDesignService } from "./foundry/testDesignService.js";
 import { buildWorkbenchMcpServer } from "./mcp/workbenchMcpServer.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { createPlatformToolRegistry } from "./tools/toolRegistry.js";
@@ -49,6 +50,19 @@ async function main(): Promise<void> {
     store: foundry,
   });
   const toolRegistry = createPlatformToolRegistry(workspaceRoot);
+  const capabilityService = new CapabilityService({
+    agentService,
+    architect: architectService,
+    store: foundry,
+    catalogFactory: () => ({
+      agents: platformAgentRegistry
+        .list()
+        .map(({ id, description }) => ({ id, description })),
+      tools: toolRegistry
+        .ids()
+        .map((id) => ({ id, description: toolRegistry.get(id).description })),
+    }),
+  });
 
   const server = buildWorkbenchMcpServer(
     {
@@ -65,18 +79,13 @@ async function main(): Promise<void> {
       }),
       briefs: briefService,
       architect: architectService,
-      capability: new CapabilityService({
+      capability: capabilityService,
+      testDesign: new TestDesignService({
         agentService,
+        capability: capabilityService,
         architect: architectService,
+        briefs: briefService,
         store: foundry,
-        catalogFactory: () => ({
-          agents: platformAgentRegistry
-            .list()
-            .map(({ id, description }) => ({ id, description })),
-          tools: toolRegistry
-            .ids()
-            .map((id) => ({ id, description: toolRegistry.get(id).description })),
-        }),
       }),
     },
     packageJson.version ?? "0.0.0",

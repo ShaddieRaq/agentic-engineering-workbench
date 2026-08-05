@@ -17,6 +17,7 @@ import type {
   IntakeTurnResult,
 } from "../foundry/intakeSessionController.js";
 import type { ProjectBriefService } from "../foundry/projectBriefService.js";
+import type { TestDesignService } from "../foundry/testDesignService.js";
 
 // Structural subsets of AgentApplicationService so tests can inject scripted
 // fakes without provider construction (precedent: IntakeAgentRunService).
@@ -56,6 +57,10 @@ export interface WorkbenchMcpDependencies {
   capability: Pick<
     CapabilityService,
     "createCapabilityPlan" | "recordCapabilityDecision"
+  >;
+  testDesign: Pick<
+    TestDesignService,
+    "createTestSuite" | "recordTestSuiteDecision"
   >;
 }
 
@@ -305,6 +310,44 @@ export function createWorkbenchMcpTools(deps: WorkbenchMcpDependencies) {
     }) {
       const saved = await deps.capability.recordCapabilityDecision({
         capabilityPlanId: input.capabilityPlanId,
+        decision: input.decision,
+        operatorId: input.operatorId,
+        rationale: input.rationale,
+        requestedRevisions:
+          input.requestedRevisions && input.requestedRevisions.length > 0
+            ? input.requestedRevisions
+            : null,
+      });
+      return { decision: saved.decision, artifactPath: saved.reference.path };
+    },
+
+    async designTests(input: {
+      capabilityPlanId: string;
+      model?: string | undefined;
+    }) {
+      const saved = await deps.testDesign.createTestSuite({
+        capabilityPlanId: input.capabilityPlanId,
+        ...(input.model ? { model: input.model } : {}),
+      });
+      return {
+        testSuiteId: saved.testSuite.testSuiteId,
+        capabilityPlanId: saved.testSuite.capabilityPlanId,
+        briefId: saved.testSuite.briefId,
+        content: saved.testSuite.content,
+        reconciliation: saved.testSuite.reconciliation,
+        artifactPath: saved.reference.path,
+      };
+    },
+
+    async recordTestDecision(input: {
+      testSuiteId: string;
+      decision: "approve" | "reject" | "revise";
+      operatorId: string;
+      rationale: string;
+      requestedRevisions?: string[] | undefined;
+    }) {
+      const saved = await deps.testDesign.recordTestSuiteDecision({
+        testSuiteId: input.testSuiteId,
         decision: input.decision,
         operatorId: input.operatorId,
         rationale: input.rationale,

@@ -312,6 +312,36 @@ describe("parseFoundryArgs", () => {
     });
   });
 
+  it("parses test-design commands", () => {
+    expect(
+      parseFoundryArgs(["design-tests", "--capability-plan-id", "c1"]),
+    ).toEqual({ command: "design-tests", capabilityPlanId: "c1", model: null });
+    expect(parseFoundryArgs(["tests-show", "--test-suite-id", "t1"])).toEqual({
+      command: "tests-show",
+      testSuiteId: "t1",
+    });
+    expect(
+      parseFoundryArgs([
+        "tests-decide",
+        "--test-suite-id",
+        "t1",
+        "--decision",
+        "approve",
+        "--operator",
+        "op-1",
+        "--rationale",
+        "Covers everything",
+      ]),
+    ).toEqual({
+      command: "tests-decide",
+      testSuiteId: "t1",
+      decision: "approve",
+      operatorId: "op-1",
+      rationale: "Covers everything",
+      requestedRevisions: [],
+    });
+  });
+
   it("parses intake-status", () => {
     expect(parseFoundryArgs(["intake-status", "--brief-id", "abc"])).toEqual({
       command: "intake-status",

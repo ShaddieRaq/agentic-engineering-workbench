@@ -53,6 +53,16 @@ export type FoundryCliArgs =
       operatorId: string;
       rationale: string;
       requestedRevisions: string[];
+    }
+  | { command: "design-tests"; capabilityPlanId: string; model: string | null }
+  | { command: "tests-show"; testSuiteId: string }
+  | {
+      command: "tests-decide";
+      testSuiteId: string;
+      decision: "approve" | "reject" | "revise";
+      operatorId: string;
+      rationale: string;
+      requestedRevisions: string[];
     };
 
 function option(args: string[], name: string): string | null {
@@ -272,6 +282,33 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
     };
   }
 
+  if (command === "design-tests") {
+    return {
+      command,
+      capabilityPlanId: requiredOption(args, "--capability-plan-id"),
+      model: option(args, "--model"),
+    };
+  }
+
+  if (command === "tests-show") {
+    return { command, testSuiteId: requiredOption(args, "--test-suite-id") };
+  }
+
+  if (command === "tests-decide") {
+    const decision = requiredOption(args, "--decision");
+    if (decision !== "approve" && decision !== "reject" && decision !== "revise") {
+      throw new Error("--decision must be one of: approve, reject, revise.");
+    }
+    return {
+      command,
+      testSuiteId: requiredOption(args, "--test-suite-id"),
+      decision,
+      operatorId: requiredOption(args, "--operator"),
+      rationale: requiredOption(args, "--rationale"),
+      requestedRevisions: repeatedOption(args, "--revision"),
+    };
+  }
+
   throw new Error(
     "Expected one of: brief-create --title <title> --idea <summary>, " +
       "brief-show --brief-id <id> [--version <n>], brief-list [--brief-id <id>], " +
@@ -285,6 +322,8 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
       "architect-plan --brief-id <id> [--model <id>], plan-show --plan-id <id>, " +
       "plan-decide --plan-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...], " +
       "capability-plan --plan-id <id> [--model <id>], capability-show --capability-plan-id <id>, " +
-      "capability-decide --capability-plan-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...].",
+      "capability-decide --capability-plan-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...], " +
+      "design-tests --capability-plan-id <id> [--model <id>], tests-show --test-suite-id <id>, " +
+      "tests-decide --test-suite-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...].",
   );
 }

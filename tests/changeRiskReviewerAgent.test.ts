@@ -34,6 +34,7 @@ describe("changeRiskReviewerAgent", () => {
       "project-architect",
       "project-intake",
       "repository-assistant",
+      "test-designer",
       "tool-builder",
     ]);
     expect(platformAgentRegistry.get("change-risk-reviewer").manifest)
