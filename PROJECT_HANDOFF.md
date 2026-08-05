@@ -497,6 +497,11 @@ produced a clean, fully covered architecture plan first try (5
 components, 6 slices, 11 acceptance mappings, advisory-only concerns),
 which the operator approved — the first interview-to-approved-plan
 pipeline with complete evidence lineage
+Architect verification gate: complete; first live baseline at
+repetitions 3 is 8/12 — constraint traceability and contradiction
+flagging are 3/3, but the architect over-escalates unspecified details
+on clean briefs to blocking severity (all four failures are the same
+false-alarm behavior; improvement-loop input, not tuned reactively)
 ```
 
 Verified test state:
