@@ -7,6 +7,7 @@ import { reconcileArchitecturePlanContent } from "../../foundry/architectureReco
 import { projectBriefSchema } from "../../foundry/projectBrief.js";
 import { defineAgent, type AgentRegistration } from "../agentRegistration.js";
 import { defineAgentRevisionSurface } from "../agentRevisionSurface.js";
+import { assessProjectArchitectExpectation } from "./projectArchitectExpectation.js";
 import {
   projectArchitectBaselinePolicy,
   projectArchitectPolicySchema,
@@ -42,7 +43,10 @@ export function createProjectArchitectAgent(
         datasetIds: [],
       },
       permissions: { toolIds: [] },
-      verification: { datasetIds: [], minimumPassRate: null },
+      verification: {
+        datasetIds: ["project-architect-smoke"],
+        minimumPassRate: 1,
+      },
     },
     inputSchema: projectArchitectInputSchema,
     outputSchema: architectPlanOutputSchema,
@@ -90,6 +94,9 @@ export function createProjectArchitectAgent(
           `${output.acceptancePlan.length} acceptance mapping(s), and ` +
           `${blockingConcerns} blocking concern(s).`,
       };
+    },
+    assessDatasetCase(_input, output, expected) {
+      return assessProjectArchitectExpectation(output, expected);
     },
   });
 }

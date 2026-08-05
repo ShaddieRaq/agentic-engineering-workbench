@@ -108,6 +108,42 @@ describe("projectArchitectAgent", () => {
     expect(result.failure?.message).toMatch(/not covered/i);
   });
 
+  it("assesses dataset cases against hidden expectations", async () => {
+    const { projectArchitectDataset } = await import(
+      "../src/agents/datasets/projectArchitectDataset.js"
+    );
+    const contradictory = projectArchitectDataset.cases.find(
+      ({ id }) => id === "contradictory-brief-flags-blocking",
+    )!;
+    const brief = (contradictory.input as { brief: never }).brief;
+    const registration = platformAgentRegistry.get("project-architect");
+
+    const honest = planContentFor(brief);
+    honest.concerns.push({
+      id: randomUUID(),
+      description:
+        "The offline constraint contradicts the real-time cloud sync goal.",
+      severity: "blocking",
+      relatedBriefEntryIds: ["22222222-2222-4222-8222-222222222201"],
+    });
+    expect(
+      registration.assessDatasetCase!(
+        contradictory.input,
+        { ...honest, reconciliation: null },
+        contradictory.expected,
+      ).passed,
+    ).toBe(true);
+
+    const silent = planContentFor(brief);
+    const failed = registration.assessDatasetCase!(
+      contradictory.input,
+      { ...silent, reconciliation: null },
+      contradictory.expected,
+    );
+    expect(failed.passed).toBe(false);
+    expect(failed.message).toMatch(/blocking concern/i);
+  });
+
   it("threads policy changes into the prompt", () => {
     const brief = briefWithCriteria();
     const patched = projectArchitectPolicySchema.parse({
