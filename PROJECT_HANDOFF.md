@@ -497,11 +497,13 @@ produced a clean, fully covered architecture plan first try (5
 components, 6 slices, 11 acceptance mappings, advisory-only concerns),
 which the operator approved — the first interview-to-approved-plan
 pipeline with complete evidence lineage
-Architect verification gate: complete; first live baseline at
-repetitions 3 is 8/12 — constraint traceability and contradiction
-flagging are 3/3, but the architect over-escalates unspecified details
-on clean briefs to blocking severity (all four failures are the same
-false-alarm behavior; improvement-loop input, not tuned reactively)
+Architect verification gate: complete; 0.1.0 baseline was 8/12 with
+all failures being blocking-severity false alarms on clean briefs
+Architect improvement cycle 1: gate-passing severity-calibration
+candidate approved and released as project-architect 0.2.0 (decision
+95a65f7e); fresh 0.2.0 baseline 11/12, with the single miss being a
+run-level structural failure (a slice cited a goal id as a criterion),
+caught by coverage validation rather than the assessor
 ```
 
 Verified test state:
