@@ -475,6 +475,10 @@ redirected to an engineering change
 Foundry Slice 5 deterministic id reconciliation (project-intake 0.2.0):
 complete; live reps-3 baseline improved 10/15 to 13/15, with both
 structural failure cases (contradiction, final-turn) now 3/3
+Foundry improvement cycle 3: first fully gate-passing candidate;
+approved and released as project-intake 0.3.0 (vague answers stay
+unresolved with sharper follow-ups; vague-answer case 0.67 to 1.00
+with zero regressions; decision f135b4dc, candidate 40373263)
 ```
 
 Verified test state:
@@ -484,9 +488,9 @@ npm run typecheck passed
 136 test files passed
 484 tests passed
 npm run agents -- validate passed (7 agents)
-project-intake 0.2.0 live gate: 13/15 (vague-answer 1/3 is the sole
-remaining weakness, a provenance-honesty behavior for a future
-instructions candidate)
+project-intake 0.3.0 live gate: 14/15 (vague-answer 3/3 after the
+released provenance policy; the single miss was one behavioral
+contradiction-challenge rep, ordinary residual variance)
 ```
 
 This state must be verified before continuing:
