@@ -491,6 +491,12 @@ Foundry improvement cycle 3: first fully gate-passing candidate;
 approved and released as project-intake 0.3.0 (vague answers stay
 unresolved with sharper follow-ups; vague-answer case 0.67 to 1.00
 with zero regressions; decision f135b4dc, candidate 40373263)
+Foundry stage 2 (Project Architect): complete and live-proven; the
+habit-tracker brief was operator-approved and project-architect 0.1.0
+produced a clean, fully covered architecture plan first try (5
+components, 6 slices, 11 acceptance mappings, advisory-only concerns),
+which the operator approved — the first interview-to-approved-plan
+pipeline with complete evidence lineage
 ```
 
 Verified test state:
