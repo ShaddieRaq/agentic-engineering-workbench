@@ -132,6 +132,36 @@ describe("buildFoundryChainView", () => {
       { id: turnQuestionId, question: "Which folders are in scope?" },
     ]);
     expect(view!.intakeTurnCount).toBe(1);
+    expect(view!.intakeCanContinue).toBe(true);
+  });
+
+  it("keeps the interview continuable when a turn asks no questions", async () => {
+    const store = await temporaryStore();
+    const { briefId, briefArtifactId } = await persistBriefOnly(store);
+    // Observed live: the model can return awaiting-answers with ZERO next
+    // questions (stalling on stale brief openQuestions). The operator must
+    // still be able to send a context-only instruction turn.
+    await store.saveIntakeTurnRecord(
+      intakeTurnRecordSchema.parse({
+        turnId: randomUUID(),
+        briefId,
+        turnNumber: 1,
+        maxTurns: 10,
+        agentRunArtifactId: null,
+        operatorAnswers: [],
+        resultingBriefVersion: 1,
+        resultingBriefArtifactId: briefArtifactId,
+        nextQuestions: [],
+        openIssues: [],
+        status: "awaiting-answers",
+        startedAt: "2026-08-06T10:00:00.000Z",
+        completedAt: "2026-08-06T10:00:05.000Z",
+      }),
+    );
+
+    const view = await buildFoundryChainView(store, briefId);
+    expect(view!.intakeQuestions).toEqual([]);
+    expect(view!.intakeCanContinue).toBe(true);
   });
 
   it("handles a brief-only chain and unknown brief ids", async () => {

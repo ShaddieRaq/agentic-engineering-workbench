@@ -540,6 +540,7 @@ export interface FoundryChainView {
   latestActivityAt: string;
   intakeTurnCount: number;
   intakeQuestions: { id: string; question: string }[];
+  intakeCanContinue: boolean;
   briefVersions: FoundryBriefVersionView[];
   plans: FoundryPlanView[];
   capabilityPlans: FoundryCapabilityPlanView[];

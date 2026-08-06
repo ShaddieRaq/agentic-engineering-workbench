@@ -144,6 +144,11 @@ export interface FoundryChainView {
   // nextQuestions — NOT the brief's openQuestions, which live in a
   // different id space). Empty when the interview is not awaiting answers.
   intakeQuestions: { id: string; question: string }[];
+  // True whenever the controller would accept another turn — including
+  // awaiting-answers turns that asked NO questions (observed live: the
+  // model can stall with stale brief openQuestions and nothing to ask, and
+  // the operator needs the context box to instruct it).
+  intakeCanContinue: boolean;
   briefVersions: FoundryBriefVersionView[];
   plans: FoundryPlanView[];
   capabilityPlans: FoundryCapabilityPlanView[];
@@ -445,6 +450,10 @@ function buildViewFromBuckets(
           question,
         }))
       : [];
+  // Mirrors IntakeSessionController.runTurn's status guard.
+  const intakeCanContinue =
+    latestTurn?.status === "awaiting-answers" ||
+    latestTurn?.status === "model-failure";
 
   return {
     briefId,
@@ -454,6 +463,7 @@ function buildViewFromBuckets(
     latestActivityAt: buckets.latestActivityAt,
     intakeTurnCount: buckets.intakeTurns.length,
     intakeQuestions,
+    intakeCanContinue: Boolean(intakeCanContinue),
     briefVersions,
     plans,
     capabilityPlans,

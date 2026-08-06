@@ -475,7 +475,7 @@ export function FoundryProjectPage() {
               <StatusBadge value={version.status} />
             </div>
             <DecisionList decisions={version.decisions} />
-            {version.version === chain.latestVersion && chain.intakeQuestions.length > 0 && (
+            {version.version === chain.latestVersion && chain.intakeCanContinue && (
               <IntakeTurnPanel briefId={chain.briefId} questions={chain.intakeQuestions} onDone={resource.reload} />
             )}
             <DecisionForm
