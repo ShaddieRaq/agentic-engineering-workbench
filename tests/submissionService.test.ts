@@ -1,6 +1,6 @@
-import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { FoundryArtifactStore } from "../src/foundry/foundryArtifactStore.js";
 import {
@@ -34,15 +34,19 @@ function scriptedRunner(script: RunnerScript = {}): {
   runner: SubmissionTestRunner;
   ranFiles: string[];
   presentDuringRun: Map<string, boolean>;
+  seenRoots: string[];
 } {
   const ranFiles: string[] = [];
   const presentDuringRun = new Map<string, boolean>();
+  const seenRoots: string[] = [];
   return {
     ranFiles,
     presentDuringRun,
+    seenRoots,
     runner: {
       async runTestFile({ projectRoot, testFile }) {
         ranFiles.push(testFile);
+        seenRoots.push(projectRoot);
         presentDuringRun.set(
           testFile,
           await access(join(projectRoot, testFile)).then(
@@ -64,15 +68,23 @@ function scriptedRunner(script: RunnerScript = {}): {
 async function submissionHarness(options: {
   fixture?: ChainFixture;
   script?: RunnerScript;
+  isolated?: boolean;
 } = {}) {
   const fixture = options.fixture ?? chainFixture();
   const storeDirectory = await mkdtemp(join(tmpdir(), "submission-store-"));
   const projectRoot = await mkdtemp(join(tmpdir(), "submission-project-"));
   createdDirectories.push(storeDirectory, projectRoot);
+  let isolationRoot: string | undefined;
+  if (options.isolated) {
+    isolationRoot = await mkdtemp(join(tmpdir(), "submission-isolation-"));
+    createdDirectories.push(isolationRoot);
+  }
 
   const store = new FoundryArtifactStore(storeDirectory);
   const workOrders = new WorkOrderService(chainDependencies(fixture, store));
-  const { runner, ranFiles, presentDuringRun } = scriptedRunner(options.script);
+  const { runner, ranFiles, presentDuringRun, seenRoots } = scriptedRunner(
+    options.script,
+  );
   const submissions = new SubmissionService({
     workOrders,
     testDesign: {
@@ -82,6 +94,7 @@ async function submissionHarness(options: {
     },
     store,
     runner,
+    ...(isolationRoot ? { isolationRoot } : {}),
   });
   return {
     fixture,
@@ -89,8 +102,10 @@ async function submissionHarness(options: {
     workOrders,
     submissions,
     projectRoot,
+    isolationRoot,
     ranFiles,
     presentDuringRun,
+    seenRoots,
   };
 }
 
@@ -264,6 +279,74 @@ describe("SubmissionService.submitSlice", () => {
         projectRoot: harness.projectRoot,
       }),
     ).rejects.toThrowError(/chain integrity/i);
+  });
+});
+
+describe("SubmissionService out-of-tree isolation", () => {
+  it("verifies against a frozen copy so holdouts never touch the builder tree", async () => {
+    const harness = await submissionHarness({ isolated: true });
+    await approveSliceInStore(
+      harness.fixture,
+      harness.store,
+      harness.fixture.sliceIds.first,
+    );
+    const { workOrder } = await harness.workOrders.createWorkOrder({
+      testSuiteId: harness.fixture.suite.testSuiteId,
+      sliceId: harness.fixture.sliceIds.second,
+    });
+    await harness.workOrders.materializeVisibleTests({
+      workOrderId: workOrder.workOrderId,
+      projectRoot: harness.projectRoot,
+    });
+
+    const { submission } = await harness.submissions.submitSlice({
+      workOrderId: workOrder.workOrderId,
+      projectRoot: harness.projectRoot,
+    });
+
+    expect(submission.status).toBe("passed");
+    expect(submission.verificationMode).toBe("out-of-tree");
+    // The attested subject stays the builder's root...
+    expect(submission.projectRoot).toBe(resolve(harness.projectRoot));
+    // ...but every test ran inside the isolation copy, where the holdout
+    // was present.
+    expect(harness.seenRoots.length).toBeGreaterThan(0);
+    for (const root of harness.seenRoots) {
+      expect(root).not.toBe(resolve(harness.projectRoot));
+      expect(root.startsWith(harness.isolationRoot!)).toBe(true);
+    }
+    expect(
+      harness.presentDuringRun.get(harness.fixture.filePaths.holdout),
+    ).toBe(true);
+
+    // The builder tree never received the holdout, and the frozen copy is
+    // gone after verification.
+    await expect(
+      access(join(harness.projectRoot, harness.fixture.filePaths.holdout)),
+    ).rejects.toThrowError();
+    expect(await readdir(harness.isolationRoot!)).toEqual([]);
+  });
+
+  it("catches builder-tree tampering through the frozen copy", async () => {
+    const harness = await submissionHarness({ isolated: true });
+    const workOrder = await issueSliceOneWorkOrder(harness);
+    await writeFile(
+      join(harness.projectRoot, harness.fixture.filePaths.visibleOnly),
+      "// weakened test\n",
+      "utf8",
+    );
+
+    const { submission } = await harness.submissions.submitSlice({
+      workOrderId: workOrder.workOrderId,
+      projectRoot: harness.projectRoot,
+    });
+
+    expect(submission.status).toBe("failed");
+    expect(submission.verificationMode).toBe("out-of-tree");
+    expect(submission.scopeCheck.failures.join(" ")).toMatch(
+      /does not match the approved suite/i,
+    );
+    expect(await readdir(harness.isolationRoot!)).toEqual([]);
   });
 });
 

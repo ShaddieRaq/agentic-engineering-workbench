@@ -982,15 +982,14 @@ scoped to the project directory only.
 
 ## Current Priorities
 
-1. Out-of-tree verification copy: close the Decision 087 headline residual
-   (verification currently executes builder-authored code while holdouts
-   are materialized in the builder's workspace).
-2. First fully isolated governed build: run the next real project's build
+1. First fully isolated governed build: run the next real project's build
    from a builder session opened inside a prepared workspace
-   (builder-workspace scaffold shipped 2026-08-05 with the workbench-builder
-   MCP server, redacted projections, deny rules, and OS sandbox — Decision
-   087). The Foundry console is full-loop for the operator (read, decide,
-   run stages) as of the same date.
+   (builder-workspace scaffold + workbench-builder MCP server with redacted
+   projections, deny rules, and OS sandbox — Decision 087; out-of-tree
+   verification shipped 2026-08-05 closes the holdout-exfiltration
+   residual, live-proven on the habit tracker with verificationMode
+   "out-of-tree" evidence). The Foundry console is full-loop for the
+   operator (read, decide, run stages).
 2. Capability Planner verification dataset and gate (same rhythm as intake
    and architect).
 3. Evidence-backed model qualification, promoted per Decision 086: add an

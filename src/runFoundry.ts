@@ -403,6 +403,7 @@ async function main(): Promise<void> {
       testDesign,
       store,
       runner: createProcessSubmissionRunner(),
+      isolationRoot: resolve(workspaceRoot, ".workbench", "verification"),
     });
 
     if (args.command === "work-order") {

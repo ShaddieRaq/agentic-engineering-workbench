@@ -600,17 +600,19 @@ workspace with visible tests, the MCP wiring, checked-in permission
 deny rules (Workbench root unreadable; .claude/, .mcp.json, and
 acceptance-tests/ uneditable), an OS sandbox denying Workbench reads to
 subprocesses, and a BUILDER.md rendered through the same redaction as
-the MCP channel. Recorded residuals (see Decision 087): verification
-executes builder code while holdouts are on disk (out-of-tree copy is
-the planned fix), crash-stranded holdouts, the Write-tool deny gap, and
-verbatim operator rationales.
+the MCP channel. Out-of-tree verification (2026-08-05) closed the
+headline residual: every submission freezes the workspace into a copy
+under .workbench/verification (unreadable to builders), verifies there,
+and cleans up — holdouts never touch the builder tree, and submissions
+record verificationMode "out-of-tree". Remaining residuals (Decision
+087): the Write-tool deny gap and verbatim operator rationales.
 
 Verified test state:
 
 ```text
 npm run typecheck passed
 160 test files passed
-888 tests passed
+890 tests passed
 npm run agents -- validate passed (10 agents)
 project-intake 0.3.0 live gate: 14/15 (vague-answer 3/3 after the
 released provenance policy; the single miss was one behavioral

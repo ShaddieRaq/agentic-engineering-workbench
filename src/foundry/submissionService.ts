@@ -1,6 +1,14 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import {
+  cp,
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
+import { basename, dirname, join, resolve } from "node:path";
 import { digestJsonEvidence } from "../agents/agentEvidenceDigest.js";
 import type {
   FoundryArtifactReference,
@@ -61,17 +69,27 @@ export class SubmissionService {
   readonly #testDesign: Pick<TestDesignService, "loadTestSuite">;
   readonly #store: FoundryArtifactStore;
   readonly #runner: SubmissionTestRunner;
+  readonly #isolationRoot: string | null;
 
   constructor(dependencies: {
     workOrders: Pick<WorkOrderService, "loadWorkOrder">;
     testDesign: Pick<TestDesignService, "loadTestSuite">;
     store: FoundryArtifactStore;
     runner: SubmissionTestRunner;
+    // When set, every verification runs against a frozen copy of the
+    // project placed under this root (Decision 087: keep it under the
+    // Workbench tree the builder session cannot read), so builder-authored
+    // code never executes with holdout files inside the builder's own
+    // workspace. Omit for in-place verification (unit tests, legacy).
+    isolationRoot?: string;
   }) {
     this.#workOrders = dependencies.workOrders;
     this.#testDesign = dependencies.testDesign;
     this.#store = dependencies.store;
     this.#runner = dependencies.runner;
+    this.#isolationRoot = dependencies.isolationRoot
+      ? resolve(dependencies.isolationRoot)
+      : null;
   }
 
   async submitSlice(input: {
@@ -85,7 +103,46 @@ export class SubmissionService {
         "Chain integrity failure: the test suite no longer matches the digest pinned by the work order.",
       );
     }
-    const projectRoot = resolve(input.projectRoot);
+    const builderRoot = resolve(input.projectRoot);
+    const submissionId = randomUUID();
+
+    // Out-of-tree isolation: freeze the workspace into a copy the builder
+    // session cannot read, then scope-check and run everything against the
+    // frozen copy. Holdout files never touch the builder's tree, and code
+    // edited after submission cannot affect the run.
+    let isolationCopy: string | null = null;
+    if (this.#isolationRoot) {
+      isolationCopy = join(this.#isolationRoot, submissionId);
+      await mkdir(this.#isolationRoot, { recursive: true });
+      await cp(builderRoot, isolationCopy, {
+        recursive: true,
+        filter: (source) => basename(source) !== ".git",
+      });
+    }
+    try {
+      return await this.#verify({
+        workOrder,
+        suite,
+        submissionId,
+        builderRoot,
+        verificationRoot: isolationCopy ?? builderRoot,
+      });
+    } finally {
+      if (isolationCopy) {
+        await rm(isolationCopy, { recursive: true, force: true });
+      }
+    }
+  }
+
+  async #verify(context: {
+    workOrder: Awaited<ReturnType<WorkOrderService["loadWorkOrder"]>>;
+    suite: Awaited<ReturnType<TestDesignService["loadTestSuite"]>>;
+    submissionId: string;
+    builderRoot: string;
+    verificationRoot: string;
+  }): Promise<SavedSliceSubmission> {
+    const { workOrder, suite, submissionId, builderRoot } = context;
+    const projectRoot = context.verificationRoot;
 
     const scopeFailures: string[] = [];
     const visibleFiles = suite.content.testFiles.filter(
@@ -173,14 +230,15 @@ export class SubmissionService {
     }
 
     const submission = sliceSubmissionSchema.parse({
-      submissionId: randomUUID(),
+      submissionId,
       workOrderId: workOrder.workOrderId,
       workOrderDigest: digestJsonEvidence(workOrder),
       testSuiteId: workOrder.testSuiteId,
       sliceId: workOrder.sliceId,
       briefId: workOrder.briefId,
       briefVersion: workOrder.briefVersion,
-      projectRoot,
+      projectRoot: builderRoot,
+      verificationMode: this.#isolationRoot ? "out-of-tree" : "in-place",
       scopeCheck: { passed: scopeFailures.length === 0, failures: scopeFailures },
       testRun: {
         files: results,

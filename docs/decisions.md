@@ -2525,3 +2525,16 @@ MCP channel.
   quote file content.
 - The OS sandbox is macOS Seatbelt / Linux bubblewrap; the human user owns
   the machine and is outside the threat model.
+
+### 2026-08-05 update — headline residual closed
+
+Verification now runs out-of-tree: `SubmissionService` freezes the builder
+workspace into a copy under `<workbench>/.workbench/verification/<id>`
+(a path the builder session's deny rules and sandbox cannot read),
+scope-checks and runs every applicable test there, and removes the copy in
+a `finally`. Holdout files never touch the builder's tree, code edited
+after submission cannot affect the run, and a crash strands files only in
+the denied area. Submissions record `verificationMode: "out-of-tree"`.
+The builder-authored-code channel is thereby cut off from holdout
+content; remaining residuals are unchanged (Write-tool gap, verbatim
+rationales, user-owns-machine).

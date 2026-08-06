@@ -87,6 +87,7 @@ async function main(): Promise<void> {
     testDesign: testDesignService,
     store: foundry,
     runner: createProcessSubmissionRunner(),
+    isolationRoot: resolve(workspaceRoot, ".workbench", "verification"),
   });
 
   const server = buildWorkbenchMcpServer(

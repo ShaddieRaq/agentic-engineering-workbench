@@ -36,6 +36,10 @@ export const sliceSubmissionSchema = z
       .strict(),
     status: z.enum(["passed", "failed"]),
     createdAt: z.string().min(1),
+    // Optional so submissions persisted before isolation existed load.
+    // out-of-tree: verified against a frozen copy under the Workbench root
+    // that the builder session is structurally denied from reading.
+    verificationMode: z.enum(["in-place", "out-of-tree"]).optional(),
   })
   .strict();
 

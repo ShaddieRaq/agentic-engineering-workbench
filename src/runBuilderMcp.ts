@@ -63,6 +63,7 @@ async function main(): Promise<void> {
     testDesign,
     store,
     runner: createProcessSubmissionRunner(),
+    isolationRoot: resolve(workspaceRoot, ".workbench", "verification"),
   });
 
   const server = buildBuilderMcpServer(
