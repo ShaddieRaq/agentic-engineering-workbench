@@ -6,6 +6,7 @@ import type {
   FoundryArtifactStore,
   FoundryStoredArtifact,
 } from "../foundry/foundryArtifactStore.js";
+import type { IntakeTurnRecord } from "../foundry/intakeTurn.js";
 import type { ProjectBrief } from "../foundry/projectBrief.js";
 import type { ProjectBriefDecision } from "../foundry/projectBriefDecision.js";
 import type {
@@ -138,6 +139,11 @@ export interface FoundryChainView {
   status: FoundryStageStatus;
   latestActivityAt: string;
   intakeTurnCount: number;
+  // Questions the interview is currently waiting on, keyed by the ids the
+  // intake controller validates answers against (the latest turn record's
+  // nextQuestions — NOT the brief's openQuestions, which live in a
+  // different id space). Empty when the interview is not awaiting answers.
+  intakeQuestions: { id: string; question: string }[];
   briefVersions: FoundryBriefVersionView[];
   plans: FoundryPlanView[];
   capabilityPlans: FoundryCapabilityPlanView[];
@@ -177,7 +183,7 @@ interface ChainBuckets {
   workOrders: WorkOrder[];
   submissions: SliceSubmission[];
   submissionDecisions: SubmissionDecision[];
-  intakeTurnCount: number;
+  intakeTurns: IntakeTurnRecord[];
   latestActivityAt: string;
 }
 
@@ -256,7 +262,7 @@ async function collectChainBuckets(
     workOrders: [],
     submissions: [],
     submissionDecisions: [],
-    intakeTurnCount: 0,
+    intakeTurns: [],
     latestActivityAt: "",
   };
 
@@ -300,7 +306,7 @@ async function collectChainBuckets(
         buckets.submissionDecisions.push(entry.artifact);
         break;
       case "intake-turn":
-        buckets.intakeTurnCount += 1;
+        buckets.intakeTurns.push(entry.artifact);
         break;
       default:
         break;
@@ -419,13 +425,35 @@ function buildViewFromBuckets(
 
   const { build, buildNote } = buildSection(buckets, testSuites);
 
+  // Answers are validated against the questions the interview last asked;
+  // after a model failure the controller falls back to the last successful
+  // turn, so the view mirrors that (IntakeSessionController.runTurn).
+  const turnsAscending = [...buckets.intakeTurns].sort(
+    (left, right) => left.turnNumber - right.turnNumber,
+  );
+  const latestTurn = turnsAscending[turnsAscending.length - 1];
+  const questionSource =
+    latestTurn?.status === "model-failure"
+      ? [...turnsAscending]
+          .reverse()
+          .find(({ status }) => status === "awaiting-answers")
+      : latestTurn;
+  const intakeQuestions =
+    questionSource?.status === "awaiting-answers"
+      ? questionSource.nextQuestions.map(({ id, question }) => ({
+          id,
+          question,
+        }))
+      : [];
+
   return {
     briefId,
     title: latestBrief.title,
     latestVersion: latestBrief.version,
     status: latestBrief.status,
     latestActivityAt: buckets.latestActivityAt,
-    intakeTurnCount: buckets.intakeTurnCount,
+    intakeTurnCount: buckets.intakeTurns.length,
+    intakeQuestions,
     briefVersions,
     plans,
     capabilityPlans,

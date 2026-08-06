@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ArchitectService } from "../src/foundry/architectService.js";
 import { FoundryArtifactStore } from "../src/foundry/foundryArtifactStore.js";
+import { intakeTurnRecordSchema } from "../src/foundry/intakeTurn.js";
 import type { IntakeSessionController } from "../src/foundry/intakeSessionController.js";
 import { sliceSubmissionSchema } from "../src/foundry/sliceSubmission.js";
 import { WorkOrderService } from "../src/foundry/workOrderService.js";
@@ -92,6 +93,45 @@ describe("buildFoundryChainView", () => {
       "rashad",
     );
     expect(build!.slices[1]!.status).toBe("not-started");
+  });
+
+  it("sources intake questions from the latest turn record, not the brief", async () => {
+    const store = await temporaryStore();
+    const { briefId, briefArtifactId } = await persistBriefOnly(store);
+    // The controller validates answers against the TURN's question ids;
+    // the brief's openQuestions live in a different id space. Regression
+    // for the live-demo failure "Answer references unknown question".
+    const turnQuestionId = randomUUID();
+    await store.saveIntakeTurnRecord(
+      intakeTurnRecordSchema.parse({
+        turnId: randomUUID(),
+        briefId,
+        turnNumber: 1,
+        maxTurns: 10,
+        agentRunArtifactId: null,
+        operatorAnswers: [],
+        resultingBriefVersion: 1,
+        resultingBriefArtifactId: briefArtifactId,
+        nextQuestions: [
+          {
+            id: turnQuestionId,
+            question: "Which folders are in scope?",
+            targetEntryIds: [],
+            intent: "elicit-new",
+          },
+        ],
+        openIssues: [],
+        status: "awaiting-answers",
+        startedAt: "2026-08-06T10:00:00.000Z",
+        completedAt: "2026-08-06T10:00:05.000Z",
+      }),
+    );
+
+    const view = await buildFoundryChainView(store, briefId);
+    expect(view!.intakeQuestions).toEqual([
+      { id: turnQuestionId, question: "Which folders are in scope?" },
+    ]);
+    expect(view!.intakeTurnCount).toBe(1);
   });
 
   it("handles a brief-only chain and unknown brief ids", async () => {

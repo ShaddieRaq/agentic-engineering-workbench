@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   api,
-  type FoundryBriefVersionView,
   type FoundryChainView,
   type FoundryDecisionView,
   type FoundryProjectIndex,
@@ -154,16 +153,18 @@ function IntakeStartPanel() {
   );
 }
 
-// Answers the latest brief version's open questions; each answered question
-// becomes an operator answer, and the optional context field arrives as a
-// new (unkeyed) answer, matching the CLI's `new=` form.
+// Answers the questions the interview is currently waiting on. The ids come
+// from the latest intake TURN record (what the controller validates answers
+// against), not the brief's openQuestions, which live in a different id
+// space. The optional context field arrives as a new (unkeyed) answer,
+// matching the CLI's `new=` form.
 function IntakeTurnPanel({
   briefId,
-  version,
+  questions,
   onDone,
 }: {
   briefId: string;
-  version: FoundryBriefVersionView;
+  questions: { id: string; question: string }[];
   onDone: () => void;
 }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -183,7 +184,7 @@ function IntakeTurnPanel({
   async function submit(event: FormEvent) {
     event.preventDefault();
     const payload = [
-      ...version.openQuestions
+      ...questions
         .filter(({ id }) => (answers[id] ?? "").trim().length > 0)
         .map(({ id }) => ({ questionId: id, answer: answers[id]!.trim() })),
       ...(additional.trim().length > 0
@@ -210,11 +211,11 @@ function IntakeTurnPanel({
   return (
     <div className="submission-block">
       <div className="section-heading">
-        <h4>Open questions ({version.openQuestions.length})</h4>
+        <h4>Open questions ({questions.length})</h4>
         <span className="eyebrow">Continue the interview</span>
       </div>
       <form onSubmit={submit} className="decision-form-body">
-        {version.openQuestions.map((question) => (
+        {questions.map((question) => (
           <label key={question.id}>
             {question.question}
             <textarea
@@ -474,8 +475,8 @@ export function FoundryProjectPage() {
               <StatusBadge value={version.status} />
             </div>
             <DecisionList decisions={version.decisions} />
-            {version.version === chain.latestVersion && version.openQuestions.length > 0 && (
-              <IntakeTurnPanel briefId={chain.briefId} version={version} onDone={resource.reload} />
+            {version.version === chain.latestVersion && chain.intakeQuestions.length > 0 && (
+              <IntakeTurnPanel briefId={chain.briefId} questions={chain.intakeQuestions} onDone={resource.reload} />
             )}
             <DecisionForm
               action={`/api/foundry/briefs/${chain.briefId}/versions/${version.version}/decisions`}
