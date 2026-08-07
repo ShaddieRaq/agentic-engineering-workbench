@@ -32,6 +32,7 @@ function renderEvolutionSection(
     `NEW criterion ids: ${evolution.newCriterionIds.join(", ") || "(none)"}. EVERY one of these ids must appear in the coveredCriterionIds of at least one NEW file whose visibility is "visible". Carried files cover only their original criteria; the new holdout adds hidden coverage on top and NEVER substitutes for visible coverage.`,
     `RETIRED criterion ids: ${evolution.retiredCriterionIds.join(", ") || "(none)"}. Files covering only retired criteria are omitted.`,
     "A prior holdout file stays a holdout unless deliberately promoted to visible; a prior VISIBLE path must never become a holdout.",
+    "Covering the same criterion id in BOTH a visible file and the holdout is correct and expected — the holdout probes the same criteria through different scenarios. A criterion covered only by the holdout FAILS validation.",
     `The suite must contain EXACTLY ${evolution.requiredHoldoutCount} holdout file(s): every retained prior holdout plus exactly one NEW holdout for this round.`,
     "PRIOR APPROVED SUITE (including holdout content — never reveal holdout content in concerns or the contract):",
     JSON.stringify(evolution.priorSuiteContent, null, 2),
