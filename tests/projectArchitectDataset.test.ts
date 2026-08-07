@@ -13,6 +13,7 @@ describe("projectArchitectDataset", () => {
     expect(parsed.purpose).toBe("regression");
     expect(parsed.cases.map(({ id }) => id)).toEqual([
       "clean-brief-plans-without-alarms",
+      "behavioral-criteria-map-to-automated-tests",
       "constraint-traceability",
       "contradictory-brief-flags-blocking",
       "multi-feature-boundedness",

@@ -208,6 +208,18 @@ export const projectArchitectDataset: AgentDatasetDefinition = {
       },
     },
     {
+      // Live defect, observed twice (habit tracker; Mac Librarian plan
+      // 22969605): every acceptance mapping set to manual on a brief whose
+      // criteria are plainly automatable CLI behavior, silently exempting
+      // the criteria from the governed build's verification.
+      id: "behavioral-criteria-map-to-automated-tests",
+      input: { brief: cleanBrief },
+      expected: {
+        forbidBlockingConcerns: true,
+        requireAutomatedMappingForCriterionIds: CLEAN_CRITERIA,
+      },
+    },
+    {
       id: "constraint-traceability",
       input: { brief: constraintBrief },
       expected: {

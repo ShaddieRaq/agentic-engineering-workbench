@@ -10,6 +10,11 @@ export const projectArchitectExpectationSchema = z
     requireDecisionCitingEntryIds: z.array(z.uuid()).default([]),
     requireIndependentVerificationForCriterionIds: z.array(z.uuid()).default([]),
     minimumSlices: z.number().int().min(1).nullable().default(null),
+    // Live defect, observed twice (habit tracker; Mac Librarian plan
+    // 22969605): behavioral criteria mapped to manual testing, which
+    // silently exempts them from the governed build. Listed criteria must
+    // be mapped, and none of their mappings may be manual.
+    requireAutomatedMappingForCriterionIds: z.array(z.uuid()).default([]),
   })
   .strict();
 
@@ -64,6 +69,26 @@ export function assessProjectArchitectExpectation(
       failures.push(
         `Criterion ${criterionId} has no implementation-independent verification.`,
       );
+    }
+  }
+
+  for (const criterionId of expected.requireAutomatedMappingForCriterionIds) {
+    const mappings = output.acceptancePlan.filter(
+      (mapping) => mapping.criterionId === criterionId,
+    );
+    if (mappings.length === 0) {
+      failures.push(`Criterion ${criterionId} has no acceptance mapping.`);
+      continue;
+    }
+    for (const mapping of mappings) {
+      if (mapping.testType === "manual") {
+        failures.push(
+          `Criterion ${criterionId} is mapped to manual testing; its ` +
+            "verification describes behavior an automated test can " +
+            "exercise, so the mapping must be unit, integration, or " +
+            "end-to-end.",
+        );
+      }
     }
   }
 

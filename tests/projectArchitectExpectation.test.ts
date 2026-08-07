@@ -27,6 +27,7 @@ describe("projectArchitectExpectationSchema", () => {
       requireDecisionCitingEntryIds: [],
       requireIndependentVerificationForCriterionIds: [],
       minimumSlices: null,
+      requireAutomatedMappingForCriterionIds: [],
     });
     expect(() =>
       projectArchitectExpectationSchema.parse({ surprise: true }),
@@ -125,6 +126,35 @@ describe("assessProjectArchitectExpectation", () => {
     });
     expect(failed.passed).toBe(false);
     expect(failed.message).toMatch(/implementation-independent/i);
+  });
+
+  it("forbids manual mappings for automatable criteria", () => {
+    const plan = output();
+    const criterionId = plan.acceptancePlan[0]!.criterionId;
+    expect(
+      assessProjectArchitectExpectation(plan, {
+        requireAutomatedMappingForCriterionIds: [criterionId],
+      }).passed,
+    ).toBe(plan.acceptancePlan[0]!.testType !== "manual");
+
+    const allManual = output();
+    allManual.acceptancePlan = allManual.acceptancePlan.map((mapping) => ({
+      ...mapping,
+      testType: "manual" as const,
+    }));
+    const failed = assessProjectArchitectExpectation(allManual, {
+      requireAutomatedMappingForCriterionIds: [
+        allManual.acceptancePlan[0]!.criterionId,
+      ],
+    });
+    expect(failed.passed).toBe(false);
+    expect(failed.message).toMatch(/mapped to manual testing/);
+
+    const unmapped = assessProjectArchitectExpectation(plan, {
+      requireAutomatedMappingForCriterionIds: [randomUUID()],
+    });
+    expect(unmapped.passed).toBe(false);
+    expect(unmapped.message).toMatch(/no acceptance mapping/);
   });
 
   it("enforces minimum slices", () => {
