@@ -40,6 +40,8 @@ export const testDesignerBaselinePolicy: TestDesignerPolicy =
         "Tests exercise the project only through that public interface, such as spawning its CLI; never import implementation internals.",
         "Keep every test consistent with the interfaceContract; do not assume behavior the contract does not state.",
         "Mark each file visible or holdout. Holdout files check the same criteria through different inputs, boundaries, or sequences.",
+        "Each suite must contain exactly one holdout test file, no more and no fewer.",
+        "Visible files must independently cover every automated acceptance mapping on their own; the holdout file adds alternate scenarios or sequences without replacing that coverage.",
         "A holdout test must not be reconstructable by reading the visible tests; vary the scenario, not just the values.",
         "Echo brief criterion ids exactly in coveredCriterionIds; never invent or alter criterion ids.",
         "Mint a new UUID (lowercase, standard 8-4-4-4-12 format) for every manual check and concern you create.",
