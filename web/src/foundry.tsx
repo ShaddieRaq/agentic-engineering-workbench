@@ -640,6 +640,17 @@ export function FoundryProjectPage() {
 
       <section className="foundry-stage">
         <div className="section-heading"><div><span className="eyebrow">Stage 5</span><h2>Governed build</h2></div></div>
+        {chain.completions.length > 0 && (
+          <div className="panel">
+            <span className="eyebrow">Generation closures</span>
+            {chain.completions.map((completion) => (
+              <p className="muted-note" key={completion.completionId}>
+                <StatusBadge value="completed" /> Completion {shortId(completion.completionId)} · suite {shortId(completion.testSuiteId)} · {completion.builtSliceCount} slice(s) · main {completion.mainCommitSha.slice(0, 10)} · tree {completion.treeDigest.slice(0, 10)}… · {completion.operatorId} · {new Date(completion.createdAt).toLocaleString()}
+                {completion.recordedRetroactively && <> · <strong>recorded retroactively</strong></>}
+              </p>
+            ))}
+          </div>
+        )}
         {chain.buildNote && <div className="notice">{chain.buildNote}</div>}
         {chain.build && chain.build.planAvailable && (
           <>

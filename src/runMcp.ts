@@ -11,6 +11,10 @@ import { FoundryArtifactStore } from "./foundry/foundryArtifactStore.js";
 import { IntakeSessionController } from "./foundry/intakeSessionController.js";
 import { ProjectBriefService } from "./foundry/projectBriefService.js";
 import {
+  BuildCompletionService,
+  createProcessGitInspector,
+} from "./foundry/buildCompletionService.js";
+import {
   createProcessSubmissionRunner,
   SubmissionService,
 } from "./foundry/submissionService.js";
@@ -89,6 +93,14 @@ async function main(): Promise<void> {
     runner: createProcessSubmissionRunner(),
     isolationRoot: resolve(workspaceRoot, ".workbench", "verification"),
   });
+  const completionService = new BuildCompletionService({
+    testDesign: testDesignService,
+    architect: architectService,
+    store: foundry,
+    runner: createProcessSubmissionRunner(),
+    git: createProcessGitInspector(),
+    isolationRoot: resolve(workspaceRoot, ".workbench", "verification"),
+  });
 
   const server = buildWorkbenchMcpServer(
     {
@@ -110,6 +122,7 @@ async function main(): Promise<void> {
       suiteReads: testDesignService,
       workOrders: workOrderService,
       submissions: submissionService,
+      completions: completionService,
     },
     packageJson.version ?? "0.0.0",
   );

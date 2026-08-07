@@ -147,6 +147,11 @@ async function createTools(options: {
         throw new Error("No submission service scripted.");
       },
     },
+    completions: {
+      async recordCompletion() {
+        throw new Error("No completion service scripted.");
+      },
+    },
   });
   return { tools, foundry, exportsRoot };
 }

@@ -6,6 +6,7 @@ import type {
   FoundryArtifactStore,
   FoundryStoredArtifact,
 } from "../foundry/foundryArtifactStore.js";
+import type { BuildCompletion } from "../foundry/buildCompletion.js";
 import type { IntakeTurnRecord } from "../foundry/intakeTurn.js";
 import type { ProjectBrief } from "../foundry/projectBrief.js";
 import type { ProjectBriefDecision } from "../foundry/projectBriefDecision.js";
@@ -159,6 +160,18 @@ export interface FoundryChainView {
   testSuites: FoundryTestSuiteView[];
   build: FoundryBuildView | null;
   buildNote?: string;
+  // Generation closures (Decision 088): operator-signed records that the
+  // full suite passed against a pinned commit. Newest first.
+  completions: {
+    completionId: string;
+    testSuiteId: string;
+    mainCommitSha: string;
+    treeDigest: string;
+    builtSliceCount: number;
+    recordedRetroactively: boolean;
+    operatorId: string;
+    createdAt: string;
+  }[];
 }
 
 export interface FoundryProjectSummary {
@@ -193,6 +206,7 @@ interface ChainBuckets {
   submissions: SliceSubmission[];
   submissionDecisions: SubmissionDecision[];
   intakeTurns: IntakeTurnRecord[];
+  completions: BuildCompletion[];
   latestActivityAt: string;
 }
 
@@ -272,6 +286,7 @@ async function collectChainBuckets(
     submissions: [],
     submissionDecisions: [],
     intakeTurns: [],
+    completions: [],
     latestActivityAt: "",
   };
 
@@ -316,6 +331,9 @@ async function collectChainBuckets(
         break;
       case "intake-turn":
         buckets.intakeTurns.push(entry.artifact);
+        break;
+      case "build-completion":
+        buckets.completions.push(entry.artifact);
         break;
       default:
         break;
@@ -440,6 +458,19 @@ function buildViewFromBuckets(
 
   const { build, buildNote } = buildSection(buckets, testSuites);
 
+  const completions = [...buckets.completions]
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+    .map((completion) => ({
+      completionId: completion.completionId,
+      testSuiteId: completion.testSuiteId,
+      mainCommitSha: completion.mainCommitSha,
+      treeDigest: completion.treeDigest,
+      builtSliceCount: completion.builtSliceIds.length,
+      recordedRetroactively: completion.recordedRetroactively,
+      operatorId: completion.operatorId,
+      createdAt: completion.createdAt,
+    }));
+
   // Answers are validated against the questions the interview last asked;
   // after a model failure the controller falls back to the last successful
   // turn, so the view mirrors that (IntakeSessionController.runTurn).
@@ -479,6 +510,7 @@ function buildViewFromBuckets(
     capabilityPlans,
     testSuites,
     build,
+    completions,
     ...(buildNote ? { buildNote } : {}),
   };
 }

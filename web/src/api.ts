@@ -542,6 +542,16 @@ export interface FoundryChainView {
   intakeTurnCount: number;
   intakeQuestions: { id: string; question: string }[];
   intakeCanContinue: boolean;
+  completions: {
+    completionId: string;
+    testSuiteId: string;
+    mainCommitSha: string;
+    treeDigest: string;
+    builtSliceCount: number;
+    recordedRetroactively: boolean;
+    operatorId: string;
+    createdAt: string;
+  }[];
   briefVersions: FoundryBriefVersionView[];
   plans: FoundryPlanView[];
   capabilityPlans: FoundryCapabilityPlanView[];

@@ -107,6 +107,11 @@ describe("workbench MCP server", () => {
             throw new Error("Not scripted.");
           },
         },
+        completions: {
+          async recordCompletion() {
+            throw new Error("Not scripted.");
+          },
+        },
       },
       "0.0.0-test",
     );
@@ -136,6 +141,7 @@ describe("workbench MCP server", () => {
       "materialize_tests",
       "prepare_builder_workspace",
       "record_brief_decision",
+      "record_build_completion",
       "record_capability_decision",
       "record_plan_decision",
       "record_promotion_decision",

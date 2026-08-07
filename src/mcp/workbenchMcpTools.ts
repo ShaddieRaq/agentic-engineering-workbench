@@ -17,6 +17,7 @@ import type {
   IntakeTurnResult,
 } from "../foundry/intakeSessionController.js";
 import type { ProjectBriefService } from "../foundry/projectBriefService.js";
+import type { BuildCompletionService } from "../foundry/buildCompletionService.js";
 import type { SubmissionService } from "../foundry/submissionService.js";
 import type { TestDesignService } from "../foundry/testDesignService.js";
 import type { WorkOrderService } from "../foundry/workOrderService.js";
@@ -73,6 +74,7 @@ export interface WorkbenchMcpDependencies {
     SubmissionService,
     "submitSlice" | "recordSubmissionDecision"
   >;
+  completions: Pick<BuildCompletionService, "recordCompletion">;
 }
 
 function intakeTurnView(result: IntakeTurnResult) {
@@ -433,6 +435,34 @@ export function createWorkbenchMcpTools(deps: WorkbenchMcpDependencies) {
       });
       return {
         submission: saved.submission,
+        artifactPath: saved.reference.path,
+      };
+    },
+
+    async recordBuildCompletion(input: {
+      testSuiteId: string;
+      projectRoot: string;
+      operatorId: string;
+      retroactive?: boolean | undefined;
+    }) {
+      const saved = await deps.completions.recordCompletion({
+        testSuiteId: input.testSuiteId,
+        projectRoot: input.projectRoot,
+        operatorId: input.operatorId,
+        retroactive: input.retroactive ?? false,
+      });
+      // Redacted projection: holdout paths are aliased in the tool result
+      // just as submission evidence aliases them for the builder channel.
+      const files = saved.completion.verification.files.map((file, index) =>
+        file.visibility === "holdout"
+          ? { ...file, path: `holdout-${index + 1}` }
+          : file,
+      );
+      return {
+        completion: {
+          ...saved.completion,
+          verification: { ...saved.completion.verification, files },
+        },
         artifactPath: saved.reference.path,
       };
     },

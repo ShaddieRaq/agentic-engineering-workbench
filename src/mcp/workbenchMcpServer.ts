@@ -342,6 +342,27 @@ export function buildWorkbenchMcpServer(
   );
 
   server.registerTool(
+    "record_build_completion",
+    {
+      description:
+        "Writes an operator-attributed evidence record. Close a build " +
+        "generation (Decision 088): requires an approved suite, approving " +
+        "submission decisions on every slice, a clean working tree, and " +
+        "the FULL suite (holdouts included) green out-of-tree; pins the " +
+        "main commit SHA and a Workbench-computed tree digest. Holdout " +
+        "paths are redacted in the result. Evolution rounds descend from " +
+        "this record.",
+      inputSchema: {
+        testSuiteId: z.uuid(),
+        projectRoot: z.string().min(1),
+        operatorId: z.string().min(1).max(200),
+        retroactive: z.boolean().optional(),
+      },
+    },
+    async (input) => asText(await tools.recordBuildCompletion(input)),
+  );
+
+  server.registerTool(
     "record_submission_decision",
     {
       description:
