@@ -1082,6 +1082,26 @@ order, each with its plan:
    capped at human scale, content-based grouping) → full chain →
    isolated builder → first evolved release.
 
+Priorities set 2026-08-07 (operator-ordered):
+A. Advisory lifecycle — the concerns mechanism predicted both Mac
+   Librarian production defects (naive grouping, raw-PDF analysis) as
+   advisories, nine times across three agents, and each was read once
+   and forgotten. Standing advisories now become project state:
+   aggregated across approved artifacts of all generations, shown on
+   the project page, injected into every reopened interview ("decide
+   or explicitly defer each"), closed only by resolving criteria or
+   operator retirement.
+B. Console UX — the operator reports the app is hard to move around
+   (observed friction: no next-step guidance, buried forms, long
+   pages). Approach: a guided next-action banner derived from the
+   chain state machine, collapsed completed stages, stage navigation.
+   Design proposal before build.
+C. Model qualification (Decision 086) — moved down by operator call.
+D. Foresight agent — DECISION DEFERRED: after one full generation runs
+   with the advisory lifecycle, examine the residual gaps that no
+   downstream agent flagged; the foresight agent earns a design
+   discussion only if that residue is real.
+
 Completed 2026-08-07 — FIRST FULLY ISOLATED GOVERNED BUILD: Mac Librarian
 (brief b1c76b2a), driven end to end by the operator from the console
 (interview → brief v8 → plan ×4 with revision loops → capability plan ×2 →
