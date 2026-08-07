@@ -9,6 +9,10 @@ const SCOPE_CONSTRAINT_ID = "4e5f6a7b-8c9d-4e0f-8a1b-2c3d4e5f6a7b";
 const FORMAT_CONSTRAINT_ID = "5f6a7b8c-9d0e-4f1a-8b2c-3d4e5f6a7b8c";
 const STALE_SCOPE_QUESTION_ID = "6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c9d";
 const STALE_FORMAT_QUESTION_ID = "7b8c9d0e-1f2a-4b3c-8d4e-5f6a7b8c9d0e";
+const COLLECT_GOAL_ID = "8c9d0e1f-2a3b-4c4d-8e5f-6a7b8c9d0e1f";
+const SUMMARY_GOAL_ID = "9d0e1f2a-3b4c-4d5e-8f6a-7b8c9d0e1f2a";
+const DOC_CRITERION_SCOPE_ID = "0e1f2a3b-4c5d-4e6f-8a7b-8c9d0e1f2a3b";
+const DOC_CRITERION_FORMAT_ID = "1f2a3b4c-5d6e-4f7a-8b8c-9d0e1f2a3b4c";
 
 function briefContent(
   overrides: Partial<ProjectBriefDraftContent> = {},
@@ -191,6 +195,99 @@ export const projectIntakeDataset: AgentDatasetDefinition = {
           STALE_SCOPE_QUESTION_ID,
           STALE_FORMAT_QUESTION_ID,
         ],
+      },
+    },
+    {
+      // Live failure (Mac Librarian brief b1c76b2a v8): during closure the
+      // agent authored criteria ABOUT the brief ("the brief states X",
+      // verified by reading the brief), which the architect then mapped to
+      // manual checks, the test designer transcribed into document-auditing
+      // tests, and the builder satisfied by editing BRIEF.md. A closing
+      // turn must author criteria about observable product behavior.
+      id: "closure-authors-behavioral-criteria",
+      input: {
+        briefContent: briefContent({
+          goals: [
+            {
+              id: COLLECT_GOAL_ID,
+              text: "Collect daily standup notes from the engineering Slack channel.",
+              source: "user-stated",
+            },
+            {
+              id: SUMMARY_GOAL_ID,
+              text: "Produce a weekly Markdown summary grouped by engineer.",
+              source: "user-stated",
+            },
+          ],
+        }),
+        operatorAnswers: [
+          {
+            questionId: null,
+            answer:
+              "These answers are final. Write the acceptance criteria for " +
+              "what we have agreed, choose reasonable defaults for anything " +
+              "remaining, and close the interview without asking further " +
+              "questions.",
+          },
+        ],
+        turnNumber: 4,
+        remainingTurns: 2,
+      },
+      expected: {
+        preservedEntryIds: [COLLECT_GOAL_ID, SUMMARY_GOAL_ID],
+        forbidQuestions: true,
+        requireAcceptanceCriteria: true,
+        forbidSelfReferentialCriteria: true,
+      },
+    },
+    {
+      // Same live failure, repair direction: criteria already written in
+      // the defect shape must be REWRITTEN IN PLACE (same ids) into
+      // product-behavior form — not deleted, not left as document checks.
+      id: "self-referential-criteria-are-rewritten",
+      input: {
+        briefContent: briefContent({
+          acceptanceCriteria: [
+            {
+              id: DOC_CRITERION_SCOPE_ID,
+              text:
+                "The brief states that the tool collects daily standup " +
+                "notes only from the engineering Slack channel.",
+              source: "agent-inferred",
+              verification:
+                "An independent tester can read the brief and confirm that " +
+                "the collection scope is explicitly stated.",
+            },
+            {
+              id: DOC_CRITERION_FORMAT_ID,
+              text:
+                "The brief states that the weekly summary is plain " +
+                "Markdown grouped by engineer.",
+              source: "agent-inferred",
+              verification:
+                "An independent tester can read the brief and verify the " +
+                "summary format is documented.",
+            },
+          ],
+        }),
+        operatorAnswers: [
+          {
+            questionId: null,
+            answer:
+              "These acceptance criteria test the document, not the tool. " +
+              "Rewrite every acceptance criterion in place to describe " +
+              "observable behavior of the tool itself, with a verification " +
+              "a tester performs by running the tool. Keep everything else " +
+              "unchanged.",
+          },
+        ],
+        turnNumber: 3,
+        remainingTurns: 3,
+      },
+      expected: {
+        preservedEntryIds: [DOC_CRITERION_SCOPE_ID, DOC_CRITERION_FORMAT_ID],
+        requireAcceptanceCriteria: true,
+        forbidSelfReferentialCriteria: true,
       },
     },
     {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { findSelfReferentialCriteria } from "../../foundry/criteriaQuality.js";
 import type { IntakeTurnOutput } from "../../foundry/intakeTurnOutput.js";
 import type {
   BriefEntry,
@@ -20,6 +21,14 @@ export const projectIntakeExpectationSchema = z
     // clean the answered questions out of the brief.
     forbidQuestions: z.boolean().default(false),
     removedOpenQuestionIds: z.array(z.uuid()).default([]),
+    // Live failure mode (Mac Librarian brief b1c76b2a v8): acceptance
+    // criteria written ABOUT the brief ("the brief states X", verify by
+    // reading the brief) instead of about the product, which degraded
+    // every downstream stage. Criteria must describe observable product
+    // behavior. requireAcceptanceCriteria guards the vacuous escape of
+    // returning no criteria at all.
+    forbidSelfReferentialCriteria: z.boolean().default(false),
+    requireAcceptanceCriteria: z.boolean().default(false),
   })
   .strict();
 
@@ -117,6 +126,28 @@ export function assessProjectIntakeExpectation(
     !output.openIssues.some(({ severity }) => severity === "blocking")
   ) {
     failures.push("Expected at least one blocking open issue.");
+  }
+
+  if (
+    expected.requireAcceptanceCriteria &&
+    output.updatedBriefDraft.acceptanceCriteria.length === 0
+  ) {
+    failures.push("Expected at least one acceptance criterion in the brief draft.");
+  }
+
+  if (expected.forbidSelfReferentialCriteria) {
+    // Enumerated, precise messages: these become the improvement analyst's
+    // only evidence of WHY a trial failed.
+    for (const violation of findSelfReferentialCriteria(
+      output.updatedBriefDraft.acceptanceCriteria,
+    )) {
+      failures.push(
+        `Criterion ${violation.entryId} ${violation.field} is self-referential ` +
+          `("${violation.matchedText}"): acceptance criteria must describe ` +
+          "observable product behavior a tester can exercise, never what " +
+          "the brief itself states.",
+      );
+    }
   }
 
   if (expected.forbidQuestions && output.nextQuestions.length > 0) {

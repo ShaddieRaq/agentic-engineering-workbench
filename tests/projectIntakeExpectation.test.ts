@@ -55,6 +55,8 @@ describe("projectIntakeExpectationSchema", () => {
       requireBlockingIssue: false,
       forbidQuestions: false,
       removedOpenQuestionIds: [],
+      forbidSelfReferentialCriteria: false,
+      requireAcceptanceCriteria: false,
     });
     expect(() =>
       projectIntakeExpectationSchema.parse({ surprise: true }),
@@ -259,6 +261,48 @@ describe("assessProjectIntakeExpectation", () => {
       removedOpenQuestionIds: [staleQuestionId],
     });
     expect(closed.passed).toBe(true);
+  });
+
+  it("enforces behavioral acceptance criteria", () => {
+    // No criteria at all fails the presence requirement.
+    const empty = assessProjectIntakeExpectation(output(), {
+      requireAcceptanceCriteria: true,
+    });
+    expect(empty.passed).toBe(false);
+    expect(empty.message).toMatch(/at least one acceptance criterion/);
+
+    // Self-referential criteria fail with the entry id and matched text
+    // enumerated (the message is the improvement analyst's evidence).
+    const docCriterion = {
+      id: randomUUID(),
+      text: "The brief states that the tool collects notes from the engineering channel.",
+      source: "agent-inferred" as const,
+      verification: "An independent tester can read the brief and confirm the scope.",
+    };
+    const selfReferential = assessProjectIntakeExpectation(
+      output({ acceptanceCriteria: [docCriterion] }),
+      { forbidSelfReferentialCriteria: true, requireAcceptanceCriteria: true },
+    );
+    expect(selfReferential.passed).toBe(false);
+    expect(selfReferential.message).toContain(docCriterion.id);
+    expect(selfReferential.message).toMatch(/observable product behavior/);
+
+    // Behavioral criteria pass both checks.
+    const behavioral = assessProjectIntakeExpectation(
+      output({
+        acceptanceCriteria: [
+          {
+            id: randomUUID(),
+            text: "The tool collects notes only from the engineering channel.",
+            source: "user-stated" as const,
+            verification:
+              "A tester runs the tool and confirms only engineering-channel messages are collected.",
+          },
+        ],
+      }),
+      { forbidSelfReferentialCriteria: true, requireAcceptanceCriteria: true },
+    );
+    expect(behavioral.passed).toBe(true);
   });
 
   it("rejects malformed expectations", () => {

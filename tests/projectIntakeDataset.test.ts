@@ -17,6 +17,8 @@ describe("projectIntakeDataset", () => {
       "vague-answer-is-challenged-not-accepted",
       "contradiction-is-surfaced-not-silently-resolved",
       "final-answers-close-the-interview",
+      "closure-authors-behavioral-criteria",
+      "self-referential-criteria-are-rewritten",
       "final-turn-reports-honestly",
     ]);
   });
