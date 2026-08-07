@@ -98,11 +98,23 @@ export function createTestDesignerAgent(
         );
       }
 
-      return reconcileTestSuiteContent(
-        testSuiteContentShapeSchema.parse(result.parsedOutput),
-        input.brief,
-        input.plan,
-      );
+      const content = testSuiteContentShapeSchema.parse(result.parsedOutput);
+      try {
+        return reconcileTestSuiteContent(content, input.brief, input.plan);
+      } catch (error: unknown) {
+        // Validation failures persist with the model's actual coverage map
+        // so repeated failures are diagnosable from run evidence instead of
+        // guessed at (live lesson: four opaque failures on one criterion).
+        const coverage = content.testFiles
+          .map(
+            (file) =>
+              `${file.path}[${file.visibility}]->${file.coveredCriterionIds.join("+")}`,
+          )
+          .join(" ");
+        throw new Error(
+          `${error instanceof Error ? error.message : String(error)} | model coverage: ${coverage}`,
+        );
+      }
     },
     assess(output) {
       if (output.testFiles.length === 0) {
