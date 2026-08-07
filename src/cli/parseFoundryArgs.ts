@@ -96,6 +96,13 @@ export type FoundryCliArgs =
       operatorId: string;
       rationale: string;
       requestedRevisions: string[];
+    }
+  | {
+      command: "record-completion";
+      testSuiteId: string;
+      projectRoot: string;
+      operatorId: string;
+      retroactive: boolean;
     };
 
 function option(args: string[], name: string): string | null {
@@ -387,6 +394,16 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
     };
   }
 
+  if (command === "record-completion") {
+    return {
+      command,
+      testSuiteId: requiredOption(args, "--test-suite-id"),
+      projectRoot: requiredOption(args, "--project-root"),
+      operatorId: requiredOption(args, "--operator"),
+      retroactive: args.includes("--retroactive"),
+    };
+  }
+
   if (command === "submission-decide") {
     const decision = requiredOption(args, "--decision");
     if (decision !== "approve" && decision !== "reject" && decision !== "revise") {
@@ -421,6 +438,7 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
       "work-order --test-suite-id <id> (--slice-id <id> | --next), work-order-show --work-order-id <id>, " +
       "materialize-tests --work-order-id <id> --project-root <path>, submit-slice --work-order-id <id> --project-root <path>, " +
       "builder-workspace --work-order-id <id> --project-root <path>, " +
-      "submission-decide --submission-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...].",
+      "submission-decide --submission-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...], " +
+      "record-completion --test-suite-id <id> --project-root <path> --operator <id> [--retroactive].",
   );
 }

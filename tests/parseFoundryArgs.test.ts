@@ -97,6 +97,38 @@ describe("parseFoundryArgs", () => {
     );
   });
 
+  it("parses record-completion", () => {
+    expect(
+      parseFoundryArgs([
+        "record-completion",
+        "--test-suite-id",
+        "suite-1",
+        "--project-root",
+        "/tmp/project",
+        "--operator",
+        "rashad",
+        "--retroactive",
+      ]),
+    ).toEqual({
+      command: "record-completion",
+      testSuiteId: "suite-1",
+      projectRoot: "/tmp/project",
+      operatorId: "rashad",
+      retroactive: true,
+    });
+    expect(
+      parseFoundryArgs([
+        "record-completion",
+        "--test-suite-id",
+        "suite-1",
+        "--project-root",
+        "/tmp/project",
+        "--operator",
+        "rashad",
+      ]),
+    ).toMatchObject({ retroactive: false });
+  });
+
   it("rejects unknown commands", () => {
     expect(() => parseFoundryArgs(["brief-delete"])).toThrowError(/expected one of/i);
   });

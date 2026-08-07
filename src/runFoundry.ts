@@ -202,7 +202,8 @@ async function main(): Promise<void> {
     args.command === "materialize-tests" ||
     args.command === "builder-workspace" ||
     args.command === "submit-slice" ||
-    args.command === "submission-decide"
+    args.command === "submission-decide" ||
+    args.command === "record-completion"
   ) {
     const { ArchitectService } = await import("./foundry/architectService.js");
     const { CapabilityService } = await import("./foundry/capabilityService.js");
@@ -405,6 +406,17 @@ async function main(): Promise<void> {
       runner: createProcessSubmissionRunner(),
       isolationRoot: resolve(workspaceRoot, ".workbench", "verification"),
     });
+    const { BuildCompletionService, createProcessGitInspector } = await import(
+      "./foundry/buildCompletionService.js"
+    );
+    const completions = new BuildCompletionService({
+      testDesign,
+      architect,
+      store,
+      runner: createProcessSubmissionRunner(),
+      git: createProcessGitInspector(),
+      isolationRoot: resolve(workspaceRoot, ".workbench", "verification"),
+    });
 
     if (args.command === "work-order") {
       let sliceId = args.sliceId;
@@ -483,6 +495,30 @@ async function main(): Promise<void> {
       for (const file of submission.testRun.files) {
         console.log(
           `  [${file.visibility}] ${file.path}: ${file.passed ? "passed" : "FAILED"} (exit ${file.exitCode})`,
+        );
+      }
+      console.log(`Evidence saved: ${saved.reference.path}`);
+      return;
+    }
+
+    if (args.command === "record-completion") {
+      const saved = await completions.recordCompletion({
+        testSuiteId: args.testSuiteId,
+        projectRoot: args.projectRoot,
+        operatorId: args.operatorId,
+        retroactive: args.retroactive,
+      });
+      const completion = saved.completion;
+      console.log(`Build completion: ${completion.completionId}`);
+      console.log(
+        `  brief ${completion.briefId} v${completion.briefVersion} | plan ${completion.planId} | suite ${completion.testSuiteId}`,
+      );
+      console.log(
+        `  main ${completion.mainCommitSha.slice(0, 12)} | tree ${completion.treeDigest.slice(0, 12)}… | slices ${completion.builtSliceIds.length} | retroactive: ${completion.recordedRetroactively}`,
+      );
+      for (const file of completion.verification.files) {
+        console.log(
+          `  [${file.visibility}] ${file.path}: passed (exit ${file.exitCode})`,
         );
       }
       console.log(`Evidence saved: ${saved.reference.path}`);

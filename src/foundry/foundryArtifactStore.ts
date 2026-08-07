@@ -29,6 +29,10 @@ import {
 import { testSuiteSchema, type TestSuite } from "./testSuite.js";
 import { workOrderSchema, type WorkOrder } from "./workOrder.js";
 import {
+  buildCompletionSchema,
+  type BuildCompletion,
+} from "./buildCompletion.js";
+import {
   testSuiteDecisionSchema,
   type TestSuiteDecision,
 } from "./testSuiteDecision.js";
@@ -54,7 +58,8 @@ export type FoundryArtifactKind =
   | "test-suite-decision"
   | "work-order"
   | "slice-submission"
-  | "submission-decision";
+  | "submission-decision"
+  | "build-completion";
 
 export interface FoundryArtifactReference {
   id: string;
@@ -75,7 +80,8 @@ export type FoundryStoredArtifact =
   | { kind: "test-suite-decision"; artifact: TestSuiteDecision }
   | { kind: "work-order"; artifact: WorkOrder }
   | { kind: "slice-submission"; artifact: SliceSubmission }
-  | { kind: "submission-decision"; artifact: SubmissionDecision };
+  | { kind: "submission-decision"; artifact: SubmissionDecision }
+  | { kind: "build-completion"; artifact: BuildCompletion };
 
 export interface FoundryArtifactSummary {
   id: string;
@@ -327,6 +333,23 @@ const kindDefinitions: Record<FoundryArtifactKind, FoundryKindDefinition> = {
       };
     },
   },
+  "build-completion": {
+    parse: (value) => ({
+      kind: "build-completion",
+      artifact: buildCompletionSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const completion = stored.artifact as BuildCompletion;
+      return {
+        id,
+        kind: "build-completion",
+        path,
+        briefId: completion.briefId,
+        briefVersion: completion.briefVersion,
+        createdAt: completion.createdAt,
+      };
+    },
+  },
 };
 
 // The decision pattern must be tested before the brief pattern because
@@ -345,6 +368,7 @@ const orderedKinds: FoundryArtifactKind[] = [
   "work-order",
   "slice-submission",
   "submission-decision",
+  "build-completion",
 ];
 
 function descriptor(
@@ -465,6 +489,13 @@ export class FoundryArtifactStore {
     return this.#write("submission-decision", validated.decisionId, validated);
   }
 
+  async saveBuildCompletion(
+    completion: BuildCompletion,
+  ): Promise<FoundryArtifactReference> {
+    const validated = buildCompletionSchema.parse(completion);
+    return this.#write("build-completion", validated.completionId, validated);
+  }
+
   async load(id: string): Promise<FoundryStoredArtifact> {
     if (!/^[a-zA-Z0-9-]+$/.test(id)) {
       throw new Error("Artifact ID contains unsupported characters.");
@@ -539,7 +570,8 @@ export class FoundryArtifactStore {
       | TestSuiteDecision
       | WorkOrder
       | SliceSubmission
-      | SubmissionDecision,
+      | SubmissionDecision
+      | BuildCompletion,
   ): Promise<FoundryArtifactReference> {
     await mkdir(this.#root, { recursive: true });
     const path = join(this.#root, `${kind}-${id}.json`);
