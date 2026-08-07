@@ -22,6 +22,7 @@ import {
   type SubmissionDecisionKind,
 } from "./sliceSubmission.js";
 import { createVerificationCommandTool } from "../tools/verificationCommandTool.js";
+import type { GitInspector } from "./buildCompletionService.js";
 import type { TestDesignService } from "./testDesignService.js";
 import type { WorkOrderService } from "./workOrderService.js";
 
@@ -70,6 +71,7 @@ export class SubmissionService {
   readonly #store: FoundryArtifactStore;
   readonly #runner: SubmissionTestRunner;
   readonly #isolationRoot: string | null;
+  readonly #git: GitInspector | null;
 
   constructor(dependencies: {
     workOrders: Pick<WorkOrderService, "loadWorkOrder">;
@@ -82,6 +84,10 @@ export class SubmissionService {
     // code never executes with holdout files inside the builder's own
     // workspace. Omit for in-place verification (unit tests, legacy).
     isolationRoot?: string;
+    // Required for evolution work orders (Decision 088): verification of a
+    // baseline-pinned work order refuses a HEAD that does not descend from
+    // the pinned commit.
+    git?: GitInspector;
   }) {
     this.#workOrders = dependencies.workOrders;
     this.#testDesign = dependencies.testDesign;
@@ -90,6 +96,7 @@ export class SubmissionService {
     this.#isolationRoot = dependencies.isolationRoot
       ? resolve(dependencies.isolationRoot)
       : null;
+    this.#git = dependencies.git ?? null;
   }
 
   async submitSlice(input: {
@@ -105,6 +112,36 @@ export class SubmissionService {
     }
     const builderRoot = resolve(input.projectRoot);
     const submissionId = randomUUID();
+
+    // Decision 088 descent check: a baseline-pinned (evolution) work order
+    // verifies only builder trees whose HEAD descends from the pinned
+    // commit. Failures are recorded as scope evidence, not thrown away.
+    let headCommitSha: string | null = null;
+    const baselineFailures: string[] = [];
+    if (workOrder.baselineCommitSha) {
+      if (!this.#git) {
+        throw new Error(
+          "This work order pins a baseline commit but the submission service has no git inspector configured.",
+        );
+      }
+      try {
+        headCommitSha = await this.#git.headCommit(builderRoot);
+        const descends = await this.#git.isAncestor(
+          builderRoot,
+          workOrder.baselineCommitSha,
+          headCommitSha,
+        );
+        if (!descends) {
+          baselineFailures.push(
+            `HEAD ${headCommitSha.slice(0, 12)} does not descend from the pinned baseline commit ${workOrder.baselineCommitSha.slice(0, 12)}.`,
+          );
+        }
+      } catch (error: unknown) {
+        baselineFailures.push(
+          `Baseline descent check failed: ${error instanceof Error ? error.message : String(error)}.`,
+        );
+      }
+    }
 
     // Out-of-tree isolation: freeze the workspace into a copy the builder
     // session cannot read, then scope-check and run everything against the
@@ -126,6 +163,8 @@ export class SubmissionService {
         submissionId,
         builderRoot,
         verificationRoot: isolationCopy ?? builderRoot,
+        baselineFailures,
+        headCommitSha,
       });
     } finally {
       if (isolationCopy) {
@@ -140,11 +179,13 @@ export class SubmissionService {
     submissionId: string;
     builderRoot: string;
     verificationRoot: string;
+    baselineFailures: string[];
+    headCommitSha: string | null;
   }): Promise<SavedSliceSubmission> {
     const { workOrder, suite, submissionId, builderRoot } = context;
     const projectRoot = context.verificationRoot;
 
-    const scopeFailures: string[] = [];
+    const scopeFailures: string[] = [...context.baselineFailures];
     const visibleFiles = suite.content.testFiles.filter(
       ({ visibility }) => visibility === "visible",
     );
@@ -238,6 +279,12 @@ export class SubmissionService {
       briefId: workOrder.briefId,
       briefVersion: workOrder.briefVersion,
       projectRoot: builderRoot,
+      ...(workOrder.baselineCommitSha
+        ? { baselineCommitSha: workOrder.baselineCommitSha }
+        : {}),
+      ...(context.headCommitSha
+        ? { headCommitSha: context.headCommitSha }
+        : {}),
       verificationMode: this.#isolationRoot ? "out-of-tree" : "in-place",
       scopeCheck: { passed: scopeFailures.length === 0, failures: scopeFailures },
       testRun: {

@@ -21,6 +21,13 @@ import type { TestDesignService } from "./testDesignService.js";
 export interface GitInspector {
   headCommit(root: string): Promise<string>;
   isClean(root: string): Promise<boolean>;
+  // True when `ancestor` is an ancestor of (or equal to) `descendant` —
+  // the Decision 088 descent check for delta submissions.
+  isAncestor(
+    root: string,
+    ancestor: string,
+    descendant: string,
+  ): Promise<boolean>;
 }
 
 export function createProcessGitInspector(): GitInspector {
@@ -43,6 +50,18 @@ export function createProcessGitInspector(): GitInspector {
     },
     async isClean(root) {
       return git(root, ["status", "--porcelain"]) === "";
+    },
+    async isAncestor(root, ancestor, descendant) {
+      const run = spawnSync(
+        "git",
+        ["merge-base", "--is-ancestor", ancestor, descendant],
+        { cwd: root, encoding: "utf8", timeout: 10_000 },
+      );
+      if (run.status === 0) return true;
+      if (run.status === 1) return false;
+      throw new Error(
+        `git merge-base --is-ancestor failed in ${root}: ${(run.stderr || "").trim()}`,
+      );
     },
   };
 }

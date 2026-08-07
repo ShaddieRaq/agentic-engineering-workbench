@@ -26,6 +26,19 @@ export const workOrderSchema = z
     builderInstructions: z.array(z.string().min(1).max(500)).min(1).max(20),
     forbiddenPaths: z.array(z.string().min(1).max(200)).min(1).max(10),
     createdAt: z.string().min(1),
+    // Evolution pins (Decision 088): the completion record this delta
+    // work descends from, with the commit and tree the builder must build
+    // on. Verification refuses a HEAD that does not descend from the
+    // pinned baseline.
+    evolvesFromCompletionId: z.uuid().optional(),
+    baselineCommitSha: z
+      .string()
+      .regex(/^[a-f0-9]{7,40}$/)
+      .optional(),
+    baselineTreeDigest: z
+      .string()
+      .regex(/^[a-f0-9]{64}$/)
+      .optional(),
   })
   .strict();
 

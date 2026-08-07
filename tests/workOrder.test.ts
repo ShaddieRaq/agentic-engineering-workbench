@@ -354,6 +354,100 @@ describe("WorkOrderService.createWorkOrder", () => {
   });
 });
 
+describe("WorkOrderService evolution rounds (Decision 088)", () => {
+  const BASELINE_COMMIT = "0123456789abcdef0123456789abcdef01234567";
+
+  async function evolutionHarness() {
+    const fixture = chainFixture();
+    const store = await temporaryStore();
+    const completionId = randomUUID();
+    await store.saveBuildCompletion({
+      completionId,
+      briefId: fixture.brief.briefId,
+      briefVersion: fixture.brief.version,
+      planId: fixture.plan.planId,
+      planDigest: "d".repeat(64),
+      testSuiteId: fixture.suite.testSuiteId,
+      testSuiteDigest: "e".repeat(64),
+      projectRoot: "/tmp/example-project",
+      mainCommitSha: BASELINE_COMMIT,
+      treeDigest: "f".repeat(64),
+      builtSliceIds: [fixture.sliceIds.first],
+      verification: {
+        files: [
+          {
+            path: fixture.filePaths.visibleOnly,
+            visibility: "visible",
+            exitCode: 0,
+            passed: true,
+          },
+        ],
+        passed: true,
+        outputExcerpt: "green",
+      },
+      operatorId: "rashad",
+      recordedRetroactively: false,
+      createdAt: new Date().toISOString(),
+    });
+    // Slice 1 is carried from the completion; slice 2 is the delta.
+    fixture.plan.evolvesFromCompletionId = completionId;
+    fixture.plan.sliceDispositions = [
+      { sliceId: fixture.sliceIds.first, disposition: "carried" },
+      { sliceId: fixture.sliceIds.second, disposition: "delta" },
+    ];
+    const service = new WorkOrderService(chainDependencies(fixture, store));
+    return { fixture, store, service, completionId };
+  }
+
+  it("refuses work orders for carried slices and gates deltas on the completion", async () => {
+    const { fixture, service, completionId } = await evolutionHarness();
+
+    await expect(
+      service.createWorkOrder({
+        testSuiteId: fixture.suite.testSuiteId,
+        sliceId: fixture.sliceIds.first,
+      }),
+    ).rejects.toThrow(/carried from completion .* already built/);
+
+    // The delta slice's dependency on the carried slice is satisfied by
+    // the completion — no submission scan needed — and carried criteria
+    // are due, so every file (holdout included) is applicable.
+    const saved = await service.createWorkOrder({
+      testSuiteId: fixture.suite.testSuiteId,
+      sliceId: fixture.sliceIds.second,
+    });
+    expect(saved.workOrder.evolvesFromCompletionId).toBe(completionId);
+    expect(saved.workOrder.baselineCommitSha).toBe(BASELINE_COMMIT);
+    expect(saved.workOrder.baselineTreeDigest).toBe("f".repeat(64));
+    expect(saved.workOrder.applicableTestFilePaths.sort()).toEqual(
+      [
+        fixture.filePaths.visibleOnly,
+        fixture.filePaths.crossSlice,
+        fixture.filePaths.holdout,
+      ].sort(),
+    );
+  });
+
+  it("nextSlice skips carried slices", async () => {
+    const { fixture, service } = await evolutionHarness();
+    const next = await service.nextSlice({
+      testSuiteId: fixture.suite.testSuiteId,
+    });
+    expect(next?.sliceId).toBe(fixture.sliceIds.second);
+  });
+
+  it("rejects a carried disposition outside the completion's built set", async () => {
+    const { fixture, service } = await evolutionHarness();
+    fixture.plan.sliceDispositions = [
+      { sliceId: fixture.sliceIds.first, disposition: "carried" },
+      { sliceId: fixture.sliceIds.second, disposition: "carried" },
+    ];
+    await expect(
+      service.nextSlice({ testSuiteId: fixture.suite.testSuiteId }),
+    ).rejects.toThrow(/not in completion .*built set/);
+  });
+});
+
 describe("WorkOrderService.nextSlice", () => {
   it("walks the plan in dependency order and ends with null", async () => {
     const fixture = chainFixture();

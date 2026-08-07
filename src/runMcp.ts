@@ -92,6 +92,7 @@ async function main(): Promise<void> {
     store: foundry,
     runner: createProcessSubmissionRunner(),
     isolationRoot: resolve(workspaceRoot, ".workbench", "verification"),
+    git: createProcessGitInspector(),
   });
   const completionService = new BuildCompletionService({
     testDesign: testDesignService,

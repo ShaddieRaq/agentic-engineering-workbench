@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { digestJsonEvidence } from "../agents/agentEvidenceDigest.js";
 import type { ArchitectService } from "./architectService.js";
+import type { BuildCompletion } from "./buildCompletion.js";
 import type {
   FoundryArtifactReference,
   FoundryArtifactStore,
@@ -50,9 +51,23 @@ export class WorkOrderService {
       throw new Error(`Slice ${input.sliceId} does not exist in plan ${plan.planId}.`);
     }
 
+    // Evolution round (Decision 088): carried slices are already built —
+    // they satisfy dependency gates from the pinned completion and never
+    // receive work orders themselves.
+    const evolution = await this.#loadEvolution(plan);
+    if (evolution?.carriedSliceIds.has(slice.id)) {
+      throw new Error(
+        `Slice ${slice.id} is carried from completion ${evolution.completion.completionId} and is already built; only delta slices receive work orders.`,
+      );
+    }
+
     const approvedSliceIds = await this.#approvedSliceIds(suite.testSuiteId);
+    const satisfiedSliceIds = new Set([
+      ...approvedSliceIds,
+      ...(evolution ? evolution.carriedSliceIds : []),
+    ]);
     for (const dependencyId of slice.dependsOnSliceIds) {
-      if (!approvedSliceIds.has(dependencyId)) {
+      if (!satisfiedSliceIds.has(dependencyId)) {
         throw new Error(
           `Slice ${slice.id} depends on slice ${dependencyId}, which has no approved submission yet.`,
         );
@@ -76,9 +91,11 @@ export class WorkOrderService {
       };
     });
 
+    // Carried criteria are ALWAYS due: every carried file — visible and
+    // holdout — runs against every delta slice (structural regression).
     const dueCriterionIds = this.#dueCriterionIds(
       plan.content.implementationSlices,
-      approvedSliceIds,
+      satisfiedSliceIds,
       slice.id,
     );
     const applicableTestFilePaths = suite.content.testFiles
@@ -106,6 +123,13 @@ export class WorkOrderService {
       builderInstructions: BUILDER_INSTRUCTIONS,
       forbiddenPaths: ["acceptance-tests/"],
       createdAt: new Date().toISOString(),
+      ...(evolution
+        ? {
+            evolvesFromCompletionId: evolution.completion.completionId,
+            baselineCommitSha: evolution.completion.mainCommitSha,
+            baselineTreeDigest: evolution.completion.treeDigest,
+          }
+        : {}),
     });
     const reference = await this.#deps.store.saveWorkOrder(workOrder);
     return { workOrder, reference };
@@ -116,15 +140,56 @@ export class WorkOrderService {
   }): Promise<{ sliceId: string; sliceTitle: string } | null> {
     const { suite, plan } = await this.#loadApprovedChain(input.testSuiteId);
     const approvedSliceIds = await this.#approvedSliceIds(suite.testSuiteId);
+    const evolution = await this.#loadEvolution(plan);
+    const satisfiedSliceIds = new Set([
+      ...approvedSliceIds,
+      ...(evolution ? evolution.carriedSliceIds : []),
+    ]);
 
     for (const slice of plan.content.implementationSlices) {
-      if (approvedSliceIds.has(slice.id)) continue;
+      if (satisfiedSliceIds.has(slice.id)) continue;
       const ready = slice.dependsOnSliceIds.every((dependencyId) =>
-        approvedSliceIds.has(dependencyId),
+        satisfiedSliceIds.has(dependencyId),
       );
       if (ready) return { sliceId: slice.id, sliceTitle: slice.title };
     }
     return null;
+  }
+
+  // Loads and cross-checks the completion an evolution plan descends from
+  // (Decision 088). Carried slice ids come from the plan's
+  // Workbench-computed dispositions, cross-checked against the completion's
+  // built set — a carried disposition outside the built set is a chain
+  // integrity failure, never a trusted claim.
+  async #loadEvolution(plan: {
+    evolvesFromCompletionId?: string | undefined;
+    sliceDispositions?:
+      | { sliceId: string; disposition: "carried" | "delta" }[]
+      | undefined;
+  }): Promise<{
+    completion: BuildCompletion;
+    carriedSliceIds: Set<string>;
+  } | null> {
+    if (!plan.evolvesFromCompletionId) return null;
+    const stored = await this.#deps.store.load(plan.evolvesFromCompletionId);
+    if (stored.kind !== "build-completion") {
+      throw new Error(
+        `Artifact ${plan.evolvesFromCompletionId} is not a build completion.`,
+      );
+    }
+    const completion = stored.artifact;
+    const built = new Set(completion.builtSliceIds);
+    const carriedSliceIds = new Set<string>();
+    for (const { sliceId, disposition } of plan.sliceDispositions ?? []) {
+      if (disposition !== "carried") continue;
+      if (!built.has(sliceId)) {
+        throw new Error(
+          `Chain integrity failure: slice ${sliceId} is marked carried but is not in completion ${completion.completionId}'s built set.`,
+        );
+      }
+      carriedSliceIds.add(sliceId);
+    }
+    return { completion, carriedSliceIds };
   }
 
   async loadWorkOrder(workOrderId: string): Promise<WorkOrder> {
@@ -153,6 +218,16 @@ export class WorkOrderService {
       await mkdir(dirname(target), { recursive: true });
       await writeFile(target, file.content, "utf8");
       written.push(file.path);
+    }
+    // Evolution reconcile (Decision 088): retired prior test files would
+    // otherwise remain on disk from the previous generation and fail the
+    // successor suite's scope check as unexpected files.
+    for (const retired of suite.retiredFilePaths ?? []) {
+      const target = join(root, retired);
+      if (!target.startsWith(root)) {
+        throw new Error(`Retired test path escapes the project root: ${retired}`);
+      }
+      await rm(target, { force: true });
     }
     return written;
   }

@@ -31,6 +31,7 @@ function scriptedGit(overrides: Partial<GitInspector> = {}): GitInspector {
   return {
     headCommit: async () => COMMIT,
     isClean: async () => true,
+    isAncestor: async () => true,
     ...overrides,
   };
 }

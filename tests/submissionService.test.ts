@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { access, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -69,6 +70,7 @@ async function submissionHarness(options: {
   fixture?: ChainFixture;
   script?: RunnerScript;
   isolated?: boolean;
+  git?: import("../src/foundry/buildCompletionService.js").GitInspector;
 } = {}) {
   const fixture = options.fixture ?? chainFixture();
   const storeDirectory = await mkdtemp(join(tmpdir(), "submission-store-"));
@@ -95,6 +97,7 @@ async function submissionHarness(options: {
     store,
     runner,
     ...(isolationRoot ? { isolationRoot } : {}),
+    ...(options.git ? { git: options.git } : {}),
   });
   return {
     fixture,
@@ -279,6 +282,119 @@ describe("SubmissionService.submitSlice", () => {
         projectRoot: harness.projectRoot,
       }),
     ).rejects.toThrowError(/chain integrity/i);
+  });
+});
+
+describe("SubmissionService baseline descent check (Decision 088)", () => {
+  const BASELINE = "0123456789abcdef0123456789abcdef01234567";
+  const HEAD = "89abcdef0123456789abcdef0123456789abcdef";
+
+  async function evolutionSubmissionHarness(options: {
+    descends: boolean;
+    git?: boolean;
+  }) {
+    const fixture = chainFixture();
+    const completionId = randomUUID();
+    fixture.plan.evolvesFromCompletionId = completionId;
+    fixture.plan.sliceDispositions = [
+      { sliceId: fixture.sliceIds.first, disposition: "carried" },
+      { sliceId: fixture.sliceIds.second, disposition: "delta" },
+    ];
+    const harness = await submissionHarness({
+      fixture,
+      ...(options.git === false
+        ? {}
+        : {
+            git: {
+              headCommit: async () => HEAD,
+              isClean: async () => true,
+              isAncestor: async (_root, ancestor, descendant) =>
+                options.descends &&
+                ancestor === BASELINE &&
+                descendant === HEAD,
+            },
+          }),
+    });
+    await harness.store.saveBuildCompletion({
+      completionId,
+      briefId: fixture.brief.briefId,
+      briefVersion: fixture.brief.version,
+      planId: fixture.plan.planId,
+      planDigest: "d".repeat(64),
+      testSuiteId: fixture.suite.testSuiteId,
+      testSuiteDigest: "e".repeat(64),
+      projectRoot: "/tmp/example-project",
+      mainCommitSha: BASELINE,
+      treeDigest: "f".repeat(64),
+      builtSliceIds: [fixture.sliceIds.first],
+      verification: {
+        files: [
+          {
+            path: fixture.filePaths.visibleOnly,
+            visibility: "visible",
+            exitCode: 0,
+            passed: true,
+          },
+        ],
+        passed: true,
+        outputExcerpt: "green",
+      },
+      operatorId: "rashad",
+      recordedRetroactively: false,
+      createdAt: new Date().toISOString(),
+    });
+    const { workOrder } = await harness.workOrders.createWorkOrder({
+      testSuiteId: fixture.suite.testSuiteId,
+      sliceId: fixture.sliceIds.second,
+    });
+    await harness.workOrders.materializeVisibleTests({
+      workOrderId: workOrder.workOrderId,
+      projectRoot: harness.projectRoot,
+    });
+    return { harness, workOrder };
+  }
+
+  it("records the pins and passes when HEAD descends from the baseline", async () => {
+    const { harness, workOrder } = await evolutionSubmissionHarness({
+      descends: true,
+    });
+    expect(workOrder.baselineCommitSha).toBe(BASELINE);
+    const { submission } = await harness.submissions.submitSlice({
+      workOrderId: workOrder.workOrderId,
+      projectRoot: harness.projectRoot,
+    });
+    expect(submission.status).toBe("passed");
+    expect(submission.baselineCommitSha).toBe(BASELINE);
+    expect(submission.headCommitSha).toBe(HEAD);
+  });
+
+  it("fails the submission when HEAD does not descend from the baseline", async () => {
+    const { harness, workOrder } = await evolutionSubmissionHarness({
+      descends: false,
+    });
+    const { submission } = await harness.submissions.submitSlice({
+      workOrderId: workOrder.workOrderId,
+      projectRoot: harness.projectRoot,
+    });
+    expect(submission.status).toBe("failed");
+    expect(submission.scopeCheck.failures[0]).toMatch(
+      /does not descend from the pinned baseline/,
+    );
+    // No tests execute against a wrong-baseline tree.
+    expect(harness.ranFiles).toEqual([]);
+  });
+
+  it("refuses outright when no git inspector is configured", async () => {
+    const { harness, workOrder } = await evolutionSubmissionHarness({
+      descends: true,
+      git: false,
+    });
+    await expect(
+      harness.submissions.submitSlice({
+        workOrderId: workOrder.workOrderId,
+        projectRoot: harness.projectRoot,
+      }),
+    ).rejects.toThrow(/no git inspector configured/);
   });
 });
 

@@ -402,16 +402,17 @@ async function main(): Promise<void> {
       briefs: service,
       store,
     });
+    const { BuildCompletionService, createProcessGitInspector } = await import(
+      "./foundry/buildCompletionService.js"
+    );
     const submissions = new SubmissionService({
       workOrders,
       testDesign,
       store,
       runner: createProcessSubmissionRunner(),
       isolationRoot: resolve(workspaceRoot, ".workbench", "verification"),
+      git: createProcessGitInspector(),
     });
-    const { BuildCompletionService, createProcessGitInspector } = await import(
-      "./foundry/buildCompletionService.js"
-    );
     const completions = new BuildCompletionService({
       testDesign,
       architect,

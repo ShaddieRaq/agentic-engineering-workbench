@@ -21,6 +21,15 @@ export const sliceSubmissionSchema = z
     briefId: z.uuid(),
     briefVersion: z.number().int().min(1),
     projectRoot: z.string().min(1),
+    // Evolution pins (Decision 088): what the delta was verified against.
+    baselineCommitSha: z
+      .string()
+      .regex(/^[a-f0-9]{7,40}$/)
+      .optional(),
+    headCommitSha: z
+      .string()
+      .regex(/^[a-f0-9]{7,40}$/)
+      .optional(),
     scopeCheck: z
       .object({
         passed: z.boolean(),
