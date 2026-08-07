@@ -213,6 +213,41 @@ describe("reconcileIntakeTurnOutput", () => {
     expect(output.reconciliation?.droppedQuestionIds).toEqual([droppedId]);
   });
 
+  it("appends a blocking issue for self-referential acceptance criteria", () => {
+    const docCriterion = {
+      id: randomUUID(),
+      text: "The brief states that the tool collects notes from one channel.",
+      source: "agent-inferred" as const,
+      verification: "A tester can read the brief and confirm the scope is stated.",
+    };
+    const result = reconcileIntakeTurnOutput(
+      modelOutput({ acceptanceCriteria: [docCriterion] }),
+    );
+    const synthetic = result.openIssues.find(({ description }) =>
+      description.startsWith("[Workbench check]"),
+    );
+    expect(synthetic).toBeDefined();
+    expect(synthetic!.severity).toBe("blocking");
+    expect(synthetic!.description).toContain(docCriterion.id);
+    expect(synthetic!.relatedEntryIds).toEqual([docCriterion.id]);
+    // Flagging is not a repair: reconciliation evidence stays null.
+    expect(result.reconciliation).toBeNull();
+  });
+
+  it("adds no issue for behavioral criteria", () => {
+    const behavioral = {
+      id: randomUUID(),
+      text: "The tool collects notes only from the engineering channel.",
+      source: "user-stated" as const,
+      verification:
+        "A tester runs the tool and confirms only engineering-channel messages are collected.",
+    };
+    const result = reconcileIntakeTurnOutput(
+      modelOutput({ acceptanceCriteria: [behavioral] }),
+    );
+    expect(result.openIssues).toEqual([]);
+  });
+
   it("still throws when the output is irreparable", () => {
     const bad = modelOutput();
     bad.updatedBriefDraft.title = "";
