@@ -65,6 +65,9 @@ describe("buildFoundryChainView", () => {
     ]);
     expect(resolved.plans[0]!.status).toBe("approved");
     expect(resolved.plans[0]!.revisedFromArtifactId).toBe(chain.planAId);
+    // The mapping-type summary is what lets the operator catch the
+    // all-manual defect at the approval gate.
+    expect(resolved.plans[0]!.mappingTestTypes).toEqual({ integration: 4 });
     expect(resolved.plans[1]!.status).toBe("revision-requested");
     expect(resolved.plans[1]!.decisions[0]!.requestedRevisions).toEqual([
       "Set every acceptance mapping testType to integration.",

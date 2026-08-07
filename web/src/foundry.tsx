@@ -264,7 +264,7 @@ function IssueWorkOrderButton({
       setMessage(
         result.done
           ? result.message ?? "Nothing left to build."
-          : `Issued work order ${result.workOrder?.workOrderId ?? ""} for "${result.workOrder?.sliceTitle ?? ""}".`,
+          : `Issued work order ${shortId(result.workOrder?.workOrderId ?? "")} for "${result.workOrder?.sliceTitle ?? ""}" — its slice below now shows status "ordered". Prepare the builder workspace, then hand it to the builder session.`,
       );
       setError(null);
       onDone();
@@ -278,7 +278,7 @@ function IssueWorkOrderButton({
       <button className="button button-secondary" type="button" onClick={issue}>
         Issue next work order
       </button>
-      {message && <div className="notice">{message}</div>}
+      {message && <div className="notice notice-success" role="status">{message}</div>}
       {error && <ErrorNotice message={error} />}
     </div>
   );
@@ -295,6 +295,7 @@ function DecisionForm({ action, onRecorded }: { action: string; onRecorded: () =
   const [rationale, setRationale] = useState("");
   const [revisions, setRevisions] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [recorded, setRecorded] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit(event: FormEvent) {
@@ -316,11 +317,13 @@ function DecisionForm({ action, onRecorded }: { action: string; onRecorded: () =
       });
       window.localStorage.setItem(OPERATOR_STORAGE_KEY, operatorId);
       setError(null);
+      setRecorded(`Recorded: ${decision} by ${operatorId}. The page has refreshed with the new status.`);
       setRationale("");
       setRevisions("");
       onRecorded();
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : String(cause));
+      setRecorded(null);
     } finally {
       setBusy(false);
     }
@@ -353,6 +356,7 @@ function DecisionForm({ action, onRecorded }: { action: string; onRecorded: () =
           </label>
         )}
         {error && <ErrorNotice message={error} />}
+        {recorded && <div className="notice notice-success" role="status">{recorded}</div>}
         <button className="button" type="submit" disabled={busy}>Record {decision}</button>
       </form>
     </details>
@@ -507,6 +511,19 @@ export function FoundryProjectPage() {
             <p className="muted-note">
               {plan.componentCount} component(s) · {plan.sliceCount} slice(s) · {plan.blockingConcerns} blocking / {plan.advisoryConcerns} advisory concern(s)
               {plan.revisedFromArtifactId && <> · revision of {shortId(plan.revisedFromArtifactId)}</>}
+            </p>
+            <p className="muted-note">
+              Acceptance mappings:{" "}
+              {Object.entries(plan.mappingTestTypes).map(([type, count]) => (
+                <span key={type} className="mapping-type">
+                  <StatusBadge value={type === "manual" ? "manual" : type} /> ×{count}{" "}
+                </span>
+              ))}
+              {plan.mappingTestTypes["manual"] ? (
+                <strong className="mapping-warning">
+                  — manual mappings cannot be verified by the governed build; consider a revise decision.
+                </strong>
+              ) : null}
             </p>
             <DecisionList decisions={plan.decisions} />
             {plan.status === "revision-requested" && (

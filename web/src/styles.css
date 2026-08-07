@@ -249,3 +249,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .stage-run { display: grid; gap: 12px; margin-bottom: 14px; }
 .decision-form-body { display: grid; gap: 12px; }
 .decision-form-body label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; }
+.notice-success { border-color: rgba(184, 242, 105, .4); color: var(--accent); }
+.status-manual { background: rgba(255, 143, 125, .12); color: var(--danger); }
+.mapping-type { margin-right: 6px; }
+.mapping-warning { color: var(--danger); font-size: 12px; }

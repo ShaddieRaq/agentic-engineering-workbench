@@ -466,6 +466,7 @@ export interface FoundryPlanView {
   status: FoundryStageStatus;
   componentCount: number;
   sliceCount: number;
+  mappingTestTypes: Record<string, number>;
   blockingConcerns: number;
   advisoryConcerns: number;
   decisions: FoundryDecisionView[];

@@ -57,6 +57,10 @@ export interface FoundryPlanView {
   status: FoundryStageStatus;
   componentCount: number;
   sliceCount: number;
+  // Acceptance-mapping test types by count (e.g. {integration: 7}). The
+  // all-manual defect slipped past operator approval twice because the
+  // summary hid this; "manual" here is a red flag the panel must show.
+  mappingTestTypes: Record<string, number>;
   blockingConcerns: number;
   advisoryConcerns: number;
   decisions: FoundryDecisionView[];
@@ -358,12 +362,18 @@ function buildViewFromBuckets(
     const decisions = buckets.planDecisions.filter(
       (decision) => decision.planId === plan.planId,
     );
+    const mappingTestTypes: Record<string, number> = {};
+    for (const mapping of plan.content.acceptancePlan) {
+      mappingTestTypes[mapping.testType] =
+        (mappingTestTypes[mapping.testType] ?? 0) + 1;
+    }
     return {
       planId: plan.planId,
       createdAt: plan.createdAt,
       status: statusFromDecisions(decisions),
       componentCount: plan.content.components.length,
       sliceCount: plan.content.implementationSlices.length,
+      mappingTestTypes,
       blockingConcerns: plan.content.concerns.filter(
         ({ severity }) => severity === "blocking",
       ).length,
