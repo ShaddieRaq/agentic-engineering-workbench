@@ -29,7 +29,7 @@ function renderEvolutionSection(
     "EVOLUTION ROUND — THIS SUITE SUPERSEDES AN APPROVED SUITE:",
     `UNCHANGED criterion ids: ${evolution.unchangedCriterionIds.join(", ") || "(none)"}. Every prior file covering ONLY these ids must be reproduced byte-identical: same path, same content, same coveredCriterionIds, same testType.`,
     `CHANGED criterion ids: ${evolution.changedCriterionIds.join(", ") || "(none)"}. Prior files covering these may be revised IN PLACE at the same path; keep the criterion ids.`,
-    `NEW criterion ids: ${evolution.newCriterionIds.join(", ") || "(none)"}. Cover these with NEW files at new paths.`,
+    `NEW criterion ids: ${evolution.newCriterionIds.join(", ") || "(none)"}. EVERY one of these ids must appear in the coveredCriterionIds of at least one NEW file whose visibility is "visible". Carried files cover only their original criteria; the new holdout adds hidden coverage on top and NEVER substitutes for visible coverage.`,
     `RETIRED criterion ids: ${evolution.retiredCriterionIds.join(", ") || "(none)"}. Files covering only retired criteria are omitted.`,
     "A prior holdout file stays a holdout unless deliberately promoted to visible; a prior VISIBLE path must never become a holdout.",
     `The suite must contain EXACTLY ${evolution.requiredHoldoutCount} holdout file(s): every retained prior holdout plus exactly one NEW holdout for this round.`,
