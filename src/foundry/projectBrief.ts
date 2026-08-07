@@ -56,8 +56,9 @@ const briefContentShape = {
   // Decision 088 criterion-identity contract: after a reopen, every
   // criterion id from the last approved version must reappear verbatim or
   // be listed here as deliberately retired. Optional so pre-evolution
-  // artifacts load unchanged.
-  retiredCriterionIds: z.array(z.uuid()).max(50).optional(),
+  // artifacts load unchanged; nullable because the OpenAI structured-output
+  // API rejects optional-without-nullable fields in model-facing schemas.
+  retiredCriterionIds: z.array(z.uuid()).max(50).nullable().optional(),
 };
 
 interface BriefContentLike {
@@ -250,8 +251,14 @@ export function createNextBriefVersion(input: {
   createdAt?: string;
 }): ProjectBrief {
   const previous = projectBriefSchema.parse(input.previous);
+  // Normalize the model-facing nullable into artifact shape: null and
+  // empty retirement lists are omitted, never persisted.
+  const { retiredCriterionIds, ...updated } = input.updated;
   return projectBriefSchema.parse({
-    ...input.updated,
+    ...updated,
+    ...(retiredCriterionIds && retiredCriterionIds.length > 0
+      ? { retiredCriterionIds }
+      : {}),
     briefId: previous.briefId,
     version: previous.version + 1,
     previousVersionArtifactId: input.previousArtifactId,

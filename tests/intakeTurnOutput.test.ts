@@ -29,6 +29,17 @@ function draftWithGoal() {
 }
 
 describe("intakeTurnOutputSchema", () => {
+  it("converts to an OpenAI structured-output format", async () => {
+    // Live failure (Mac Librarian evolution turn 8): retiredCriterionIds
+    // was .optional() without .nullable(), which the OpenAI structured
+    // output helper rejects. Every model-facing schema must pass this
+    // conversion.
+    const { zodTextFormat } = await import("openai/helpers/zod");
+    expect(() =>
+      zodTextFormat(intakeTurnOutputSchema as never, "output"),
+    ).not.toThrow();
+  });
+
   it("accepts a valid turn output", () => {
     const { draft, goal } = draftWithGoal();
     const turn = intakeTurnOutputSchema.parse({
