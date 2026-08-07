@@ -31,6 +31,7 @@ import {
   findEvaluationCase,
 } from "./evaluations/agentEvaluationView.js";
 import { runAgentImprovementAnalysis } from "./agentImprovement/agentImprovementAnalysis.js";
+import { validateCandidatePolicyPatch } from "./agentImprovement/agentCandidateBuilder.js";
 import { buildAgentCandidate } from "./agentImprovement/agentCandidateBuilder.js";
 import {
   buildAgentImprovementEvidencePacket,
@@ -667,6 +668,15 @@ export class AgentApplicationService {
     const analysis = await runAgentImprovementAnalysis(
       this.providerFactory(model),
       packet,
+      subjectRegistration?.revisionSurface
+        ? {
+            validateCandidatePolicy: (patch) =>
+              validateCandidatePolicyPatch(
+                subjectRegistration.revisionSurface!,
+                patch,
+              ),
+          }
+        : {},
     );
     const reference = await this.artifacts.saveAgentImprovementProposal(analysis);
     return {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
+import { validateCandidatePolicyPatch } from "../src/agents/agentImprovement/agentCandidateBuilder.js";
 import type { AgentImprovementEvidencePacket } from "../src/agents/agentImprovement/agentImprovementEvidence.js";
 import {
   agentImprovementProposalOutputSchema,
@@ -167,6 +168,63 @@ describe("evaluateAgentImprovementProposal", () => {
       passed: false,
       issues: [expect.stringContaining("invalid JSON")],
     });
+  });
+
+  it("fails at proposal time when the patched policy violates the subject schema", () => {
+    // Reproduces the live failure: a 321-character instruction line passed
+    // proposal policy and surfaced as a raw parse error only when the
+    // operator clicked Run frozen comparison.
+    const surfaceSchema = z
+      .object({ instructions: z.array(z.string().max(300)) })
+      .strict();
+    const validateCandidatePolicy = (patch: {
+      changes: { field: string; valueJson: string }[];
+    }) =>
+      validateCandidatePolicyPatch(
+        { schema: surfaceSchema, baselinePolicy: { instructions: ["short"] } },
+        patch,
+      );
+
+    const overlong = proposal();
+    overlong.candidatePolicyPatch = {
+      changes: [
+        {
+          field: "instructions",
+          valueJson: JSON.stringify({ instructions: ["x".repeat(321)] }),
+        },
+      ],
+    };
+    // The packet's mutable field is "instructions" in this fixture? Use the
+    // fixture's own field to stay inside the revision surface.
+    overlong.candidatePolicyPatch.changes[0]!.field =
+      packet.revisionSurface!.mutableFields[0]!;
+    const failed = evaluateAgentImprovementProposal(packet, overlong, {
+      validateCandidatePolicy: () => [
+        "Candidate patch produces an invalid policy at instructions.0: Too big: expected string to have <=300 characters.",
+      ],
+    });
+    expect(failed.passed).toBe(false);
+    expect(failed.issues[0]).toContain("invalid policy at instructions.0");
+
+    // And the real validator helper reports the same class of issue.
+    const helperIssues = validateCandidatePolicy({
+      changes: [
+        {
+          field: "instructions",
+          valueJson: JSON.stringify(["x".repeat(321)]),
+        },
+      ],
+    });
+    expect(helperIssues[0]).toContain("invalid policy at instructions");
+
+    // A legal patch passes through the validator untouched.
+    expect(
+      validateCandidatePolicy({
+        changes: [
+          { field: "instructions", valueJson: JSON.stringify(["fine"]) },
+        ],
+      }),
+    ).toEqual([]);
   });
 
   it("generates an OpenAI-compatible schema without propertyNames", () => {

@@ -982,18 +982,72 @@ scoped to the project directory only.
 
 ## Current Priorities
 
-1. Feed the first operator-driven run's defect evidence into the
-   improvement loops: the intake agent's question-circling (5 turns
-   re-asking answered topics, Mac Librarian interview), the architect's
-   second all-manual acceptance-mapping occurrence, and the test
-   designer's document-auditing suite (tests that read the brief instead
-   of exercising the product). All three are recorded live evidence with
-   operator revisions that fixed them.
-2. Console gaps found while an operator learned the app: surface
-   acceptance-mapping test types on the plan panel (the all-manual defect
-   slipped past approval twice because the summary hides them), and make
-   success states more visible (work-order issuance reads as "nothing
-   happened").
+Progress 2026-08-07: intake cycles #1 and #2 complete (0.5.0 released —
+interview closure rule, then unprompted in-place rewrite of
+self-referential acceptance criteria; both patches gate-proven with the
+full decision chain pinned). Console gaps from priority 2 fixed (mapping
+test types surfaced with manual flagged red; success notices on decisions
+and work orders; operator-guidance field on failure analysis). Reconciler
+backstop blocks self-referential criteria at runtime. Remaining, in
+order, each with its plan:
+
+1. Proposal-time candidate patch validation. The analyst produced a
+   321-character instruction line; the policy check passed it and the
+   failure surfaced as a raw schema error when the operator clicked
+   Run frozen comparison. Plan: where the improvement pipeline runs its
+   citation/candidate policy evaluation, additionally apply the
+   candidatePolicyPatch to the baseline policy and parse the result with
+   the subject agent's policy schema; any Zod issue becomes a policy
+   issue ("candidate patch produces an invalid policy: ...") so the
+   proposal records succeeded=false with a legible reason and the
+   comparison button never sees an invalid patch. Unit test: a patch
+   with a >300-char instruction line yields a failed policy evaluation
+   naming the line. No UI change needed — the proposal page already
+   renders policy issues.
+
+2. Architect improvement loop (all-manual acceptance mappings, observed
+   twice: habit tracker and Mac Librarian plan 22969605). Plan: add a
+   hidden expectation check to the architect dataset (forbid mappings
+   whose testType is "manual" when the criterion's verification
+   describes behavior an automated test can exercise — start simple:
+   maximum manual-mapping ratio, enumerable and deterministic), plus a
+   dataset case whose input brief mirrors the Mac Librarian criteria
+   and whose expectation requires zero manual mappings. Then the
+   operator drives the standard loop: baseline (expect the case to
+   fail), analyst with steering guidance, frozen comparison, gates,
+   promotion, source release. Watch for the same over-broad-rule
+   regression pattern intake cycle #2 hit.
+
+3. Test-designer verification dataset (prerequisite for its loop).
+   Plan: scripted-provider dataset in the established rhythm — cases
+   built from the two recorded live defects: (a) document-auditing
+   suite (input: approved chain artifacts; hidden expectation: every
+   generated test file spawns the product under test, no file reads
+   brief/plan artifacts — deterministic string checks on file content),
+   (b) missing holdout (expectation: exactly one holdout file while
+   visible files still cover every automated mapping), (c) regression
+   guards for the known-good suite shape (criterion coverage, syntax
+   validity via esbuild). Register the dataset on the test-designer
+   manifest with minimumPassRate 1; then the loop is available when
+   evidence warrants.
+
+4. Project-evolution loop (governed change to an already-built
+   project; blocks Mac Librarian v2 requirements: app-data skip rule,
+   human-scale batch caps, content-based grouping). Plan sketch to be
+   pressure-tested before build: reopen an approved brief via a
+   brief-level revise decision (extends the intake reopening shipped
+   2026-08-06); new brief version yields a DELTA architecture plan
+   stage that takes the prior plan plus the built project's verified
+   state and emits only new/changed slices with an updated acceptance
+   plan; test designer emits a suite update pinned to the new plan
+   (existing files retained byte-exact unless a changed criterion
+   requires an update, holdout discipline preserved); work orders carry
+   dependsOn references to already-approved slices from the prior
+   build; submission verification runs the full merged suite. Requires
+   decisions on: how prior-build approvals carry into the new chain's
+   digest lineage, and whether evolution reuses the project's git
+   history (it should — slice branches on the existing repo).
+   Design-discussion gate with the operator before implementation.
 
 Completed 2026-08-07 — FIRST FULLY ISOLATED GOVERNED BUILD: Mac Librarian
 (brief b1c76b2a), driven end to end by the operator from the console

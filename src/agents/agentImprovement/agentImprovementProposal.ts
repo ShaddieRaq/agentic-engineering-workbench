@@ -149,9 +149,19 @@ function uniqueSorted(values: string[]): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
 
+export interface AgentImprovementProposalEvaluationOptions {
+  // Supplied by callers that hold the subject's registration: applies the
+  // patch to the baseline policy and returns schema-violation messages so
+  // invalid candidates fail at proposal time, not at comparison launch.
+  validateCandidatePolicy?: (patch: {
+    changes: { field: string; valueJson: string }[];
+  }) => string[];
+}
+
 export function evaluateAgentImprovementProposal(
   packet: AgentImprovementEvidencePacket,
   proposal: AgentImprovementProposalOutput,
+  options: AgentImprovementProposalEvaluationOptions = {},
 ): AgentImprovementProposalPolicyEvaluation {
   const issues: string[] = [];
   const available = new Set(packet.evidenceItems.map(({ id }) => id));
@@ -200,6 +210,13 @@ export function evaluateAgentImprovementProposal(
       if (invalidFields.length > 0) {
         issues.push(`Candidate patch changes fields outside the revision surface: ${invalidFields.join(", ")}.`);
       }
+    }
+    if (
+      patch !== null &&
+      issues.length === 0 &&
+      options.validateCandidatePolicy
+    ) {
+      issues.push(...options.validateCandidatePolicy(patch));
     }
   } else if (patch !== null) {
     issues.push("Only a candidate-ready proposal may include a policy patch.");

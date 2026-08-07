@@ -13,6 +13,7 @@ import {
 import {
   agentImprovementProposalOutputSchema,
   agentImprovementProposalPolicyEvaluationSchema,
+  type AgentImprovementProposalEvaluationOptions,
   evaluateAgentImprovementProposal,
   type AgentImprovementProposalOutput,
 } from "./agentImprovementProposal.js";
@@ -106,6 +107,7 @@ export function buildAgentImprovementPrompt(
 export async function runAgentImprovementAnalysis(
   provider: AIProvider,
   rawPacket: unknown,
+  evaluationOptions: AgentImprovementProposalEvaluationOptions = {},
 ): Promise<AgentImprovementAnalysisResult> {
   const startedAt = performance.now();
   const packet = agentImprovementEvidencePacketSchema.parse(rawPacket);
@@ -133,7 +135,11 @@ export async function runAgentImprovementAnalysis(
 
   const policyEvaluation = providerResult.parsedOutput === null
     ? null
-    : evaluateAgentImprovementProposal(packet, providerResult.parsedOutput);
+    : evaluateAgentImprovementProposal(
+        packet,
+        providerResult.parsedOutput,
+        evaluationOptions,
+      );
 
   return agentImprovementAnalysisResultSchema.parse({
     analysisRunId: randomUUID(),
