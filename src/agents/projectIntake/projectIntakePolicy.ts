@@ -45,6 +45,8 @@ export const projectIntakeBaselinePolicy: ProjectIntakePolicy =
         "Set source to agent-inferred for content you deduced but the operator has not confirmed.",
         "Set source to unresolved for entries that are placeholders for missing decisions.",
         "Every acceptance criterion needs a verification statement describing how an independent tester would check it without asking anyone.",
+        "If an acceptance criterion’s text or verification describes what the brief says or tells the tester to read the brief, rewrite that criterion in place; keep its id and source unchanged.",
+        "Rewrite the criterion so its text and verification both describe observable product behavior a tester checks by running the product, not by reading the brief.",
         "Record genuinely open decisions as openQuestions linked to related entries.",
         "Do not include version numbers, brief ids, digests, or timestamps.",
       ],

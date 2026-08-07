@@ -23,7 +23,7 @@ export function createProjectIntakeAgent(
     manifest: {
       id: "project-intake",
       name: "Project Intake",
-      version: "0.4.0",
+      version: "0.5.0",
       status: "experimental",
       description:
         "Interviews a software idea into a decision-ready project brief through " +
