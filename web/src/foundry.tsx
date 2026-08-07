@@ -765,13 +765,13 @@ export function FoundryProjectPage() {
         {chain.build && chain.build.planAvailable && (
           <>
             <p className="muted-note">
-              Anchored on approved suite {shortId(chain.build.anchorTestSuiteId)} · {chain.build.approvedSliceCount}/{chain.build.slices.length} slices approved
+              Anchored on approved suite {shortId(chain.build.anchorTestSuiteId)} · {chain.build.satisfiedSliceCount}/{chain.build.slices.length} slices satisfied ({chain.build.approvedSliceCount} approved this round{chain.build.satisfiedSliceCount > chain.build.approvedSliceCount ? `, ${chain.build.satisfiedSliceCount - chain.build.approvedSliceCount} carried` : ""})
             </p>
             <IssueWorkOrderButton
               testSuiteId={chain.build.anchorTestSuiteId}
               onDone={resource.reload}
             />
-            {chain.build.approvedSliceCount === chain.build.slices.length &&
+            {chain.build.satisfiedSliceCount === chain.build.slices.length &&
               chain.build.slices.length > 0 &&
               !chain.completions.some(
                 (completion) => completion.testSuiteId === chain.build!.anchorTestSuiteId,

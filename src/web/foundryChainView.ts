@@ -26,6 +26,7 @@ export type FoundryStageStatus =
 
 export type FoundrySliceStatus =
   | "not-started"
+  | "carried"
   | "ordered"
   | "submitted-passed"
   | "submitted-failed"
@@ -144,6 +145,9 @@ export interface FoundryBuildView {
   anchorPlanId: string;
   planAvailable: boolean;
   approvedSliceCount: number;
+  // approved + carried (Decision 088): carried slices are satisfied by the
+  // prior generation's completion, not by submissions.
+  satisfiedSliceCount: number;
   slices: FoundrySliceRow[];
 }
 
@@ -603,6 +607,7 @@ function buildSection(
         anchorPlanId: approvedSuite.planId,
         planAvailable: false,
         approvedSliceCount: 0,
+        satisfiedSliceCount: 0,
         slices: [],
       },
       buildNote:
@@ -620,6 +625,11 @@ function buildSection(
     (decision) => decision.testSuiteId === approvedSuite.testSuiteId,
   );
 
+  const carriedSliceIds = new Set(
+    (anchorPlan.sliceDispositions ?? [])
+      .filter(({ disposition }) => disposition === "carried")
+      .map(({ sliceId }) => sliceId),
+  );
   const slices = anchorPlan.content.implementationSlices.map((slice) => {
     const workOrders = newestFirst(
       suiteWorkOrders.filter(({ sliceId }) => sliceId === slice.id),
@@ -654,7 +664,9 @@ function buildSection(
       title: slice.title,
       delivers: slice.delivers,
       dependsOnSliceIds: slice.dependsOnSliceIds,
-      status: sliceStatus(sliceDecisions, submissions, workOrders.length > 0),
+      status: carriedSliceIds.has(slice.id)
+        ? ("carried" as const)
+        : sliceStatus(sliceDecisions, submissions, workOrders.length > 0),
       workOrders,
       submissions,
     };
@@ -667,6 +679,9 @@ function buildSection(
       planAvailable: true,
       approvedSliceCount: slices.filter(({ status }) => status === "approved")
         .length,
+      satisfiedSliceCount: slices.filter(
+        ({ status }) => status === "approved" || status === "carried",
+      ).length,
       slices,
     },
   };

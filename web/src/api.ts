@@ -434,6 +434,7 @@ export type FoundryStageStatus = "draft" | "approved" | "rejected" | "revision-r
 
 export type FoundrySliceStatus =
   | "not-started"
+  | "carried"
   | "ordered"
   | "submitted-passed"
   | "submitted-failed"
@@ -533,6 +534,7 @@ export interface FoundryBuildView {
   anchorPlanId: string;
   planAvailable: boolean;
   approvedSliceCount: number;
+  satisfiedSliceCount: number;
   slices: FoundrySliceRow[];
 }
 

@@ -161,9 +161,13 @@ export class BuildCompletionService {
     const plan = await this.#architect.loadPlan(suite.planId);
 
     const approvedSliceIds = await this.#approvedSliceIds(input.testSuiteId);
+    // Evolution rounds (Decision 088): carried slices are satisfied by the
+    // prior generation's completion — cross-checked against its built set,
+    // never trusted from the plan alone.
+    const carriedSliceIds = await this.#carriedSliceIds(plan);
     const unapproved = plan.content.implementationSlices
       .map(({ id }) => id)
-      .filter((id) => !approvedSliceIds.has(id));
+      .filter((id) => !approvedSliceIds.has(id) && !carriedSliceIds.has(id));
     if (unapproved.length > 0) {
       throw new Error(
         `Cannot record completion: slice(s) without an approving submission decision: ${unapproved.join(", ")}.`,
@@ -316,6 +320,33 @@ export class BuildCompletionService {
       files,
       outputExcerpt: visibleOutputs.join("\n").slice(0, MAXIMUM_EXCERPT_BYTES),
     };
+  }
+
+  async #carriedSliceIds(plan: {
+    evolvesFromCompletionId?: string | undefined;
+    sliceDispositions?:
+      | { sliceId: string; disposition: "carried" | "delta" }[]
+      | undefined;
+  }): Promise<Set<string>> {
+    const carried = new Set<string>();
+    if (!plan.evolvesFromCompletionId) return carried;
+    const stored = await this.#store.load(plan.evolvesFromCompletionId);
+    if (stored.kind !== "build-completion") {
+      throw new Error(
+        `Artifact ${plan.evolvesFromCompletionId} is not a build completion.`,
+      );
+    }
+    const built = new Set(stored.artifact.builtSliceIds);
+    for (const { sliceId, disposition } of plan.sliceDispositions ?? []) {
+      if (disposition !== "carried") continue;
+      if (!built.has(sliceId)) {
+        throw new Error(
+          `Chain integrity failure: slice ${sliceId} is marked carried but is not in completion ${stored.artifact.completionId}'s built set.`,
+        );
+      }
+      carried.add(sliceId);
+    }
+    return carried;
   }
 
   async #approvedSliceIds(testSuiteId: string): Promise<Set<string>> {

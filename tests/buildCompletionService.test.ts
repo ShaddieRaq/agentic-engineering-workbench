@@ -293,6 +293,65 @@ describe("BuildCompletionService", () => {
     expect(artifacts).toEqual([]);
   });
 
+  it("accepts carried slices satisfied by the prior completion (Decision 088)", async () => {
+    const { service, store, fixture, plan, projectRoot } =
+      await serviceFixture();
+    // Rewrite the plan as an evolution plan: a second, carried slice with
+    // no submissions, satisfied by a prior completion's built set.
+    const carriedSliceId = randomUUID();
+    const priorCompletionId = randomUUID();
+    await store.saveBuildCompletion({
+      completionId: priorCompletionId,
+      briefId: fixture.suite.briefId,
+      briefVersion: 1,
+      planId: randomUUID(),
+      planDigest: "e".repeat(64),
+      testSuiteId: randomUUID(),
+      testSuiteDigest: "e".repeat(64),
+      projectRoot: "/tmp/prior",
+      mainCommitSha: COMMIT,
+      treeDigest: "e".repeat(64),
+      builtSliceIds: [carriedSliceId],
+      verification: {
+        files: [
+          {
+            path: "acceptance-tests/prior.test.ts",
+            visibility: "visible",
+            exitCode: 0,
+            passed: true,
+          },
+        ],
+        passed: true,
+        outputExcerpt: "green",
+      },
+      operatorId: "rashad",
+      recordedRetroactively: false,
+      createdAt: "2026-08-07T00:00:00.000Z",
+    });
+    (plan as { evolvesFromCompletionId?: string }).evolvesFromCompletionId =
+      priorCompletionId;
+    (plan as { sliceDispositions?: unknown }).sliceDispositions = [
+      { sliceId: carriedSliceId, disposition: "carried" },
+      { sliceId: fixture.sliceId, disposition: "delta" },
+    ];
+    plan.content.implementationSlices.push({
+      id: carriedSliceId,
+      title: "Carried from generation 1",
+      delivers: "Already built.",
+      dependsOnSliceIds: [],
+      verifiedByCriterionIds: [fixture.criterionId],
+    });
+
+    const saved = await service.recordCompletion({
+      testSuiteId: fixture.suite.testSuiteId,
+      projectRoot,
+      operatorId: "rashad",
+    });
+    expect(saved.completion.builtSliceIds.sort()).toEqual(
+      [fixture.sliceId, carriedSliceId].sort(),
+    );
+  });
+
   it("flags retroactive records and computes stable tree digests", async () => {
     const { service, fixture, projectRoot } = await serviceFixture();
     const before = await computeTreeDigest(projectRoot);
