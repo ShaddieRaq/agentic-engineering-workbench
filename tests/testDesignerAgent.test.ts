@@ -56,6 +56,67 @@ describe("testDesignerAgent", () => {
     expect(result.output).toMatchObject({ reconciliation: null });
   });
 
+  it("merges untouched prior files into a delta-only evolution output", async () => {
+    const { brief, plan } = suiteFixtures();
+    const priorSuiteContent = suiteContentFor(brief);
+    // The model emits ONLY the delta: one new visible file and one new
+    // holdout; every prior file must be carried in verbatim by the merge.
+    const newCriterionId = brief.acceptanceCriteria[0]!.id;
+    const deltaOnly: TestSuiteContentShape = {
+      interfaceContract: priorSuiteContent.interfaceContract,
+      testFiles: [
+        {
+          path: "acceptance-tests/evolution-new.test.ts",
+          content: priorSuiteContent.testFiles[0]!.content,
+          visibility: "visible",
+          coveredCriterionIds: [newCriterionId],
+          testType: "integration",
+        },
+        {
+          path: "acceptance-tests/evolution-holdout.test.ts",
+          content: priorSuiteContent.testFiles[0]!.content,
+          visibility: "holdout",
+          coveredCriterionIds: [newCriterionId],
+          testType: "integration",
+        },
+      ],
+      manualChecks: [],
+      concerns: [],
+    };
+    const result = await runAgent(
+      "test-designer",
+      {
+        brief,
+        plan,
+        evolution: {
+          priorSuiteContent,
+          requiredHoldoutCount: 1,
+          unchangedCriterionIds: brief.acceptanceCriteria.map(({ id }) => id),
+          changedCriterionIds: [],
+          newCriterionIds: [newCriterionId],
+          retiredCriterionIds: [],
+        },
+      },
+      {
+        agents: platformAgentRegistry,
+        tools: new ToolRegistry([]),
+        provider: scriptedProvider(deltaOnly),
+        workspaceRoot: "/workspace",
+      },
+    );
+
+    expect(result.succeeded).toBe(true);
+    const output = result.output as TestSuiteContentShape;
+    const paths = output.testFiles.map(({ path }) => path);
+    for (const prior of priorSuiteContent.testFiles) {
+      expect(paths).toContain(prior.path);
+      const merged = output.testFiles.find(({ path }) => path === prior.path);
+      expect(merged?.content).toBe(prior.content);
+    }
+    expect(paths).toContain("acceptance-tests/evolution-new.test.ts");
+    expect(paths).toContain("acceptance-tests/evolution-holdout.test.ts");
+  });
+
   it("fails the run on holdout-only coverage", async () => {
     const { brief, plan } = suiteFixtures();
     const content = suiteContentFor(brief);

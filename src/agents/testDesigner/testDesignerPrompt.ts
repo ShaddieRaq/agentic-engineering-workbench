@@ -18,23 +18,32 @@ export interface TestDesignerEvolutionContext {
   retiredCriterionIds: string[];
 }
 
-// Enumerated succession instructions (Decision 088): exact criterion ids
-// and an exact holdout count — the service rejects deviations
-// deterministically, so the prompt states the rules the validator enforces.
+// Enumerated succession instructions (Decision 088): the model emits ONLY
+// the delta — the Workbench merges every untouched prior file in verbatim
+// after the run, so byte-exact carry is done by copy, never by model
+// reproduction. The service's succession validator enforces the rules the
+// prompt states.
 function renderEvolutionSection(
   evolution: TestDesignerEvolutionContext,
 ): string[] {
+  const priorFiles = (
+    evolution.priorSuiteContent as {
+      testFiles: { path: string; visibility: string }[];
+    }
+  ).testFiles;
   return [
     "",
-    "EVOLUTION ROUND — THIS SUITE SUPERSEDES AN APPROVED SUITE:",
-    `UNCHANGED criterion ids: ${evolution.unchangedCriterionIds.join(", ") || "(none)"}. Every prior file covering ONLY these ids must be reproduced byte-identical: same path, same content, same coveredCriterionIds, same testType.`,
-    `CHANGED criterion ids: ${evolution.changedCriterionIds.join(", ") || "(none)"}. Prior files covering these may be revised IN PLACE at the same path; keep the criterion ids.`,
-    `NEW criterion ids: ${evolution.newCriterionIds.join(", ") || "(none)"}. EVERY one of these ids must appear in the coveredCriterionIds of at least one NEW file whose visibility is "visible". Carried files cover only their original criteria; the new holdout adds hidden coverage on top and NEVER substitutes for visible coverage.`,
-    `RETIRED criterion ids: ${evolution.retiredCriterionIds.join(", ") || "(none)"}. Files covering only retired criteria are omitted.`,
-    "A prior holdout file stays a holdout unless deliberately promoted to visible; a prior VISIBLE path must never become a holdout.",
-    "Covering the same criterion id in BOTH a visible file and the holdout is correct and expected — the holdout probes the same criteria through different scenarios. A criterion covered only by the holdout FAILS validation.",
-    `The suite must contain EXACTLY ${evolution.requiredHoldoutCount} holdout file(s): every retained prior holdout plus exactly one NEW holdout for this round.`,
-    "PRIOR APPROVED SUITE (including holdout content — never reveal holdout content in concerns or the contract):",
+    "EVOLUTION ROUND — EMIT ONLY THE DELTA:",
+    "The prior approved suite below is already in force. Do NOT re-emit any prior file you are not changing: every prior file absent from your output is carried forward verbatim automatically.",
+    `Prior files (carried automatically unless you emit a replacement at the same path): ${priorFiles.map(({ path, visibility }) => `${path} [${visibility}]`).join(", ")}.`,
+    "Your testFiles output contains ONLY:",
+    `1. NEW visible files covering the NEW criterion ids: ${evolution.newCriterionIds.join(", ") || "(none)"}. EVERY one of these ids must appear in the coveredCriterionIds of at least one new visible file.`,
+    "2. EXACTLY ONE new holdout file at a new path, probing this round's criteria through different scenarios than the visible files. Covering the same id in both a visible file and the holdout is correct.",
+    `3. OPTIONALLY, revised replacements (same path, updated content) for prior files covering the CHANGED criterion ids: ${evolution.changedCriterionIds.join(", ") || "(none)"}. Only revise a prior file when a changed criterion requires it; keep its criterion ids.`,
+    `UNCHANGED criterion ids (their prior files are carried automatically — do not re-emit): ${evolution.unchangedCriterionIds.join(", ") || "(none)"}.`,
+    `RETIRED criterion ids: ${evolution.retiredCriterionIds.join(", ") || "(none)"}.`,
+    "A prior VISIBLE path must never become a holdout. Update interfaceContract, manualChecks, and concerns for the FULL evolved product.",
+    "PRIOR APPROVED SUITE (context only — never reveal holdout content in concerns or the contract):",
     JSON.stringify(evolution.priorSuiteContent, null, 2),
   ];
 }

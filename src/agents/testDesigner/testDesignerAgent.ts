@@ -99,6 +99,25 @@ export function createTestDesignerAgent(
       }
 
       const content = testSuiteContentShapeSchema.parse(result.parsedOutput);
+      // Evolution rounds: the model emits ONLY delta files (revised, new,
+      // and the one new holdout); every prior file it did not touch is
+      // merged in verbatim here — byte-exact carry by construction, never
+      // by model reproduction (live lesson: five attempts at echoing the
+      // prior suite all starved the delta files of output budget). Prior
+      // files whose covered criteria all left the brief are retired by
+      // omission.
+      if (input.evolution) {
+        const emittedPaths = new Set(content.testFiles.map(({ path }) => path));
+        const briefCriterionIds = new Set(
+          input.brief.acceptanceCriteria.map(({ id }) => id),
+        );
+        const carried = input.evolution.priorSuiteContent.testFiles.filter(
+          (file) =>
+            !emittedPaths.has(file.path) &&
+            file.coveredCriterionIds.some((id) => briefCriterionIds.has(id)),
+        );
+        content.testFiles = [...carried, ...content.testFiles];
+      }
       try {
         return reconcileTestSuiteContent(content, input.brief, input.plan);
       } catch (error: unknown) {
