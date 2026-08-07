@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { createProcessGitInspector } from "./foundry/buildCompletionService.js";
 import { FoundryArtifactStore } from "./foundry/foundryArtifactStore.js";
 import {
   createProcessSubmissionRunner,
@@ -64,6 +65,7 @@ async function main(): Promise<void> {
     store,
     runner: createProcessSubmissionRunner(),
     isolationRoot: resolve(workspaceRoot, ".workbench", "verification"),
+    git: createProcessGitInspector(),
   });
 
   const server = buildBuilderMcpServer(
