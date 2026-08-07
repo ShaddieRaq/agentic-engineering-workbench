@@ -5,6 +5,10 @@ const CONFIRMED_GOAL_ID = "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
 const VAGUE_CONSTRAINT_ID = "1b2c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e";
 const CLOUD_NON_GOAL_ID = "2c3d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f";
 const FINAL_UNRESOLVED_ID = "3d4e5f6a-7b8c-4d9e-8f0a-1b2c3d4e5f6a";
+const SCOPE_CONSTRAINT_ID = "4e5f6a7b-8c9d-4e0f-8a1b-2c3d4e5f6a7b";
+const FORMAT_CONSTRAINT_ID = "5f6a7b8c-9d0e-4f1a-8b2c-3d4e5f6a7b8c";
+const STALE_SCOPE_QUESTION_ID = "6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c9d";
+const STALE_FORMAT_QUESTION_ID = "7b8c9d0e-1f2a-4b3c-8d4e-5f6a7b8c9d0e";
 
 function briefContent(
   overrides: Partial<ProjectBriefDraftContent> = {},
@@ -130,6 +134,63 @@ export const projectIntakeDataset: AgentDatasetDefinition = {
         preservedEntryIds: [CLOUD_NON_GOAL_ID],
         challengedEntryIds: [CLOUD_NON_GOAL_ID],
         requireQuestions: true,
+      },
+    },
+    {
+      // Live failure (Mac Librarian, 2026-08-06): five turns re-asking
+      // answered topics with ever-finer variations, stale openQuestions
+      // never cleaned. When the operator declares answers final, the turn
+      // must stop asking and clear the answered questions.
+      id: "final-answers-close-the-interview",
+      input: {
+        briefContent: briefContent({
+          constraints: [
+            {
+              id: SCOPE_CONSTRAINT_ID,
+              text: "Notes are collected only from the engineering Slack channel.",
+              source: "user-stated",
+            },
+            {
+              id: FORMAT_CONSTRAINT_ID,
+              text: "The weekly summary is plain Markdown grouped by engineer.",
+              source: "user-stated",
+            },
+          ],
+          openQuestions: [
+            {
+              id: STALE_SCOPE_QUESTION_ID,
+              question:
+                "Which exact channels are in scope for collecting notes?",
+              relatedEntryIds: [SCOPE_CONSTRAINT_ID],
+            },
+            {
+              id: STALE_FORMAT_QUESTION_ID,
+              question: "What output format should the weekly summary use?",
+              relatedEntryIds: [FORMAT_CONSTRAINT_ID],
+            },
+          ],
+        }),
+        operatorAnswers: [
+          {
+            questionId: null,
+            answer:
+              "Only the engineering Slack channel — final. Markdown grouped " +
+              "by engineer — final. Stop refining: these answers are final, " +
+              "remove the answered open questions, choose reasonable " +
+              "defaults for anything remaining, and close the interview " +
+              "without asking further questions.",
+          },
+        ],
+        turnNumber: 4,
+        remainingTurns: 2,
+      },
+      expected: {
+        preservedEntryIds: [SCOPE_CONSTRAINT_ID, FORMAT_CONSTRAINT_ID],
+        forbidQuestions: true,
+        removedOpenQuestionIds: [
+          STALE_SCOPE_QUESTION_ID,
+          STALE_FORMAT_QUESTION_ID,
+        ],
       },
     },
     {

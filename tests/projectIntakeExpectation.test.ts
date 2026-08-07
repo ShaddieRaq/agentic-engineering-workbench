@@ -53,6 +53,8 @@ describe("projectIntakeExpectationSchema", () => {
       challengedEntryIds: [],
       requireQuestions: false,
       requireBlockingIssue: false,
+      forbidQuestions: false,
+      removedOpenQuestionIds: [],
     });
     expect(() =>
       projectIntakeExpectationSchema.parse({ surprise: true }),
@@ -210,6 +212,53 @@ describe("assessProjectIntakeExpectation", () => {
       { requireQuestions: true, requireBlockingIssue: true },
     );
     expect(satisfied.passed).toBe(true);
+  });
+
+  it("enforces closure when the operator declares answers final", () => {
+    const staleQuestionId = randomUUID();
+
+    // Asking anything after "final" fails.
+    const asked = assessProjectIntakeExpectation(
+      output(
+        {},
+        {
+          nextQuestions: [
+            {
+              id: randomUUID(),
+              question: "But which exact channels?",
+              targetEntryIds: [],
+              intent: "confirm-inferred",
+            },
+          ],
+        },
+      ),
+      { forbidQuestions: true },
+    );
+    expect(asked.passed).toBe(false);
+    expect(asked.message).toMatch(/after the operator declared the answers final/);
+
+    // Leaving an answered open question in the draft fails.
+    const stale = assessProjectIntakeExpectation(
+      output({
+        openQuestions: [
+          {
+            id: staleQuestionId,
+            question: "Which channels are in scope?",
+            relatedEntryIds: [],
+          },
+        ],
+      }),
+      { removedOpenQuestionIds: [staleQuestionId] },
+    );
+    expect(stale.passed).toBe(false);
+    expect(stale.message).toMatch(/remains in the brief draft/);
+
+    // A clean closing turn passes both.
+    const closed = assessProjectIntakeExpectation(output(), {
+      forbidQuestions: true,
+      removedOpenQuestionIds: [staleQuestionId],
+    });
+    expect(closed.passed).toBe(true);
   });
 
   it("rejects malformed expectations", () => {

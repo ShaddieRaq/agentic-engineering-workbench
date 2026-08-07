@@ -14,6 +14,12 @@ export const projectIntakeExpectationSchema = z
     challengedEntryIds: z.array(z.uuid()).default([]),
     requireQuestions: z.boolean().default(false),
     requireBlockingIssue: z.boolean().default(false),
+    // Live failure mode (Mac Librarian interview, 2026-08-06): the agent
+    // circled for five turns re-asking answered topics. When the operator
+    // declares answers final, the turn must ask nothing further and must
+    // clean the answered questions out of the brief.
+    forbidQuestions: z.boolean().default(false),
+    removedOpenQuestionIds: z.array(z.uuid()).default([]),
   })
   .strict();
 
@@ -111,6 +117,24 @@ export function assessProjectIntakeExpectation(
     !output.openIssues.some(({ severity }) => severity === "blocking")
   ) {
     failures.push("Expected at least one blocking open issue.");
+  }
+
+  if (expected.forbidQuestions && output.nextQuestions.length > 0) {
+    failures.push(
+      `Asked ${output.nextQuestions.length} question(s) after the operator ` +
+        "declared the answers final.",
+    );
+  }
+
+  for (const questionId of expected.removedOpenQuestionIds) {
+    if (
+      output.updatedBriefDraft.openQuestions.some(({ id }) => id === questionId)
+    ) {
+      failures.push(
+        `Open question ${questionId} was answered by the operator but ` +
+          "remains in the brief draft.",
+      );
+    }
   }
 
   return {

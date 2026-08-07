@@ -16,6 +16,7 @@ describe("projectIntakeDataset", () => {
       "confirmed-inference-becomes-user-stated",
       "vague-answer-is-challenged-not-accepted",
       "contradiction-is-surfaced-not-silently-resolved",
+      "final-answers-close-the-interview",
       "final-turn-reports-honestly",
     ]);
   });
