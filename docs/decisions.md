@@ -2538,3 +2538,84 @@ the denied area. Submissions record `verificationMode: "out-of-tree"`.
 The builder-authored-code channel is thereby cut off from holdout
 content; remaining residuals are unchanged (Write-tool gap, verbatim
 rationales, user-owns-machine).
+
+## Decision 088 — Project Evolution: Generations Closed by Completion, Grown by the Same Gates
+
+Date: 2026-08-07. Operator: rashad. Status: accepted (design settled after
+an adversarial probe — three fatal flaws found in the first draft — and a
+competing independent design; both are folded in below).
+
+An already-built, fully-approved project takes new requirements through
+the SAME governed chain, growing one continuous lineage per briefId. No
+delta artifacts, no forked chains, no model-asserted boundaries.
+
+1. BUILD COMPLETION closes a generation. A new operator-gated artifact,
+   recordable only when every plan slice has an approving submission
+   decision: the Workbench re-runs the full approved suite (visible and
+   holdout, out-of-tree) against the project's main and requires green,
+   then pins the main commit SHA, a Workbench-computed tree digest, the
+   suite id+digest, plan id+digest, and the enumerated built slice ids.
+   Holdout evidence in the record is redacted via the existing
+   projection. Retroactive completion records are permitted for
+   pre-design builds (mac-librarian, habit-tracker) and are flagged
+   recordedRetroactively. A generation is the span between completions;
+   evolution cannot begin without a green one (operator decision:
+   mandatory, no exceptions).
+
+2. REOPENING is a brief decision. The operator records a reopen decision
+   on the approved brief; downstream gates close and the intake
+   interview re-arms. The turn budget is scoped to the reopened session
+   (counted from the reopen decision), not derived from the brief's
+   lifetime version. Criterion identity is a deterministic contract:
+   brief v(n+1) must carry every approved criterion id verbatim or list
+   it in an explicit retirement map; edits keep their ids
+   (rewrite-in-place, the intake 0.5.0 pattern); retirement is only for
+   genuinely dropped requirements. The operator judges each rewrite at
+   approval, where the criterion diff is displayed.
+
+3. THE ARCHITECT EMITS A FULL PLAN; the Workbench computes each slice's
+   disposition: carried := slice id is in the completion record's built
+   set AND the slice is content-identical to the prior approved plan;
+   everything else is delta. The model never authors the carried flag.
+   Carried slices are history, like commits: new requirements that
+   change built behavior become NEW slices depending on the old ones.
+
+4. THE CAPABILITY STAGE ALWAYS RUNS (full document over the new plan;
+   skipping it would break the suite's digest chain and remove the one
+   gate that catches new capability needs — which evolution is when).
+
+5. THE SUITE IS FULL, WITH RULE-GOVERNED SUCCESSION. Every file carries
+   a lineage declaration — carried | revised | new | retired, with the
+   prior path and content digest — validated deterministically: files
+   for unchanged criteria are carried byte-exact; changed criteria
+   release their files for revision (including holdouts, which remain
+   secret); disclosure is one-way (holdout may be deliberately promoted
+   to visible; visible never becomes holdout; retired paths are never
+   reused). Required holdout count = prior count + 1, parameterized in
+   the designer's input (holdouts accumulate; cost is a later problem
+   by operator decision).
+
+6. WORK ORDERS are issued only for delta slices. Carried slices satisfy
+   dependency gates from the pinned completion record, not runtime
+   scans. Carried criteria are ALWAYS DUE, so every carried file —
+   visible and holdout — is applicable to every delta work order:
+   regression protection is structural, not bolted on.
+
+7. GIT IS PINNED AND CHECKED. Same repository, continuing main. The
+   completion commit SHA and tree digest are pinned into evolution work
+   orders and submissions; workspace preparation clones the repo at the
+   pinned commit, verifies the tree digest, and reconciles
+   acceptance-tests/ to exactly the new suite's visible set as the
+   Workbench's own recorded commit before the builder starts.
+   submitSlice captures HEAD and refuses verification unless it
+   descends from the pinned baseline, recording the changed-path set.
+
+8. MAINTENANCE DIVERGENCE (lockfile bumps, hotfixes between
+   generations) is an operator-acknowledged divergence record showing
+   the tree diff — not a governed slice — because the next round's
+   verification re-runs everything (operator decision).
+
+Why: evolution is where a factory either preserves its evidence
+discipline or quietly abandons it. Every mechanism above converts a
+would-be judgment call (what is built, what changed, what still holds)
+into either a pinned fact or an operator decision on a displayed diff.

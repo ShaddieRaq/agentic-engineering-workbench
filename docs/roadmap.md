@@ -1031,23 +1031,41 @@ order, each with its plan:
    manifest with minimumPassRate 1; then the loop is available when
    evidence warrants.
 
-4. Project-evolution loop (governed change to an already-built
-   project; blocks Mac Librarian v2 requirements: app-data skip rule,
-   human-scale batch caps, content-based grouping). Plan sketch to be
-   pressure-tested before build: reopen an approved brief via a
-   brief-level revise decision (extends the intake reopening shipped
-   2026-08-06); new brief version yields a DELTA architecture plan
-   stage that takes the prior plan plus the built project's verified
-   state and emits only new/changed slices with an updated acceptance
-   plan; test designer emits a suite update pinned to the new plan
-   (existing files retained byte-exact unless a changed criterion
-   requires an update, holdout discipline preserved); work orders carry
-   dependsOn references to already-approved slices from the prior
-   build; submission verification runs the full merged suite. Requires
-   decisions on: how prior-build approvals carry into the new chain's
-   digest lineage, and whether evolution reuses the project's git
-   history (it should — slice branches on the existing repo).
-   Design-discussion gate with the operator before implementation.
+4. Project-evolution loop — DESIGN SETTLED 2026-08-07 as Decision 088
+   (generations closed by build-completion records, grown by the same
+   gates; adversarial probe killed three fatal draft flaws — holdout
+   leakage via retention rules, criterion-id churn, unpinned git
+   state). Implementation slices, in order, each through the usual
+   slice rhythm:
+   A. build-completion artifact + service (green full-suite re-run,
+      commit SHA + tree digest pins, built-slice enumeration, redacted
+      holdout evidence, retroactive mode) + CLI/MCP/console surfaces.
+   B. Brief reopening: reopen decision kind closing downstream gates;
+      session-scoped turn budget counted from the reopen decision;
+      deterministic criterion-id carry contract (verbatim or declared
+      retirement) enforced at brief persistence.
+   C. Evolution plan: architect input carries prior approved plan +
+      completion record; Workbench-computed slice dispositions
+      (carried requires membership in the completion's built set AND
+      content identity with the prior plan); model never authors the
+      flag.
+   D. Evolution suite: designer input carries prior suite including
+      holdout content + requiredHoldoutCount (prior + 1); per-file
+      lineage declarations (carried|revised|new|retired + prior
+      digest) with deterministic succession validation and one-way
+      disclosure.
+   E. Delta work orders + submissions: carried slices satisfy
+      dependency gates from the pinned completion; carried criteria
+      always due (structural regression); commit/tree-digest pins with
+      descent check at submitSlice; evolution workspace prep (clone at
+      pinned commit, reconcile acceptance-tests/ as a Workbench
+      commit, modify-existing-codebase builder instructions).
+   F. Console: completion panel, reopen flow, criterion diff at brief
+      approval, generation demarcation in the chain view.
+   Proving run: retroactive completion for mac-librarian → reopen →
+   v2 requirements (app-data/project-directory skip, review queue
+   capped at human scale, content-based grouping) → full chain →
+   isolated builder → first evolved release.
 
 Completed 2026-08-07 — FIRST FULLY ISOLATED GOVERNED BUILD: Mac Librarian
 (brief b1c76b2a), driven end to end by the operator from the console
