@@ -284,6 +284,84 @@ function IssueWorkOrderButton({
   );
 }
 
+// Closes a build generation (Decision 088): re-runs the full approved
+// suite — holdouts included — against the project's main, then records the
+// operator-signed completion with commit and tree pins. Evolution rounds
+// descend from this record.
+function RecordCompletionPanel({
+  testSuiteId,
+  onDone,
+}: {
+  testSuiteId: string;
+  onDone: () => void;
+}) {
+  const [projectRoot, setProjectRoot] = useState("");
+  const [operatorId, setOperatorId] = useState(
+    () => window.localStorage.getItem(OPERATOR_STORAGE_KEY) ?? "",
+  );
+  const [retroactive, setRetroactive] = useState(false);
+  const [operationId, setOperationId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const operation = useOperation(operationId);
+  const completed = useRef(false);
+
+  useEffect(() => {
+    if (operation.data?.status === "completed" && !completed.current) {
+      completed.current = true;
+      onDone();
+    }
+  }, [operation.data, onDone]);
+
+  async function start(event: FormEvent) {
+    event.preventDefault();
+    try {
+      const started = await api<Operation>("/api/foundry/completions", {
+        method: "POST",
+        body: JSON.stringify({
+          testSuiteId,
+          projectRoot,
+          operatorId,
+          ...(retroactive ? { retroactive } : {}),
+        }),
+      });
+      window.localStorage.setItem(OPERATOR_STORAGE_KEY, operatorId);
+      completed.current = false;
+      setOperationId(started.operationId);
+      setError(null);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  return (
+    <details className="panel decision-form">
+      <summary>Record build completion (close this generation)</summary>
+      <form onSubmit={(event) => void start(event)} className="decision-form-body">
+        <p className="muted-note">
+          Re-runs the FULL approved suite — holdouts included — out-of-tree
+          against the project&apos;s main, then pins the commit and tree
+          digest. Refuses a dirty tree or a red suite.
+        </p>
+        <label>
+          Project root (absolute path)
+          <input required value={projectRoot} onChange={(event) => setProjectRoot(event.target.value)} placeholder="/Users/you/Projects/generated/my-project" />
+        </label>
+        <label>
+          Operator
+          <input required value={operatorId} onChange={(event) => setOperatorId(event.target.value)} />
+        </label>
+        <label className="checkbox-label">
+          <input type="checkbox" checked={retroactive} onChange={(event) => setRetroactive(event.target.checked)} />
+          {" "}Recorded retroactively (build predates completion records)
+        </label>
+        {error && <ErrorNotice message={error} />}
+        {operation.data && <OperationTrace operation={operation.data} />}
+        <button className="button" type="submit">Record completion</button>
+      </form>
+    </details>
+  );
+}
+
 // Records an operator-attributed decision against a decisions endpoint.
 // Approval gates live server-side in the decision constructors; this form
 // only collects the human identity, verdict, and rationale.
@@ -479,6 +557,20 @@ export function FoundryProjectPage() {
               <h3>Version {version.version} · {when(version.createdAt)}</h3>
               <StatusBadge value={version.status} />
             </div>
+            {version.criterionChanges && (
+              <div className="notice">
+                <strong>Criterion changes vs v{version.version - 1}</strong>
+                {version.criterionChanges.changed.map((text) => (
+                  <p className="muted-note" key={`changed-${text}`}>rewritten: {text}</p>
+                ))}
+                {version.criterionChanges.added.map((text) => (
+                  <p className="muted-note" key={`added-${text}`}>added: {text}</p>
+                ))}
+                {version.criterionChanges.retired.map((text) => (
+                  <p className="muted-note" key={`retired-${text}`}>retired: {text}</p>
+                ))}
+              </div>
+            )}
             <DecisionList decisions={version.decisions} />
             {version.version === chain.latestVersion && chain.intakeCanContinue && (
               <IntakeTurnPanel briefId={chain.briefId} questions={chain.intakeQuestions} onDone={resource.reload} />
@@ -495,14 +587,23 @@ export function FoundryProjectPage() {
 
       <section className="foundry-stage">
         <div className="section-heading"><div><span className="eyebrow">Stage 2</span><h2>Architecture plans</h2></div></div>
-        {chain.status === "approved" && (
-          <StageRunControl
-            label="Generate architecture plan"
-            action="/api/foundry/plans"
-            body={{ briefId: chain.briefId }}
-            onDone={resource.reload}
-          />
-        )}
+        {chain.status === "approved" && (() => {
+          // Decision 088: after a completion, a newer approved brief means
+          // the next plan is an EVOLUTION plan descending from it.
+          const latestCompletion = chain.completions[0];
+          const evolveFrom =
+            latestCompletion && chain.latestVersion > latestCompletion.briefVersion
+              ? latestCompletion.completionId
+              : undefined;
+          return (
+            <StageRunControl
+              label={evolveFrom ? `Generate evolution plan (from completion ${shortId(evolveFrom)})` : "Generate architecture plan"}
+              action="/api/foundry/plans"
+              body={{ briefId: chain.briefId, ...(evolveFrom ? { evolveFrom } : {}) }}
+              onDone={resource.reload}
+            />
+          );
+        })()}
         {!chain.plans.length && <EmptyState>No architecture plan yet.</EmptyState>}
         {chain.plans.map((plan) => (
           <div className="panel foundry-panel" key={plan.planId}>
@@ -513,6 +614,7 @@ export function FoundryProjectPage() {
             <p className="muted-note">
               {plan.componentCount} component(s) · {plan.sliceCount} slice(s) · {plan.blockingConcerns} blocking / {plan.advisoryConcerns} advisory concern(s)
               {plan.revisedFromArtifactId && <> · revision of {shortId(plan.revisedFromArtifactId)}</>}
+              {plan.evolvesFromCompletionId && <> · <strong>evolution plan</strong> ({plan.carriedSliceCount ?? 0} carried) from completion {shortId(plan.evolvesFromCompletionId)}</>}
             </p>
             <p className="muted-note">
               Acceptance mappings:{" "}
@@ -532,7 +634,13 @@ export function FoundryProjectPage() {
               <StageRunControl
                 label="Re-run with the requested revisions"
                 action="/api/foundry/plans"
-                body={{ briefId: chain.briefId, reviseFrom: plan.planId }}
+                body={{
+                  briefId: chain.briefId,
+                  reviseFrom: plan.planId,
+                  ...(plan.evolvesFromCompletionId
+                    ? { evolveFrom: plan.evolvesFromCompletionId }
+                    : {}),
+                }}
                 onDone={resource.reload}
               />
             )}
@@ -663,6 +771,16 @@ export function FoundryProjectPage() {
               testSuiteId={chain.build.anchorTestSuiteId}
               onDone={resource.reload}
             />
+            {chain.build.approvedSliceCount === chain.build.slices.length &&
+              chain.build.slices.length > 0 &&
+              !chain.completions.some(
+                (completion) => completion.testSuiteId === chain.build!.anchorTestSuiteId,
+              ) && (
+                <RecordCompletionPanel
+                  testSuiteId={chain.build.anchorTestSuiteId}
+                  onDone={resource.reload}
+                />
+              )}
             {chain.build.slices.map((slice, index) => (
               <div className="panel foundry-panel" key={slice.sliceId}>
                 <div className="section-heading">

@@ -98,6 +98,59 @@ describe("buildFoundryChainView", () => {
     expect(build!.slices[1]!.status).toBe("not-started");
   });
 
+  it("exposes criterion changes between brief versions (Decision 088)", async () => {
+    const store = await temporaryStore();
+    const carried = {
+      id: randomUUID(),
+      text: "Stable behavior.",
+      source: "user-stated" as const,
+      verification: "Run and check.",
+    };
+    const rewritten = {
+      id: randomUUID(),
+      text: "Old wording.",
+      source: "user-stated" as const,
+      verification: "Old check.",
+    };
+    const { createInitialProjectBrief, createNextBriefVersion, briefContentOf } =
+      await import("../src/foundry/projectBrief.js");
+    const v1 = createInitialProjectBrief({
+      title: "Evolving",
+      ideaSummary: "A project taking new requirements.",
+      acceptanceCriteria: [carried, rewritten],
+      createdAt: "2026-08-07T09:00:00.000Z",
+    });
+    const v1Reference = await store.saveProjectBrief(v1);
+    const v2 = createNextBriefVersion({
+      previous: v1,
+      previousArtifactId: v1Reference.id,
+      updated: {
+        ...briefContentOf(v1),
+        acceptanceCriteria: [
+          carried,
+          { ...rewritten, text: "New wording." },
+          {
+            id: randomUUID(),
+            text: "Brand new behavior.",
+            source: "user-stated" as const,
+            verification: "Run and verify.",
+          },
+        ],
+      },
+    });
+    await store.saveProjectBrief(v2);
+
+    const view = await buildFoundryChainView(store, v1.briefId);
+    const versionTwo = view!.briefVersions.find(({ version }) => version === 2);
+    expect(versionTwo?.criterionChanges).toEqual({
+      added: ["Brand new behavior."],
+      changed: ["New wording."],
+      retired: [],
+    });
+    const versionOne = view!.briefVersions.find(({ version }) => version === 1);
+    expect(versionOne?.criterionChanges).toBeUndefined();
+  });
+
   it("sources intake questions from the latest turn record, not the brief", async () => {
     const store = await temporaryStore();
     const { briefId, briefArtifactId } = await persistBriefOnly(store);

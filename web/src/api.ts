@@ -458,6 +458,7 @@ export interface FoundryBriefVersionView {
   status: FoundryStageStatus;
   openQuestions: { id: string; question: string }[];
   decisions: FoundryDecisionView[];
+  criterionChanges?: { added: string[]; changed: string[]; retired: string[] };
 }
 
 export interface FoundryPlanView {
@@ -471,6 +472,8 @@ export interface FoundryPlanView {
   advisoryConcerns: number;
   decisions: FoundryDecisionView[];
   revisedFromArtifactId?: string;
+  evolvesFromCompletionId?: string;
+  carriedSliceCount?: number;
 }
 
 export interface FoundryCapabilityPlanView {
@@ -545,6 +548,7 @@ export interface FoundryChainView {
   completions: {
     completionId: string;
     testSuiteId: string;
+    briefVersion: number;
     mainCommitSha: string;
     treeDigest: string;
     builtSliceCount: number;

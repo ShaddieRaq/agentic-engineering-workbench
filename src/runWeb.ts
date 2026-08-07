@@ -4,6 +4,11 @@ import { AgentApplicationService } from "./agents/agentApplicationService.js";
 import { platformAgentRegistry } from "./agents/platformAgentRegistry.js";
 import { FileArtifactStore } from "./artifacts/fileArtifactStore.js";
 import { ArchitectService } from "./foundry/architectService.js";
+import {
+  BuildCompletionService,
+  createProcessGitInspector,
+} from "./foundry/buildCompletionService.js";
+import { createProcessSubmissionRunner } from "./foundry/submissionService.js";
 import { CapabilityService } from "./foundry/capabilityService.js";
 import { FoundryArtifactStore } from "./foundry/foundryArtifactStore.js";
 import { IntakeSessionController } from "./foundry/intakeSessionController.js";
@@ -79,6 +84,14 @@ async function main(): Promise<void> {
         architect: architectService,
         briefs: briefService,
         store: foundry,
+      }),
+      completions: new BuildCompletionService({
+        testDesign: testDesignService,
+        architect: architectService,
+        store: foundry,
+        runner: createProcessSubmissionRunner(),
+        git: createProcessGitInspector(),
+        isolationRoot: resolve(workspaceRoot, ".workbench", "verification"),
       }),
     },
     clientDirectory: resolve(workspaceRoot, "web/dist"),

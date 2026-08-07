@@ -50,6 +50,13 @@ export interface FoundryBriefVersionView {
   status: FoundryStageStatus;
   openQuestions: { id: string; question: string }[];
   decisions: FoundryDecisionView[];
+  // Criterion delta vs the previous version (Decision 088: the operator
+  // judges criterion rewrites at approval, where the diff is displayed).
+  criterionChanges?: {
+    added: string[];
+    changed: string[];
+    retired: string[];
+  };
 }
 
 export interface FoundryPlanView {
@@ -66,6 +73,9 @@ export interface FoundryPlanView {
   advisoryConcerns: number;
   decisions: FoundryDecisionView[];
   revisedFromArtifactId?: string;
+  // Present on evolution plans; re-runs must carry it (Decision 088).
+  evolvesFromCompletionId?: string;
+  carriedSliceCount?: number;
 }
 
 export interface FoundryCapabilityPlanView {
@@ -165,6 +175,7 @@ export interface FoundryChainView {
   completions: {
     completionId: string;
     testSuiteId: string;
+    briefVersion: number;
     mainCommitSha: string;
     treeDigest: string;
     builtSliceCount: number;
@@ -354,25 +365,63 @@ function buildViewFromBuckets(
   briefId: string,
   buckets: ChainBuckets,
 ): FoundryChainView {
-  const briefVersions = [...buckets.briefs]
-    .sort((left, right) => left.artifact.version - right.artifact.version)
-    .map(({ artifactId, artifact }) => {
-      const decisions = buckets.briefDecisions.filter(
-        (decision) => decision.briefVersion === artifact.version,
+  const sortedBriefs = [...buckets.briefs].sort(
+    (left, right) => left.artifact.version - right.artifact.version,
+  );
+  const briefVersions = sortedBriefs.map(({ artifactId, artifact }, index) => {
+    const decisions = buckets.briefDecisions.filter(
+      (decision) => decision.briefVersion === artifact.version,
+    );
+    // Criterion delta vs the previous version, keyed by criterion text so
+    // the operator can judge rewrites at the approval gate (Decision 088).
+    const previous = sortedBriefs[index - 1]?.artifact;
+    let criterionChanges:
+      | { added: string[]; changed: string[]; retired: string[] }
+      | undefined;
+    if (previous) {
+      const before = new Map(
+        previous.acceptanceCriteria.map((criterion) => [
+          criterion.id,
+          criterion,
+        ]),
       );
-      return {
-        version: artifact.version,
-        artifactId,
-        title: artifact.title,
-        createdAt: artifact.createdAt,
-        status: statusFromDecisions(decisions),
-        openQuestions: artifact.openQuestions.map(({ id, question }) => ({
-          id,
-          question,
-        })),
-        decisions: decisionViews(decisions),
-      };
-    });
+      const added: string[] = [];
+      const changed: string[] = [];
+      for (const criterion of artifact.acceptanceCriteria) {
+        const prior = before.get(criterion.id);
+        if (!prior) {
+          added.push(criterion.text);
+        } else if (
+          prior.text !== criterion.text ||
+          prior.verification !== criterion.verification
+        ) {
+          changed.push(criterion.text);
+        }
+      }
+      const currentIds = new Set(
+        artifact.acceptanceCriteria.map(({ id }) => id),
+      );
+      const retired = previous.acceptanceCriteria
+        .filter(({ id }) => !currentIds.has(id))
+        .map(({ text }) => text);
+      if (added.length + changed.length + retired.length > 0) {
+        criterionChanges = { added, changed, retired };
+      }
+    }
+    return {
+      version: artifact.version,
+      artifactId,
+      title: artifact.title,
+      createdAt: artifact.createdAt,
+      status: statusFromDecisions(decisions),
+      openQuestions: artifact.openQuestions.map(({ id, question }) => ({
+        id,
+        question,
+      })),
+      decisions: decisionViews(decisions),
+      ...(criterionChanges ? { criterionChanges } : {}),
+    };
+  });
   const latestBrief = briefVersions[briefVersions.length - 1];
   if (!latestBrief) {
     throw new Error(`No project brief found for ${briefId}.`);
@@ -403,6 +452,14 @@ function buildViewFromBuckets(
       decisions: decisionViews(decisions),
       ...(plan.revisedFromArtifactId
         ? { revisedFromArtifactId: plan.revisedFromArtifactId }
+        : {}),
+      ...(plan.evolvesFromCompletionId
+        ? {
+            evolvesFromCompletionId: plan.evolvesFromCompletionId,
+            carriedSliceCount: (plan.sliceDispositions ?? []).filter(
+              ({ disposition }) => disposition === "carried",
+            ).length,
+          }
         : {}),
     };
   });
@@ -465,6 +522,7 @@ function buildViewFromBuckets(
     .map((completion) => ({
       completionId: completion.completionId,
       testSuiteId: completion.testSuiteId,
+      briefVersion: completion.briefVersion,
       mainCommitSha: completion.mainCommitSha,
       treeDigest: completion.treeDigest,
       builtSliceCount: completion.builtSliceIds.length,

@@ -13,6 +13,7 @@ import type {
   FoundryArtifactKind,
   FoundryArtifactStore,
 } from "../foundry/foundryArtifactStore.js";
+import type { BuildCompletionService } from "../foundry/buildCompletionService.js";
 import type { IntakeSessionController } from "../foundry/intakeSessionController.js";
 import { createProjectBriefDecision } from "../foundry/projectBriefDecision.js";
 import { createSubmissionDecision } from "../foundry/sliceSubmission.js";
@@ -145,6 +146,16 @@ const foundryWorkOrderRequestSchema = z
   })
   .strict();
 
+// Operator-attributed generation closure (Decision 088).
+const foundryCompletionRequestSchema = z
+  .object({
+    testSuiteId: z.uuid(),
+    projectRoot: z.string().min(1).max(1_000),
+    operatorId: z.string().min(1).max(200),
+    retroactive: z.boolean().optional(),
+  })
+  .strict();
+
 // Foundry decisions are always attributed to the human operator submitting
 // the form (Decision 084: decision writes carry a human identity).
 // "reopen" is only meaningful on briefs (Decision 088); the stage-level
@@ -167,6 +178,9 @@ export interface FoundryActionServices {
   capability: Pick<CapabilityService, "createCapabilityPlan">;
   testDesign: Pick<TestDesignService, "createTestSuite">;
   workOrders: Pick<WorkOrderService, "createWorkOrder" | "nextSlice">;
+  // Optional so evidence-only deployments keep working; the completion
+  // route answers 501 without it.
+  completions?: Pick<BuildCompletionService, "recordCompletion">;
 }
 
 export interface AgentWebServerOptions {
@@ -1134,6 +1148,38 @@ export async function buildAgentWebServer(
         } catch (error: unknown) {
           return reply.code(422).send({ error: errorMessage(error) });
         }
+      });
+
+      app.post("/api/foundry/completions", async (request, reply) => {
+        const parsed = foundryCompletionRequestSchema.safeParse(
+          request.body ?? {},
+        );
+        if (!parsed.success) {
+          return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+        }
+        const completions = stages.completions;
+        if (!completions) {
+          return reply
+            .code(501)
+            .send({ error: "Build completions are not configured on this deployment." });
+        }
+        return startStage(reply, "build-completion", async (emit) => {
+          emit(
+            "workflow",
+            "Re-running the full approved suite (holdouts included) out-of-tree.",
+          );
+          const saved = await completions.recordCompletion({
+            testSuiteId: parsed.data.testSuiteId,
+            projectRoot: parsed.data.projectRoot,
+            operatorId: parsed.data.operatorId,
+            retroactive: parsed.data.retroactive ?? false,
+          });
+          emit(
+            "persistence",
+            `Completion ${saved.completion.completionId} recorded at ${saved.completion.mainCommitSha.slice(0, 12)}.`,
+          );
+          return { completionId: saved.completion.completionId };
+        });
       });
     }
   }
