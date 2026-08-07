@@ -22,6 +22,21 @@ export const testDesignerInputSchema = z
     brief: projectBriefSchema,
     plan: architecturePlanSchema,
     revision: revisionContextSchema.optional(),
+    // Evolution round (Decision 088): the prior approved suite (holdouts
+    // included — the designer authors holdouts; only the BUILDER never
+    // sees them) plus enumerated succession requirements. The service
+    // validates the output against these deterministically.
+    evolution: z
+      .object({
+        priorSuiteContent: testSuiteContentShapeSchema,
+        requiredHoldoutCount: z.number().int().min(1).max(40),
+        unchangedCriterionIds: z.array(z.uuid()).max(50),
+        changedCriterionIds: z.array(z.uuid()).max(50),
+        newCriterionIds: z.array(z.uuid()).max(50),
+        retiredCriterionIds: z.array(z.uuid()).max(50),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 
@@ -69,6 +84,7 @@ export function createTestDesignerAgent(
           input.plan,
           effectivePolicy,
           input.revision,
+          input.evolution,
         ),
         outputSchema: testSuiteContentShapeSchema,
       });

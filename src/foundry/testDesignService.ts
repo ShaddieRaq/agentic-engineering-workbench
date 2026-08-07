@@ -17,6 +17,12 @@ import {
   type TestSuiteDecision,
   type TestSuiteDecisionKind,
 } from "./testSuiteDecision.js";
+import {
+  diffAcceptanceCriteria,
+  validateSuiteSuccession,
+  type CriteriaDiff,
+  type SuiteSuccession,
+} from "./testSuiteSuccession.js";
 
 export const TEST_DESIGNER_AGENT_ID = "test-designer";
 
@@ -95,6 +101,43 @@ export class TestDesignService {
       capabilityPlan.briefVersion,
     );
 
+    // Evolution round (Decision 088): the plan's completion lineage makes
+    // this suite a SUCCESSOR — the prior suite (holdouts included) feeds
+    // the designer, and the output must satisfy the succession rules.
+    let evolution: {
+      priorSuite: TestSuite;
+      diff: CriteriaDiff;
+      requiredHoldoutCount: number;
+    } | null = null;
+    if (plan.evolvesFromCompletionId) {
+      const stored = await this.#store.load(plan.evolvesFromCompletionId);
+      if (stored.kind !== "build-completion") {
+        throw new Error(
+          `Artifact ${plan.evolvesFromCompletionId} is not a build completion.`,
+        );
+      }
+      const completion = stored.artifact;
+      const priorSuite = await this.loadTestSuite(completion.testSuiteId);
+      if (digestJsonEvidence(priorSuite) !== completion.testSuiteDigest) {
+        throw new Error(
+          "Chain integrity failure: the prior suite no longer matches the digest pinned by the completion record.",
+        );
+      }
+      const priorBrief = await this.#briefs.loadBrief(
+        completion.briefId,
+        completion.briefVersion,
+      );
+      const diff = diffAcceptanceCriteria(priorBrief, brief);
+      const priorHoldouts = priorSuite.content.testFiles.filter(
+        ({ visibility }) => visibility === "holdout",
+      ).length;
+      evolution = {
+        priorSuite,
+        diff,
+        requiredHoldoutCount: priorHoldouts + 1,
+      };
+    }
+
     let revision: { previous: unknown; requestedRevisions: string[] } | null =
       null;
     let revisionDecisionId: string | null = null;
@@ -123,7 +166,23 @@ export class TestDesignService {
 
     const response = await this.#agentService.run({
       agentId: TEST_DESIGNER_AGENT_ID,
-      input: { brief, plan, ...(revision ? { revision } : {}) },
+      input: {
+        brief,
+        plan,
+        ...(revision ? { revision } : {}),
+        ...(evolution
+          ? {
+              evolution: {
+                priorSuiteContent: evolution.priorSuite.content,
+                requiredHoldoutCount: evolution.requiredHoldoutCount,
+                unchangedCriterionIds: [...evolution.diff.unchangedIds].sort(),
+                changedCriterionIds: [...evolution.diff.changedIds].sort(),
+                newCriterionIds: [...evolution.diff.newIds].sort(),
+                retiredCriterionIds: [...evolution.diff.retiredIds].sort(),
+              },
+            }
+          : {}),
+      },
       ...(input.model ? { model: input.model } : {}),
     });
     if (!response.run.succeeded || response.run.output === null) {
@@ -134,6 +193,15 @@ export class TestDesignService {
     }
     const output = testSuiteOutputSchema.parse(response.run.output);
     const { reconciliation, ...content } = output;
+
+    let succession: SuiteSuccession | null = null;
+    if (evolution) {
+      succession = validateSuiteSuccession({
+        priorSuiteContent: evolution.priorSuite.content,
+        content,
+        diff: evolution.diff,
+      });
+    }
 
     const testSuite = testSuiteSchema.parse({
       testSuiteId: randomUUID(),
@@ -150,6 +218,15 @@ export class TestDesignService {
         ? { revisedFromArtifactId: input.reviseFromId }
         : {}),
       ...(revisionDecisionId ? { revisionDecisionId } : {}),
+      ...(evolution
+        ? { evolvesFromTestSuiteId: evolution.priorSuite.testSuiteId }
+        : {}),
+      ...(succession
+        ? {
+            fileLineage: succession.fileLineage,
+            retiredFilePaths: succession.retiredFilePaths,
+          }
+        : {}),
     });
     const reference = await this.#store.saveTestSuite(testSuite);
     return { testSuite, reference };

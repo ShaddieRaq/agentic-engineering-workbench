@@ -133,6 +133,26 @@ export const testSuiteSchema = z
     // Optional so artifacts persisted before revision lineage existed load.
     revisedFromArtifactId: z.string().min(1).optional(),
     revisionDecisionId: z.uuid().optional(),
+    // Evolution succession (Decision 088): the prior approved suite this
+    // one supersedes, plus the Workbench-COMPUTED per-file lineage and the
+    // retired prior paths. The model never authors these.
+    evolvesFromTestSuiteId: z.uuid().optional(),
+    fileLineage: z
+      .array(
+        z
+          .object({
+            path: z.string().min(1).max(500),
+            lineage: z.enum(["carried", "revised", "new"]),
+            priorContentDigest: z
+              .string()
+              .regex(/^[a-f0-9]{64}$/)
+              .nullable(),
+          })
+          .strict(),
+      )
+      .max(40)
+      .optional(),
+    retiredFilePaths: z.array(z.string().min(1).max(500)).max(40).optional(),
   })
   .strict();
 

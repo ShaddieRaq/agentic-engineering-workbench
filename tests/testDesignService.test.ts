@@ -14,6 +14,7 @@ import {
   type TestDesignAgentRunService,
 } from "../src/foundry/testDesignService.js";
 import { reconcileTestSuiteContent } from "../src/foundry/testSuiteReconciliation.js";
+import type { TestSuiteContentShape } from "../src/foundry/testSuite.js";
 import { briefWithCriteria, planContentFor } from "./architecturePlan.test.js";
 import { capabilityContentFor, catalogFixture } from "./capabilityPlan.test.js";
 import { suiteContentFor } from "./testSuite.test.js";
@@ -29,7 +30,12 @@ afterEach(async () => {
   createdDirectories.length = 0;
 });
 
-async function createHarness(options: { withBlockingConcern?: boolean } = {}) {
+async function createHarness(
+  options: {
+    withBlockingConcern?: boolean;
+    designerScript?: (input: unknown) => TestSuiteContentShape;
+  } = {},
+) {
   const root = await mkdtemp(join(tmpdir(), "test-design-service-"));
   createdDirectories.push(root);
   const store = new FoundryArtifactStore(root);
@@ -78,7 +84,9 @@ async function createHarness(options: { withBlockingConcern?: boolean } = {}) {
     async run(request) {
       capturedInputs.push(request.input);
       const { brief, plan } = request.input as { brief: never; plan: never };
-      const content = suiteContentFor(brief);
+      const content = options.designerScript
+        ? options.designerScript(request.input)
+        : suiteContentFor(brief);
       if (options.withBlockingConcern) {
         content.concerns.push({
           id: randomUUID(),
@@ -219,6 +227,206 @@ describe("TestDesignService", () => {
     expect(lastInput.revision?.requestedRevisions).toEqual([
       "Import every Vitest hook used.",
     ]);
+  });
+
+  it("runs an evolution round with validated suite succession (Decision 088)", async () => {
+    const { digestJsonEvidence } = await import(
+      "../src/agents/agentEvidenceDigest.js"
+    );
+    const harness = await createHarness({
+      designerScript: (input) => {
+        const typed = input as {
+          brief: {
+            acceptanceCriteria: { id: string }[];
+          };
+          evolution?: {
+            priorSuiteContent: TestSuiteContentShape;
+            newCriterionIds: string[];
+          };
+        };
+        if (!typed.evolution) {
+          return suiteContentFor(typed.brief as never);
+        }
+        // Faithful successor: carry every prior file byte-exact, add a new
+        // visible file for the new criterion, and one new holdout.
+        const newId = typed.evolution.newCriterionIds[0]!;
+        const carried = typed.evolution.priorSuiteContent.testFiles;
+        return {
+          ...typed.evolution.priorSuiteContent,
+          testFiles: [
+            ...carried,
+            {
+              path: "acceptance-tests/export.test.ts",
+              content: carried[0]!.content,
+              visibility: "visible" as const,
+              coveredCriterionIds: [newId],
+              testType: "integration" as const,
+            },
+            {
+              path: "acceptance-tests/export-holdout.test.ts",
+              content: carried[0]!.content,
+              visibility: "holdout" as const,
+              coveredCriterionIds: [newId],
+              testType: "integration" as const,
+            },
+          ],
+        };
+      },
+    });
+
+    // Generation 1: approved chain -> prior suite -> completion.
+    const capabilityPlan = await approvedCapabilityPlan(harness);
+    await harness.capability.recordCapabilityDecision({
+      capabilityPlanId: capabilityPlan.capabilityPlanId,
+      decision: "approve",
+      operatorId: "rashad",
+      rationale: "Mapped.",
+    });
+    const prior = await harness.testDesign.createTestSuite({
+      capabilityPlanId: capabilityPlan.capabilityPlanId,
+    });
+    const gen1Plan = await harness.architect.loadPlan(capabilityPlan.planId);
+    const briefV1 = await harness.briefService.loadBrief(
+      capabilityPlan.briefId,
+      1,
+    );
+    const completionId = randomUUID();
+    await harness.store.saveBuildCompletion({
+      completionId,
+      briefId: capabilityPlan.briefId,
+      briefVersion: 1,
+      planId: gen1Plan.planId,
+      planDigest: digestJsonEvidence(gen1Plan),
+      testSuiteId: prior.testSuite.testSuiteId,
+      testSuiteDigest: digestJsonEvidence(prior.testSuite),
+      projectRoot: "/tmp/project",
+      mainCommitSha: "0123456789abcdef0123456789abcdef01234567",
+      treeDigest: "b".repeat(64),
+      builtSliceIds: gen1Plan.content.implementationSlices.map(({ id }) => id),
+      verification: {
+        files: [
+          {
+            path: "acceptance-tests/criterion-1.test.ts",
+            visibility: "visible",
+            exitCode: 0,
+            passed: true,
+          },
+        ],
+        passed: true,
+        outputExcerpt: "green",
+      },
+      operatorId: "rashad",
+      recordedRetroactively: false,
+      createdAt: new Date().toISOString(),
+    });
+
+    // Reopen -> v2 (one criterion reworded in place, one new) -> approve.
+    await harness.briefService.recordDecision({
+      briefId: capabilityPlan.briefId,
+      version: 1,
+      decision: "reopen",
+      operatorId: "rashad",
+      rationale: "Evolution round.",
+    });
+    const newCriterion = {
+      id: randomUUID(),
+      text: "Exports a weekly CSV summary.",
+      source: "user-stated" as const,
+      verification: "A tester runs export and inspects the CSV.",
+    };
+    const v2 = await harness.briefService.appendBriefVersion(
+      capabilityPlan.briefId,
+      {
+        title: briefV1.title,
+        ideaSummary: briefV1.ideaSummary,
+        goals: briefV1.goals,
+        users: briefV1.users,
+        constraints: briefV1.constraints,
+        risks: briefV1.risks,
+        nonGoals: briefV1.nonGoals,
+        assumptions: briefV1.assumptions,
+        acceptanceCriteria: [
+          {
+            ...briefV1.acceptanceCriteria[0]!,
+            text: "A weekly plan covers seven days, Monday first.",
+          },
+          briefV1.acceptanceCriteria[1]!,
+          newCriterion,
+        ],
+        openQuestions: [],
+      },
+    );
+    await harness.briefService.recordDecision({
+      briefId: capabilityPlan.briefId,
+      version: v2.brief.version,
+      decision: "approve",
+      operatorId: "rashad",
+      rationale: "V2 approved.",
+    });
+
+    // Evolution plan (hand-made, pinned to the completion) -> capability.
+    const evolutionPlanContent = planContentFor(v2.brief as never);
+    const evolutionPlan = {
+      planId: randomUUID(),
+      briefId: capabilityPlan.briefId,
+      briefVersion: v2.brief.version,
+      briefArtifactId: `${capabilityPlan.briefId}-v${v2.brief.version}`,
+      briefDigest: digestJsonEvidence(v2.brief),
+      agentRunArtifactId: null,
+      content: evolutionPlanContent,
+      reconciliation: null,
+      createdAt: new Date().toISOString(),
+      evolvesFromCompletionId: completionId,
+    };
+    await harness.store.saveArchitecturePlan(evolutionPlan);
+    await harness.architect.recordPlanDecision({
+      planId: evolutionPlan.planId,
+      decision: "approve",
+      operatorId: "rashad",
+      rationale: "Evolution plan approved.",
+    });
+    const evolutionCapability = await harness.capability.createCapabilityPlan({
+      planId: evolutionPlan.planId,
+    });
+    await harness.capability.recordCapabilityDecision({
+      capabilityPlanId: evolutionCapability.capabilityPlan.capabilityPlanId,
+      decision: "approve",
+      operatorId: "rashad",
+      rationale: "Mapped.",
+    });
+
+    const evolved = await harness.testDesign.createTestSuite({
+      capabilityPlanId: evolutionCapability.capabilityPlan.capabilityPlanId,
+    });
+    expect(evolved.testSuite.evolvesFromTestSuiteId).toBe(
+      prior.testSuite.testSuiteId,
+    );
+    const lineage = new Map(
+      (evolved.testSuite.fileLineage ?? []).map(({ path, lineage: kind }) => [
+        path,
+        kind,
+      ]),
+    );
+    expect(lineage.get("acceptance-tests/criterion-1.test.ts")).toBe("carried");
+    expect(lineage.get("acceptance-tests/criterion-2.test.ts")).toBe("carried");
+    expect(lineage.get("acceptance-tests/export.test.ts")).toBe("new");
+    expect(lineage.get("acceptance-tests/export-holdout.test.ts")).toBe("new");
+    expect(evolved.testSuite.retiredFilePaths).toEqual([]);
+    // The designer received the prior suite and the enumerated diff.
+    const evolutionInput = harness.capturedInputs.find(
+      (captured) => (captured as { evolution?: unknown }).evolution,
+    ) as {
+      evolution: {
+        requiredHoldoutCount: number;
+        changedCriterionIds: string[];
+        newCriterionIds: string[];
+      };
+    };
+    expect(evolutionInput.evolution.requiredHoldoutCount).toBe(1);
+    expect(evolutionInput.evolution.changedCriterionIds).toEqual([
+      briefV1.acceptanceCriteria[0]!.id,
+    ]);
+    expect(evolutionInput.evolution.newCriterionIds).toEqual([newCriterion.id]);
   });
 
   it("blocks approval on blocking concerns and derives status", async () => {
