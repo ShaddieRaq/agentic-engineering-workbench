@@ -1031,9 +1031,21 @@ order, each with its plan:
    manifest with minimumPassRate 1; then the loop is available when
    evidence warrants.
 
-4. Project-evolution loop — IMPLEMENTED 2026-08-07 (slices A–F below,
-   commits b88aa82..5502410; 940 tests green). Remaining: the live
-   proving run (Mac Librarian v2) and any defects it surfaces.
+4. Project-evolution loop — PROVEN LIVE 2026-08-07: Mac Librarian
+   generation 2 closed (completion fa2722cb, brief v11, suite 07e57ada,
+   7 slices — 4 carried + 3 delta, both holdouts green at main
+   add84ae). The operator drove the whole round from the console:
+   reopen → v2 requirements (intake 0.5.0 rewrote the old document
+   criteria behaviorally, unprompted) → evolution plan (built slices
+   byte-identical, dispositions computed) → capability → successor
+   suite (delta-only model output, Workbench merges carried files) →
+   three delta builds by an isolated builder on the existing repo, all
+   descent-checked, all passing both holdouts first exposure → live
+   completion. Six defects found and fixed during the run (nullable
+   schema field, capability planner flake, designer echo starvation →
+   delta-only redesign, builder-channel git inspector, carried slices
+   in the build view and completion gate). Implementation record:
+   slices A–F, commits b88aa82..b46478f; 943 tests green.
    Original design record — DESIGN SETTLED 2026-08-07 as Decision 088
    (generations closed by build-completion records, grown by the same
    gates; adversarial probe killed three fatal draft flaws — holdout
