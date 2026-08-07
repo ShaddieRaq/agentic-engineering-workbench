@@ -14,6 +14,7 @@ import {
   testDesignerPolicySchema,
   type TestDesignerPolicy,
 } from "./testDesignerPolicy.js";
+import { assessTestDesignerExpectation } from "./testDesignerExpectation.js";
 import { buildTestDesignerPrompt } from "./testDesignerPrompt.js";
 
 export const testDesignerInputSchema = z
@@ -48,7 +49,7 @@ export function createTestDesignerAgent(
         datasetIds: [],
       },
       permissions: { toolIds: [] },
-      verification: { datasetIds: [], minimumPassRate: null },
+      verification: { datasetIds: ["test-designer-smoke"], minimumPassRate: 1 },
     },
     inputSchema: testDesignerInputSchema,
     outputSchema: testSuiteOutputSchema,
@@ -58,6 +59,9 @@ export function createTestDesignerAgent(
       mutableFields: ["instructions"],
       createCandidate: createTestDesignerAgent,
     }),
+    assessDatasetCase(_input, output, expected) {
+      return assessTestDesignerExpectation(output, expected);
+    },
     async execute(input, services) {
       const result = await services.provider.generate({
         prompt: buildTestDesignerPrompt(
