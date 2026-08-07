@@ -24,6 +24,14 @@ export function buildProjectIntakePrompt(
     "CURRENT BRIEF CONTENT:",
     JSON.stringify(input.briefContent, null, 2),
     "",
+    ...(input.standingAdvisories && input.standingAdvisories.length > 0
+      ? [
+          "STANDING ADVISORIES — open edges recorded in prior generations of this project:",
+          ...input.standingAdvisories.map((advisory) => `- ${advisory}`),
+          "For EACH standing advisory: either resolve it in this brief (add or rewrite an acceptance criterion carrying the missing decision) or ask the operator ONE question that decides it. Never silently drop one.",
+          "",
+        ]
+      : []),
     "OPERATOR ANSWERS THIS TURN:",
     input.operatorAnswers.length === 0
       ? "None. This is the opening turn; interrogate the idea summary."

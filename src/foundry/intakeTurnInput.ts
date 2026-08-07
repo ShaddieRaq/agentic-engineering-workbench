@@ -14,6 +14,10 @@ export const intakeTurnInputSchema = z
     operatorAnswers: z.array(intakeOperatorAnswerSchema).max(50),
     turnNumber: z.number().int().min(1),
     remainingTurns: z.number().int().min(0),
+    // Advisory lifecycle: open edges recorded on prior generations'
+    // approved artifacts, injected into reopened interviews so each is
+    // decided or explicitly deferred instead of silently forgotten.
+    standingAdvisories: z.array(z.string().min(1).max(2_000)).max(30).optional(),
   })
   .strict();
 

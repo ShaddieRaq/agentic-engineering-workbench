@@ -11,6 +11,8 @@ import {
 import type { IntakeTurnOutput } from "../src/foundry/intakeTurnOutput.js";
 import type { ProjectBriefDraftContent } from "../src/foundry/projectBrief.js";
 import { ProjectBriefService } from "../src/foundry/projectBriefService.js";
+import { digestJsonEvidence } from "../src/agents/agentEvidenceDigest.js";
+import { planContentFor } from "./architecturePlan.test.js";
 
 const createdDirectories: string[] = [];
 
@@ -408,7 +410,7 @@ describe("IntakeSessionController", () => {
       text: "Confirmed goal",
       source: "user-stated" as const,
     };
-    const { controller, briefService } = await createController([
+    const { controller, briefService, store, agentService } = await createController([
       // Turn 1: interview closes immediately.
       {
         kind: "output",
@@ -452,6 +454,54 @@ describe("IntakeSessionController", () => {
       rationale: "Done.",
     });
 
+    // An approved plan with an advisory concern: the reopened turn must
+    // carry it as a standing advisory (advisory lifecycle).
+    const advisoryPlan = {
+      planId: randomUUID(),
+      briefId: started.brief.briefId,
+      briefVersion: started.brief.version,
+      briefArtifactId: `${started.brief.briefId}-v${started.brief.version}`,
+      briefDigest: "a".repeat(64),
+      agentRunArtifactId: null,
+      content: {
+        ...planContentFor({
+          ...started.brief,
+          acceptanceCriteria: [
+            {
+              id: randomUUID(),
+              text: "Meals plan generates.",
+              source: "user-stated" as const,
+              verification: "Run the planner and check output.",
+            },
+          ],
+        } as never),
+        concerns: [
+          {
+            id: randomUUID(),
+            severity: "advisory" as const,
+            description: "Advisory: the export format is unspecified.",
+            relatedBriefEntryIds: [],
+          },
+        ],
+      },
+      reconciliation: null,
+      createdAt: new Date().toISOString(),
+    };
+    await store.saveArchitecturePlan(advisoryPlan);
+    await store.saveArchitecturePlanDecision({
+      decisionId: randomUUID(),
+      decision: "approve",
+      planId: advisoryPlan.planId,
+      planArtifactId: advisoryPlan.planId,
+      planDigest: digestJsonEvidence(advisoryPlan),
+      briefId: started.brief.briefId,
+      briefVersion: started.brief.version,
+      operatorId: "rashad",
+      rationale: "Approved.",
+      requestedRevisions: null,
+      decidedAt: new Date().toISOString(),
+    });
+
     // Without a reopen the interview stays closed.
     await expect(
       controller.runTurn({
@@ -479,5 +529,18 @@ describe("IntakeSessionController", () => {
     const report = await controller.status(started.brief.briefId);
     expect(report.completedTurns).toBe(1);
     expect(report.maxTurns).toBe(2);
+
+    // The reopened turn carried the standing advisory to the agent; the
+    // greenfield turn did not.
+    const evolutionInput = agentService.calls[1] as {
+      standingAdvisories?: string[];
+    };
+    expect(evolutionInput.standingAdvisories).toEqual([
+      "Advisory: the export format is unspecified.",
+    ]);
+    expect(
+      (agentService.calls[0] as { standingAdvisories?: string[] })
+        .standingAdvisories,
+    ).toBeUndefined();
   });
 });

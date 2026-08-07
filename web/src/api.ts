@@ -547,6 +547,12 @@ export interface FoundryChainView {
   intakeTurnCount: number;
   intakeQuestions: { id: string; question: string }[];
   intakeCanContinue: boolean;
+  standingAdvisories: {
+    stage: "architect" | "capability" | "test-designer";
+    description: string;
+    firstRecordedAt: string;
+    occurrences: number;
+  }[];
   completions: {
     completionId: string;
     testSuiteId: string;

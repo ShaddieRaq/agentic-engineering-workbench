@@ -10,6 +10,7 @@ import type { BuildCompletion } from "../foundry/buildCompletion.js";
 import type { IntakeTurnRecord } from "../foundry/intakeTurn.js";
 import type { ProjectBrief } from "../foundry/projectBrief.js";
 import type { ProjectBriefDecision } from "../foundry/projectBriefDecision.js";
+import { collectStandingAdvisories } from "../foundry/standingAdvisories.js";
 import type {
   SliceSubmission,
   SubmissionDecision,
@@ -174,6 +175,15 @@ export interface FoundryChainView {
   testSuites: FoundryTestSuiteView[];
   build: FoundryBuildView | null;
   buildNote?: string;
+  // Advisory lifecycle: open edges from approved artifacts across all
+  // generations — the system's own defect predictions, kept alive until a
+  // criterion resolves them. Most-repeated first.
+  standingAdvisories: {
+    stage: "architect" | "capability" | "test-designer";
+    description: string;
+    firstRecordedAt: string;
+    occurrences: number;
+  }[];
   // Generation closures (Decision 088): operator-signed records that the
   // full suite passed against a pinned commit. Newest first.
   completions: {
@@ -368,6 +378,7 @@ function newestFirst<T extends { createdAt: string }>(items: T[]): T[] {
 function buildViewFromBuckets(
   briefId: string,
   buckets: ChainBuckets,
+  standingAdvisories: FoundryChainView["standingAdvisories"] = [],
 ): FoundryChainView {
   const sortedBriefs = [...buckets.briefs].sort(
     (left, right) => left.artifact.version - right.artifact.version,
@@ -578,6 +589,7 @@ function buildViewFromBuckets(
     intakeTurnCount: buckets.intakeTurns.length,
     intakeQuestions,
     intakeCanContinue: Boolean(intakeCanContinue),
+    standingAdvisories,
     briefVersions,
     plans,
     capabilityPlans,
@@ -719,7 +731,15 @@ export async function buildFoundryChainView(
 ): Promise<FoundryChainView | null> {
   const buckets = await collectChainBuckets(store, briefId);
   if (!buckets) return null;
-  return buildViewFromBuckets(briefId, buckets);
+  const standingAdvisories = (
+    await collectStandingAdvisories(store, briefId)
+  ).map(({ stage, description, firstRecordedAt, occurrences }) => ({
+    stage,
+    description,
+    firstRecordedAt,
+    occurrences,
+  }));
+  return buildViewFromBuckets(briefId, buckets, standingAdvisories);
 }
 
 export async function buildFoundryProjectIndex(

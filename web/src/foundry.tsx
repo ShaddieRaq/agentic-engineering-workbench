@@ -585,6 +585,22 @@ export function FoundryProjectPage() {
         ))}
       </section>
 
+      {chain.standingAdvisories.length > 0 && (
+        <section className="foundry-stage">
+          <div className="section-heading"><div><span className="eyebrow">Open edges</span><h2>Standing advisories ({chain.standingAdvisories.length})</h2></div></div>
+          <div className="panel">
+            <p className="muted-note">
+              Advisory concerns from approved artifacts across all generations — the system&apos;s own defect predictions. Each stays here until a criterion resolves it; reopened interviews carry this list automatically.
+            </p>
+            {chain.standingAdvisories.map((advisory) => (
+              <p className="muted-note" key={`${advisory.stage}-${advisory.description.slice(0, 40)}`}>
+                <StatusBadge value={advisory.stage} /> ×{advisory.occurrences} · since {new Date(advisory.firstRecordedAt).toLocaleDateString()} — {advisory.description}
+              </p>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="foundry-stage">
         <div className="section-heading"><div><span className="eyebrow">Stage 2</span><h2>Architecture plans</h2></div></div>
         {chain.status === "approved" && (() => {

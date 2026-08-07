@@ -14,6 +14,7 @@ import {
   type ProvenanceConversionSummary,
 } from "./projectBrief.js";
 import type { ProjectBriefService } from "./projectBriefService.js";
+import { collectStandingAdvisories } from "./standingAdvisories.js";
 
 export const PROJECT_INTAKE_AGENT_ID = "project-intake";
 
@@ -242,11 +243,25 @@ export class IntakeSessionController {
     const budgetBaseVersion =
       (await this.#briefService.latestReopenVersion(turn.briefId)) ?? 1;
     const completedTurns = turn.currentBrief.version - budgetBaseVersion;
+    // Advisory lifecycle: reopened interviews carry the project's standing
+    // advisories so every previously-flagged open edge is decided or
+    // explicitly deferred rather than silently forgotten.
+    let standingAdvisories: string[] = [];
+    if (budgetBaseVersion > 1) {
+      const collected = await collectStandingAdvisories(
+        this.#store,
+        turn.briefId,
+      );
+      standingAdvisories = collected
+        .slice(0, 30)
+        .map(({ description }) => description);
+    }
     const agentInput = {
       briefContent: briefContentOf(turn.currentBrief),
       operatorAnswers: turn.operatorAnswers,
       turnNumber: completedTurns + 1,
       remainingTurns: Math.max(turn.maxTurns - completedTurns - 1, 0),
+      ...(standingAdvisories.length > 0 ? { standingAdvisories } : {}),
     };
 
     let agentRunArtifactId: string | null = null;
