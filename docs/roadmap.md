@@ -1031,7 +1031,10 @@ order, each with its plan:
    manifest with minimumPassRate 1; then the loop is available when
    evidence warrants.
 
-4. Project-evolution loop — DESIGN SETTLED 2026-08-07 as Decision 088
+4. Project-evolution loop — IMPLEMENTED 2026-08-07 (slices A–F below,
+   commits b88aa82..5502410; 940 tests green). Remaining: the live
+   proving run (Mac Librarian v2) and any defects it surfaces.
+   Original design record — DESIGN SETTLED 2026-08-07 as Decision 088
    (generations closed by build-completion records, grown by the same
    gates; adversarial probe killed three fatal draft flaws — holdout
    leakage via retention rules, criterion-id churn, unpinned git
