@@ -169,6 +169,105 @@ describe("ProjectBriefService", () => {
     ).rejects.toThrowError(/open questions cannot be approved/i);
   });
 
+  it("reopens only the approved latest version (Decision 088)", async () => {
+    const { service } = await createService();
+    const { brief } = await service.initiateBrief({
+      title: "Evolving",
+      ideaSummary: "A project that will evolve.",
+    });
+
+    // Draft briefs cannot reopen.
+    await expect(
+      service.recordDecision({
+        briefId: brief.briefId,
+        version: 1,
+        decision: "reopen",
+        operatorId: "rashad",
+        rationale: "Too early.",
+      }),
+    ).rejects.toThrow(/Only an approved brief/);
+
+    await service.recordDecision({
+      briefId: brief.briefId,
+      version: 1,
+      decision: "approve",
+      operatorId: "rashad",
+      rationale: "Ship it.",
+    });
+    const saved = await service.recordDecision({
+      briefId: brief.briefId,
+      version: 1,
+      decision: "reopen",
+      operatorId: "rashad",
+      rationale: "New requirements.",
+    });
+    expect(saved.decision.decision).toBe("reopen");
+    // Reopen closes downstream gates and records the base version.
+    expect(await service.deriveBriefStatus(brief.briefId)).toBe("draft");
+    expect(await service.latestReopenVersion(brief.briefId)).toBe(1);
+  });
+
+  it("enforces the criterion-identity contract after approval", async () => {
+    const { service } = await createService();
+    const carried = {
+      id: randomUUID(),
+      text: "Saving works.",
+      source: "user-stated" as const,
+      verification: "A tester runs save and checks the listing.",
+    };
+    const { brief } = await service.initiateBrief({
+      title: "Contract",
+      ideaSummary: "Criterion identity is a contract.",
+      acceptanceCriteria: [carried],
+    });
+    await service.recordDecision({
+      briefId: brief.briefId,
+      version: 1,
+      decision: "approve",
+      operatorId: "rashad",
+      rationale: "Approved.",
+    });
+    await service.recordDecision({
+      briefId: brief.briefId,
+      version: 1,
+      decision: "reopen",
+      operatorId: "rashad",
+      rationale: "Evolution round.",
+    });
+
+    // Dropping an approved criterion without declaring retirement fails.
+    await expect(
+      service.appendBriefVersion(brief.briefId, {
+        ...updatedFrom(brief),
+        acceptanceCriteria: [],
+      }),
+    ).rejects.toThrow(/neither carried nor explicitly retired/);
+
+    // Rewriting in place (same id) passes; so does declared retirement.
+    const rewritten = await service.appendBriefVersion(brief.briefId, {
+      ...updatedFrom(brief),
+      acceptanceCriteria: [
+        { ...carried, text: "Saving works and is confirmed on stdout." },
+      ],
+    });
+    expect(rewritten.brief.version).toBe(2);
+    const retired = await service.appendBriefVersion(brief.briefId, {
+      ...updatedFrom(rewritten.brief),
+      acceptanceCriteria: [],
+      retiredCriterionIds: [carried.id],
+    });
+    expect(retired.brief.retiredCriterionIds).toEqual([carried.id]);
+
+    // An id cannot be both active and retired.
+    await expect(
+      service.appendBriefVersion(brief.briefId, {
+        ...updatedFrom(rewritten.brief),
+        acceptanceCriteria: [carried],
+        retiredCriterionIds: [carried.id],
+      }),
+    ).rejects.toThrow(/both active and retired/);
+  });
+
   it("pins decisions to the exact decided version", async () => {
     const { service } = await createService();
     const { brief: initial } = await service.initiateBrief({

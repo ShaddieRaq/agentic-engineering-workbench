@@ -53,6 +53,11 @@ const briefContentShape = {
   assumptions: z.array(briefEntrySchema).max(50),
   acceptanceCriteria: z.array(acceptanceCriterionSchema).max(50),
   openQuestions: z.array(openQuestionSchema).max(50),
+  // Decision 088 criterion-identity contract: after a reopen, every
+  // criterion id from the last approved version must reappear verbatim or
+  // be listed here as deliberately retired. Optional so pre-evolution
+  // artifacts load unchanged.
+  retiredCriterionIds: z.array(z.uuid()).max(50).optional(),
 };
 
 interface BriefContentLike {
@@ -192,6 +197,9 @@ export function briefContentOf(brief: ProjectBrief): ProjectBriefDraftContent {
     assumptions: brief.assumptions,
     acceptanceCriteria: brief.acceptanceCriteria,
     openQuestions: brief.openQuestions,
+    ...(brief.retiredCriterionIds
+      ? { retiredCriterionIds: brief.retiredCriterionIds }
+      : {}),
   });
 }
 

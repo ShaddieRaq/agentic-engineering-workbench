@@ -35,7 +35,7 @@ export type FoundrySliceStatus =
 
 export interface FoundryDecisionView {
   decisionId: string;
-  decision: "approve" | "reject" | "revise";
+  decision: "approve" | "reject" | "revise" | "reopen";
   operatorId: string;
   rationale: string;
   requestedRevisions: string[] | null;
@@ -233,13 +233,15 @@ function statusFromDecisions(
   if (!latest) return "draft";
   if (latest.decision === "approve") return "approved";
   if (latest.decision === "reject") return "rejected";
+  // A reopen (Decision 088) returns the stage to draft for a new round.
+  if (latest.decision === "reopen") return "draft";
   return "revision-requested";
 }
 
 function decisionViews(
   decisions: {
     decisionId: string;
-    decision: "approve" | "reject" | "revise";
+    decision: "approve" | "reject" | "revise" | "reopen";
     operatorId: string;
     rationale: string;
     requestedRevisions: string[] | null;
@@ -491,10 +493,19 @@ function buildViewFromBuckets(
           question,
         }))
       : [];
-  // Mirrors IntakeSessionController.runTurn's status guard.
+  // Mirrors IntakeSessionController.runTurn's status guard, including the
+  // reopen re-arm (Decision 088): a reopen on the latest version makes the
+  // interview continuable even after a closed turn.
+  const latestVersionDecisions = sortDecisionsDesc(
+    buckets.briefDecisions.filter(
+      (decision) => decision.briefVersion === latestBrief.version,
+    ),
+  );
+  const reopened = latestVersionDecisions[0]?.decision === "reopen";
   const intakeCanContinue =
     latestTurn?.status === "awaiting-answers" ||
-    latestTurn?.status === "model-failure";
+    latestTurn?.status === "model-failure" ||
+    reopened;
 
   return {
     briefId,

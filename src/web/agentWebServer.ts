@@ -145,9 +145,11 @@ const foundryWorkOrderRequestSchema = z
 
 // Foundry decisions are always attributed to the human operator submitting
 // the form (Decision 084: decision writes carry a human identity).
+// "reopen" is only meaningful on briefs (Decision 088); the stage-level
+// decision constructors reject it everywhere else.
 const foundryDecisionRequestSchema = z
   .object({
-    decision: z.enum(["approve", "reject", "revise"]),
+    decision: z.enum(["approve", "reject", "revise", "reopen"]),
     operatorId: z.string().min(1).max(200),
     rationale: z.string().min(1).max(8_000),
     requestedRevisions: z.array(z.string().min(1).max(2_000)).max(20).optional(),
@@ -821,7 +823,7 @@ export async function buildAgentWebServer(
       build: (
         artifact: never,
         input: {
-          decision: "approve" | "reject" | "revise";
+          decision: "approve" | "reject" | "revise" | "reopen";
           operatorId: string;
           rationale: string;
           requestedRevisions: string[] | null;
@@ -873,13 +875,17 @@ export async function buildAgentWebServer(
           artifactId,
           "project-brief",
           async (brief: never, input) => {
-            const decision = createProjectBriefDecision({
-              brief,
-              briefArtifactId: artifactId,
+            // Delegating to the service keeps the web boundary identical to
+            // CLI/MCP — including the reopen guard (approved latest version
+            // only, Decision 088).
+            const { ProjectBriefService } = await import(
+              "../foundry/projectBriefService.js"
+            );
+            return new ProjectBriefService(foundry).recordDecision({
+              briefId: request.params.briefId,
+              version,
               ...input,
             });
-            const reference = await foundry.saveProjectBriefDecision(decision);
-            return { decision, reference };
           },
         );
       },
@@ -894,10 +900,15 @@ export async function buildAgentWebServer(
           request.params.planId,
           "architecture-plan",
           async (plan: never, input) => {
+            const { decision: decisionKind, ...decisionRest } = input;
+            if (decisionKind === "reopen") {
+              throw new Error("reopen is only valid on project briefs.");
+            }
             const decision = createArchitecturePlanDecision({
               plan,
               planArtifactId: request.params.planId,
-              ...input,
+              decision: decisionKind,
+              ...decisionRest,
             });
             const reference = await foundry.saveArchitecturePlanDecision(decision);
             return { decision, reference };
@@ -914,10 +925,15 @@ export async function buildAgentWebServer(
           request.params.capabilityPlanId,
           "capability-plan",
           async (capabilityPlan: never, input) => {
+            const { decision: decisionKind, ...decisionRest } = input;
+            if (decisionKind === "reopen") {
+              throw new Error("reopen is only valid on project briefs.");
+            }
             const decision = createCapabilityPlanDecision({
               capabilityPlan,
               capabilityPlanArtifactId: request.params.capabilityPlanId,
-              ...input,
+              decision: decisionKind,
+              ...decisionRest,
             });
             const reference = await foundry.saveCapabilityPlanDecision(decision);
             return { decision, reference };
@@ -934,10 +950,15 @@ export async function buildAgentWebServer(
           request.params.testSuiteId,
           "test-suite",
           async (testSuite: never, input) => {
+            const { decision: decisionKind, ...decisionRest } = input;
+            if (decisionKind === "reopen") {
+              throw new Error("reopen is only valid on project briefs.");
+            }
             const decision = createTestSuiteDecision({
               testSuite,
               testSuiteArtifactId: request.params.testSuiteId,
-              ...input,
+              decision: decisionKind,
+              ...decisionRest,
             });
             const reference = await foundry.saveTestSuiteDecision(decision);
             return { decision, reference };
@@ -954,9 +975,14 @@ export async function buildAgentWebServer(
           request.params.submissionId,
           "slice-submission",
           async (submission: never, input) => {
+            const { decision: decisionKind, ...decisionRest } = input;
+            if (decisionKind === "reopen") {
+              throw new Error("reopen is only valid on project briefs.");
+            }
             const decision = createSubmissionDecision({
               submission,
-              ...input,
+              decision: decisionKind,
+              ...decisionRest,
             });
             const reference = await foundry.saveSubmissionDecision(decision);
             return { decision, reference };

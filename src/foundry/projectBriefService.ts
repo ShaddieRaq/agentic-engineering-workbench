@@ -64,6 +64,35 @@ export class ProjectBriefService {
       previousArtifactId: projectBriefArtifactId(previous),
       updated,
     });
+
+    // Decision 088 criterion-identity contract: once a version has been
+    // approved, every approved criterion id must reappear verbatim in each
+    // later version or be explicitly retired — no silent disappearances,
+    // no id churn (id churn breaks every downstream carry rule).
+    const approvedIds = await this.#latestApprovedCriterionIds(briefId);
+    if (approvedIds !== null) {
+      const activeIds = new Set(brief.acceptanceCriteria.map(({ id }) => id));
+      const retiredIds = new Set(brief.retiredCriterionIds ?? []);
+      const missing = [...approvedIds].filter(
+        (id) => !activeIds.has(id) && !retiredIds.has(id),
+      );
+      if (missing.length > 0) {
+        throw new Error(
+          "Criterion-identity contract violation: approved criterion id(s) " +
+            `${missing.join(", ")} are neither carried nor explicitly retired ` +
+            "in the new version.",
+        );
+      }
+      const bothActiveAndRetired = [...retiredIds].filter((id) =>
+        activeIds.has(id),
+      );
+      if (bothActiveAndRetired.length > 0) {
+        throw new Error(
+          `Criterion id(s) ${bothActiveAndRetired.join(", ")} are both active and retired.`,
+        );
+      }
+    }
+
     const reference = await this.#store.saveProjectBrief(brief);
     return { brief, reference };
   }
@@ -141,6 +170,20 @@ export class ProjectBriefService {
     requestedRevisions?: string[] | null;
   }): Promise<SavedProjectBriefDecision> {
     const brief = await this.loadBrief(input.briefId, input.version);
+    if (input.decision === "reopen") {
+      const latestVersion = await this.#latestVersion(input.briefId);
+      if (input.version !== latestVersion) {
+        throw new Error(
+          `Reopen must target the latest brief version (${latestVersion}), not ${input.version}.`,
+        );
+      }
+      const status = await this.deriveBriefStatus(input.briefId);
+      if (status !== "approved") {
+        throw new Error(
+          `Only an approved brief can be reopened; brief ${input.briefId} is ${status}.`,
+        );
+      }
+    }
     const decision = createProjectBriefDecision({
       brief,
       briefArtifactId: projectBriefArtifactId(brief),
@@ -178,7 +221,48 @@ export class ProjectBriefService {
     }
     if (stored.artifact.decision === "approve") return "approved";
     if (stored.artifact.decision === "reject") return "rejected";
+    // A reopen returns the brief to draft: downstream gates that require
+    // "approved" close, and the interview re-arms.
+    if (stored.artifact.decision === "reopen") return "draft";
     return "revision-requested";
+  }
+
+  // Version at which the latest reopen decision was recorded, or null when
+  // the brief was never reopened. The intake turn budget is counted from
+  // this base (Decision 088 session-scoped budget).
+  async latestReopenVersion(briefId: string): Promise<number | null> {
+    const decisions = await this.listDecisions(briefId);
+    const sorted = [...decisions].sort((left, right) =>
+      right.createdAt.localeCompare(left.createdAt),
+    );
+    for (const summary of sorted) {
+      const stored = await this.#store.load(summary.id);
+      if (stored.kind !== "project-brief-decision") continue;
+      if (stored.artifact.decision === "reopen") {
+        return stored.artifact.briefVersion;
+      }
+    }
+    return null;
+  }
+
+  // Acceptance-criterion ids of the latest APPROVED version, or null when
+  // no version was ever approved. Input to the criterion-identity contract.
+  async #latestApprovedCriterionIds(briefId: string): Promise<Set<string> | null> {
+    const decisions = await this.listDecisions(briefId);
+    const sorted = [...decisions].sort((left, right) =>
+      right.createdAt.localeCompare(left.createdAt),
+    );
+    for (const summary of sorted) {
+      const stored = await this.#store.load(summary.id);
+      if (stored.kind !== "project-brief-decision") continue;
+      if (stored.artifact.decision !== "approve") continue;
+      const approved = await this.loadBrief(
+        briefId,
+        stored.artifact.briefVersion,
+      );
+      return new Set(approved.acceptanceCriteria.map(({ id }) => id));
+    }
+    return null;
   }
 
   async #latestVersion(briefId: string): Promise<number> {

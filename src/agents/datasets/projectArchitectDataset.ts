@@ -24,7 +24,10 @@ function baseBrief(overrides: {
   goals?: ProjectBrief["goals"];
   constraints?: ProjectBrief["constraints"];
   acceptanceCriteria?: ProjectBrief["acceptanceCriteria"];
-}): ProjectBrief {
+}) {
+  // Inferred (not ProjectBrief-annotated) so the JSON-typed dataset input
+  // accepts it: the named type's optional retiredCriterionIds is
+  // incompatible with the strict JSON index signature.
   return {
     briefId: overrides.briefId,
     version: 1,

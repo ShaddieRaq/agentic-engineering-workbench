@@ -7,6 +7,10 @@ export const projectBriefDecisionKindSchema = z.enum([
   "approve",
   "reject",
   "revise",
+  // Decision 088: recorded on an APPROVED brief to open an evolution
+  // round; downstream gates close and the intake interview re-arms with a
+  // session-scoped turn budget.
+  "reopen",
 ]);
 
 export const projectBriefDecisionSchema = z

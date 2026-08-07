@@ -12,7 +12,7 @@ export type FoundryCliArgs =
       command: "brief-decide";
       briefId: string;
       version: number;
-      decision: "approve" | "reject" | "revise";
+      decision: "approve" | "reject" | "revise" | "reopen";
       operatorId: string;
       rationale: string;
       requestedRevisions: string[];
@@ -185,8 +185,13 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
 
   if (command === "brief-decide") {
     const decision = requiredOption(args, "--decision");
-    if (decision !== "approve" && decision !== "reject" && decision !== "revise") {
-      throw new Error("--decision must be one of: approve, reject, revise.");
+    if (
+      decision !== "approve" &&
+      decision !== "reject" &&
+      decision !== "revise" &&
+      decision !== "reopen"
+    ) {
+      throw new Error("--decision must be one of: approve, reject, revise, reopen.");
     }
     const version = versionOption(args, "--version");
     if (version === null) {

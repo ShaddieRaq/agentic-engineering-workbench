@@ -443,7 +443,7 @@ export type FoundrySliceStatus =
 
 export interface FoundryDecisionView {
   decisionId: string;
-  decision: "approve" | "reject" | "revise";
+  decision: "approve" | "reject" | "revise" | "reopen";
   operatorId: string;
   rationale: string;
   requestedRevisions: string[] | null;

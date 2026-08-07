@@ -385,15 +385,16 @@ export function buildWorkbenchMcpServer(
     "record_brief_decision",
     {
       description:
-        "Writes an operator decision. Record approve, reject, or revise on a " +
-        "specific project-brief version, pinned to its exact content digest. " +
-        "Recorded with the named operator's identity; approval is blocked " +
-        "while unresolved entries or open questions remain, identical to the " +
-        "CLI boundary.",
+        "Writes an operator decision. Record approve, reject, revise, or " +
+        "reopen on a specific project-brief version, pinned to its exact " +
+        "content digest. Recorded with the named operator's identity; " +
+        "approval is blocked while unresolved entries or open questions " +
+        "remain, and reopen (Decision 088) is valid only on the approved " +
+        "latest version — it re-arms the interview for an evolution round.",
       inputSchema: {
         briefId: z.uuid(),
         version: z.number().int().min(1),
-        decision: z.enum(["approve", "reject", "revise"]),
+        decision: z.enum(["approve", "reject", "revise", "reopen"]),
         operatorId: z.string().min(1).max(200),
         rationale: z.string().min(1).max(8_000),
         requestedRevisions: z.array(z.string().min(1).max(2_000)).max(20).optional(),

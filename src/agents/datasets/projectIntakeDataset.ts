@@ -15,8 +15,11 @@ const DOC_CRITERION_SCOPE_ID = "0e1f2a3b-4c5d-4e6f-8a7b-8c9d0e1f2a3b";
 const DOC_CRITERION_FORMAT_ID = "1f2a3b4c-5d6e-4f7a-8b8c-9d0e1f2a3b4c";
 
 function briefContent(
-  overrides: Partial<ProjectBriefDraftContent> = {},
-): ProjectBriefDraftContent {
+  // retiredCriterionIds is omitted so the inferred type stays compatible
+  // with the JSON-typed dataset input (optional fields break the strict
+  // JSON index signature).
+  overrides: Omit<Partial<ProjectBriefDraftContent>, "retiredCriterionIds"> = {},
+) {
   return {
     title: "Team Standup Notes CLI",
     ideaSummary:

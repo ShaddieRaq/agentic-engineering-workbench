@@ -135,7 +135,22 @@ export class IntakeSessionController {
         `Brief ${input.briefId} has no intake turns. Use startIntake first.`,
       );
     }
-    if (previous.status !== "awaiting-answers" && previous.status !== "model-failure") {
+    // A reopen decision recorded after the last completed turn re-arms the
+    // interview regardless of how that turn closed (Decision 088).
+    const reopenVersion = await this.#briefService.latestReopenVersion(
+      input.briefId,
+    );
+    const currentVersion = (await this.#briefService.loadBrief(input.briefId))
+      .version;
+    const reopened =
+      reopenVersion !== null && reopenVersion === currentVersion &&
+      previous.status !== "awaiting-answers" &&
+      previous.status !== "model-failure";
+    if (
+      previous.status !== "awaiting-answers" &&
+      previous.status !== "model-failure" &&
+      !reopened
+    ) {
       throw new Error(
         `Intake for brief ${input.briefId} is ${previous.status} and cannot accept answers.`,
       );
@@ -196,11 +211,13 @@ export class IntakeSessionController {
       provenanceConversion = computeProvenanceConversion(previousBrief, brief);
     }
 
+    const statusBudgetBase =
+      (await this.#briefService.latestReopenVersion(briefId)) ?? 1;
     return {
       briefId,
       briefVersion: brief.version,
       status: record.status,
-      completedTurns: brief.version - 1,
+      completedTurns: brief.version - statusBudgetBase,
       attempts: record.turnNumber,
       maxTurns: record.maxTurns,
       nextQuestions: record.nextQuestions,
@@ -219,8 +236,12 @@ export class IntakeSessionController {
     const startedAt = new Date().toISOString();
     // Interview progress is the brief version chain, not the attempt count:
     // every successful turn appends exactly one version, so failed attempts
-    // never consume budget.
-    const completedTurns = turn.currentBrief.version - 1;
+    // never consume budget. After a reopen the budget is session-scoped —
+    // counted from the version the reopen was recorded on (Decision 088),
+    // otherwise a reopened v8 brief would be born budget-exhausted.
+    const budgetBaseVersion =
+      (await this.#briefService.latestReopenVersion(turn.briefId)) ?? 1;
+    const completedTurns = turn.currentBrief.version - budgetBaseVersion;
     const agentInput = {
       briefContent: briefContentOf(turn.currentBrief),
       operatorAnswers: turn.operatorAnswers,
@@ -268,7 +289,8 @@ export class IntakeSessionController {
     const status = deriveIntakeStatus(
       resultingBrief,
       output,
-      resultingBrief.version - 1,
+      // Session-scoped, same base as the pre-turn budget (Decision 088).
+      resultingBrief.version - budgetBaseVersion,
       turn.maxTurns,
     );
 

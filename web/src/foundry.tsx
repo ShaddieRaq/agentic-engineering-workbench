@@ -287,8 +287,8 @@ function IssueWorkOrderButton({
 // Records an operator-attributed decision against a decisions endpoint.
 // Approval gates live server-side in the decision constructors; this form
 // only collects the human identity, verdict, and rationale.
-function DecisionForm({ action, onRecorded }: { action: string; onRecorded: () => void }) {
-  const [decision, setDecision] = useState<"approve" | "reject" | "revise">("approve");
+function DecisionForm({ action, onRecorded, allowReopen }: { action: string; onRecorded: () => void; allowReopen?: boolean }) {
+  const [decision, setDecision] = useState<"approve" | "reject" | "revise" | "reopen">("approve");
   const [operatorId, setOperatorId] = useState(
     () => window.localStorage.getItem(OPERATOR_STORAGE_KEY) ?? "",
   );
@@ -335,10 +335,11 @@ function DecisionForm({ action, onRecorded }: { action: string; onRecorded: () =
       <form className="panel" onSubmit={submit}>
         <label>
           Decision
-          <select value={decision} onChange={(event) => setDecision(event.target.value as "approve" | "reject" | "revise")}>
+          <select value={decision} onChange={(event) => setDecision(event.target.value as "approve" | "reject" | "revise" | "reopen")}>
             <option value="approve">approve</option>
             <option value="reject">reject</option>
             <option value="revise">revise</option>
+            {allowReopen && <option value="reopen">reopen (start an evolution round)</option>}
           </select>
         </label>
         <label>
@@ -485,6 +486,7 @@ export function FoundryProjectPage() {
             <DecisionForm
               action={`/api/foundry/briefs/${chain.briefId}/versions/${version.version}/decisions`}
               onRecorded={resource.reload}
+              allowReopen={version.version === chain.latestVersion && version.status === "approved"}
             />
             <Link to={`/foundry/artifacts/${version.artifactId}`}>Raw brief →</Link>
           </div>

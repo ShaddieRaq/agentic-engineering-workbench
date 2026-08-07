@@ -239,7 +239,7 @@ export function createWorkbenchMcpTools(deps: WorkbenchMcpDependencies) {
     async recordBriefDecision(input: {
       briefId: string;
       version: number;
-      decision: "approve" | "reject" | "revise";
+      decision: "approve" | "reject" | "revise" | "reopen";
       operatorId: string;
       rationale: string;
       requestedRevisions?: string[] | undefined;

@@ -24,7 +24,9 @@ const SLICE_IDS = [
   "eeeeeee1-0000-4000-8000-00000000060e",
 ];
 
-const brief: ProjectBrief = {
+// Inferred (satisfies, not annotated) so the JSON-typed dataset input
+// accepts it despite the named type's optional fields.
+const brief = {
   briefId: BRIEF_ID,
   version: 1,
   title: "Note Snippet CLI",
@@ -68,7 +70,7 @@ const brief: ProjectBrief = {
   previousVersionArtifactId: null,
   previousVersionDigest: null,
   createdAt: FIXED_CREATED_AT,
-};
+} satisfies ProjectBrief;
 
 // Typed via satisfies so the JSON-valued dataset input accepts it: the
 // ArchitecturePlan type's optional revision-lineage fields are incompatible

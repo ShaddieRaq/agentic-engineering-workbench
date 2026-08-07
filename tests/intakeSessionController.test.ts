@@ -401,4 +401,83 @@ describe("IntakeSessionController", () => {
       }),
     ).rejects.toThrowError(/ready-for-decision/);
   });
+
+  it("re-arms after a reopen with a session-scoped turn budget (Decision 088)", async () => {
+    const goal = {
+      id: randomUUID(),
+      text: "Confirmed goal",
+      source: "user-stated" as const,
+    };
+    const { controller, briefService } = await createController([
+      // Turn 1: interview closes immediately.
+      {
+        kind: "output",
+        output: {
+          updatedBriefDraft: content({ goals: [goal] }),
+          nextQuestions: [],
+          openIssues: [],
+        },
+      },
+      // Evolution turn after reopen: still-open scope keeps it awaiting.
+      {
+        kind: "output",
+        output: {
+          updatedBriefDraft: content({
+            goals: [goal],
+            openQuestions: [
+              {
+                id: randomUUID(),
+                question: "Which export formats matter?",
+                relatedEntryIds: [goal.id],
+              },
+            ],
+          }),
+          nextQuestions: [question([goal.id])],
+          openIssues: [],
+        },
+      },
+    ]);
+
+    const started = await controller.startIntake({
+      title: "Recipe planner",
+      idea: "Plan meals.",
+      maxTurns: 2,
+    });
+    expect(started.record.status).toBe("ready-for-decision");
+    await briefService.recordDecision({
+      briefId: started.brief.briefId,
+      version: started.brief.version,
+      decision: "approve",
+      operatorId: "rashad",
+      rationale: "Done.",
+    });
+
+    // Without a reopen the interview stays closed.
+    await expect(
+      controller.runTurn({
+        briefId: started.brief.briefId,
+        answers: [{ questionId: null, answer: "Add exports." }],
+      }),
+    ).rejects.toThrowError(/ready-for-decision/);
+
+    await briefService.recordDecision({
+      briefId: started.brief.briefId,
+      version: started.brief.version,
+      decision: "reopen",
+      operatorId: "rashad",
+      rationale: "Evolution round.",
+    });
+
+    const evolved = await controller.runTurn({
+      briefId: started.brief.briefId,
+      answers: [{ questionId: null, answer: "Add exports." }],
+    });
+    expect(evolved.record.status).toBe("awaiting-answers");
+    expect(evolved.brief.version).toBe(started.brief.version + 1);
+
+    // Budget counts from the reopen base, not the brief's lifetime version.
+    const report = await controller.status(started.brief.briefId);
+    expect(report.completedTurns).toBe(1);
+    expect(report.maxTurns).toBe(2);
+  });
 });
