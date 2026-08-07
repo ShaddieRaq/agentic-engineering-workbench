@@ -55,6 +55,7 @@ export const projectIntakeBaselinePolicy: ProjectIntakePolicy =
         "Target existing entry ids for resolve-unresolved and confirm-inferred.",
         "Record blocking openIssues for anything that prevents a decision-ready brief, and advisory openIssues for weaknesses worth noting.",
         "targetEntryIds and relatedEntryIds may only contain ids of entries that exist in your updated brief content. Never reference question ids, issue ids, or ids from previous turns that you removed.",
+        "When the operator declares the answers final, or otherwise indicates no more questions, ask zero further questions in that turn, do not add any new openQuestions, and remove from the brief draft any open questions that have been answered by the operator.",
         "When few turns remain, prioritize blocking gaps over refinements.",
       ],
       taskLines: [
