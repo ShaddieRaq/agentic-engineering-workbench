@@ -223,11 +223,14 @@ export const projectIntakeDataset: AgentDatasetDefinition = {
         operatorAnswers: [
           {
             questionId: null,
+            // Mirrors the live trigger wording (Mac Librarian, 2026-08-06):
+            // a neutral closure instruction that never mentions criteria or
+            // how to write them. The case must reproduce the CONDITIONS of
+            // the defect, not describe the desired behavior.
             answer:
-              "These answers are final. Write the acceptance criteria for " +
-              "what we have agreed, choose reasonable defaults for anything " +
-              "remaining, and close the interview without asking further " +
-              "questions.",
+              "Stop refining. These answers are final. Choose reasonable " +
+              "defaults for anything remaining and produce the complete " +
+              "final brief without asking further questions.",
           },
         ],
         turnNumber: 4,
@@ -273,12 +276,10 @@ export const projectIntakeDataset: AgentDatasetDefinition = {
         operatorAnswers: [
           {
             questionId: null,
-            answer:
-              "These acceptance criteria test the document, not the tool. " +
-              "Rewrite every acceptance criterion in place to describe " +
-              "observable behavior of the tool itself, with a verification " +
-              "a tester performs by running the tool. Keep everything else " +
-              "unchanged.",
+            // Deliberately neutral: the operator gives no hint that the
+            // existing criteria are defective. Rewriting them must come
+            // from the agent's own rules, or this measures nothing.
+            answer: "Everything looks right to me. Finalize the brief.",
           },
         ],
         turnNumber: 3,
