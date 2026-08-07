@@ -20,6 +20,16 @@ export const projectArchitectInputSchema = z
   .object({
     brief: projectBriefSchema,
     revision: revisionContextSchema.optional(),
+    // Evolution round (Decision 088): the prior approved plan's content
+    // and the completion record's built slice ids. Built slices must be
+    // reproduced byte-identical; the service validates deterministically.
+    evolution: z
+      .object({
+        builtSliceIds: z.array(z.uuid()).min(1).max(20),
+        priorPlanContent: architecturePlanContentShapeSchema,
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 
@@ -66,6 +76,7 @@ export function createProjectArchitectAgent(
           input.brief,
           effectivePolicy,
           input.revision,
+          input.evolution,
         ),
         outputSchema: architecturePlanContentShapeSchema,
       });

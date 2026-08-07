@@ -176,6 +176,10 @@ export function buildWorkbenchMcpServer(
         briefId: z.uuid(),
         model: z.string().min(1).optional(),
         reviseFromId: z.string().min(1).optional(),
+        // Decision 088: pass the completion record id to run an EVOLUTION
+        // round — built slices carried byte-identical, dispositions
+        // computed by the Workbench, never by the model.
+        evolvesFromCompletionId: z.uuid().optional(),
       },
     },
     async (input) => asText(await tools.architectPlan(input)),

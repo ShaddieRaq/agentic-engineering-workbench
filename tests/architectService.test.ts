@@ -144,6 +144,210 @@ describe("ArchitectService", () => {
     expect(second.plan.revisionDecisionId).toBe(revise.decision.decisionId);
   });
 
+  it("runs an evolution round with Workbench-computed dispositions (Decision 088)", async () => {
+    const { digestJsonEvidence } = await import(
+      "../src/agents/agentEvidenceDigest.js"
+    );
+    // Chain: approved brief v1 -> approved-shape plan -> completion ->
+    // reopen -> brief v2 with a new criterion -> evolution plan.
+    let scripted: (input: unknown) => unknown = () => {
+      throw new Error("not scripted yet");
+    };
+    const { service, briefService, store } = await createHarness({
+      async run(request) {
+        return {
+          artifactId: `agent-run-${Math.random().toString(36).slice(2, 8)}`,
+          run: {
+            succeeded: true,
+            output: scripted(request.input),
+            failure: null,
+          },
+        };
+      },
+    });
+    const brief = await approvedBrief(briefService);
+
+    scripted = (input) => {
+      const b = (input as { brief: never }).brief;
+      return reconcileArchitecturePlanContent(planContentFor(b), b);
+    };
+    const gen1 = await service.createPlan({ briefId: brief.briefId });
+    const builtSliceIds = gen1.plan.content.implementationSlices.map(
+      ({ id }) => id,
+    );
+    const completion = {
+      completionId: randomUUID(),
+      briefId: brief.briefId,
+      briefVersion: brief.version,
+      planId: gen1.plan.planId,
+      planDigest: digestJsonEvidence(gen1.plan),
+      testSuiteId: randomUUID(),
+      testSuiteDigest: "a".repeat(64),
+      projectRoot: "/tmp/project",
+      mainCommitSha: "0123456789abcdef0123456789abcdef01234567",
+      treeDigest: "b".repeat(64),
+      builtSliceIds,
+      verification: {
+        files: [
+          {
+            path: "acceptance-tests/a.test.ts",
+            visibility: "visible" as const,
+            exitCode: 0,
+            passed: true,
+          },
+        ],
+        passed: true,
+        outputExcerpt: "green",
+      },
+      operatorId: "rashad",
+      recordedRetroactively: false,
+      createdAt: new Date().toISOString(),
+    };
+    await store.saveBuildCompletion(completion);
+
+    // Evolution refuses while the brief version equals the completion's.
+    await expect(
+      service.createPlan({
+        briefId: brief.briefId,
+        evolvesFromCompletionId: completion.completionId,
+      }),
+    ).rejects.toThrow(/brief version newer than the completion/);
+
+    await briefService.recordDecision({
+      briefId: brief.briefId,
+      version: brief.version,
+      decision: "reopen",
+      operatorId: "rashad",
+      rationale: "Evolution round.",
+    });
+    const newCriterion = {
+      id: randomUUID(),
+      text: "Exports a weekly CSV summary.",
+      source: "user-stated" as const,
+      verification: "A tester runs export and inspects the CSV.",
+    };
+    const v2 = await briefService.appendBriefVersion(brief.briefId, {
+      title: brief.title,
+      ideaSummary: brief.ideaSummary,
+      goals: brief.goals,
+      users: brief.users,
+      constraints: brief.constraints,
+      risks: brief.risks,
+      nonGoals: brief.nonGoals,
+      assumptions: brief.assumptions,
+      acceptanceCriteria: [...brief.acceptanceCriteria, newCriterion],
+      openQuestions: [],
+    });
+    await briefService.recordDecision({
+      briefId: brief.briefId,
+      version: v2.brief.version,
+      decision: "approve",
+      operatorId: "rashad",
+      rationale: "V2 approved.",
+    });
+
+    // A plan that ALTERS a built slice is rejected deterministically.
+    const alteredSliceId = builtSliceIds[0]!;
+    scripted = (input) => {
+      const typed = input as {
+        brief: never;
+        evolution: { priorPlanContent: { implementationSlices: unknown[] } };
+      };
+      const prior = structuredClone(typed.evolution.priorPlanContent);
+      const content = {
+        ...prior,
+        acceptancePlan: [
+          ...(prior as unknown as { acceptancePlan: { criterionId: string }[] })
+            .acceptancePlan,
+          {
+            criterionId: newCriterion.id,
+            testType: "integration",
+            verificationApproach: "Spawn the CLI and read the CSV.",
+            independentOfImplementation: true,
+          },
+        ],
+        implementationSlices: (
+          prior as {
+            implementationSlices: {
+              id: string;
+              title: string;
+              delivers: string;
+              dependsOnSliceIds: string[];
+              verifiedByCriterionIds: string[];
+            }[];
+          }
+        ).implementationSlices.map((slice) =>
+          slice.id === alteredSliceId
+            ? { ...slice, title: "Reworded history" }
+            : slice,
+        ),
+      };
+      return { ...content, reconciliation: null };
+    };
+    await expect(
+      service.createPlan({
+        briefId: brief.briefId,
+        evolvesFromCompletionId: completion.completionId,
+      }),
+    ).rejects.toThrow(/differ from the prior approved plan/);
+
+    // A faithful evolution plan carries built slices and adds a delta.
+    const deltaSliceId = randomUUID();
+    scripted = (input) => {
+      const typed = input as {
+        evolution: {
+          priorPlanContent: {
+            implementationSlices: { id: string }[];
+            acceptancePlan: { criterionId: string }[];
+          };
+        };
+      };
+      const prior = structuredClone(typed.evolution.priorPlanContent) as {
+        implementationSlices: { id: string }[];
+        acceptancePlan: { criterionId: string }[];
+        [key: string]: unknown;
+      };
+      return {
+        ...prior,
+        acceptancePlan: [
+          ...prior.acceptancePlan,
+          {
+            criterionId: newCriterion.id,
+            testType: "integration",
+            verificationApproach: "Spawn the CLI and read the CSV.",
+            independentOfImplementation: true,
+          },
+        ],
+        implementationSlices: [
+          ...prior.implementationSlices,
+          {
+            id: deltaSliceId,
+            title: "Weekly CSV export",
+            delivers: "An export command writing the weekly CSV.",
+            dependsOnSliceIds: [builtSliceIds[0]!],
+            verifiedByCriterionIds: [newCriterion.id],
+          },
+        ],
+        reconciliation: null,
+      };
+    };
+    const evolved = await service.createPlan({
+      briefId: brief.briefId,
+      evolvesFromCompletionId: completion.completionId,
+    });
+    expect(evolved.plan.evolvesFromCompletionId).toBe(completion.completionId);
+    expect(evolved.plan.briefVersion).toBe(v2.brief.version);
+    const dispositions = new Map(
+      (evolved.plan.sliceDispositions ?? []).map(
+        ({ sliceId, disposition }) => [sliceId, disposition],
+      ),
+    );
+    for (const id of builtSliceIds) {
+      expect(dispositions.get(id)).toBe("carried");
+    }
+    expect(dispositions.get(deltaSliceId)).toBe("delta");
+  });
+
   it("records plan decisions and blocks approval on blocking concerns", async () => {
     const { service, briefService } = await createHarness({
       async run(request) {

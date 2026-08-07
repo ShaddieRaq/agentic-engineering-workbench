@@ -184,6 +184,23 @@ export const architecturePlanSchema = z
     // Optional so artifacts persisted before revision lineage existed load.
     revisedFromArtifactId: z.string().min(1).optional(),
     revisionDecisionId: z.uuid().optional(),
+    // Evolution lineage (Decision 088): the completion record this plan
+    // descends from, plus the Workbench-COMPUTED disposition of every
+    // slice. The model never authors these; carried means the slice id is
+    // in the completion's built set AND the slice is content-identical to
+    // the prior approved plan.
+    evolvesFromCompletionId: z.uuid().optional(),
+    sliceDispositions: z
+      .array(
+        z
+          .object({
+            sliceId: z.uuid(),
+            disposition: z.enum(["carried", "delta"]),
+          })
+          .strict(),
+      )
+      .max(20)
+      .optional(),
   })
   .strict();
 

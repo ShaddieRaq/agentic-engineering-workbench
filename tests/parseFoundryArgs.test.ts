@@ -282,7 +282,17 @@ describe("parseFoundryArgs", () => {
       briefId: "abc",
       model: null,
       reviseFrom: null,
+      evolveFrom: null,
     });
+    expect(
+      parseFoundryArgs([
+        "architect-plan",
+        "--brief-id",
+        "abc",
+        "--evolve-from",
+        "completion-1",
+      ]),
+    ).toMatchObject({ evolveFrom: "completion-1" });
     expect(
       parseFoundryArgs([
         "architect-plan",
@@ -296,6 +306,7 @@ describe("parseFoundryArgs", () => {
       briefId: "abc",
       model: null,
       reviseFrom: "p0",
+      evolveFrom: null,
     });
     expect(parseFoundryArgs(["plan-show", "--plan-id", "p1"])).toEqual({
       command: "plan-show",

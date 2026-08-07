@@ -10,6 +10,7 @@ import {
   type ArchitecturePlanDecision,
   type ArchitecturePlanDecisionKind,
 } from "./architecturePlanDecision.js";
+import type { BuildCompletion } from "./buildCompletion.js";
 import {
   projectBriefArtifactId,
   type FoundryArtifactReference,
@@ -18,6 +19,55 @@ import {
 import type { ProjectBriefService } from "./projectBriefService.js";
 
 export const PROJECT_ARCHITECT_AGENT_ID = "project-architect";
+
+// Deterministic slice-disposition computation (Decision 088): the model
+// never authors the carried flag. Fails loudly when the output rewrites
+// history — a built slice missing or altered.
+export function computeSliceDispositions(input: {
+  content: ArchitecturePlan["content"];
+  priorPlan: ArchitecturePlan;
+  builtSliceIds: string[];
+}): { sliceId: string; disposition: "carried" | "delta" }[] {
+  const priorSlices = new Map(
+    input.priorPlan.content.implementationSlices.map((slice) => [
+      slice.id,
+      slice,
+    ]),
+  );
+  const outputSlices = new Map(
+    input.content.implementationSlices.map((slice) => [slice.id, slice]),
+  );
+
+  const missing = input.builtSliceIds.filter((id) => !outputSlices.has(id));
+  if (missing.length > 0) {
+    throw new Error(
+      `Evolution plan rejected: built slice(s) ${missing.join(", ")} are ` +
+        "missing from the plan. Built slices are history and must be " +
+        "reproduced exactly.",
+    );
+  }
+  const altered = input.builtSliceIds.filter((id) => {
+    const prior = priorSlices.get(id);
+    const emitted = outputSlices.get(id);
+    return (
+      prior === undefined ||
+      JSON.stringify(emitted) !== JSON.stringify(prior)
+    );
+  });
+  if (altered.length > 0) {
+    throw new Error(
+      `Evolution plan rejected: built slice(s) ${altered.join(", ")} differ ` +
+        "from the prior approved plan. Changed behavior must be a NEW slice " +
+        "depending on the built one, never an edit to it.",
+    );
+  }
+
+  const built = new Set(input.builtSliceIds);
+  return input.content.implementationSlices.map((slice) => ({
+    sliceId: slice.id,
+    disposition: built.has(slice.id) ? ("carried" as const) : ("delta" as const),
+  }));
+}
 
 export interface ArchitectAgentRunService {
   run(request: { agentId: string; input: unknown; model?: string }): Promise<{
@@ -59,6 +109,10 @@ export class ArchitectService {
     briefId: string;
     model?: string | undefined;
     reviseFromId?: string | undefined;
+    // Decision 088: the completion record this evolution round descends
+    // from. Built slices are carried byte-identical; the Workbench, not
+    // the model, computes each slice's disposition.
+    evolvesFromCompletionId?: string | undefined;
   }): Promise<SavedArchitecturePlan> {
     const status = await this.#briefService.deriveBriefStatus(input.briefId);
     if (status !== "approved") {
@@ -67,6 +121,39 @@ export class ArchitectService {
       );
     }
     const brief = await this.#briefService.loadBrief(input.briefId);
+
+    let evolution: {
+      completion: BuildCompletion;
+      priorPlan: ArchitecturePlan;
+    } | null = null;
+    if (input.evolvesFromCompletionId) {
+      const stored = await this.#store.load(input.evolvesFromCompletionId);
+      if (stored.kind !== "build-completion") {
+        throw new Error(
+          `Artifact ${input.evolvesFromCompletionId} is not a build completion.`,
+        );
+      }
+      const completion = stored.artifact;
+      if (completion.briefId !== input.briefId) {
+        throw new Error(
+          `Completion ${completion.completionId} belongs to a different brief.`,
+        );
+      }
+      if (brief.version <= completion.briefVersion) {
+        throw new Error(
+          `Evolution requires a brief version newer than the completion's ` +
+            `(brief v${brief.version} vs completion at v${completion.briefVersion}); ` +
+            "reopen the brief and record the new requirements first.",
+        );
+      }
+      const priorPlan = await this.loadPlan(completion.planId);
+      if (digestJsonEvidence(priorPlan) !== completion.planDigest) {
+        throw new Error(
+          "Chain integrity failure: the prior plan no longer matches the digest pinned by the completion record.",
+        );
+      }
+      evolution = { completion, priorPlan };
+    }
 
     let revision: { previous: unknown; requestedRevisions: string[] } | null =
       null;
@@ -93,7 +180,18 @@ export class ArchitectService {
 
     const response = await this.#agentService.run({
       agentId: PROJECT_ARCHITECT_AGENT_ID,
-      input: { brief, ...(revision ? { revision } : {}) },
+      input: {
+        brief,
+        ...(revision ? { revision } : {}),
+        ...(evolution
+          ? {
+              evolution: {
+                builtSliceIds: evolution.completion.builtSliceIds,
+                priorPlanContent: evolution.priorPlan.content,
+              },
+            }
+          : {}),
+      },
       ...(input.model ? { model: input.model } : {}),
     });
     if (!response.run.succeeded || response.run.output === null) {
@@ -104,6 +202,17 @@ export class ArchitectService {
     }
     const output = architectPlanOutputSchema.parse(response.run.output);
     const { reconciliation, ...content } = output;
+
+    let sliceDispositions:
+      | { sliceId: string; disposition: "carried" | "delta" }[]
+      | null = null;
+    if (evolution) {
+      sliceDispositions = computeSliceDispositions({
+        content,
+        priorPlan: evolution.priorPlan,
+        builtSliceIds: evolution.completion.builtSliceIds,
+      });
+    }
 
     const plan = architecturePlanSchema.parse({
       planId: randomUUID(),
@@ -119,6 +228,10 @@ export class ArchitectService {
         ? { revisedFromArtifactId: input.reviseFromId }
         : {}),
       ...(revisionDecisionId ? { revisionDecisionId } : {}),
+      ...(evolution
+        ? { evolvesFromCompletionId: evolution.completion.completionId }
+        : {}),
+      ...(sliceDispositions ? { sliceDispositions } : {}),
     });
     const reference = await this.#store.saveArchitecturePlan(plan);
     return { plan, reference };

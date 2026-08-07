@@ -262,11 +262,15 @@ export function createWorkbenchMcpTools(deps: WorkbenchMcpDependencies) {
       briefId: string;
       model?: string | undefined;
       reviseFromId?: string | undefined;
+      evolvesFromCompletionId?: string | undefined;
     }) {
       const saved = await deps.architect.createPlan({
         briefId: input.briefId,
         ...(input.model ? { model: input.model } : {}),
         ...(input.reviseFromId ? { reviseFromId: input.reviseFromId } : {}),
+        ...(input.evolvesFromCompletionId
+          ? { evolvesFromCompletionId: input.evolvesFromCompletionId }
+          : {}),
       });
       return {
         planId: saved.plan.planId,

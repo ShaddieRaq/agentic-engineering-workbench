@@ -253,6 +253,9 @@ async function main(): Promise<void> {
         briefId: args.briefId,
         ...(args.model ? { model: args.model } : {}),
         ...(args.reviseFrom ? { reviseFromId: args.reviseFrom } : {}),
+        ...(args.evolveFrom
+          ? { evolvesFromCompletionId: args.evolveFrom }
+          : {}),
       });
       console.log(`Plan: ${saved.plan.planId} (brief ${saved.plan.briefId} v${saved.plan.briefVersion})`);
       console.log(

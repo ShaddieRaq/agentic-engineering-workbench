@@ -119,6 +119,8 @@ const foundryArchitectRunSchema = z
   .object({
     briefId: z.uuid(),
     reviseFrom: z.string().min(1).optional(),
+    // Decision 088: completion record id opening an evolution round.
+    evolveFrom: z.uuid().optional(),
   })
   .strict();
 
@@ -1067,6 +1069,7 @@ export async function buildAgentWebServer(
           const saved = await stages.architect.createPlan({
             briefId: parsed.data.briefId,
             reviseFromId: parsed.data.reviseFrom,
+            evolvesFromCompletionId: parsed.data.evolveFrom,
           });
           emit("persistence", `Plan ${saved.plan.planId} recorded.`);
           return { planId: saved.plan.planId };

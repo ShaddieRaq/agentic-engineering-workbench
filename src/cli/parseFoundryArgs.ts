@@ -39,6 +39,7 @@ export type FoundryCliArgs =
       briefId: string;
       model: string | null;
       reviseFrom: string | null;
+      evolveFrom: string | null;
     }
   | { command: "plan-show"; planId: string }
   | {
@@ -276,6 +277,7 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
       briefId: requiredOption(args, "--brief-id"),
       model: option(args, "--model"),
       reviseFrom: option(args, "--revise-from"),
+      evolveFrom: option(args, "--evolve-from"),
     };
   }
 
@@ -434,7 +436,7 @@ export function parseFoundryArgs(args: string[]): FoundryCliArgs {
       "intake-status --brief-id <id>, " +
       "export-claude-code --decision <artifact-id> [--out <directory>], " +
       "import-feedback --bundle <path> [--export-dir <directory>], " +
-      "architect-plan --brief-id <id> [--model <id>], plan-show --plan-id <id>, " +
+      "architect-plan --brief-id <id> [--model <id>] [--evolve-from <completionId>], plan-show --plan-id <id>, " +
       "plan-decide --plan-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...], " +
       "capability-plan --plan-id <id> [--model <id>], capability-show --capability-plan-id <id>, " +
       "capability-decide --capability-plan-id <id> --decision <approve|reject|revise> --operator <id> --rationale <text> [--revision <text> ...], " +
