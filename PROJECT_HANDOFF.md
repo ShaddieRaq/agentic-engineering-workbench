@@ -620,6 +620,12 @@ contradiction-challenge rep, ordinary residual variance)
 habit-tracker governed build: 6/6 submissions passed, including the
 holdout on first exposure; all 10 visible acceptance tests green on
 the generated project's main
+mac-librarian (2026-08-07): FIRST FULLY ISOLATED GOVERNED BUILD —
+operator-driven from the console end to end; 4/4 submissions passed
+out-of-tree verification on first exposure (holdout ran and passed in
+all four); built by an isolated builder session over the redacted MCP
+channel (Decision 087 isolation held: no holdout ever in the builder
+tree, no Workbench reads); merged to main, acceptance tests green
 ```
 
 This state must be verified before continuing:

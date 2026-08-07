@@ -982,14 +982,30 @@ scoped to the project directory only.
 
 ## Current Priorities
 
-1. First fully isolated governed build: run the next real project's build
-   from a builder session opened inside a prepared workspace
-   (builder-workspace scaffold + workbench-builder MCP server with redacted
-   projections, deny rules, and OS sandbox — Decision 087; out-of-tree
-   verification shipped 2026-08-05 closes the holdout-exfiltration
-   residual, live-proven on the habit tracker with verificationMode
-   "out-of-tree" evidence). The Foundry console is full-loop for the
-   operator (read, decide, run stages).
+1. Feed the first operator-driven run's defect evidence into the
+   improvement loops: the intake agent's question-circling (5 turns
+   re-asking answered topics, Mac Librarian interview), the architect's
+   second all-manual acceptance-mapping occurrence, and the test
+   designer's document-auditing suite (tests that read the brief instead
+   of exercising the product). All three are recorded live evidence with
+   operator revisions that fixed them.
+2. Console gaps found while an operator learned the app: surface
+   acceptance-mapping test types on the plan panel (the all-manual defect
+   slipped past approval twice because the summary hides them), and make
+   success states more visible (work-order issuance reads as "nothing
+   happened").
+
+Completed 2026-08-07 — FIRST FULLY ISOLATED GOVERNED BUILD: Mac Librarian
+(brief b1c76b2a), driven end to end by the operator from the console
+(interview → brief v8 → plan ×4 with revision loops → capability plan ×2 →
+test suite ×3 with revision loops → 4 build slices). Built by an isolated
+Claude session in a prepared workspace over the redacted workbench-builder
+MCP channel; all four submissions passed out-of-tree verification on first
+exposure including the withheld holdout each time; all decisions
+operator-recorded; merged to main with acceptance tests green. Three
+platform defects were found and fixed live during the run (intake answer
+ids, hidden zero-question intake form, and the earlier stale-openQuestions
+stall pattern).
 2. Capability Planner verification dataset and gate (same rhythm as intake
    and architect).
 3. Evidence-backed model qualification, promoted per Decision 086: add an
