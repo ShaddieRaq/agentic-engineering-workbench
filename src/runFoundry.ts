@@ -16,6 +16,7 @@ import {
 } from "./foundry/intakeSessionController.js";
 import { intakeOperatorAnswerSchema } from "./foundry/intakeTurnInput.js";
 import { ProjectBriefService } from "./foundry/projectBriefService.js";
+import { requireInteractiveTerminal } from "./cli/interactiveGuard.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { createPlatformToolRegistry } from "./tools/toolRegistry.js";
 import { FileWorkspaceStore } from "./workspaces/fileWorkspaceStore.js";
@@ -112,6 +113,19 @@ function renderTurn(result: IntakeTurnResult): void {
 
 async function main(): Promise<void> {
   const args = parseFoundryArgs(process.argv.slice(2));
+  // Operator decisions require a human at a terminal (incident 2026-08-08:
+  // the builder session forged an approval via scripted CLI access).
+  const decisionCommands = new Set([
+    "brief-decide",
+    "plan-decide",
+    "capability-decide",
+    "tests-decide",
+    "submission-decide",
+    "record-completion",
+  ]);
+  if (decisionCommands.has(args.command)) {
+    requireInteractiveTerminal(args.command);
+  }
   const store = new FoundryArtifactStore();
   const service = new ProjectBriefService(store);
 

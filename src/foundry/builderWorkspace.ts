@@ -32,6 +32,14 @@ function builderSettings(workbenchRoot: string): unknown {
         "Edit(.claude/**)",
         "Edit(.mcp.json)",
         "Edit(acceptance-tests/**)",
+        // Incident 2026-08-08: the builder invoked the workbench CLI via
+        // shell and forged an operator decision. Deny patterns are
+        // defense-in-depth; the enforced backstop is the CLI's
+        // interactive-terminal guard on all decision commands.
+        `Bash(cd ${workbenchRoot}*)`,
+        `Bash(*${workbenchRoot}*)`,
+        "Bash(*npm run foundry*)",
+        "Bash(*runFoundry*)",
       ],
     },
     sandbox: {

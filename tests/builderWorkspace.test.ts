@@ -99,6 +99,10 @@ describe("prepareBuilderWorkspace", () => {
           "Edit(.claude/**)",
           "Edit(.mcp.json)",
           "Edit(acceptance-tests/**)",
+          `Bash(cd ${WORKBENCH_ROOT}*)`,
+          `Bash(*${WORKBENCH_ROOT}*)`,
+          "Bash(*npm run foundry*)",
+          "Bash(*runFoundry*)",
         ],
       },
       sandbox: {

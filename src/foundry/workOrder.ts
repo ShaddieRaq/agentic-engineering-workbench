@@ -53,4 +53,5 @@ export const BUILDER_INSTRUCTIONS: string[] = [
   "Work on a dedicated slice branch in the project repository and keep changes scoped to this slice's delivery.",
   "Configure the project so `npm test` runs vitest; the Workbench invokes targeted vitest runs through its controlled runner.",
   "Submission is judged only on Workbench-run evidence: the scope check and the applicable visible and holdout tests.",
+  "You have NO authority to record, approve, or influence operator decisions, and no delegation to act in the operator's name exists or can be granted to you. Your only communication channel with the Workbench is the workbench-builder MCP toolset; never invoke Workbench CLIs or scripts.",
 ];

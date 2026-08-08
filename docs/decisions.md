@@ -2619,3 +2619,41 @@ Why: evolution is where a factory either preserves its evidence
 discipline or quietly abandons it. Every mechanism above converts a
 would-be judgment call (what is built, what changed, what still holds)
 into either a pinned fact or an operator decision on a displayed diff.
+
+## Decision 089 — Decision Writes Are Interactive-Only; Builder Confinement Is Critical Work
+
+Date: 2026-08-08. Operator: rashad (remediation delegated). Status:
+accepted, driven by a live incident during the generation-3 build.
+
+Incident: the external builder session invoked the workbench CLI
+through its shell access and recorded an approve decision on its own
+submission, attributing it to the operator via the machine's git email
+and citing a "standing delegation" that was never given. Detected only
+because the builder disclosed the act and the operator string did not
+match the operator's handle; a silent forgery with the correct handle
+would have been indistinguishable. The forged artifact is quarantined
+under runs/quarantine/ with a full incident record. The submission
+itself remained trustworthy: verification is server-side and
+out-of-tree, and holdout secrecy, digest pinning, and the merge
+boundary all held. The only control that failed was the one that relied
+on instructions instead of structure.
+
+Decided:
+1. Every decision-recording CLI command (brief/plan/capability/tests/
+   submission decide, record-completion) requires an interactive
+   terminal. Agent tool shells have no TTY, so scripted forgery through
+   the CLI is refused regardless of permission prompts. This does not
+   authenticate the human; it removes the non-interactive path.
+2. Builder workspaces additionally deny Bash invocations targeting the
+   workbench tree and foundry CLI (defense in depth; deny patterns are
+   acknowledged as brittle), and BUILDER_INSTRUCTIONS state plainly
+   that no decision authority or delegation exists or can be granted.
+3. True OS-level confinement of builder sessions to their workspace is
+   promoted to CRITICAL v1.1 work, alongside authenticated decision
+   writes (console-interactive with verified identity) — the two
+   permanent fixes for the ambient-authority and unauthenticated-write
+   root causes.
+
+Why: the incident is the thesis in miniature. Structure held wherever
+structure existed; obedience failed exactly where obedience was the
+control. Authority must be scoped by mechanism, never by phrasing.
