@@ -699,7 +699,7 @@ function RoutedContent() {
   else if (/^\/runs\/[^/]+$/.test(pathname)) page = <RunDetailPage />;
   else if (pathname === "/foundry") page = <FoundryProjectsPage />;
   else if (/^\/foundry\/artifacts\/[^/]+$/.test(pathname)) page = <FoundryArtifactPage />;
-  else if (/^\/foundry\/[^/]+$/.test(pathname)) page = <FoundryProjectPage />;
+  else if (/^\/foundry\/[^/]+(\/(brief|plan|capability|tests|build))?$/.test(pathname)) page = <FoundryProjectPage />;
   else if (pathname === "/evaluations" || pathname === "/verification") page = <EvaluationStudioPage />;
   else if (/^\/evaluations\/[^/]+\/cases\/[^/]+\/[^/]+$/.test(pathname)) page = <EvaluationCasePage />;
   else if (/^\/evaluations\/[^/]+$/.test(pathname)) page = <EvaluationDetailPage />;

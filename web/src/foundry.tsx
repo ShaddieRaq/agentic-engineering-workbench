@@ -290,9 +290,11 @@ function IssueWorkOrderButton({
 // kinds scroll to and reveal the stage's form.
 function NextStepBanner({
   step,
+  briefId,
   onDone,
 }: {
   step: NonNullable<FoundryChainView["nextStep"]>;
+  briefId: string;
   onDone: () => void;
 }) {
   const [operationId, setOperationId] = useState<string | null>(null);
@@ -328,12 +330,7 @@ function NextStepBanner({
 
   function jump() {
     if (!step.anchor) return;
-    const section = document.getElementById(`stage-${step.anchor}`);
-    section?.scrollIntoView({ behavior: "smooth", block: "start" });
-    const details = section?.querySelector<HTMLDetailsElement>("details.decision-form");
-    if (details) details.open = true;
-    const field = section?.querySelector<HTMLElement>("textarea, input, select");
-    field?.focus({ preventScroll: true });
+    navigate(`/foundry/${briefId}/${step.anchor}`);
   }
 
   const running =
@@ -364,7 +361,7 @@ function NextStepBanner({
 
 // Sticky scroll-nav: one glyph per stage, amber where the operator is
 // needed. Display-only — the banner is the authority.
-function StageRail({ chain }: { chain: FoundryChainView }) {
+function StageRail({ chain, active }: { chain: FoundryChainView; active: string }) {
   const currentPlan = chain.plans.find(
     ({ briefVersion }) => briefVersion === chain.latestVersion,
   );
@@ -401,22 +398,116 @@ function StageRail({ chain }: { chain: FoundryChainView }) {
   ];
   return (
     <nav className="stage-rail" aria-label="Stages">
+      <Link to={`/foundry/${chain.briefId}`} className={active === "overview" ? "rail-current" : ""}>
+        Overview
+      </Link>
       {entries.map((entry) => (
-        <a
+        <Link
           key={entry.anchor}
-          href={`#stage-${entry.anchor}`}
-          className={chain.nextStep.anchor === entry.anchor ? "rail-current" : ""}
-          onClick={(event) => {
-            event.preventDefault();
-            document
-              .getElementById(`stage-${entry.anchor}`)
-              ?.scrollIntoView({ behavior: "smooth" });
-          }}
+          to={`/foundry/${chain.briefId}/${entry.anchor}`}
+          className={[
+            active === entry.anchor ? "rail-current" : "",
+            chain.nextStep.anchor === entry.anchor ? "rail-needed" : "",
+          ].join(" ").trim()}
         >
           <StatusBadge value={entry.status} /> {entry.label}
-        </a>
+        </Link>
       ))}
     </nav>
+  );
+}
+
+// The project hub: one card per stage with its status and headline
+// numbers; detail lives on the stage pages.
+function ProjectOverview({ chain }: { chain: FoundryChainView }) {
+  const latest = chain.briefVersions[chain.briefVersions.length - 1];
+  const plan = chain.plans.find(({ briefVersion }) => briefVersion === chain.latestVersion);
+  const capability = plan
+    ? chain.capabilityPlans.find(({ planId }) => planId === plan.planId)
+    : undefined;
+  const suite = capability
+    ? chain.testSuites.find(({ capabilityPlanId }) => capabilityPlanId === capability.capabilityPlanId)
+    : undefined;
+  const cards: { anchor: string; title: string; status: string; summary: string }[] = [
+    {
+      anchor: "brief",
+      title: "Project brief",
+      status: latest?.status ?? "draft",
+      summary: `v${chain.latestVersion} · ${chain.intakeTurnCount} interview turn(s) · ${chain.briefVersions.length} version(s)`,
+    },
+    {
+      anchor: "plan",
+      title: "Architecture plan",
+      status: plan?.status ?? "missing",
+      summary: plan
+        ? `${plan.sliceCount} slice(s) · ${plan.blockingConcerns} blocking concern(s)${plan.evolvesFromCompletionId ? ` · evolution (${plan.carriedSliceCount ?? 0} carried)` : ""}`
+        : "Not generated for this brief version yet.",
+    },
+    {
+      anchor: "capability",
+      title: "Capability plan",
+      status: capability?.status ?? "missing",
+      summary: capability
+        ? `${capability.needCount} need(s) · ${capability.blockingConcerns} blocking concern(s)`
+        : "Follows plan approval.",
+    },
+    {
+      anchor: "tests",
+      title: "Acceptance tests",
+      status: suite?.status ?? "missing",
+      summary: suite
+        ? `${suite.files.length} file(s) · ${suite.files.filter(({ visibility }) => visibility === "holdout").length} holdout(s)`
+        : "Follows capability approval.",
+    },
+    {
+      anchor: "build",
+      title: "Governed build",
+      status: chain.build && chain.build.slices.length > 0
+        ? chain.build.satisfiedSliceCount === chain.build.slices.length
+          ? "approved"
+          : "revision-requested"
+        : "missing",
+      summary: chain.build
+        ? `${chain.build.satisfiedSliceCount}/${chain.build.slices.length} slices satisfied (${chain.build.approvedSliceCount} approved this round)`
+        : chain.buildNote ?? "Follows suite approval.",
+    },
+  ];
+  return (
+    <>
+      <div className="card-grid stage-cards">
+        {cards.map((card) => (
+          <Link className="agent-card" to={`/foundry/${chain.briefId}/${card.anchor}`} key={card.anchor}>
+            <div className="card-topline">
+              <StatusBadge value={card.status} />
+              {chain.nextStep.anchor === card.anchor && <span className="eyebrow">← next</span>}
+            </div>
+            <h3>{card.title}</h3>
+            <p>{card.summary}</p>
+          </Link>
+        ))}
+      </div>
+      {chain.standingAdvisories.length > 0 && (
+        <details className="panel history-strip">
+          <summary>{chain.standingAdvisories.length} open edge(s) recorded by prior gates — expand to review</summary>
+          {chain.standingAdvisories.map((advisory) => (
+            <p className="muted-note" key={`${advisory.stage}-${advisory.description.slice(0, 40)}`}>
+              <StatusBadge value={advisory.stage} /> ×{advisory.occurrences} — {advisory.description}
+            </p>
+          ))}
+        </details>
+      )}
+      {chain.completions.length > 0 && (
+        <div className="panel" style={{ marginTop: 14 }}>
+          <span className="eyebrow">Generation closures</span>
+          {chain.completions.map((completion) => (
+            <p className="muted-note" key={completion.completionId}>
+              <StatusBadge value="completed" /> Completion {shortId(completion.completionId)} · brief v{completion.briefVersion} · {completion.builtSliceCount} slice(s) · main {completion.mainCommitSha.slice(0, 10)} · {completion.operatorId}
+              {completion.recordedRetroactively && <> · recorded retroactively</>}
+            </p>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -671,8 +762,15 @@ function SubmissionDetails({ submission, onRecorded }: { submission: FoundrySubm
   );
 }
 
+const STAGE_PAGES = ["brief", "plan", "capability", "tests", "build"] as const;
+type StagePage = (typeof STAGE_PAGES)[number] | "overview";
+
 export function FoundryProjectPage() {
-  const briefId = usePathname().split("/")[2];
+  const parts = usePathname().split("/");
+  const briefId = parts[2];
+  const stagePage: StagePage = STAGE_PAGES.includes(parts[3] as never)
+    ? (parts[3] as StagePage)
+    : "overview";
   const resource = useResource<FoundryChainView>(briefId ? `/api/foundry/projects/${briefId}` : null);
   if (resource.loading) return <Loading />;
   if (resource.error || !resource.data) return <ErrorNotice message={resource.error ?? "Project not found"} />;
@@ -686,8 +784,12 @@ export function FoundryProjectPage() {
         Chain {shortId(chain.briefId)} · {chain.intakeTurnCount} intake turn(s) · last activity {when(chain.latestActivityAt)}
       </p>
 
-      <NextStepBanner step={chain.nextStep} onDone={resource.reload} />
-      <StageRail chain={chain} />
+      <NextStepBanner step={chain.nextStep} briefId={chain.briefId} onDone={resource.reload} />
+      <StageRail chain={chain} active={stagePage} />
+
+      {stagePage === "overview" && <ProjectOverview chain={chain} />}
+
+      {stagePage === "brief" && (<>
 
       <section className="foundry-stage" id="stage-brief">
         <div className="section-heading"><div><span className="eyebrow">Stage 1</span><h2>Project brief</h2></div></div>
@@ -757,7 +859,9 @@ export function FoundryProjectPage() {
           </details>
         </section>
       )}
+      </>)}
 
+      {stagePage === "plan" && (<>
       <section className="foundry-stage" id="stage-plan">
         <div className="section-heading"><div><span className="eyebrow">Stage 2</span><h2>Architecture plans</h2></div></div>
         {chain.status === "approved" && (() => {
@@ -840,7 +944,9 @@ export function FoundryProjectPage() {
           );
         })()}
       </section>
+      </>)}
 
+      {stagePage === "capability" && (<>
       <section className="foundry-stage" id="stage-capability">
         <div className="section-heading"><div><span className="eyebrow">Stage 3</span><h2>Capability plans</h2></div></div>
         {chain.plans.some(({ status }) => status === "approved") && (
@@ -894,7 +1000,9 @@ export function FoundryProjectPage() {
           );
         })()}
       </section>
+      </>)}
 
+      {stagePage === "tests" && (<>
       <section className="foundry-stage" id="stage-tests">
         <div className="section-heading"><div><span className="eyebrow">Stage 4</span><h2>Acceptance test suites</h2></div></div>
         {chain.capabilityPlans.some(({ status }) => status === "approved") && (
@@ -965,7 +1073,9 @@ export function FoundryProjectPage() {
           );
         })()}
       </section>
+      </>)}
 
+      {stagePage === "build" && (<>
       <section className="foundry-stage" id="stage-build">
         <div className="section-heading"><div><span className="eyebrow">Stage 5</span><h2>Governed build</h2></div></div>
         {chain.completions.length > 0 && (
@@ -1034,6 +1144,7 @@ export function FoundryProjectPage() {
           </>
         )}
       </section>
+      </>)}
     </>
   );
 }

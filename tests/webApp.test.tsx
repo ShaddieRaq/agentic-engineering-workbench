@@ -534,8 +534,12 @@ describe("agent workbench web interface", () => {
     fireEvent.click(screen.getByRole("link", { name: "Habit tracker" }));
     expect(window.location.pathname).toBe(`/foundry/${chain.briefId}`);
     expect(await screen.findByRole("heading", { name: "Habit tracker" })).toBeInTheDocument();
+    // The project URL is a hub of stage cards; slice detail lives on the
+    // build page.
+    expect(await screen.findByRole("heading", { name: "Governed build" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("link", { name: /Governed build/ }));
+    expect(window.location.pathname).toBe(`/foundry/${chain.briefId}/build`);
     expect(await screen.findByRole("heading", { name: /Slice 1: CLI shell/ })).toBeInTheDocument();
-    expect(screen.getAllByText("Chain verified end to end.").length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /Slice 2: Streak tracking/ })).toBeInTheDocument();
     expect(screen.getByText("not started")).toBeInTheDocument();
   });
@@ -567,7 +571,7 @@ describe("agent workbench web interface", () => {
       return new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } });
     }));
 
-    window.history.replaceState(null, "", `/foundry/${chainPayload.briefId}`);
+    window.history.replaceState(null, "", `/foundry/${chainPayload.briefId}/brief`);
     render(<AppRoutes />);
 
     expect(await screen.findByRole("heading", { name: "Note taker" })).toBeInTheDocument();
@@ -619,7 +623,7 @@ describe("agent workbench web interface", () => {
       return new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } });
     }));
 
-    window.history.replaceState(null, "", `/foundry/${chainPayload.briefId}`);
+    window.history.replaceState(null, "", `/foundry/${chainPayload.briefId}/plan`);
     render(<AppRoutes />);
 
     expect(await screen.findByRole("heading", { name: "Recipe box" })).toBeInTheDocument();
@@ -661,7 +665,7 @@ describe("agent workbench web interface", () => {
       return new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } });
     }));
 
-    window.history.replaceState(null, "", `/foundry/${chainPayload.briefId}`);
+    window.history.replaceState(null, "", `/foundry/${chainPayload.briefId}/brief`);
     render(<AppRoutes />);
 
     const question = await screen.findByLabelText("Which airports matter?");

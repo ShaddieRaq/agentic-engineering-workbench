@@ -275,3 +275,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .error-card details { margin-top: 8px; }
 .error-card summary { cursor: pointer; font-size: 12.5px; }
 .error-card .evidence-json { max-height: 260px; overflow: auto; }
+.stage-cards { margin-top: 6px; }
+.stage-cards .agent-card p { min-height: 0; }
+.stage-rail a.rail-needed { border-color: var(--warning); }
+.stage-rail a.rail-needed::after { content: '●'; color: var(--warning); font-size: 9px; }
