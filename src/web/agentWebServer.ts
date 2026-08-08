@@ -150,7 +150,7 @@ const foundryWorkOrderRequestSchema = z
 const foundryCompletionRequestSchema = z
   .object({
     testSuiteId: z.uuid(),
-    projectRoot: z.string().min(1).max(1_000),
+    projectRoot: z.string().trim().min(1).max(1_000),
     operatorId: z.string().min(1).max(200),
     retroactive: z.boolean().optional(),
   })

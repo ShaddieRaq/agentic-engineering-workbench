@@ -174,7 +174,7 @@ export class BuildCompletionService {
       );
     }
 
-    const builderRoot = resolve(input.projectRoot);
+    const builderRoot = resolve(input.projectRoot.trim());
     if (!(await this.#git.isClean(builderRoot))) {
       throw new Error(
         "Cannot record completion: the project working tree has uncommitted changes.",
