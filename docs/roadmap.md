@@ -1111,7 +1111,12 @@ out-of-tree). One live defect at the gate: the completion form accepted
 a leading-space project root and misresolved it — fixed by trimming
 path input (145ddff).
 
-v1.2 sequence settled 2026-08-08 (debrief with operator):
+v1.2 sequence settled 2026-08-08 (debrief with operator). Order
+CONFIRMED infrastructure-first by operator direction 2026-08-08 ("our
+biggest problem is communication back to the workbench... we need to
+go infrastructure first right now"): items 1-5 land before the
+generation-4 run, which then doubles as the validation of the new
+channels.
 1. Authenticated decision writes — console decision routes trust a
    typed operatorId; any local process can POST a decision today. A
    console-held session token closes the forgery class on the web
@@ -1124,14 +1129,25 @@ v1.2 sequence settled 2026-08-08 (debrief with operator):
    console answer forms, answers become artifacts the builder polls).
    All builder text rendered as builder-authored/unverified — data,
    never instructions.
-3. One-click builder handoff (console runs workspace prep, hands one
+3. Usage-feedback channel — field findings become evidence, not chat.
+   A field-report artifact recorded against a completed generation
+   (operator-authored in the console: what the shipped software did
+   on real inputs, what was wrong), aggregated with standing
+   advisories (priority A below), and injected into the next reopened
+   interview so generation N+1's intake starts from generation N's
+   reality instead of the operator's memory. Today this pathway is
+   the operator pasting terminal output into a chat session.
+4. One-click builder handoff (console runs workspace prep, hands one
    command) + failed operations persist until acknowledged + plan
    panel slice contents with carried/delta tags.
-4. OS-level builder confinement hardening (structural, not
+5. OS-level builder confinement hardening (structural, not
    scaffold-dependent).
-5. Generation 4 run — operator-driven, first round with delta-ownership
-   enforced from the start and the new communication channel.
-6. DECISION POINT after generation 4: console-launched builder — the
+6. Generation 4 run — operator-driven, first round with delta-ownership
+   enforced from the start, the builder communication channel, and a
+   brief seeded by recorded field reports (Exhibit A: the 2026-08-08
+   cold run — obj-filter-2 labels, singleton batches, Organized
+   reshuffling).
+7. DECISION POINT after generation 4: console-launched builder — the
    operator's stated direction ("the builder should live in the UI").
    The console spawns the builder session itself (Agent SDK) inside
    the locked-down workspace and streams its transcript into the build
@@ -1139,7 +1155,7 @@ v1.2 sequence settled 2026-08-08 (debrief with operator):
    generation-4 run shows the communication channel + one-click
    handoff still leave the terminal as real friction; skip if they
    sufficed.
-7. Reserved for operator certification 3: severity mis-calibration
+8. Reserved for operator certification 3: severity mis-calibration
    improvement loop (two live occurrences banked). Parallel candidate:
    test-designer fixture-reality rule via the improvement loop.
 
