@@ -11,6 +11,7 @@ import {
   type ArchitecturePlanDecisionKind,
 } from "./architecturePlanDecision.js";
 import type { BuildCompletion } from "./buildCompletion.js";
+import { diffAcceptanceCriteria } from "./testSuiteSuccession.js";
 import {
   projectBriefArtifactId,
   type FoundryArtifactReference,
@@ -126,6 +127,8 @@ export class ArchitectService {
       completion: BuildCompletion;
       priorPlan: ArchitecturePlan;
     } | null = null;
+    let evolutionCriteriaDiff: ReturnType<typeof diffAcceptanceCriteria> | null =
+      null;
     if (input.evolvesFromCompletionId) {
       const stored = await this.#store.load(input.evolvesFromCompletionId);
       if (stored.kind !== "build-completion") {
@@ -153,6 +156,11 @@ export class ArchitectService {
         );
       }
       evolution = { completion, priorPlan };
+      const priorBrief = await this.#briefService.loadBrief(
+        input.briefId,
+        completion.briefVersion,
+      );
+      evolutionCriteriaDiff = diffAcceptanceCriteria(priorBrief, brief);
     }
 
     let revision: { previous: unknown; requestedRevisions: string[] } | null =
@@ -188,6 +196,10 @@ export class ArchitectService {
               evolution: {
                 builtSliceIds: evolution.completion.builtSliceIds,
                 priorPlanContent: evolution.priorPlan.content,
+                changedOrNewCriterionIds: [
+                  ...evolutionCriteriaDiff!.changedIds,
+                  ...evolutionCriteriaDiff!.newIds,
+                ].sort(),
               },
             }
           : {}),
@@ -212,6 +224,34 @@ export class ArchitectService {
         priorPlan: evolution.priorPlan,
         builtSliceIds: evolution.completion.builtSliceIds,
       });
+      // Generation-3 lesson (Mac Librarian): a changed or new criterion
+      // mapped only to carried slices is implemented by NO ONE — carried
+      // slices are history and never rebuilt, so the requirement ships
+      // green-on-paper and unmet in reality. Changed meaning must be
+      // owned by delta work.
+      const diff = evolutionCriteriaDiff!;
+      const mustBeDeltaOwned = [...diff.changedIds, ...diff.newIds];
+      const deltaSliceIds = new Set(
+        sliceDispositions
+          .filter(({ disposition }) => disposition === "delta")
+          .map(({ sliceId }) => sliceId),
+      );
+      const deltaOwnedCriteria = new Set(
+        content.implementationSlices
+          .filter(({ id }) => deltaSliceIds.has(id))
+          .flatMap(({ verifiedByCriterionIds }) => verifiedByCriterionIds),
+      );
+      const orphaned = mustBeDeltaOwned.filter(
+        (criterionId) => !deltaOwnedCriteria.has(criterionId),
+      );
+      if (orphaned.length > 0) {
+        throw new Error(
+          `Evolution plan rejected: changed or new criterion(s) ${orphaned.join(", ")} ` +
+            "are not verified by any DELTA slice. Carried slices are never " +
+            "rebuilt, so changed meaning must be owned by a delta slice — " +
+            "add or extend delta slices to cover these criteria.",
+        );
+      }
     }
 
     const plan = architecturePlanSchema.parse({

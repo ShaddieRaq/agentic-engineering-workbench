@@ -27,6 +27,9 @@ export const projectArchitectInputSchema = z
       .object({
         builtSliceIds: z.array(z.uuid()).min(1).max(20),
         priorPlanContent: architecturePlanContentShapeSchema,
+        // Criteria whose meaning changed (or that are new) since the
+        // completed generation; each must be verified by a DELTA slice.
+        changedOrNewCriterionIds: z.array(z.uuid()).max(50).optional(),
       })
       .strict()
       .optional(),

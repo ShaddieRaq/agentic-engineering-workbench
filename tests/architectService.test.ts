@@ -291,6 +291,38 @@ describe("ArchitectService", () => {
       }),
     ).rejects.toThrow(/differ from the prior approved plan/);
 
+    // Generation-3 lesson: a plan that carries everything and leaves the
+    // NEW criterion without a delta owner is rejected — carried slices
+    // never get rebuilt, so nobody would implement it.
+    scripted = (input) => {
+      const typed = input as {
+        evolution: { priorPlanContent: { acceptancePlan: unknown[] } };
+      };
+      const prior = structuredClone(typed.evolution.priorPlanContent) as {
+        acceptancePlan: { criterionId: string }[];
+        [key: string]: unknown;
+      };
+      return {
+        ...prior,
+        acceptancePlan: [
+          ...prior.acceptancePlan,
+          {
+            criterionId: newCriterion.id,
+            testType: "integration",
+            verificationApproach: "Spawn the CLI and read the CSV.",
+            independentOfImplementation: true,
+          },
+        ],
+        reconciliation: null,
+      };
+    };
+    await expect(
+      service.createPlan({
+        briefId: brief.briefId,
+        evolvesFromCompletionId: completion.completionId,
+      }),
+    ).rejects.toThrow(/not verified by any DELTA slice/);
+
     // A faithful evolution plan carries built slices and adds a delta.
     const deltaSliceId = randomUUID();
     scripted = (input) => {

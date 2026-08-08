@@ -11,6 +11,7 @@ import {
 export interface ArchitectEvolutionContext {
   builtSliceIds: string[];
   priorPlanContent: unknown;
+  changedOrNewCriterionIds?: string[] | undefined;
 }
 
 // Enumerated instructions (the model complies with exact ids, drifts on
@@ -26,6 +27,11 @@ function renderEvolutionSection(
     `These slice ids are BUILT and IMMUTABLE: ${evolution.builtSliceIds.join(", ")}.`,
     "Reproduce every built slice EXACTLY as it appears in the prior plan — identical id, title, delivers, dependsOnSliceIds, and verifiedByCriterionIds. Do not reword, reorder within the slice, or remove any of them.",
     "Add NEW slices (new ids) for the new and changed requirements; new slices may depend on built slice ids. Never modify built behavior inside a built slice — changed behavior is a new slice depending on the old one.",
+    ...(evolution.changedOrNewCriterionIds && evolution.changedOrNewCriterionIds.length > 0
+      ? [
+          `These criterion ids CHANGED or are NEW since the completed generation: ${evolution.changedOrNewCriterionIds.join(", ")}. EVERY one of these ids must appear in the verifiedByCriterionIds of at least one NEW slice — a built slice cannot own changed meaning; the plan is rejected otherwise.`,
+        ]
+      : []),
     "Update components, decisions, acceptancePlan, and concerns to cover the FULL brief including the new criteria.",
     "PRIOR APPROVED PLAN:",
     JSON.stringify(evolution.priorPlanContent, null, 2),
