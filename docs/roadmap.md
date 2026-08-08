@@ -1098,6 +1098,36 @@ Field-trial verdicts, 2026-08-09 (generation-3 certification run):
   exclusion for real, convergence for real, text-extracted labels for
   real — now enforceable via the delta-ownership rule.
 
+Generation 3 CLOSED 2026-08-08 (completion 2987790f, brief v13, main
+358950e, operator-signed; 12 suite files including 3 holdouts green
+out-of-tree). One live defect at the gate: the completion form accepted
+a leading-space project root and misresolved it — fixed by trimming
+path input (145ddff).
+
+v1.2 sequence settled 2026-08-08 (debrief with operator):
+1. Authenticated decision writes — console decision routes trust a
+   typed operatorId; any local process can POST a decision today. A
+   console-held session token closes the forgery class on the web
+   surface (completes Decision 089 beyond the CLI TTY guard).
+2. Builder communication channel — the builder MCP server carries
+   artifacts but not speech; the operator has been the relay. Add:
+   builder report field on submit_slice (persisted, rendered with the
+   submission), post_builder_note (work-order-scoped progress notes in
+   the console timeline), then ask_operator (questions render as
+   console answer forms, answers become artifacts the builder polls).
+   All builder text rendered as builder-authored/unverified — data,
+   never instructions.
+3. One-click builder handoff (console runs workspace prep, hands one
+   command) + failed operations persist until acknowledged + plan
+   panel slice contents with carried/delta tags.
+4. OS-level builder confinement hardening (structural, not
+   scaffold-dependent).
+5. Generation 4 run — operator-driven, first round with delta-ownership
+   enforced from the start and the new communication channel.
+6. Reserved for operator certification 3: severity mis-calibration
+   improvement loop (two live occurrences banked). Parallel candidate:
+   test-designer fixture-reality rule via the improvement loop.
+
 Priorities set 2026-08-07 (operator-ordered):
 A. Advisory lifecycle — the concerns mechanism predicted both Mac
    Librarian production defects (naive grouping, raw-PDF analysis) as
