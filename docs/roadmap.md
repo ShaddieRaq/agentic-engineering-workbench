@@ -1124,7 +1124,15 @@ v1.2 sequence settled 2026-08-08 (debrief with operator):
    scaffold-dependent).
 5. Generation 4 run — operator-driven, first round with delta-ownership
    enforced from the start and the new communication channel.
-6. Reserved for operator certification 3: severity mis-calibration
+6. DECISION POINT after generation 4: console-launched builder — the
+   operator's stated direction ("the builder should live in the UI").
+   The console spawns the builder session itself (Agent SDK) inside
+   the locked-down workspace and streams its transcript into the build
+   page; the builder never shares console authority. Build it if the
+   generation-4 run shows the communication channel + one-click
+   handoff still leave the terminal as real friction; skip if they
+   sufficed.
+7. Reserved for operator certification 3: severity mis-calibration
    improvement loop (two live occurrences banked). Parallel candidate:
    test-designer fixture-reality rule via the improvement loop.
 
