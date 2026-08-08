@@ -97,7 +97,11 @@ async function main(): Promise<void> {
     clientDirectory: resolve(workspaceRoot, "web/dist"),
     logger: true,
   });
-  const address = await app.listen({ host: "127.0.0.1", port: 4173 });
+  const port = Number(process.env.PORT ?? 4173);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error(`PORT must be a valid TCP port, got: ${process.env.PORT}`);
+  }
+  const address = await app.listen({ host: "127.0.0.1", port });
   console.log(`Agent Workbench available at ${address}`);
   const shutdown = async () => {
     await app.close();
