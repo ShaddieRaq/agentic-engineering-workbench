@@ -262,3 +262,16 @@ tbody tr:last-child td { border-bottom: 0; }
 .history-strip[open] > summary { margin-bottom: 12px; }
 .history-strip .foundry-panel { opacity: .85; }
 .slice-carried { opacity: .75; padding-top: 14px; padding-bottom: 14px; }
+.next-step { position: sticky; top: 12px; z-index: 30; display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 1px solid rgba(130, 143, 255, .45); border-radius: 12px; padding: 14px 18px; margin-bottom: 18px; background: #14151D; box-shadow: 0 6px 24px rgba(0, 0, 0, .35); }
+.next-step strong { color: var(--accent); font-size: 15px; }
+.next-step .muted-note { margin: 3px 0 0; }
+.next-step-blocked { border-color: rgba(240, 180, 41, .45); }
+.next-step-blocked strong { color: var(--warning); }
+.next-step-done { border-color: rgba(76, 195, 138, .45); }
+.next-step-done strong { color: var(--success); }
+.stage-rail { position: sticky; top: 84px; z-index: 20; display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 0 14px; }
+.stage-rail a { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; background: var(--surface); }
+.stage-rail a.rail-current { border-color: var(--accent); color: var(--accent); }
+.error-card details { margin-top: 8px; }
+.error-card summary { cursor: pointer; font-size: 12.5px; }
+.error-card .evidence-json { max-height: 260px; overflow: auto; }

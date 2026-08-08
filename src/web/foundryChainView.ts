@@ -63,6 +63,7 @@ export interface FoundryBriefVersionView {
 
 export interface FoundryPlanView {
   planId: string;
+  briefVersion: number;
   createdAt: string;
   status: FoundryStageStatus;
   componentCount: number;
@@ -83,6 +84,7 @@ export interface FoundryPlanView {
 export interface FoundryCapabilityPlanView {
   capabilityPlanId: string;
   planId: string;
+  briefVersion: number;
   createdAt: string;
   status: FoundryStageStatus;
   needCount: number;
@@ -104,6 +106,7 @@ export interface FoundryTestSuiteView {
   testSuiteId: string;
   planId: string;
   capabilityPlanId: string;
+  briefVersion: number;
   createdAt: string;
   status: FoundryStageStatus;
   interfaceContract: string;
@@ -152,6 +155,21 @@ export interface FoundryBuildView {
   slices: FoundrySliceRow[];
 }
 
+// The single server-computed answer to "what should the operator do now?"
+// (console UX settlement, 2026-08-08). Exactly one state at a time; the
+// client renders it, never derives it — divergence between banner and
+// gates was a known failure class.
+export interface FoundryNextStep {
+  kind: "run" | "decide" | "answer" | "form" | "blocked" | "done";
+  headline: string;
+  detail: string;
+  // Stage section the banner scrolls to for decide/answer/form kinds.
+  anchor: "brief" | "plan" | "capability" | "tests" | "build" | null;
+  // For run kinds the banner hosts the button; the server builds the
+  // request so client and gates can never disagree.
+  action: { label: string; endpoint: string; body: Record<string, unknown> } | null;
+}
+
 export interface FoundryChainView {
   briefId: string;
   title: string;
@@ -184,6 +202,7 @@ export interface FoundryChainView {
     firstRecordedAt: string;
     occurrences: number;
   }[];
+  nextStep: FoundryNextStep;
   // Generation closures (Decision 088): operator-signed records that the
   // full suite passed against a pinned commit. Newest first.
   completions: {
@@ -379,7 +398,7 @@ function buildViewFromBuckets(
   briefId: string,
   buckets: ChainBuckets,
   standingAdvisories: FoundryChainView["standingAdvisories"] = [],
-): FoundryChainView {
+): Omit<FoundryChainView, "nextStep"> {
   const sortedBriefs = [...buckets.briefs].sort(
     (left, right) => left.artifact.version - right.artifact.version,
   );
@@ -453,6 +472,7 @@ function buildViewFromBuckets(
     }
     return {
       planId: plan.planId,
+      briefVersion: plan.briefVersion,
       createdAt: plan.createdAt,
       status: statusFromDecisions(decisions),
       componentCount: plan.content.components.length,
@@ -486,6 +506,7 @@ function buildViewFromBuckets(
     return {
       capabilityPlanId: plan.capabilityPlanId,
       planId: plan.planId,
+      briefVersion: plan.briefVersion,
       createdAt: plan.createdAt,
       status: statusFromDecisions(decisions),
       needCount: plan.content.needs.length,
@@ -511,6 +532,7 @@ function buildViewFromBuckets(
       testSuiteId: suite.testSuiteId,
       planId: suite.planId,
       capabilityPlanId: suite.capabilityPlanId,
+      briefVersion: suite.briefVersion,
       createdAt: suite.createdAt,
       status: statusFromDecisions(decisions),
       interfaceContract: suite.content.interfaceContract,
@@ -725,6 +747,279 @@ function sliceStatus(
   return hasWorkOrder ? "ordered" : "not-started";
 }
 
+
+// Walks the chain's gate ladder generation-aware: each stage's current
+// artifact is the one matching the LATEST brief version (older generations
+// are history, not work). Exported for deterministic tests.
+export function computeNextStep(
+  view: Omit<FoundryChainView, "nextStep">,
+): FoundryNextStep {
+  const latest = view.briefVersions[view.briefVersions.length - 1];
+  if (!latest) {
+    return {
+      kind: "blocked",
+      headline: "No brief found",
+      detail: "This chain has no brief versions in the store.",
+      anchor: null,
+      action: null,
+    };
+  }
+
+  if (view.intakeCanContinue) {
+    const count = view.intakeQuestions.length;
+    return {
+      kind: "answer",
+      headline:
+        count > 0
+          ? `Answer ${count} open intake question(s)`
+          : "Continue the interview",
+      detail:
+        count > 0
+          ? "The interview cannot close until these are answered."
+          : "The interview is waiting; use the context box to instruct it.",
+      anchor: "brief",
+      action: null,
+    };
+  }
+  if (latest.status === "draft") {
+    return {
+      kind: "decide",
+      headline: `Decide on brief v${latest.version}`,
+      detail: "The interview is closed. Approve, reject, or revise.",
+      anchor: "brief",
+      action: null,
+    };
+  }
+  if (latest.status !== "approved") {
+    return {
+      kind: "blocked",
+      headline: `Brief v${latest.version} is ${latest.status}`,
+      detail:
+        "Record another decision on the brief, or start a new project.",
+      anchor: "brief",
+      action: null,
+    };
+  }
+
+  // Brief approved. Evolution context: a completion older than the brief
+  // means the next plan descends from it (Decision 088).
+  const completion = view.completions[0];
+  const evolveFrom =
+    completion && view.latestVersion > completion.briefVersion
+      ? completion.completionId
+      : undefined;
+
+  const plan = view.plans.find(
+    ({ briefVersion }) => briefVersion === view.latestVersion,
+  );
+  if (!plan || plan.status === "rejected") {
+    return {
+      kind: "run",
+      headline: evolveFrom
+        ? "Generate the evolution plan"
+        : plan
+          ? "Generate a new architecture plan"
+          : "Generate the architecture plan",
+      detail: evolveFrom
+        ? `Descends from completion ${completion!.completionId.slice(0, 8)}; built slices are carried byte-identical.`
+        : "The architect maps the approved brief into components, slices, and acceptance mappings.",
+      anchor: "plan",
+      action: {
+        label: evolveFrom ? "Generate evolution plan" : "Generate plan",
+        endpoint: "/api/foundry/plans",
+        body: {
+          briefId: view.briefId,
+          ...(evolveFrom ? { evolveFrom } : {}),
+        },
+      },
+    };
+  }
+  if (plan.status === "draft") {
+    return {
+      kind: "decide",
+      headline: `Decide on architecture plan ${plan.planId.slice(0, 8)}`,
+      detail: `${plan.sliceCount} slice(s) · ${plan.blockingConcerns} blocking concern(s)${plan.mappingTestTypes["manual"] ? " · has MANUAL mappings" : ""}.`,
+      anchor: "plan",
+      action: null,
+    };
+  }
+  if (plan.status === "revision-requested") {
+    return {
+      kind: "run",
+      headline: "Re-run the architect with the requested revisions",
+      detail: "The revise decision's requests feed the next run.",
+      anchor: "plan",
+      action: {
+        label: "Re-run architect",
+        endpoint: "/api/foundry/plans",
+        body: {
+          briefId: view.briefId,
+          reviseFrom: plan.planId,
+          ...(plan.evolvesFromCompletionId
+            ? { evolveFrom: plan.evolvesFromCompletionId }
+            : {}),
+        },
+      },
+    };
+  }
+
+  const capability = view.capabilityPlans.find(
+    ({ planId }) => planId === plan.planId,
+  );
+  if (!capability || capability.status === "rejected") {
+    return {
+      kind: "run",
+      headline: "Generate the capability plan",
+      detail: "Maps every slice's needs to project code, existing tools, or proposed capabilities.",
+      anchor: "capability",
+      action: {
+        label: "Generate capability plan",
+        endpoint: "/api/foundry/capability-plans",
+        body: { planId: plan.planId },
+      },
+    };
+  }
+  if (capability.status === "draft") {
+    return {
+      kind: "decide",
+      headline: `Decide on capability plan ${capability.capabilityPlanId.slice(0, 8)}`,
+      detail: `${capability.needCount} need(s) · ${capability.blockingConcerns} blocking concern(s).`,
+      anchor: "capability",
+      action: null,
+    };
+  }
+  if (capability.status === "revision-requested") {
+    return {
+      kind: "run",
+      headline: "Re-run the capability planner with the requested revisions",
+      detail: "The revise decision's requests feed the next run.",
+      anchor: "capability",
+      action: {
+        label: "Re-run capability planner",
+        endpoint: "/api/foundry/capability-plans",
+        body: { planId: plan.planId, reviseFrom: capability.capabilityPlanId },
+      },
+    };
+  }
+
+  const suite = view.testSuites.find(
+    ({ capabilityPlanId }) => capabilityPlanId === capability.capabilityPlanId,
+  );
+  if (!suite || suite.status === "rejected") {
+    return {
+      kind: "run",
+      headline: "Design the acceptance tests",
+      detail: "Executable tests plus a withheld holdout; the slow stage — allow a few minutes.",
+      anchor: "tests",
+      action: {
+        label: "Design acceptance tests",
+        endpoint: "/api/foundry/test-suites",
+        body: { capabilityPlanId: capability.capabilityPlanId },
+      },
+    };
+  }
+  if (suite.status === "draft") {
+    const holdouts = suite.files.filter(
+      ({ visibility }) => visibility === "holdout",
+    ).length;
+    return {
+      kind: "decide",
+      headline: `Decide on test suite ${suite.testSuiteId.slice(0, 8)}`,
+      detail: `${suite.files.length} file(s), ${holdouts} holdout(s).`,
+      anchor: "tests",
+      action: null,
+    };
+  }
+  if (suite.status === "revision-requested") {
+    return {
+      kind: "run",
+      headline: "Re-run the test designer with the requested revisions",
+      detail: "The revise decision's requests feed the next run.",
+      anchor: "tests",
+      action: {
+        label: "Re-run test designer",
+        endpoint: "/api/foundry/test-suites",
+        body: {
+          capabilityPlanId: capability.capabilityPlanId,
+          reviseFrom: suite.testSuiteId,
+        },
+      },
+    };
+  }
+
+  // Suite approved: the governed build.
+  const build = view.build;
+  if (!build || !build.planAvailable) {
+    return {
+      kind: "blocked",
+      headline: "Build state unavailable",
+      detail: view.buildNote ?? "The build section could not be derived.",
+      anchor: "build",
+      action: null,
+    };
+  }
+  const undecided = build.slices.find(
+    ({ status }) => status === "submitted-passed" || status === "submitted-failed",
+  );
+  if (undecided) {
+    return {
+      kind: "decide",
+      headline: `Decide on the submission for "${undecided.title}"`,
+      detail:
+        undecided.status === "submitted-passed"
+          ? "Verification passed — approve to authorize the merge."
+          : "Verification FAILED — reject or request revisions.",
+      anchor: "build",
+      action: null,
+    };
+  }
+  const ordered = build.slices.find(({ status }) => status === "ordered");
+  if (ordered) {
+    return {
+      kind: "blocked",
+      headline: `Waiting on the builder — "${ordered.title}"`,
+      detail:
+        "Prepare the workspace (builder-workspace CLI) and hand the work order to the builder session; verification runs at submit_slice.",
+      anchor: "build",
+      action: null,
+    };
+  }
+  if (build.satisfiedSliceCount < build.slices.length) {
+    return {
+      kind: "run",
+      headline: "Issue the next work order",
+      detail: `${build.satisfiedSliceCount}/${build.slices.length} slices satisfied; the next buildable slice is selected automatically.`,
+      anchor: "build",
+      action: {
+        label: "Issue next work order",
+        endpoint: "/api/foundry/work-orders",
+        body: { testSuiteId: build.anchorTestSuiteId },
+      },
+    };
+  }
+  const closed = view.completions.some(
+    ({ testSuiteId }) => testSuiteId === build.anchorTestSuiteId,
+  );
+  if (!closed) {
+    return {
+      kind: "form",
+      headline: "Record the build completion",
+      detail:
+        "Every slice is satisfied. Re-runs the full suite (holdouts included) and pins the commit — closes this generation.",
+      anchor: "build",
+      action: null,
+    };
+  }
+  return {
+    kind: "done",
+    headline: "Generation closed — nothing to do",
+    detail:
+      "Reopen the brief (decision form on the latest version) to start an evolution round with new requirements.",
+    anchor: "brief",
+    action: null,
+  };
+}
+
 export async function buildFoundryChainView(
   store: FoundryArtifactStore,
   briefId: string,
@@ -739,7 +1034,8 @@ export async function buildFoundryChainView(
     firstRecordedAt,
     occurrences,
   }));
-  return buildViewFromBuckets(briefId, buckets, standingAdvisories);
+  const view = buildViewFromBuckets(briefId, buckets, standingAdvisories);
+  return { ...view, nextStep: computeNextStep(view) };
 }
 
 export async function buildFoundryProjectIndex(

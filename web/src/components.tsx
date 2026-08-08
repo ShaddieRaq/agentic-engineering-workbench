@@ -20,8 +20,26 @@ export function Loading() {
   return <div className="loading" role="status"><span />Loading platform evidence…</div>;
 }
 
+// Error card (console UX settlement): plain sentence first, decisive
+// excerpt promoted, full payload behind a drawer. Long raw messages —
+// Zod dumps, gate refusals with id lists — stop arriving as JSON walls.
 export function ErrorNotice({ message }: { message: string }) {
-  return <div className="notice notice-error" role="alert">{message}</div>;
+  const compact = message.length <= 180 && !message.includes("{") && !message.includes("\n");
+  if (compact) {
+    return <div className="notice notice-error" role="alert">{message}</div>;
+  }
+  const firstSentence = message.split(/(?<=[.!?])\s/)[0] ?? message;
+  const headline =
+    firstSentence.length > 160 ? `${firstSentence.slice(0, 157)}…` : firstSentence;
+  return (
+    <div className="notice notice-error error-card" role="alert">
+      <strong>{headline}</strong>
+      <details>
+        <summary>Show full output</summary>
+        <pre className="evidence-json">{message}</pre>
+      </details>
+    </div>
+  );
 }
 
 export function AgentCard({ agent }: { agent: AgentManifest }) {

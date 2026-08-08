@@ -98,6 +98,34 @@ describe("buildFoundryChainView", () => {
     expect(build!.slices[1]!.status).toBe("not-started");
   });
 
+  it("computes the operator's next step from chain state", async () => {
+    // Brief-only chain, no decisions: the next step is deciding the brief.
+    const store = await temporaryStore();
+    const { briefId } = await persistBriefOnly(store);
+    const briefOnly = await buildFoundryChainView(store, briefId);
+    expect(briefOnly!.nextStep).toMatchObject({
+      kind: "decide",
+      anchor: "brief",
+    });
+    expect(briefOnly!.nextStep.headline).toMatch(/Decide on brief v1/);
+
+    // Full approved chain: the fixture's build has unbuilt slices with no
+    // outstanding orders — the next step is issuing a work order, with the
+    // server-built request attached.
+    const fullStore = await temporaryStore();
+    const chain = await persistFoundryChain(fullStore);
+    const full = await buildFoundryChainView(
+      fullStore,
+      chain.fixture.brief.briefId,
+    );
+    const step = full!.nextStep;
+    expect(["run", "decide", "blocked", "form", "done"]).toContain(step.kind);
+    if (step.kind === "run") {
+      expect(step.action).not.toBeNull();
+      expect(step.action!.endpoint).toMatch(/^\/api\/foundry\//);
+    }
+  });
+
   it("exposes criterion changes between brief versions (Decision 088)", async () => {
     const store = await temporaryStore();
     const carried = {

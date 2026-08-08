@@ -284,6 +284,142 @@ function IssueWorkOrderButton({
   );
 }
 
+
+// The server-computed answer to "what now?" — one state, one action
+// (console UX settlement). run-kinds host the button; decide/answer/form
+// kinds scroll to and reveal the stage's form.
+function NextStepBanner({
+  step,
+  onDone,
+}: {
+  step: NonNullable<FoundryChainView["nextStep"]>;
+  onDone: () => void;
+}) {
+  const [operationId, setOperationId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const operation = useOperation(operationId);
+  const completed = useRef(false);
+
+  useEffect(() => {
+    if (operation.data?.status === "completed" && !completed.current) {
+      completed.current = true;
+      onDone();
+    }
+  }, [operation.data, onDone]);
+
+  async function runAction() {
+    if (!step.action) return;
+    try {
+      const response = await api<Operation | Record<string, unknown>>(
+        step.action.endpoint,
+        { method: "POST", body: JSON.stringify(step.action.body) },
+      );
+      if (response && typeof response === "object" && "operationId" in response) {
+        completed.current = false;
+        setOperationId((response as Operation).operationId);
+      } else {
+        onDone();
+      }
+      setError(null);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  }
+
+  function jump() {
+    if (!step.anchor) return;
+    const section = document.getElementById(`stage-${step.anchor}`);
+    section?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const details = section?.querySelector<HTMLDetailsElement>("details.decision-form");
+    if (details) details.open = true;
+    const field = section?.querySelector<HTMLElement>("textarea, input, select");
+    field?.focus({ preventScroll: true });
+  }
+
+  const running =
+    operation.data?.status === "queued" || operation.data?.status === "running";
+  return (
+    <div className={`next-step next-step-${step.kind}`} role="status">
+      <div>
+        <strong>Next: {step.headline}</strong>
+        <p className="muted-note">{step.detail}</p>
+      </div>
+      {step.kind === "run" && step.action && (
+        <button className="button" type="button" onClick={() => void runAction()} disabled={running}>
+          {running ? "Running…" : step.action.label}
+        </button>
+      )}
+      {(step.kind === "decide" || step.kind === "answer" || step.kind === "form") && step.anchor && (
+        <button className="button" type="button" onClick={jump}>
+          Go to {step.kind === "answer" ? "the questions" : "the form"}
+        </button>
+      )}
+      {error && <ErrorNotice message={error} />}
+      {operation.data && operation.data.status !== "completed" && (
+        <OperationTrace operation={operation.data} />
+      )}
+    </div>
+  );
+}
+
+// Sticky scroll-nav: one glyph per stage, amber where the operator is
+// needed. Display-only — the banner is the authority.
+function StageRail({ chain }: { chain: FoundryChainView }) {
+  const currentPlan = chain.plans.find(
+    ({ briefVersion }) => briefVersion === chain.latestVersion,
+  );
+  const currentCapability = currentPlan
+    ? chain.capabilityPlans.find(({ planId }) => planId === currentPlan.planId)
+    : undefined;
+  const currentSuite = currentCapability
+    ? chain.testSuites.find(
+        ({ capabilityPlanId }) =>
+          capabilityPlanId === currentCapability.capabilityPlanId,
+      )
+    : undefined;
+  const entries: { anchor: string; label: string; status: string }[] = [
+    {
+      anchor: "brief",
+      label: "Brief",
+      status: chain.intakeCanContinue
+        ? "revision-requested"
+        : chain.briefVersions[chain.briefVersions.length - 1]?.status ?? "draft",
+    },
+    { anchor: "plan", label: "Plan", status: currentPlan?.status ?? "missing" },
+    { anchor: "capability", label: "Capability", status: currentCapability?.status ?? "missing" },
+    { anchor: "tests", label: "Tests", status: currentSuite?.status ?? "missing" },
+    {
+      anchor: "build",
+      label: "Build",
+      status: chain.build
+        ? chain.build.satisfiedSliceCount === chain.build.slices.length &&
+          chain.build.slices.length > 0
+          ? "approved"
+          : "revision-requested"
+        : "missing",
+    },
+  ];
+  return (
+    <nav className="stage-rail" aria-label="Stages">
+      {entries.map((entry) => (
+        <a
+          key={entry.anchor}
+          href={`#stage-${entry.anchor}`}
+          className={chain.nextStep.anchor === entry.anchor ? "rail-current" : ""}
+          onClick={(event) => {
+            event.preventDefault();
+            document
+              .getElementById(`stage-${entry.anchor}`)
+              ?.scrollIntoView({ behavior: "smooth" });
+          }}
+        >
+          <StatusBadge value={entry.status} /> {entry.label}
+        </a>
+      ))}
+    </nav>
+  );
+}
+
 // Closes a build generation (Decision 088): re-runs the full approved
 // suite — holdouts included — against the project's main, then records the
 // operator-signed completion with commit and tree pins. Evolution rounds
@@ -365,7 +501,7 @@ function RecordCompletionPanel({
 // Records an operator-attributed decision against a decisions endpoint.
 // Approval gates live server-side in the decision constructors; this form
 // only collects the human identity, verdict, and rationale.
-function DecisionForm({ action, onRecorded, allowReopen }: { action: string; onRecorded: () => void; allowReopen?: boolean }) {
+function DecisionForm({ action, onRecorded, allowReopen, defaultOpen }: { action: string; onRecorded: () => void; allowReopen?: boolean; defaultOpen?: boolean }) {
   const [decision, setDecision] = useState<"approve" | "reject" | "revise" | "reopen">("approve");
   const [operatorId, setOperatorId] = useState(
     () => window.localStorage.getItem(OPERATOR_STORAGE_KEY) ?? "",
@@ -408,7 +544,7 @@ function DecisionForm({ action, onRecorded, allowReopen }: { action: string; onR
   }
 
   return (
-    <details className="decision-form">
+    <details className="decision-form" open={defaultOpen}>
       <summary>Record decision</summary>
       <form className="panel" onSubmit={submit}>
         <label>
@@ -528,6 +664,7 @@ function SubmissionDetails({ submission, onRecorded }: { submission: FoundrySubm
       <DecisionForm
         action={`/api/foundry/submissions/${submission.submissionId}/decisions`}
         onRecorded={onRecorded}
+        defaultOpen={submission.decisions.length === 0}
       />
       <Link to={`/foundry/artifacts/${submission.submissionId}`}>Raw submission evidence →</Link>
     </div>
@@ -549,7 +686,10 @@ export function FoundryProjectPage() {
         Chain {shortId(chain.briefId)} · {chain.intakeTurnCount} intake turn(s) · last activity {when(chain.latestActivityAt)}
       </p>
 
-      <section className="foundry-stage">
+      <NextStepBanner step={chain.nextStep} onDone={resource.reload} />
+      <StageRail chain={chain} />
+
+      <section className="foundry-stage" id="stage-brief">
         <div className="section-heading"><div><span className="eyebrow">Stage 1</span><h2>Project brief</h2></div></div>
         {(() => {
           const newestFirst = [...chain.briefVersions].reverse();
@@ -582,6 +722,7 @@ export function FoundryProjectPage() {
               action={`/api/foundry/briefs/${chain.briefId}/versions/${version.version}/decisions`}
               onRecorded={resource.reload}
               allowReopen={version.version === chain.latestVersion && version.status === "approved"}
+              defaultOpen={version.version === chain.latestVersion && version.status === "draft" && !chain.intakeCanContinue}
             />
             <Link to={`/foundry/artifacts/${version.artifactId}`}>Raw brief →</Link>
           </div>
@@ -617,7 +758,7 @@ export function FoundryProjectPage() {
         </section>
       )}
 
-      <section className="foundry-stage">
+      <section className="foundry-stage" id="stage-plan">
         <div className="section-heading"><div><span className="eyebrow">Stage 2</span><h2>Architecture plans</h2></div></div>
         {chain.status === "approved" && (() => {
           // Decision 088: after a completion, a newer approved brief means
@@ -681,6 +822,7 @@ export function FoundryProjectPage() {
             <DecisionForm
               action={`/api/foundry/plans/${plan.planId}/decisions`}
               onRecorded={resource.reload}
+              defaultOpen={plan.status === "draft"}
             />
             <Link to={`/foundry/artifacts/${plan.planId}`}>Raw plan →</Link>
           </div>
@@ -699,7 +841,7 @@ export function FoundryProjectPage() {
         })()}
       </section>
 
-      <section className="foundry-stage">
+      <section className="foundry-stage" id="stage-capability">
         <div className="section-heading"><div><span className="eyebrow">Stage 3</span><h2>Capability plans</h2></div></div>
         {chain.plans.some(({ status }) => status === "approved") && (
           <StageRunControl
@@ -734,6 +876,7 @@ export function FoundryProjectPage() {
             <DecisionForm
               action={`/api/foundry/capability-plans/${plan.capabilityPlanId}/decisions`}
               onRecorded={resource.reload}
+              defaultOpen={plan.status === "draft"}
             />
             <Link to={`/foundry/artifacts/${plan.capabilityPlanId}`}>Raw capability plan →</Link>
           </div>
@@ -752,7 +895,7 @@ export function FoundryProjectPage() {
         })()}
       </section>
 
-      <section className="foundry-stage">
+      <section className="foundry-stage" id="stage-tests">
         <div className="section-heading"><div><span className="eyebrow">Stage 4</span><h2>Acceptance test suites</h2></div></div>
         {chain.capabilityPlans.some(({ status }) => status === "approved") && (
           <StageRunControl
@@ -804,6 +947,7 @@ export function FoundryProjectPage() {
             <DecisionForm
               action={`/api/foundry/test-suites/${suite.testSuiteId}/decisions`}
               onRecorded={resource.reload}
+              defaultOpen={suite.status === "draft"}
             />
             <Link to={`/foundry/artifacts/${suite.testSuiteId}`}>Raw suite (includes holdout content) →</Link>
           </div>
@@ -822,7 +966,7 @@ export function FoundryProjectPage() {
         })()}
       </section>
 
-      <section className="foundry-stage">
+      <section className="foundry-stage" id="stage-build">
         <div className="section-heading"><div><span className="eyebrow">Stage 5</span><h2>Governed build</h2></div></div>
         {chain.completions.length > 0 && (
           <div className="panel">

@@ -493,10 +493,10 @@ describe("agent workbench web interface", () => {
     const chain = {
       briefId: "b1000000-0000-4000-8000-000000000001",
       title: "Habit tracker", latestVersion: 5, status: "approved",
-      latestActivityAt: "2026-08-05T10:11:00.000Z", intakeTurnCount: 6, intakeQuestions: [], intakeCanContinue: false, completions: [], standingAdvisories: [],
+      latestActivityAt: "2026-08-05T10:11:00.000Z", intakeTurnCount: 6, intakeQuestions: [], intakeCanContinue: false, completions: [], standingAdvisories: [], nextStep: { kind: "blocked", headline: "Test state", detail: "Fixture chain.", anchor: null, action: null },
       briefVersions: [{ version: 5, artifactId: "b1000000-0000-4000-8000-000000000001-v5", title: "Habit tracker", createdAt: "2026-08-04T10:00:00.000Z", status: "approved", openQuestions: [], decisions: [decision] }],
-      plans: [{ planId: "p1000000-0000-4000-8000-000000000001", createdAt: "2026-08-04T11:00:00.000Z", status: "approved", componentCount: 5, sliceCount: 2, mappingTestTypes: { integration: 7 }, blockingConcerns: 0, advisoryConcerns: 3, decisions: [decision] }],
-      capabilityPlans: [{ capabilityPlanId: "c1000000-0000-4000-8000-000000000001", planId: "p1000000-0000-4000-8000-000000000001", createdAt: "2026-08-04T12:00:00.000Z", status: "approved", needCount: 6, proposedCapabilityCount: 0, blockingConcerns: 0, advisoryConcerns: 0, decisions: [decision] }],
+      plans: [{ planId: "p1000000-0000-4000-8000-000000000001", briefVersion: 1, createdAt: "2026-08-04T11:00:00.000Z", status: "approved", componentCount: 5, sliceCount: 2, mappingTestTypes: { integration: 7 }, blockingConcerns: 0, advisoryConcerns: 3, decisions: [decision] }],
+      capabilityPlans: [{ capabilityPlanId: "c1000000-0000-4000-8000-000000000001", planId: "p1000000-0000-4000-8000-000000000001", briefVersion: 1, createdAt: "2026-08-04T12:00:00.000Z", status: "approved", needCount: 6, proposedCapabilityCount: 0, blockingConcerns: 0, advisoryConcerns: 0, decisions: [decision] }],
       testSuites: [{ testSuiteId: "t1000000-0000-4000-8000-000000000001", planId: "p1000000-0000-4000-8000-000000000001", capabilityPlanId: "c1000000-0000-4000-8000-000000000001", createdAt: "2026-08-04T13:00:00.000Z", status: "approved", interfaceContract: "CLI via node ./dist/index.js", files: [{ path: "acceptance-tests/routing.test.ts", visibility: "visible", testType: "integration", coveredCriterionIds: ["x"] }, { path: "acceptance-tests/holdout.test.ts", visibility: "holdout", testType: "integration", coveredCriterionIds: ["y"] }], decisions: [decision] }],
       build: {
         anchorTestSuiteId: "t1000000-0000-4000-8000-000000000001",
@@ -544,7 +544,7 @@ describe("agent workbench web interface", () => {
     const chainPayload = {
       briefId: "b2000000-0000-4000-8000-000000000002",
       title: "Note taker", latestVersion: 1, status: "draft",
-      latestActivityAt: "2026-08-05T10:00:00.000Z", intakeTurnCount: 0, intakeQuestions: [], intakeCanContinue: false, completions: [], standingAdvisories: [],
+      latestActivityAt: "2026-08-05T10:00:00.000Z", intakeTurnCount: 0, intakeQuestions: [], intakeCanContinue: false, completions: [], standingAdvisories: [], nextStep: { kind: "blocked", headline: "Test state", detail: "Fixture chain.", anchor: null, action: null },
       briefVersions: [{ version: 1, artifactId: "b2000000-0000-4000-8000-000000000002-v1", title: "Note taker", createdAt: "2026-08-05T09:00:00.000Z", status: "draft", openQuestions: [], decisions: [] }],
       plans: [], capabilityPlans: [], testSuites: [], build: null,
       buildNote: "No approved test suite yet.",
@@ -590,7 +590,7 @@ describe("agent workbench web interface", () => {
     const chainPayload = {
       briefId: "b3000000-0000-4000-8000-000000000003",
       title: "Recipe box", latestVersion: 2, status: "approved",
-      latestActivityAt: "2026-08-05T10:00:00.000Z", intakeTurnCount: 2, intakeQuestions: [], intakeCanContinue: false, completions: [], standingAdvisories: [],
+      latestActivityAt: "2026-08-05T10:00:00.000Z", intakeTurnCount: 2, intakeQuestions: [], intakeCanContinue: false, completions: [], standingAdvisories: [], nextStep: { kind: "blocked", headline: "Test state", detail: "Fixture chain.", anchor: null, action: null },
       briefVersions: [
         { version: 1, artifactId: "b3000000-0000-4000-8000-000000000003-v1", title: "Recipe box", createdAt: "2026-08-05T08:00:00.000Z", status: "draft", openQuestions: [{ id: questionId, question: "Which storage should recipes use?" }], decisions: [] },
         { version: 2, artifactId: "b3000000-0000-4000-8000-000000000003-v2", title: "Recipe box", createdAt: "2026-08-05T09:00:00.000Z", status: "approved", openQuestions: [], decisions: [] },
@@ -635,7 +635,7 @@ describe("agent workbench web interface", () => {
     const chainPayload = {
       briefId: "b4000000-0000-4000-8000-000000000004",
       title: "Trip planner", latestVersion: 1, status: "draft",
-      latestActivityAt: "2026-08-05T10:00:00.000Z", intakeTurnCount: 1, intakeQuestions: [{ id: "q1", question: "Which airports matter?" }], intakeCanContinue: true, completions: [], standingAdvisories: [],
+      latestActivityAt: "2026-08-05T10:00:00.000Z", intakeTurnCount: 1, intakeQuestions: [{ id: "q1", question: "Which airports matter?" }], intakeCanContinue: true, completions: [], standingAdvisories: [], nextStep: { kind: "blocked", headline: "Test state", detail: "Fixture chain.", anchor: null, action: null },
       briefVersions: [
         { version: 1, artifactId: "b4000000-0000-4000-8000-000000000004-v1", title: "Trip planner", createdAt: "2026-08-05T09:00:00.000Z", status: "draft", openQuestions: [{ id: "q1", question: "Which airports matter?" }], decisions: [] },
       ],

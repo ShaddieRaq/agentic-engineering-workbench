@@ -442,6 +442,14 @@ export type FoundrySliceStatus =
   | "rejected"
   | "revision-requested";
 
+export interface FoundryNextStep {
+  kind: "run" | "decide" | "answer" | "form" | "blocked" | "done";
+  headline: string;
+  detail: string;
+  anchor: "brief" | "plan" | "capability" | "tests" | "build" | null;
+  action: { label: string; endpoint: string; body: Record<string, unknown> } | null;
+}
+
 export interface FoundryDecisionView {
   decisionId: string;
   decision: "approve" | "reject" | "revise" | "reopen";
@@ -464,6 +472,7 @@ export interface FoundryBriefVersionView {
 
 export interface FoundryPlanView {
   planId: string;
+  briefVersion: number;
   createdAt: string;
   status: FoundryStageStatus;
   componentCount: number;
@@ -480,6 +489,7 @@ export interface FoundryPlanView {
 export interface FoundryCapabilityPlanView {
   capabilityPlanId: string;
   planId: string;
+  briefVersion: number;
   createdAt: string;
   status: FoundryStageStatus;
   needCount: number;
@@ -501,6 +511,7 @@ export interface FoundryTestSuiteView {
   testSuiteId: string;
   planId: string;
   capabilityPlanId: string;
+  briefVersion: number;
   createdAt: string;
   status: FoundryStageStatus;
   interfaceContract: string;
@@ -553,6 +564,7 @@ export interface FoundryChainView {
     firstRecordedAt: string;
     occurrences: number;
   }[];
+  nextStep: FoundryNextStep;
   completions: {
     completionId: string;
     testSuiteId: string;
