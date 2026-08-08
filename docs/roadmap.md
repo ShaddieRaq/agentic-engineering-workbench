@@ -1082,6 +1082,22 @@ order, each with its plan:
    capped at human scale, content-based grouping) → full chain →
    isolated builder → first evolved release.
 
+Field-trial verdicts, 2026-08-09 (generation-3 certification run):
+- FIXED: changed/new criteria must be delta-owned in evolution plans
+  (the gen-3 green-chain/unmet-reality hole), commit 9f79e0a.
+- CRITICAL v1.1 (Decision 089): OS-level builder confinement;
+  authenticated decision writes.
+- HIGH v1.1: one-click builder handoff — the console must run the
+  workspace prep itself; the terminal + full-UUID dance failed its
+  operator ("the worst workflow"). Failed operations must persist
+  visibly until acknowledged. Plan panels must render slice contents.
+- OPEN AGENT-POLICY CANDIDATE (improvement loop, not direct edit):
+  test designer needs a fixture-reality rule — criteria about binary
+  formats (PDF/Word) cannot be verified with plain-text stand-ins.
+- Generation 4 brief (Mac Librarian), written by field trial: Organized
+  exclusion for real, convergence for real, text-extracted labels for
+  real — now enforceable via the delta-ownership rule.
+
 Priorities set 2026-08-07 (operator-ordered):
 A. Advisory lifecycle — the concerns mechanism predicted both Mac
    Librarian production defects (naive grouping, raw-PDF analysis) as
