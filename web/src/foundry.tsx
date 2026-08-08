@@ -551,7 +551,10 @@ export function FoundryProjectPage() {
 
       <section className="foundry-stage">
         <div className="section-heading"><div><span className="eyebrow">Stage 1</span><h2>Project brief</h2></div></div>
-        {chain.briefVersions.map((version) => (
+        {(() => {
+          const newestFirst = [...chain.briefVersions].reverse();
+          const [currentVersion, ...versionHistory] = newestFirst;
+          const renderVersion = (version: typeof newestFirst[number]) => (
           <div className="panel foundry-panel" key={version.artifactId}>
             <div className="section-heading">
               <h3>Version {version.version} · {when(version.createdAt)}</h3>
@@ -582,13 +585,26 @@ export function FoundryProjectPage() {
             />
             <Link to={`/foundry/artifacts/${version.artifactId}`}>Raw brief →</Link>
           </div>
-        ))}
+          );
+          return (
+            <>
+              {currentVersion && renderVersion(currentVersion)}
+              {versionHistory.length > 0 && (
+                <details className="history-strip">
+                  <summary>{versionHistory.length} earlier version(s) — collapsed history</summary>
+                  {versionHistory.map(renderVersion)}
+                </details>
+              )}
+            </>
+          );
+        })()}
       </section>
 
       {chain.standingAdvisories.length > 0 && (
         <section className="foundry-stage">
           <div className="section-heading"><div><span className="eyebrow">Open edges</span><h2>Standing advisories ({chain.standingAdvisories.length})</h2></div></div>
-          <div className="panel">
+          <details className="panel history-strip">
+            <summary>{chain.standingAdvisories.length} open edge(s) recorded by prior gates — expand to review</summary>
             <p className="muted-note">
               Advisory concerns from approved artifacts across all generations — the system&apos;s own defect predictions. Each stays here until a criterion resolves it; reopened interviews carry this list automatically.
             </p>
@@ -597,7 +613,7 @@ export function FoundryProjectPage() {
                 <StatusBadge value={advisory.stage} /> ×{advisory.occurrences} · since {new Date(advisory.firstRecordedAt).toLocaleDateString()} — {advisory.description}
               </p>
             ))}
-          </div>
+          </details>
         </section>
       )}
 
@@ -621,7 +637,9 @@ export function FoundryProjectPage() {
           );
         })()}
         {!chain.plans.length && <EmptyState>No architecture plan yet.</EmptyState>}
-        {chain.plans.map((plan) => (
+        {(() => {
+          const [currentPlan, ...planHistory] = chain.plans;
+          const renderPlan = (plan: typeof chain.plans[number]) => (
           <div className="panel foundry-panel" key={plan.planId}>
             <div className="section-heading">
               <h3>Plan {shortId(plan.planId)} · {when(plan.createdAt)}</h3>
@@ -666,7 +684,19 @@ export function FoundryProjectPage() {
             />
             <Link to={`/foundry/artifacts/${plan.planId}`}>Raw plan →</Link>
           </div>
-        ))}
+          );
+          return (
+            <>
+              {currentPlan && renderPlan(currentPlan)}
+              {planHistory.length > 0 && (
+                <details className="history-strip">
+                  <summary>{planHistory.length} earlier plan(s) — collapsed history</summary>
+                  {planHistory.map(renderPlan)}
+                </details>
+              )}
+            </>
+          );
+        })()}
       </section>
 
       <section className="foundry-stage">
@@ -680,7 +710,9 @@ export function FoundryProjectPage() {
           />
         )}
         {!chain.capabilityPlans.length && <EmptyState>No capability plan yet.</EmptyState>}
-        {chain.capabilityPlans.map((plan) => (
+        {(() => {
+          const [currentCapability, ...capabilityHistory] = chain.capabilityPlans;
+          const renderCapability = (plan: typeof chain.capabilityPlans[number]) => (
           <div className="panel foundry-panel" key={plan.capabilityPlanId}>
             <div className="section-heading">
               <h3>Capability plan {shortId(plan.capabilityPlanId)} · {when(plan.createdAt)}</h3>
@@ -705,7 +737,19 @@ export function FoundryProjectPage() {
             />
             <Link to={`/foundry/artifacts/${plan.capabilityPlanId}`}>Raw capability plan →</Link>
           </div>
-        ))}
+          );
+          return (
+            <>
+              {currentCapability && renderCapability(currentCapability)}
+              {capabilityHistory.length > 0 && (
+                <details className="history-strip">
+                  <summary>{capabilityHistory.length} earlier capability plan(s) — collapsed history</summary>
+                  {capabilityHistory.map(renderCapability)}
+                </details>
+              )}
+            </>
+          );
+        })()}
       </section>
 
       <section className="foundry-stage">
@@ -721,7 +765,9 @@ export function FoundryProjectPage() {
           />
         )}
         {!chain.testSuites.length && <EmptyState>No test suite yet.</EmptyState>}
-        {chain.testSuites.map((suite) => (
+        {(() => {
+          const [currentSuite, ...suiteHistory] = chain.testSuites;
+          const renderSuite = (suite: typeof chain.testSuites[number]) => (
           <div className="panel foundry-panel" key={suite.testSuiteId}>
             <div className="section-heading">
               <h3>Suite {shortId(suite.testSuiteId)} · {when(suite.createdAt)}</h3>
@@ -761,7 +807,19 @@ export function FoundryProjectPage() {
             />
             <Link to={`/foundry/artifacts/${suite.testSuiteId}`}>Raw suite (includes holdout content) →</Link>
           </div>
-        ))}
+          );
+          return (
+            <>
+              {currentSuite && renderSuite(currentSuite)}
+              {suiteHistory.length > 0 && (
+                <details className="history-strip">
+                  <summary>{suiteHistory.length} earlier suite(s) — collapsed history</summary>
+                  {suiteHistory.map(renderSuite)}
+                </details>
+              )}
+            </>
+          );
+        })()}
       </section>
 
       <section className="foundry-stage">
@@ -798,6 +856,15 @@ export function FoundryProjectPage() {
                 />
               )}
             {chain.build.slices.map((slice, index) => (
+              slice.status === "carried" ? (
+                <div className="panel foundry-panel slice-carried" key={slice.sliceId}>
+                  <div className="section-heading">
+                    <h3>Slice {index + 1}: {slice.title}</h3>
+                    <StatusBadge value="carried" />
+                  </div>
+                  <p className="muted-note">Built and verified in a prior generation; satisfied by the pinned completion record.</p>
+                </div>
+              ) : (
               <div className="panel foundry-panel" key={slice.sliceId}>
                 <div className="section-heading">
                   <h3>Slice {index + 1}: {slice.title}</h3>
@@ -818,6 +885,7 @@ export function FoundryProjectPage() {
                   />
                 ))}
               </div>
+              )
             ))}
           </>
         )}
