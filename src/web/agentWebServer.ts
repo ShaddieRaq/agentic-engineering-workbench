@@ -1019,13 +1019,41 @@ export async function buildAgentWebServer(
         execute: (
           emit: (stage: "workflow" | "persistence", message: string) => void,
         ) => Promise<unknown>,
+        label?: string,
       ): unknown => {
         if (!options.apiKeyConfigured) {
           return reply.code(503).send({ error: "OPENAI_API_KEY is not configured." });
         }
-        const operation = operations.start("foundry-stage", agentId, execute);
+        const stageLabels: Record<string, string> = {
+          "project-intake": "Intake interview",
+          "project-architect": "Generating the architecture plan",
+          "capability-planner": "Generating the capability plan",
+          "test-designer": "Designing the acceptance tests",
+          "build-completion": "Recording the build completion",
+        };
+        const operation = operations.start(
+          "foundry-stage",
+          agentId,
+          execute,
+          label ?? stageLabels[agentId] ?? agentId,
+        );
         return reply.code(202).send(operation);
       };
+
+      // Read model for the operations tray: refresh-safe because the
+      // server is the only owner of in-flight state.
+      app.get("/api/foundry/operations", async () => ({
+        operations: operations
+          .listRecent()
+          .map(({ operationId, label, agentId, status, createdAt, completedAt }) => ({
+            operationId,
+            label,
+            agentId,
+            status,
+            createdAt,
+            completedAt,
+          })),
+      }));
 
       app.post("/api/foundry/intake", async (request, reply) => {
         const parsed = foundryIntakeStartSchema.safeParse(request.body ?? {});

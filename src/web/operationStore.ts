@@ -30,6 +30,9 @@ export interface OperationSnapshot {
   operationId: string;
   kind: OperationKind;
   agentId: string;
+  // Human-facing description shown in the operations tray ("Designing
+  // acceptance tests"). Falls back to the agent id when absent.
+  label: string;
   status: OperationStatus;
   events: OperationEvent[];
   result: unknown | null;
@@ -48,11 +51,13 @@ export class OperationStore {
     kind: OperationKind,
     agentId: string,
     execute: (emit: (stage: OperationEvent["stage"], message: string) => void) => Promise<unknown>,
+    label?: string,
   ): OperationSnapshot {
     const operation: OperationSnapshot = {
       operationId: randomUUID(),
       kind,
       agentId,
+      label: label ?? agentId,
       status: "queued",
       events: [],
       result: null,
@@ -97,6 +102,24 @@ export class OperationStore {
     subscribers.add(subscriber);
     this.#subscribers.set(id, subscribers);
     return () => subscribers.delete(subscriber);
+  }
+
+  // Read model for the operations tray (console UX settlement): every
+  // queued/running operation plus recently settled ones, newest first, so
+  // a page refresh reconstructs in-flight work from server state alone.
+  listRecent(limit = 10): OperationSnapshot[] {
+    const all = [...this.#operations.values()];
+    const active = all
+      .filter(({ status }) => status === "queued" || status === "running")
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    const settled = all
+      .filter(({ status }) => status === "completed" || status === "failed")
+      .sort(
+        (left, right) =>
+          (right.completedAt ?? "").localeCompare(left.completedAt ?? ""),
+      )
+      .slice(0, Math.max(limit - active.length, 3));
+    return [...active, ...settled];
   }
 
   #emit(

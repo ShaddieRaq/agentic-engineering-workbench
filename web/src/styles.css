@@ -279,3 +279,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .stage-cards .agent-card p { min-height: 0; }
 .stage-rail a.rail-needed { border-color: var(--warning); }
 .stage-rail a.rail-needed::after { content: '●'; color: var(--warning); font-size: 9px; }
+.ops-tray { display: grid; gap: 6px; margin-bottom: 14px; }
+.ops-row { border: 1px solid rgba(240, 180, 41, .35); border-radius: 10px; background: var(--surface); }
+.ops-row-head { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; background: none; border: 0; color: var(--text, #E8E9ED); padding: 10px 14px; cursor: pointer; font: inherit; }
+.ops-row .timeline { padding: 0 16px 12px; }

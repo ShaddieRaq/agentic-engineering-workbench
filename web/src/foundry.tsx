@@ -285,6 +285,80 @@ function IssueWorkOrderButton({
 }
 
 
+
+// Refresh-safe operations tray: rendered purely from server state
+// (console UX settlement — a reload mid-run must reconstruct in-flight
+// work). Polls while anything is active; reloads the chain when an
+// operation settles.
+function OperationsTray({ onSettled }: { onSettled: () => void }) {
+  const [rows, setRows] = useState<
+    { operationId: string; label: string; status: string; createdAt: string }[]
+  >([]);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const activeIds = useRef<Set<string>>(new Set());
+  const operation = useOperation(expanded);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    async function poll() {
+      try {
+        const response = await api<{ operations: typeof rows }>(
+          "/api/foundry/operations",
+        );
+        if (cancelled) return;
+        const next = response.operations;
+        const nextActive = new Set(
+          next
+            .filter(({ status }) => status === "queued" || status === "running")
+            .map(({ operationId }) => operationId),
+        );
+        // An operation left the active set: server state changed — reload.
+        for (const id of activeIds.current) {
+          if (!nextActive.has(id)) onSettled();
+        }
+        activeIds.current = nextActive;
+        setRows(next);
+        timer = setTimeout(poll, nextActive.size > 0 ? 2000 : 10000);
+      } catch {
+        timer = setTimeout(poll, 5000);
+      }
+    }
+    void poll();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const active = rows.filter(
+    ({ status }) => status === "queued" || status === "running",
+  );
+  if (active.length === 0) return null;
+  return (
+    <div className="ops-tray">
+      {active.map((row) => (
+        <div className="ops-row" key={row.operationId}>
+          <button
+            type="button"
+            className="ops-row-head"
+            onClick={() =>
+              setExpanded(expanded === row.operationId ? null : row.operationId)
+            }
+          >
+            <StatusBadge value={row.status} /> {row.label}
+            <span className="muted-note"> · started {when(row.createdAt)}</span>
+          </button>
+          {expanded === row.operationId && operation.data && (
+            <OperationTrace operation={operation.data} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // The server-computed answer to "what now?" — one state, one action
 // (console UX settlement). run-kinds host the button; decide/answer/form
 // kinds scroll to and reveal the stage's form.
@@ -785,6 +859,7 @@ export function FoundryProjectPage() {
       </p>
 
       <NextStepBanner step={chain.nextStep} briefId={chain.briefId} onDone={resource.reload} />
+      <OperationsTray onSettled={resource.reload} />
       <StageRail chain={chain} active={stagePage} />
 
       {stagePage === "overview" && <ProjectOverview chain={chain} />}
