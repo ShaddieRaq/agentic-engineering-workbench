@@ -1096,7 +1096,14 @@ Field-trial verdicts, 2026-08-09 (generation-3 certification run):
   formats (PDF/Word) cannot be verified with plain-text stand-ins.
 - Generation 4 brief (Mac Librarian), written by field trial: Organized
   exclusion for real, convergence for real, text-extracted labels for
-  real — now enforceable via the delta-ownership rule.
+  real — now enforceable via the delta-ownership rule. Added 2026-08-08
+  (operator ran the app cold): scoped runs — a root pointed at a single
+  library folder (e.g. ~/Downloads) silently yields nothing because
+  scan only descends into Desktop/Downloads/Documents under the given
+  root; empty results must explain themselves (review printed
+  {"batches": []} with no reason); grouping is degenerate in practice
+  (15 batches of one file each — similarity clustering produced only
+  singletons with PDF-internals labels like "obj endobj 21").
 
 Generation 3 CLOSED 2026-08-08 (completion 2987790f, brief v13, main
 358950e, operator-signed; 12 suite files including 3 holdouts green
