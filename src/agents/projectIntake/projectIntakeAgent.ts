@@ -23,14 +23,18 @@ export function createProjectIntakeAgent(
     manifest: {
       id: "project-intake",
       name: "Project Intake",
-      version: "0.5.0",
+      version: "0.6.0",
       status: "experimental",
       description:
         "Interviews a software idea into a decision-ready project brief through " +
         "controller-driven single-shot turns.",
       owner: "local-platform",
       tags: ["foundry", "intake"],
-      defaultModel: "gpt-5.4-mini",
+      // Same evidence pattern as the test designer (2026-08-09): the
+      // interview circled live in both real projects — closure judgment
+      // is exactly where the small model drifts. Strong model for the
+      // judgment-heavy conversational stage.
+      defaultModel: "gpt-5.4",
       components: {
         workflowIds: [],
         harnessIds: [],
