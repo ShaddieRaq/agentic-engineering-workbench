@@ -1097,6 +1097,20 @@ forms must name their target artifact; tilde-expansion on path inputs;
 builder sandbox currently denies git init; next should announce
 valid-but-empty results.
 
+WORKBENCH QUEUE SHIPPED 2026-08-09 (evening, under standing
+delegation; commits f4437c4..bc74db9, 976 tests): (1) NULL-
+IMPLEMENTATION GATE — every generated test file runs against a stub
+project at design time; a file that passes there is vacuous and the
+suite is rejected by name (closes the placebo class for any model).
+(2) Deterministic intake repeat-question guard — near-verbatim re-asks
+are filtered before reaching the operator and recorded on the turn
+(filteredDuplicateQuestions); circling can no longer hold an interview
+open. (3) Hygiene: decision forms name their target artifact; operator
+path inputs trim + expand ~ at the web boundary; builder workspaces
+arrive with git initialized (sandbox denies builder-side init). Earlier
+same day: test-designer 0.3.0 (enumerated coverage checklist, gpt-5.4)
+and project-intake 0.6.0 (gpt-5.4) — model tiering by evidence.
+
 OPERATOR DELEGATION, 2026-08-09 (job-tracker build): after three
 misfiled decisions caused by indistinguishable decision forms (UX
 defect, queued), the operator explicitly delegated the remainder of the
