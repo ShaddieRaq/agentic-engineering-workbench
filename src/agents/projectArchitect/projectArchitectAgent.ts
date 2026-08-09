@@ -45,14 +45,18 @@ export function createProjectArchitectAgent(
     manifest: {
       id: "project-architect",
       name: "Project Architect",
-      version: "0.2.0",
+      version: "0.3.0",
       status: "experimental",
       description:
         "Turns an approved project brief into an architecture and acceptance " +
         "plan with deterministic coverage validation.",
       owner: "local-platform",
       tags: ["foundry", "architecture"],
-      defaultModel: "gpt-5.4-mini",
+      // Third model promoted on live evidence (2026-08-09): the evolution
+      // round failed 3x with three distinct id-fidelity errors (duplicate
+      // slice ids, hallucinated criterion ids, altered built slices) —
+      // echo-fidelity over large prompts is exactly where mini breaks.
+      defaultModel: "gpt-5.4",
       components: {
         workflowIds: [],
         harnessIds: [],

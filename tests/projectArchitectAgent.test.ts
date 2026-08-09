@@ -31,7 +31,7 @@ function scriptedProvider(
 describe("projectArchitectAgent", () => {
   it("is registered with an instructions revision surface", () => {
     const registration = platformAgentRegistry.get("project-architect");
-    expect(registration.manifest.version).toBe("0.2.0");
+    expect(registration.manifest.version).toBe("0.3.0");
     expect(registration.manifest.permissions.toolIds).toEqual([]);
     expect(registration.revisionSurface?.mutableFields).toEqual(["instructions"]);
     expect(registration.revisionSurface?.baselinePolicy).toEqual(
