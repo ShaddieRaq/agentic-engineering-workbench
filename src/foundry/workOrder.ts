@@ -22,7 +22,7 @@ export const workOrderSchema = z
     dependsOnSliceIds: z.array(z.uuid()).max(10),
     criteria: z.array(workOrderCriterionSchema).min(1).max(20),
     applicableTestFilePaths: z.array(z.string().min(1).max(200)).max(40),
-    interfaceContract: z.string().min(1).max(4_000),
+    interfaceContract: z.string().min(1).max(16_000),
     builderInstructions: z.array(z.string().min(1).max(500)).min(1).max(20),
     forbiddenPaths: z.array(z.string().min(1).max(200)).min(1).max(10),
     createdAt: z.string().min(1),

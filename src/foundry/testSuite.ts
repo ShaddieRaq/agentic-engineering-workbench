@@ -49,7 +49,7 @@ export const testSuiteConcernSchema = z
   .strict();
 
 const testSuiteContentShape = {
-  interfaceContract: z.string().min(1).max(4_000),
+  interfaceContract: z.string().min(1).max(16_000),
   testFiles: z.array(testFileSchema).min(1).max(40),
   manualChecks: z.array(manualCheckSchema).max(20),
   concerns: z.array(testSuiteConcernSchema).max(30),
