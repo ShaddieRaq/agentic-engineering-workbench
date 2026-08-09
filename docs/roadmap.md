@@ -1111,6 +1111,21 @@ arrive with git initialized (sandbox denies builder-side init). Earlier
 same day: test-designer 0.3.0 (enumerated coverage checklist, gpt-5.4)
 and project-intake 0.6.0 (gpt-5.4) — model tiering by evidence.
 
+INTERVIEW PREP DRILL GENERATION 1 SHIPPED 2026-08-09 (completion
+340ef56e, suite 468e23fd, seven slices, field report ab91c06f) — third
+product, second shipped same-day, built end to end by a healthy
+external builder session with zero stalls. Round quality: two-round
+interview with no repeated questions; one suite revision for file
+granularity; one builder-caught designer arithmetic defect (per-tag
+stats windowing) verified and surgically corrected; the builder also
+caught the cross-project work-order leak (fixed: brief scoping +
+superseded-suite exclusion) and raised the delegated-approvals
+governance question, closed on the record in the field report. The
+agent-as-integration-bus pattern is live: shared career profile at
+~/.job-tracker/profile.md, driving guides on both products, mock
+interviews and JD-targeted deck generation available with no product
+coupling.
+
 JOB TRACKER GENERATION 2 CLOSED 2026-08-09 (completion ee76c535,
 suite 1114912a, main c4885c2, field report 64d0cbe9) under the standing
 delegation. Shipped: contact-based inactivity (bookkeeping never
