@@ -34,6 +34,7 @@ async function createHarness(
   options: {
     withBlockingConcern?: boolean;
     designerScript?: (input: unknown) => TestSuiteContentShape;
+    vacuityCheck?: (files: { path: string; content: string }[]) => Promise<string[]>;
   } = {},
 ) {
   const root = await mkdtemp(join(tmpdir(), "test-design-service-"));
@@ -111,6 +112,7 @@ async function createHarness(
     architect,
     briefs: briefService,
     store,
+    ...(options.vacuityCheck ? { vacuityCheck: options.vacuityCheck } : {}),
   });
   return { store, briefService, architect, capability, testDesign, capturedInputs };
 }
@@ -148,6 +150,43 @@ async function approvedCapabilityPlan(harness: {
 }
 
 describe("TestDesignService", () => {
+  it("rejects suites whose files pass against an empty project (null-implementation gate)", async () => {
+    const flagged: { path: string; content: string }[][] = [];
+    const harness = await createHarness({
+      vacuityCheck: async (files) => {
+        flagged.push(files);
+        // Pretend the first file passed in the empty stub project.
+        return [files[0]!.path];
+      },
+    });
+    const { capabilityPlanId } = await approvedCapabilityPlan(harness);
+    await harness.capability.recordCapabilityDecision({
+      capabilityPlanId,
+      decision: "approve",
+      operatorId: "operator-1",
+      rationale: "Coverage complete.",
+    });
+    await expect(
+      harness.testDesign.createTestSuite({ capabilityPlanId }),
+    ).rejects.toThrow(/null-implementation gate/);
+    // The check received the full suite, holdouts included.
+    expect(flagged[0]!.length).toBeGreaterThan(1);
+
+    // A suite with no vacuous files passes through untouched.
+    const clean = await createHarness({ vacuityCheck: async () => [] });
+    const cleanPlan = await approvedCapabilityPlan(clean);
+    await clean.capability.recordCapabilityDecision({
+      capabilityPlanId: cleanPlan.capabilityPlanId,
+      decision: "approve",
+      operatorId: "operator-1",
+      rationale: "Coverage complete.",
+    });
+    const saved = await clean.testDesign.createTestSuite({
+      capabilityPlanId: cleanPlan.capabilityPlanId,
+    });
+    expect(saved.testSuite.testSuiteId).toBeTruthy();
+  });
+
   it("refuses to design tests for an unapproved capability plan", async () => {
     const harness = await createHarness();
     const capabilityPlan = await approvedCapabilityPlan(harness);

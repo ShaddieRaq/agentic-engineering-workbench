@@ -355,12 +355,16 @@ async function main(): Promise<void> {
       return;
     }
 
+    const { createProcessSuiteVacuityCheck } = await import(
+      "./foundry/suiteVacuityCheck.js"
+    );
     const testDesign = new TestDesignService({
       agentService,
       capability,
       architect,
       briefs: service,
       store,
+      vacuityCheck: createProcessSuiteVacuityCheck(workspaceRoot),
     });
 
     if (args.command === "design-tests") {

@@ -7,6 +7,7 @@ import type {
   FoundryArtifactStore,
 } from "./foundryArtifactStore.js";
 import type { ProjectBriefService } from "./projectBriefService.js";
+import type { SuiteVacuityCheck } from "./suiteVacuityCheck.js";
 import {
   testSuiteOutputSchema,
   testSuiteSchema,
@@ -56,6 +57,7 @@ export class TestDesignService {
   readonly #architect: Pick<ArchitectService, "loadPlan">;
   readonly #briefs: Pick<ProjectBriefService, "loadBrief">;
   readonly #store: FoundryArtifactStore;
+  readonly #vacuityCheck: SuiteVacuityCheck | null;
 
   constructor(dependencies: {
     agentService: TestDesignAgentRunService;
@@ -66,12 +68,17 @@ export class TestDesignService {
     architect: Pick<ArchitectService, "loadPlan">;
     briefs: Pick<ProjectBriefService, "loadBrief">;
     store: FoundryArtifactStore;
+    // Null-implementation gate (optional so evidence-only embeds and
+    // existing tests keep working; every runtime wires it): returns the
+    // paths of test files that PASS against an empty project.
+    vacuityCheck?: SuiteVacuityCheck;
   }) {
     this.#agentService = dependencies.agentService;
     this.#capability = dependencies.capability;
     this.#architect = dependencies.architect;
     this.#briefs = dependencies.briefs;
     this.#store = dependencies.store;
+    this.#vacuityCheck = dependencies.vacuityCheck ?? null;
   }
 
   async createTestSuite(input: {
@@ -201,6 +208,25 @@ export class TestDesignService {
         content,
         diff: evolution.diff,
       });
+    }
+
+    // Null-implementation gate: every file must FAIL against a project
+    // that contains nothing. A file that passes there cannot tell the
+    // product's absence from its presence and verifies nothing.
+    if (this.#vacuityCheck) {
+      const vacuousFiles = await this.#vacuityCheck(
+        content.testFiles.map(({ path, content: fileContent }) => ({
+          path,
+          content: fileContent,
+        })),
+      );
+      if (vacuousFiles.length > 0) {
+        throw new Error(
+          `Test suite rejected by the null-implementation gate: file(s) ${vacuousFiles.join(
+            ", ",
+          )} PASS against an empty project with no implementation, so they verify nothing. Every test file must execute the real product and fail until it exists.`,
+        );
+      }
     }
 
     const testSuite = testSuiteSchema.parse({

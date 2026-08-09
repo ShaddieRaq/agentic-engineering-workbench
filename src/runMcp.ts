@@ -19,6 +19,7 @@ import {
   SubmissionService,
 } from "./foundry/submissionService.js";
 import { TestDesignService } from "./foundry/testDesignService.js";
+import { createProcessSuiteVacuityCheck } from "./foundry/suiteVacuityCheck.js";
 import { WorkOrderService } from "./foundry/workOrderService.js";
 import { buildWorkbenchMcpServer } from "./mcp/workbenchMcpServer.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
@@ -79,6 +80,7 @@ async function main(): Promise<void> {
     architect: architectService,
     briefs: briefService,
     store: foundry,
+    vacuityCheck: createProcessSuiteVacuityCheck(workspaceRoot),
   });
   const workOrderService = new WorkOrderService({
     testDesign: testDesignService,

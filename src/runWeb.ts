@@ -15,6 +15,7 @@ import { FoundryArtifactStore } from "./foundry/foundryArtifactStore.js";
 import { IntakeSessionController } from "./foundry/intakeSessionController.js";
 import { ProjectBriefService } from "./foundry/projectBriefService.js";
 import { TestDesignService } from "./foundry/testDesignService.js";
+import { createProcessSuiteVacuityCheck } from "./foundry/suiteVacuityCheck.js";
 import { WorkOrderService } from "./foundry/workOrderService.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { createPlatformToolRegistry } from "./tools/toolRegistry.js";
@@ -66,6 +67,7 @@ async function main(): Promise<void> {
     architect: architectService,
     briefs: briefService,
     store: foundry,
+    vacuityCheck: createProcessSuiteVacuityCheck(workspaceRoot),
   });
 
   const operatorToken = await loadOrCreateOperatorToken(
