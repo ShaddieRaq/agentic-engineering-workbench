@@ -126,16 +126,79 @@ async function builderHarness() {
 }
 
 describe("builder MCP server", () => {
-  it("exposes exactly the five builder tools", async () => {
+  it("exposes exactly the eight builder tools", async () => {
     const harness = await builderHarness();
     const listed = await harness.client.listTools();
     expect(listed.tools.map(({ name }) => name).sort()).toEqual([
-      "get_work_order",
+      "ask_operator",
+      "get_operator_answer",
       "get_submission",
+      "get_work_order",
       "list_open_work_orders",
       "materialize_tests",
+      "post_builder_note",
       "submit_slice",
     ].sort());
+    await harness.client.close();
+    await harness.server.close();
+  });
+
+  it("carries builder speech as artifacts: notes, questions, and polled answers (Decision 090)", async () => {
+    const harness = await builderHarness();
+
+    // A note lands as an artifact with chain identity from the work order.
+    const posted = (await harness.call("post_builder_note", {
+      workOrderId: harness.workOrderId,
+      note: "Batch grouping converges after the second pass; disclosing a semantic change in the apply loop.",
+    })) as { noteId: string };
+    const storedNote = await harness.store.load(posted.noteId);
+    expect(storedNote.kind).toBe("builder-note");
+    if (storedNote.kind === "builder-note") {
+      expect(storedNote.artifact.briefId).toBe(harness.chain.fixture.brief.briefId);
+      expect(storedNote.artifact.sliceId).toBe(harness.chain.fixture.sliceIds.second);
+    }
+
+    // A question is pending until the operator answers; the builder polls.
+    const asked = (await harness.call("ask_operator", {
+      workOrderId: harness.workOrderId,
+      question: "The interface contract names no exit code for stale batch ids — treat skips as success?",
+    })) as { questionId: string; status: string };
+    expect(asked.status).toBe("pending");
+    expect((await harness.call("get_operator_answer", {
+      questionId: asked.questionId,
+    })) as object).toEqual({ status: "pending" });
+
+    const question = await harness.store.load(asked.questionId);
+    expect(question.kind).toBe("builder-question");
+    if (question.kind === "builder-question") {
+      await harness.store.saveOperatorAnswer({
+        answerId: "6b1f8a3c-7d2e-4f10-9a5b-1c2d3e4f5a6b",
+        questionId: question.artifact.questionId,
+        briefId: question.artifact.briefId,
+        briefVersion: question.artifact.briefVersion,
+        operatorId: "rashad",
+        answer: "Yes — stale ids skip gracefully with exit 0; that is the ratified contract.",
+        answeredAt: new Date().toISOString(),
+      });
+    }
+    const answered = (await harness.call("get_operator_answer", {
+      questionId: asked.questionId,
+    })) as { status: string; answer?: string; operatorId?: string };
+    expect(answered.status).toBe("answered");
+    expect(answered.operatorId).toBe("rashad");
+    expect(answered.answer).toContain("exit 0");
+
+    // Non-question artifact ids are refused (MCP surfaces it as a tool
+    // error, not a thrown exception).
+    const errorResult = await harness.client.callTool({
+      name: "get_operator_answer",
+      arguments: { questionId: harness.chain.testSuiteId },
+    });
+    expect(errorResult.isError).toBe(true);
+    expect(JSON.stringify(errorResult.content)).toContain(
+      "is not a builder question",
+    );
+
     await harness.client.close();
     await harness.server.close();
   });
@@ -185,6 +248,8 @@ describe("builder MCP server", () => {
 
     const result = (await harness.call("submit_slice", {
       workOrderId: harness.workOrderId,
+      report:
+        "Disclosure: the apply loop now snapshots before moving; no semantic change to routing.",
     })) as {
       submissionId: string;
       status: string;
@@ -205,10 +270,14 @@ describe("builder MCP server", () => {
     expect(result.visibleOutputExcerpt).not.toContain("this trailing line is sacrificed");
 
     // The full evidence, including holdout output, still reaches the store
-    // for the operator.
+    // for the operator — and the builder's report rides with it
+    // (Decision 090).
     const stored = await harness.store.load(result.submissionId);
     expect(stored.kind).toBe("slice-submission");
     expect(JSON.stringify(stored.artifact)).toContain(HOLDOUT_SECRET);
+    if (stored.kind === "slice-submission") {
+      expect(stored.artifact.builderReport).toContain("snapshots before moving");
+    }
 
     await harness.client.close();
     await harness.server.close();

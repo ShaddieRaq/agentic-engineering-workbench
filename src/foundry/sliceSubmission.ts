@@ -49,6 +49,9 @@ export const sliceSubmissionSchema = z
     // out-of-tree: verified against a frozen copy under the Workbench root
     // that the builder session is structurally denied from reading.
     verificationMode: z.enum(["in-place", "out-of-tree"]).optional(),
+    // Builder-authored, unverified prose (Decision 090): disclosures and
+    // context for the operator's decision. Never participates in gates.
+    builderReport: z.string().min(1).max(4_000).optional(),
   })
   .strict();
 

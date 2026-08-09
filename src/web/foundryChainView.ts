@@ -7,6 +7,11 @@ import type {
   FoundryStoredArtifact,
 } from "../foundry/foundryArtifactStore.js";
 import type { BuildCompletion } from "../foundry/buildCompletion.js";
+import type {
+  BuilderNote,
+  BuilderQuestion,
+  OperatorAnswer,
+} from "../foundry/builderMessage.js";
 import type { IntakeTurnRecord } from "../foundry/intakeTurn.js";
 import type { ProjectBrief } from "../foundry/projectBrief.js";
 import type { ProjectBriefDecision } from "../foundry/projectBriefDecision.js";
@@ -127,6 +132,9 @@ export interface FoundrySubmissionView {
     passed: boolean;
   }[];
   outputExcerpt: string;
+  // Builder-authored, unverified (Decision 090). Rendered labeled as such;
+  // never part of gate evaluation.
+  builderReport: string | null;
   decisions: FoundryDecisionView[];
 }
 
@@ -142,6 +150,18 @@ export interface FoundrySliceRow {
     applicableTestFilePaths: string[];
   }[];
   submissions: FoundrySubmissionView[];
+  // Builder speech (Decision 090), oldest first so it reads as a timeline.
+  builderNotes: { noteId: string; note: string; createdAt: string }[];
+  builderQuestions: {
+    questionId: string;
+    question: string;
+    createdAt: string;
+    answer: {
+      operatorId: string;
+      answer: string;
+      answeredAt: string;
+    } | null;
+  }[];
 }
 
 export interface FoundryBuildView {
@@ -152,6 +172,9 @@ export interface FoundryBuildView {
   // approved + carried (Decision 088): carried slices are satisfied by the
   // prior generation's completion, not by submissions.
   satisfiedSliceCount: number;
+  // Builder questions with no operator answer yet (Decision 090); the
+  // next-step ladder surfaces these ahead of everything else in the build.
+  unansweredQuestionCount: number;
   slices: FoundrySliceRow[];
 }
 
@@ -251,6 +274,9 @@ interface ChainBuckets {
   submissionDecisions: SubmissionDecision[];
   intakeTurns: IntakeTurnRecord[];
   completions: BuildCompletion[];
+  builderNotes: BuilderNote[];
+  builderQuestions: BuilderQuestion[];
+  operatorAnswers: OperatorAnswer[];
   latestActivityAt: string;
 }
 
@@ -333,6 +359,9 @@ async function collectChainBuckets(
     submissionDecisions: [],
     intakeTurns: [],
     completions: [],
+    builderNotes: [],
+    builderQuestions: [],
+    operatorAnswers: [],
     latestActivityAt: "",
   };
 
@@ -380,6 +409,15 @@ async function collectChainBuckets(
         break;
       case "build-completion":
         buckets.completions.push(entry.artifact);
+        break;
+      case "builder-note":
+        buckets.builderNotes.push(entry.artifact);
+        break;
+      case "builder-question":
+        buckets.builderQuestions.push(entry.artifact);
+        break;
+      case "operator-answer":
+        buckets.operatorAnswers.push(entry.artifact);
         break;
       default:
         break;
@@ -642,6 +680,7 @@ function buildSection(
         planAvailable: false,
         approvedSliceCount: 0,
         satisfiedSliceCount: 0,
+        unansweredQuestionCount: 0,
         slices: [],
       },
       buildNote:
@@ -658,6 +697,20 @@ function buildSection(
   const suiteSubmissionDecisions = buckets.submissionDecisions.filter(
     (decision) => decision.testSuiteId === approvedSuite.testSuiteId,
   );
+  const suiteNotes = buckets.builderNotes.filter(
+    (note) => note.testSuiteId === approvedSuite.testSuiteId,
+  );
+  const suiteQuestions = buckets.builderQuestions.filter(
+    (question) => question.testSuiteId === approvedSuite.testSuiteId,
+  );
+  // Latest answer wins per question, mirroring latest-decision-wins.
+  const answersByQuestion = new Map<string, OperatorAnswer>();
+  for (const answer of buckets.operatorAnswers) {
+    const existing = answersByQuestion.get(answer.questionId);
+    if (!existing || answer.answeredAt.localeCompare(existing.answeredAt) > 0) {
+      answersByQuestion.set(answer.questionId, answer);
+    }
+  }
 
   const carriedSliceIds = new Set(
     (anchorPlan.sliceDispositions ?? [])
@@ -686,9 +739,33 @@ function buildSection(
         scopeCheck: submission.scopeCheck,
         files: submission.testRun.files,
         outputExcerpt: submission.testRun.outputExcerpt,
+        builderReport: submission.builderReport ?? null,
         decisions: decisionViews(decisions),
       };
     });
+
+    const builderNotes = [...suiteNotes]
+      .filter((note) => note.sliceId === slice.id)
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+      .map(({ noteId, note, createdAt }) => ({ noteId, note, createdAt }));
+    const builderQuestions = [...suiteQuestions]
+      .filter((question) => question.sliceId === slice.id)
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+      .map((question) => {
+        const answer = answersByQuestion.get(question.questionId);
+        return {
+          questionId: question.questionId,
+          question: question.question,
+          createdAt: question.createdAt,
+          answer: answer
+            ? {
+                operatorId: answer.operatorId,
+                answer: answer.answer,
+                answeredAt: answer.answeredAt,
+              }
+            : null,
+        };
+      });
 
     const sliceDecisions = suiteSubmissionDecisions.filter(
       (decision) => decision.sliceId === slice.id,
@@ -703,6 +780,8 @@ function buildSection(
         : sliceStatus(sliceDecisions, submissions, workOrders.length > 0),
       workOrders,
       submissions,
+      builderNotes,
+      builderQuestions,
     };
   });
 
@@ -716,6 +795,9 @@ function buildSection(
       satisfiedSliceCount: slices.filter(
         ({ status }) => status === "approved" || status === "carried",
       ).length,
+      unansweredQuestionCount: slices
+        .flatMap(({ builderQuestions }) => builderQuestions)
+        .filter(({ answer }) => answer === null).length,
       slices,
     },
   };
@@ -954,6 +1036,28 @@ export function computeNextStep(
       kind: "blocked",
       headline: "Build state unavailable",
       detail: view.buildNote ?? "The build section could not be derived.",
+      anchor: "build",
+      action: null,
+    };
+  }
+  // An explicit builder question outranks everything else in the build:
+  // the builder said it is blocked, and only the operator can unblock it
+  // (Decision 090).
+  const askedSlice = build.slices.find(({ builderQuestions }) =>
+    builderQuestions.some(({ answer }) => answer === null),
+  );
+  if (askedSlice) {
+    const pending = askedSlice.builderQuestions.find(
+      ({ answer }) => answer === null,
+    )!;
+    const excerpt =
+      pending.question.length > 140
+        ? `${pending.question.slice(0, 140)}…`
+        : pending.question;
+    return {
+      kind: "answer",
+      headline: `Answer the builder's question on "${askedSlice.title}"`,
+      detail: excerpt,
       anchor: "build",
       action: null,
     };

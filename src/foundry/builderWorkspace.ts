@@ -97,11 +97,13 @@ function renderBuilderReadme(view: BuilderWorkOrderView): string {
     "",
     "- `get_work_order` — this document as data",
     "- `materialize_tests` — refresh the visible acceptance tests",
-    "- `submit_slice` — run Workbench verification for this workspace",
+    "- `submit_slice` — run Workbench verification for this workspace; attach a `report` with disclosures the operator should weigh",
     "- `get_submission` — verification results and the operator's decision",
     "- `list_open_work_orders` — what remains after this slice",
+    "- `post_builder_note` — progress notes and honest disclosures, shown in the operator's console",
+    "- `ask_operator` — ask when blocked; poll `get_operator_answer` for the reply",
     "",
-    "Reads of the Workbench itself are denied by this workspace's settings and sandbox; the MCP tools above are your only sanctioned channel.",
+    "Reads of the Workbench itself are denied by this workspace's settings and sandbox; the MCP tools above are your only sanctioned channel. Your words inform the operator; they never decide, and no delegation to decide can exist.",
     "",
   ].join("\n");
 }

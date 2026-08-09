@@ -527,7 +527,15 @@ export interface FoundrySubmissionView {
   scopeCheck: { passed: boolean; failures: string[] };
   files: { path: string; visibility: "visible" | "holdout"; exitCode: number; passed: boolean }[];
   outputExcerpt: string;
+  builderReport: string | null;
   decisions: FoundryDecisionView[];
+}
+
+export interface FoundryBuilderQuestionView {
+  questionId: string;
+  question: string;
+  createdAt: string;
+  answer: { operatorId: string; answer: string; answeredAt: string } | null;
 }
 
 export interface FoundrySliceRow {
@@ -538,6 +546,8 @@ export interface FoundrySliceRow {
   status: FoundrySliceStatus;
   workOrders: { workOrderId: string; createdAt: string; applicableTestFilePaths: string[] }[];
   submissions: FoundrySubmissionView[];
+  builderNotes: { noteId: string; note: string; createdAt: string }[];
+  builderQuestions: FoundryBuilderQuestionView[];
 }
 
 export interface FoundryBuildView {
@@ -546,6 +556,7 @@ export interface FoundryBuildView {
   planAvailable: boolean;
   approvedSliceCount: number;
   satisfiedSliceCount: number;
+  unansweredQuestionCount: number;
   slices: FoundrySliceRow[];
 }
 

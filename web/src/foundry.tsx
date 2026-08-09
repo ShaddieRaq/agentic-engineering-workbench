@@ -6,6 +6,7 @@ import {
   type FoundryChainView,
   type FoundryDecisionView,
   type FoundryProjectIndex,
+  type FoundrySliceRow,
   type FoundryStoredArtifact,
   type FoundrySubmissionView,
   type Operation,
@@ -822,6 +823,12 @@ function SubmissionDetails({ submission, onRecorded }: { submission: FoundrySubm
         <h4>Submission {shortId(submission.submissionId)} · {when(submission.createdAt)}</h4>
         <StatusBadge value={submission.status} />
       </div>
+      {submission.builderReport && (
+        <div className="builder-authored">
+          <span className="eyebrow">Builder report — builder-authored, unverified</span>
+          <p>{submission.builderReport}</p>
+        </div>
+      )}
       <p>
         Scope check: <StatusBadge value={submission.scopeCheck.passed ? "passed" : "failed"} />
       </p>
@@ -860,6 +867,82 @@ function SubmissionDetails({ submission, onRecorded }: { submission: FoundrySubm
         defaultOpen={submission.decisions.length === 0}
       />
       <Link to={`/foundry/artifacts/${submission.submissionId}`}>Raw submission evidence →</Link>
+    </div>
+  );
+}
+
+// Operator answer to a builder question (Decision 090). Token-guarded
+// server-side; the answer becomes an artifact the builder polls for.
+function AnswerQuestionForm({ questionId, onRecorded }: { questionId: string; onRecorded: () => void }) {
+  const [operatorId, setOperatorId] = useState(
+    () => window.localStorage.getItem(OPERATOR_STORAGE_KEY) ?? "",
+  );
+  const [answer, setAnswer] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      await api(`/api/foundry/questions/${questionId}/answers`, {
+        method: "POST",
+        body: JSON.stringify({ operatorId, answer }),
+      });
+      window.localStorage.setItem(OPERATOR_STORAGE_KEY, operatorId);
+      setError(null);
+      onRecorded();
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="decision-form-body" onSubmit={(event) => void submit(event)}>
+      <label>
+        Operator
+        <input required value={operatorId} onChange={(event) => setOperatorId(event.target.value)} />
+      </label>
+      <OperatorTokenField />
+      <label>
+        Answer
+        <textarea required rows={3} value={answer} onChange={(event) => setAnswer(event.target.value)} />
+      </label>
+      {error && <ErrorNotice message={error} />}
+      <button className="button" type="submit" disabled={busy}>Send answer to the builder</button>
+    </form>
+  );
+}
+
+// Builder speech on a slice (Decision 090): notes and questions, rendered
+// clearly labeled as builder-authored. The builder informs and asks; it
+// never decides.
+function BuilderSpeech({ slice, onRecorded }: { slice: FoundrySliceRow; onRecorded: () => void }) {
+  if (!slice.builderNotes.length && !slice.builderQuestions.length) return null;
+  return (
+    <div className="builder-speech">
+      <span className="eyebrow">Builder messages — builder-authored, unverified</span>
+      {slice.builderNotes.map((note) => (
+        <p className="muted-note" key={note.noteId}>
+          <StatusBadge value="note" /> {when(note.createdAt)} — {note.note}
+        </p>
+      ))}
+      {slice.builderQuestions.map((question) => (
+        <div className={question.answer ? "builder-question answered" : "builder-question"} key={question.questionId}>
+          <p>
+            <StatusBadge value={question.answer ? "answered" : "question"} /> {when(question.createdAt)} — {question.question}
+          </p>
+          {question.answer ? (
+            <p className="muted-note">
+              <strong>{question.answer.operatorId}</strong> · {when(question.answer.answeredAt)} — {question.answer.answer}
+            </p>
+          ) : (
+            <AnswerQuestionForm questionId={question.questionId} onRecorded={onRecorded} />
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -1234,6 +1317,7 @@ export function FoundryProjectPage() {
                     <Link to={`/foundry/artifacts/${slice.workOrders[0]!.workOrderId}`}>raw →</Link>
                   </p>
                 )}
+                <BuilderSpeech slice={slice} onRecorded={resource.reload} />
                 {slice.submissions.map((submission) => (
                   <SubmissionDetails
                     submission={submission}

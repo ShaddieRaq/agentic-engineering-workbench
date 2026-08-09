@@ -102,6 +102,9 @@ export class SubmissionService {
   async submitSlice(input: {
     workOrderId: string;
     projectRoot: string;
+    // Builder-authored, unverified (Decision 090); stored with the
+    // submission for the operator's decision, never used by gates.
+    builderReport?: string;
   }): Promise<SavedSliceSubmission> {
     const workOrder = await this.#workOrders.loadWorkOrder(input.workOrderId);
     const suite = await this.#testDesign.loadTestSuite(workOrder.testSuiteId);
@@ -165,6 +168,7 @@ export class SubmissionService {
         verificationRoot: isolationCopy ?? builderRoot,
         baselineFailures,
         headCommitSha,
+        builderReport: input.builderReport?.trim() || null,
       });
     } finally {
       if (isolationCopy) {
@@ -181,6 +185,7 @@ export class SubmissionService {
     verificationRoot: string;
     baselineFailures: string[];
     headCommitSha: string | null;
+    builderReport: string | null;
   }): Promise<SavedSliceSubmission> {
     const { workOrder, suite, submissionId, builderRoot } = context;
     const projectRoot = context.verificationRoot;
@@ -295,6 +300,7 @@ export class SubmissionService {
       status:
         scopeFailures.length === 0 && testsPassed ? "passed" : "failed",
       createdAt: new Date().toISOString(),
+      ...(context.builderReport ? { builderReport: context.builderReport } : {}),
     });
     const reference = await this.#store.saveSliceSubmission(submission);
     return { submission, reference };

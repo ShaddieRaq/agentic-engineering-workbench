@@ -283,3 +283,13 @@ tbody tr:last-child td { border-bottom: 0; }
 .ops-row { border: 1px solid rgba(240, 180, 41, .35); border-radius: 10px; background: var(--surface); }
 .ops-row-head { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; background: none; border: 0; color: var(--text, #E8E9ED); padding: 10px 14px; cursor: pointer; font: inherit; }
 .ops-row .timeline { padding: 0 16px 12px; }
+
+/* Builder speech channel (Decision 090): builder-authored text is visually
+   set apart — informational, never authoritative. */
+.builder-authored { border-left: 3px solid var(--accent-2); background: rgba(110, 121, 214, .08); border-radius: 0 10px 10px 0; padding: 9px 13px; margin: 10px 0; }
+.builder-authored p { margin: 5px 0 0; font-size: 13px; white-space: pre-wrap; }
+.builder-speech { border-left: 3px solid var(--accent-2); background: rgba(110, 121, 214, .06); border-radius: 0 10px 10px 0; padding: 9px 13px; margin: 10px 0; display: grid; gap: 7px; }
+.builder-speech .muted-note { margin: 0; white-space: pre-wrap; }
+.builder-question { border: 1px solid rgba(240, 180, 41, .45); border-radius: 10px; padding: 9px 12px; }
+.builder-question.answered { border-color: var(--line); }
+.builder-question p { margin: 0 0 6px; font-size: 13px; white-space: pre-wrap; }

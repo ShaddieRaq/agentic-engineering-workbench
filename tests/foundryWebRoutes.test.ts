@@ -491,6 +491,59 @@ describe("foundry web routes", () => {
     await app.close();
   });
 
+  it("routes builder questions to the operator and answers back (Decision 090)", async () => {
+    const store = await temporaryStore();
+    const chain = await persistFoundryChain(store);
+    const questionId = randomUUID();
+    await store.saveBuilderQuestion({
+      questionId,
+      workOrderId: chain.workOrderId,
+      testSuiteId: chain.testSuiteId,
+      sliceId: chain.fixture.sliceIds.second,
+      briefId: chain.fixture.brief.briefId,
+      briefVersion: chain.fixture.brief.version,
+      question: "The contract names no exit code for stale batch ids — skip with exit 0?",
+      createdAt: new Date().toISOString(),
+    });
+
+    // The question outranks everything else in the build ladder.
+    const before = await buildFoundryChainView(store, chain.fixture.brief.briefId);
+    expect(before!.build!.unansweredQuestionCount).toBe(1);
+    expect(before!.nextStep.kind).toBe("answer");
+    expect(before!.nextStep.headline).toContain("builder");
+
+    const { service } = await createConsoleTestService(false);
+    const app = await buildAgentWebServer({
+      service,
+      apiKeyConfigured: false,
+      foundry: store,
+    });
+    const answered = await app.inject({
+      method: "POST",
+      url: `/api/foundry/questions/${questionId}/answers`,
+      payload: { operatorId: "rashad", answer: "Yes — stale ids skip gracefully with exit 0." },
+    });
+    expect(answered.statusCode).toBe(201);
+
+    const after = await buildFoundryChainView(store, chain.fixture.brief.briefId);
+    expect(after!.build!.unansweredQuestionCount).toBe(0);
+    expect(after!.nextStep.kind).not.toBe("answer");
+    const slice = after!.build!.slices.find(
+      ({ sliceId }) => sliceId === chain.fixture.sliceIds.second,
+    )!;
+    expect(slice.builderQuestions[0]!.answer?.operatorId).toBe("rashad");
+
+    // Only builder-question artifacts accept answers.
+    const wrongKindAnswer = await app.inject({
+      method: "POST",
+      url: `/api/foundry/questions/${chain.testSuiteId}/answers`,
+      payload: { operatorId: "rashad", answer: "x" },
+    });
+    expect(wrongKindAnswer.statusCode).toBe(404);
+
+    await app.close();
+  });
+
   it("refuses decision-class writes without the operator token when one is configured", async () => {
     const store = await temporaryStore();
     const briefOnly = await persistBriefOnly(store);

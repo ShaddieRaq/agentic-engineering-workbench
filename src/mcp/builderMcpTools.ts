@@ -1,6 +1,12 @@
+import { randomUUID } from "node:crypto";
 import type {
   FoundryArtifactStore,
 } from "../foundry/foundryArtifactStore.js";
+import {
+  builderNoteSchema,
+  builderQuestionSchema,
+  type OperatorAnswer,
+} from "../foundry/builderMessage.js";
 import type {
   SliceSubmission,
   SubmissionDecision,
@@ -278,14 +284,85 @@ export function createBuilderMcpTools(deps: BuilderMcpDependencies) {
       return { written, projectRoot: deps.projectRoot };
     },
 
-    async submitSlice(input: { workOrderId: string }) {
+    async submitSlice(input: { workOrderId: string; report?: string | undefined }) {
       const workOrder = await deps.workOrders.loadWorkOrder(input.workOrderId);
       const suite = await loadSuiteFor(workOrder);
       const { submission } = await deps.submissions.submitSlice({
         workOrderId: input.workOrderId,
         projectRoot: deps.projectRoot,
+        ...(input.report ? { builderReport: input.report } : {}),
       });
       return redactSubmission(submission, suite, []);
+    },
+
+    // Builder speech channel (Decision 090): notes inform, questions ask.
+    // Chain identity comes from the work order, never from the builder.
+    async postBuilderNote(input: { workOrderId: string; note: string }) {
+      const workOrder = await deps.workOrders.loadWorkOrder(input.workOrderId);
+      const note = builderNoteSchema.parse({
+        noteId: randomUUID(),
+        workOrderId: workOrder.workOrderId,
+        testSuiteId: workOrder.testSuiteId,
+        sliceId: workOrder.sliceId,
+        briefId: workOrder.briefId,
+        briefVersion: workOrder.briefVersion,
+        note: input.note,
+        createdAt: new Date().toISOString(),
+      });
+      await deps.store.saveBuilderNote(note);
+      return { noteId: note.noteId, recordedAt: note.createdAt };
+    },
+
+    async askOperator(input: { workOrderId: string; question: string }) {
+      const workOrder = await deps.workOrders.loadWorkOrder(input.workOrderId);
+      const question = builderQuestionSchema.parse({
+        questionId: randomUUID(),
+        workOrderId: workOrder.workOrderId,
+        testSuiteId: workOrder.testSuiteId,
+        sliceId: workOrder.sliceId,
+        briefId: workOrder.briefId,
+        briefVersion: workOrder.briefVersion,
+        question: input.question,
+        createdAt: new Date().toISOString(),
+      });
+      await deps.store.saveBuilderQuestion(question);
+      return {
+        questionId: question.questionId,
+        status: "pending" as const,
+        guidance:
+          "The operator sees this question in the console. Poll get_operator_answer with this questionId; continue other work meanwhile if possible.",
+      };
+    },
+
+    async getOperatorAnswer(input: { questionId: string }) {
+      const stored = await deps.store.load(input.questionId);
+      if (stored.kind !== "builder-question") {
+        throw new Error(`Artifact ${input.questionId} is not a builder question.`);
+      }
+      const { artifacts } = await deps.store.list({
+        kind: "operator-answer",
+        limit: 500,
+      });
+      let latest: OperatorAnswer | null = null;
+      for (const summary of artifacts) {
+        const answerStored = await deps.store.load(summary.id);
+        if (answerStored.kind !== "operator-answer") continue;
+        if (answerStored.artifact.questionId !== input.questionId) continue;
+        if (
+          !latest ||
+          answerStored.artifact.answeredAt.localeCompare(latest.answeredAt) > 0
+        ) {
+          latest = answerStored.artifact;
+        }
+      }
+      return latest
+        ? {
+            status: "answered" as const,
+            answer: latest.answer,
+            operatorId: latest.operatorId,
+            answeredAt: latest.answeredAt,
+          }
+        : { status: "pending" as const };
     },
 
     async getSubmission(input: { submissionId: string }) {

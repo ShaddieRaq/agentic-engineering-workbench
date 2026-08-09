@@ -13,7 +13,12 @@ const SERVER_INSTRUCTIONS =
   "Workbench verification. You may not read Workbench evidence, test " +
   "suites, or agent policy through any channel. Never create, modify, or " +
   "delete anything under acceptance-tests/; verification checks it " +
-  "byte-for-byte. Operator decisions arrive through get_submission.";
+  "byte-for-byte. Operator decisions arrive through get_submission. " +
+  "Speak through the channel (Decision 090): attach a report to " +
+  "submit_slice, post progress or disclosures with post_builder_note, and " +
+  "raise blockers with ask_operator — the operator answers in the console " +
+  "and you poll get_operator_answer. Your words inform decisions; they " +
+  "never make them, and no delegation to decide can exist.";
 
 function asText(value: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] };
@@ -72,10 +77,60 @@ export function buildBuilderMcpServer(
         "check of acceptance-tests/, then the applicable visible and " +
         "holdout tests run through the controlled runner. The response " +
         "withholds holdout paths and output; pass/fail per file is " +
-        "included. Evidence persists on the Workbench either way.",
-      inputSchema: { workOrderId: z.uuid() },
+        "included. Evidence persists on the Workbench either way. Attach " +
+        "your report (disclosures, semantic changes, anything the operator " +
+        "should weigh) — it is stored with the submission and shown to the " +
+        "operator labeled builder-authored.",
+      inputSchema: {
+        workOrderId: z.uuid(),
+        report: z.string().min(1).max(4_000).optional(),
+      },
     },
     async (input) => asText(await tools.submitSlice(input)),
+  );
+
+  server.registerTool(
+    "post_builder_note",
+    {
+      description:
+        "Record a progress note or disclosure against your work order. The " +
+        "note appears in the operator's console timeline labeled " +
+        "builder-authored and unverified. Use for status, obstacles, and " +
+        "honest disclosures mid-slice; use ask_operator when you need an " +
+        "answer to continue.",
+      inputSchema: {
+        workOrderId: z.uuid(),
+        note: z.string().min(1).max(4_000),
+      },
+    },
+    async (input) => asText(await tools.postBuilderNote(input)),
+  );
+
+  server.registerTool(
+    "ask_operator",
+    {
+      description:
+        "Ask the operator a question about your work order. It renders as " +
+        "an answer form in the console; poll get_operator_answer with the " +
+        "returned questionId. Ask only what blocks you — decisions " +
+        "(approve/reject/revise) are not questions and cannot be requested.",
+      inputSchema: {
+        workOrderId: z.uuid(),
+        question: z.string().min(1).max(4_000),
+      },
+    },
+    async (input) => asText(await tools.askOperator(input)),
+  );
+
+  server.registerTool(
+    "get_operator_answer",
+    {
+      description:
+        "Read-only. Poll the operator's answer to one of your questions: " +
+        "status pending, or answered with the operator's text.",
+      inputSchema: { questionId: z.uuid() },
+    },
+    async (input) => asText(await tools.getOperatorAnswer(input)),
   );
 
   server.registerTool(

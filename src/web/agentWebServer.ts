@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { access } from "node:fs/promises";
 import { resolve } from "node:path";
 import fastifyStatic from "@fastify/static";
@@ -13,6 +14,7 @@ import type {
   FoundryArtifactKind,
   FoundryArtifactStore,
 } from "../foundry/foundryArtifactStore.js";
+import { operatorAnswerSchema } from "../foundry/builderMessage.js";
 import type { BuildCompletionService } from "../foundry/buildCompletionService.js";
 import type { IntakeSessionController } from "../foundry/intakeSessionController.js";
 import { createProjectBriefDecision } from "../foundry/projectBriefDecision.js";
@@ -147,6 +149,14 @@ const foundryWorkOrderRequestSchema = z
   })
   .strict();
 
+// Operator answer to a builder question (Decision 090).
+const foundryAnswerRequestSchema = z
+  .object({
+    operatorId: z.string().min(1).max(200),
+    answer: z.string().min(1).max(8_000),
+  })
+  .strict();
+
 // Operator-attributed generation closure (Decision 088).
 const foundryCompletionRequestSchema = z
   .object({
@@ -212,6 +222,10 @@ const foundryArtifactKinds: readonly FoundryArtifactKind[] = [
   "work-order",
   "slice-submission",
   "submission-decision",
+  "build-completion",
+  "builder-note",
+  "builder-question",
+  "operator-answer",
 ];
 
 function parseFoundryKind(value: string): FoundryArtifactKind | null {
@@ -1034,6 +1048,41 @@ export async function buildAgentWebServer(
             return { decision, reference };
           },
         ),
+    );
+
+    // Operator answers a builder question (Decision 090): operator-
+    // attributed, token-guarded, chain identity copied from the question.
+    app.post<{ Params: { questionId: string } }>(
+      "/api/foundry/questions/:questionId/answers",
+      async (request, reply) => {
+        if (rejectWithoutOperatorToken(request, reply)) return undefined;
+        const parsed = foundryAnswerRequestSchema.safeParse(request.body ?? {});
+        if (!parsed.success) {
+          return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+        }
+        let stored;
+        try {
+          stored = await foundry.load(request.params.questionId);
+        } catch (error: unknown) {
+          return reply.code(404).send({ error: errorMessage(error) });
+        }
+        if (stored.kind !== "builder-question") {
+          return reply.code(404).send({
+            error: `Artifact ${request.params.questionId} is not a builder-question.`,
+          });
+        }
+        const answer = operatorAnswerSchema.parse({
+          answerId: randomUUID(),
+          questionId: stored.artifact.questionId,
+          briefId: stored.artifact.briefId,
+          briefVersion: stored.artifact.briefVersion,
+          operatorId: parsed.data.operatorId,
+          answer: parsed.data.answer,
+          answeredAt: new Date().toISOString(),
+        });
+        const reference = await foundry.saveOperatorAnswer(answer);
+        return reply.code(201).send({ answer, reference });
+      },
     );
 
     if (options.foundryServices) {

@@ -21,6 +21,14 @@ import {
   type ExportFeedbackRecord,
 } from "./exportFeedback.js";
 import {
+  builderNoteSchema,
+  builderQuestionSchema,
+  operatorAnswerSchema,
+  type BuilderNote,
+  type BuilderQuestion,
+  type OperatorAnswer,
+} from "./builderMessage.js";
+import {
   sliceSubmissionSchema,
   submissionDecisionSchema,
   type SliceSubmission,
@@ -59,7 +67,10 @@ export type FoundryArtifactKind =
   | "work-order"
   | "slice-submission"
   | "submission-decision"
-  | "build-completion";
+  | "build-completion"
+  | "builder-note"
+  | "builder-question"
+  | "operator-answer";
 
 export interface FoundryArtifactReference {
   id: string;
@@ -81,7 +92,10 @@ export type FoundryStoredArtifact =
   | { kind: "work-order"; artifact: WorkOrder }
   | { kind: "slice-submission"; artifact: SliceSubmission }
   | { kind: "submission-decision"; artifact: SubmissionDecision }
-  | { kind: "build-completion"; artifact: BuildCompletion };
+  | { kind: "build-completion"; artifact: BuildCompletion }
+  | { kind: "builder-note"; artifact: BuilderNote }
+  | { kind: "builder-question"; artifact: BuilderQuestion }
+  | { kind: "operator-answer"; artifact: OperatorAnswer };
 
 export interface FoundryArtifactSummary {
   id: string;
@@ -350,6 +364,57 @@ const kindDefinitions: Record<FoundryArtifactKind, FoundryKindDefinition> = {
       };
     },
   },
+  "builder-note": {
+    parse: (value) => ({
+      kind: "builder-note",
+      artifact: builderNoteSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const note = stored.artifact as BuilderNote;
+      return {
+        id,
+        kind: "builder-note",
+        path,
+        briefId: note.briefId,
+        briefVersion: note.briefVersion,
+        createdAt: note.createdAt,
+      };
+    },
+  },
+  "builder-question": {
+    parse: (value) => ({
+      kind: "builder-question",
+      artifact: builderQuestionSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const question = stored.artifact as BuilderQuestion;
+      return {
+        id,
+        kind: "builder-question",
+        path,
+        briefId: question.briefId,
+        briefVersion: question.briefVersion,
+        createdAt: question.createdAt,
+      };
+    },
+  },
+  "operator-answer": {
+    parse: (value) => ({
+      kind: "operator-answer",
+      artifact: operatorAnswerSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const answer = stored.artifact as OperatorAnswer;
+      return {
+        id,
+        kind: "operator-answer",
+        path,
+        briefId: answer.briefId,
+        briefVersion: answer.briefVersion,
+        createdAt: answer.answeredAt,
+      };
+    },
+  },
 };
 
 // The decision pattern must be tested before the brief pattern because
@@ -369,6 +434,11 @@ const orderedKinds: FoundryArtifactKind[] = [
   "slice-submission",
   "submission-decision",
   "build-completion",
+  // "builder-question" before "builder-note" is not required (no prefix
+  // relation), but decisions-before-subjects ordering is the house style.
+  "builder-question",
+  "builder-note",
+  "operator-answer",
 ];
 
 function descriptor(
@@ -496,6 +566,25 @@ export class FoundryArtifactStore {
     return this.#write("build-completion", validated.completionId, validated);
   }
 
+  async saveBuilderNote(note: BuilderNote): Promise<FoundryArtifactReference> {
+    const validated = builderNoteSchema.parse(note);
+    return this.#write("builder-note", validated.noteId, validated);
+  }
+
+  async saveBuilderQuestion(
+    question: BuilderQuestion,
+  ): Promise<FoundryArtifactReference> {
+    const validated = builderQuestionSchema.parse(question);
+    return this.#write("builder-question", validated.questionId, validated);
+  }
+
+  async saveOperatorAnswer(
+    answer: OperatorAnswer,
+  ): Promise<FoundryArtifactReference> {
+    const validated = operatorAnswerSchema.parse(answer);
+    return this.#write("operator-answer", validated.answerId, validated);
+  }
+
   async load(id: string): Promise<FoundryStoredArtifact> {
     if (!/^[a-zA-Z0-9-]+$/.test(id)) {
       throw new Error("Artifact ID contains unsupported characters.");
@@ -571,7 +660,10 @@ export class FoundryArtifactStore {
       | WorkOrder
       | SliceSubmission
       | SubmissionDecision
-      | BuildCompletion,
+      | BuildCompletion
+      | BuilderNote
+      | BuilderQuestion
+      | OperatorAnswer,
   ): Promise<FoundryArtifactReference> {
     await mkdir(this.#root, { recursive: true });
     const path = join(this.#root, `${kind}-${id}.json`);
