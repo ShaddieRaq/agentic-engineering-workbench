@@ -49,7 +49,7 @@ export function createTestDesignerAgent(
     manifest: {
       id: "test-designer",
       name: "Test Designer",
-      version: "0.3.0",
+      version: "0.4.0",
       status: "experimental",
       description:
         "Writes executable acceptance tests from the approved planning chain " +

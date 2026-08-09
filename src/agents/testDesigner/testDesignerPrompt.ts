@@ -39,7 +39,7 @@ function renderEvolutionSection(
     "Your testFiles output contains ONLY:",
     `1. NEW visible files covering the NEW criterion ids: ${evolution.newCriterionIds.join(", ") || "(none)"}. EVERY one of these ids must appear in the coveredCriterionIds of at least one new visible file.`,
     "2. EXACTLY ONE new holdout file at a new path, probing this round's criteria through different scenarios than the visible files. Covering the same id in both a visible file and the holdout is correct.",
-    `3. OPTIONALLY, revised replacements (same path, updated content) for prior files covering the CHANGED criterion ids: ${evolution.changedCriterionIds.join(", ") || "(none)"}. Only revise a prior file when a changed criterion requires it; keep its criterion ids.`,
+    `3. REQUIRED revised replacements (same path, updated content, holdouts stay holdouts) for EVERY prior file whose coveredCriterionIds include any CHANGED criterion id: ${evolution.changedCriterionIds.join(", ") || "(none)"}. Re-derive every expectation in those files under the changed criteria's new meaning — a byte-identical carry of such a file is rejected deterministically. Keep their criterion ids.`,
     `UNCHANGED criterion ids (their prior files are carried automatically — do not re-emit): ${evolution.unchangedCriterionIds.join(", ") || "(none)"}.`,
     `RETIRED criterion ids: ${evolution.retiredCriterionIds.join(", ") || "(none)"}.`,
     "A prior VISIBLE path must never become a holdout. Update interfaceContract, manualChecks, and concerns for the FULL evolved product.",

@@ -30,7 +30,7 @@ describe("buildAgentCatalogReport", () => {
       "project-architect@0.3.0",
       "project-intake@0.6.0",
       "repository-assistant@1.0.0",
-      "test-designer@0.3.0",
+      "test-designer@0.4.0",
       "tool-builder@0.1.0",
     ]);
   });

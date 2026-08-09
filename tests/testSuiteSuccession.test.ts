@@ -188,7 +188,7 @@ describe("validateSuiteSuccession", () => {
       content: suiteContent([
         PRIOR_FILES.stable,
         { ...PRIOR_FILES.holdout, visibility: "visible" },
-        PRIOR_FILES.changed,
+        { ...PRIOR_FILES.changed, content: "revised content" },
         NEW_HOLDOUT,
         {
           ...NEW_HOLDOUT,

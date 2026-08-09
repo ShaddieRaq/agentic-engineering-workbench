@@ -30,7 +30,7 @@ function scriptedProvider(
 describe("testDesignerAgent", () => {
   it("is registered with an instructions revision surface", () => {
     const registration = platformAgentRegistry.get("test-designer");
-    expect(registration.manifest.version).toBe("0.3.0");
+    expect(registration.manifest.version).toBe("0.4.0");
     expect(registration.manifest.permissions.toolIds).toEqual([]);
     expect(registration.revisionSurface?.mutableFields).toEqual(["instructions"]);
     expect(

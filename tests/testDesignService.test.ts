@@ -281,15 +281,23 @@ describe("TestDesignService", () => {
           evolution?: {
             priorSuiteContent: TestSuiteContentShape;
             newCriterionIds: string[];
+            changedCriterionIds: string[];
           };
         };
         if (!typed.evolution) {
           return suiteContentFor(typed.brief as never);
         }
-        // Faithful successor: carry every prior file byte-exact, add a new
-        // visible file for the new criterion, and one new holdout.
+        // Faithful successor: carry unchanged files byte-exact, re-derive
+        // files touching changed criteria (mandatory since the stale-carry
+        // rule), add a new visible file for the new criterion + one new
+        // holdout.
         const newId = typed.evolution.newCriterionIds[0]!;
-        const carried = typed.evolution.priorSuiteContent.testFiles;
+        const changedIds = new Set(typed.evolution.changedCriterionIds);
+        const carried = typed.evolution.priorSuiteContent.testFiles.map((file) =>
+          file.coveredCriterionIds.some((id) => changedIds.has(id))
+            ? { ...file, content: `${file.content}\n// re-derived\n` }
+            : file,
+        );
         return {
           ...typed.evolution.priorSuiteContent,
           testFiles: [
@@ -446,7 +454,7 @@ describe("TestDesignService", () => {
         kind,
       ]),
     );
-    expect(lineage.get("acceptance-tests/criterion-1.test.ts")).toBe("carried");
+    expect(lineage.get("acceptance-tests/criterion-1.test.ts")).toBe("revised");
     expect(lineage.get("acceptance-tests/criterion-2.test.ts")).toBe("carried");
     expect(lineage.get("acceptance-tests/export.test.ts")).toBe("new");
     expect(lineage.get("acceptance-tests/export-holdout.test.ts")).toBe("new");

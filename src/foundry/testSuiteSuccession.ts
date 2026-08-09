@@ -147,9 +147,23 @@ export function validateSuiteSuccession(input: {
         priorContentDigest: contentDigest(prior.content),
       });
     } else {
+      // Two live incidents (2026-08-09): byte-identical carries of files
+      // touching CHANGED criteria silently pinned pre-change semantics —
+      // once in a visible file, once in a holdout only the operator could
+      // see. A file whose criteria changed meaning must be consciously
+      // re-derived, never carried on judgment.
+      if (identical) {
+        const changedTouched = prior.coveredCriterionIds.filter((id) =>
+          input.diff.changedIds.has(id),
+        );
+        failures.push(
+          `File ${path} covers changed criterion(s) ${changedTouched.join(", ")} but is carried byte-identical; its assertions may pin pre-change semantics. Emit a revised replacement re-derived under the changed criteria.`,
+        );
+        continue;
+      }
       fileLineage.push({
         path,
-        lineage: identical ? "carried" : "revised",
+        lineage: "revised",
         priorContentDigest: contentDigest(prior.content),
       });
     }
