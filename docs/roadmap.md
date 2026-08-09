@@ -1082,6 +1082,15 @@ order, each with its plan:
    capped at human scale, content-based grouping) → full chain →
    isolated builder → first evolved release.
 
+OPERATOR DELEGATION, 2026-08-09 (job-tracker build): after three
+misfiled decisions caused by indistinguishable decision forms (UX
+defect, queued), the operator explicitly delegated the remainder of the
+job-tracker generation: "You do it. You do the entire thing and then
+tell me how it works. When the product is done, let me know." Decisions
+recorded under this delegation use operator id
+claude-delegated-by-rashad and cite this instruction — delegated
+authority is recorded, never impersonated (Decision 089's lesson).
+
 OPERATOR DECLARATION, 2026-08-09: EVERY PROJECT TO DATE IS A FAILED
 PROJECT. Established as the baseline fact. Habit tracker: built green,
 never used, never aimed at use. Mac Librarian generations 1-3:
