@@ -247,6 +247,7 @@ export class IntakeSessionController {
     // advisories so every previously-flagged open edge is decided or
     // explicitly deferred rather than silently forgotten.
     let standingAdvisories: string[] = [];
+    let fieldReports: string[] = [];
     if (budgetBaseVersion > 1) {
       const collected = await collectStandingAdvisories(
         this.#store,
@@ -255,6 +256,26 @@ export class IntakeSessionController {
       standingAdvisories = collected
         .slice(0, 30)
         .map(({ description }) => description);
+      // Field reports (Decision 090): the operator's record of what the
+      // shipped generation actually did on real inputs — newest first.
+      const { artifacts } = await this.#store.list({
+        kind: "field-report",
+        briefId: turn.briefId,
+        limit: 50,
+      });
+      const loaded = await Promise.all(
+        artifacts.map((summary) => this.#store.load(summary.id)),
+      );
+      fieldReports = loaded
+        .flatMap((stored) =>
+          stored.kind === "field-report" ? [stored.artifact] : [],
+        )
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+        .slice(0, 10)
+        .map(
+          (report) =>
+            `[generation v${report.briefVersion}, recorded by ${report.operatorId}] ${report.report}`,
+        );
     }
     const agentInput = {
       briefContent: briefContentOf(turn.currentBrief),
@@ -262,6 +283,7 @@ export class IntakeSessionController {
       turnNumber: completedTurns + 1,
       remainingTurns: Math.max(turn.maxTurns - completedTurns - 1, 0),
       ...(standingAdvisories.length > 0 ? { standingAdvisories } : {}),
+      ...(fieldReports.length > 0 ? { fieldReports } : {}),
     };
 
     let agentRunArtifactId: string | null = null;

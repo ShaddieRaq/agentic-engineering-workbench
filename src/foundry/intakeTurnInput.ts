@@ -18,6 +18,10 @@ export const intakeTurnInputSchema = z
     // approved artifacts, injected into reopened interviews so each is
     // decided or explicitly deferred instead of silently forgotten.
     standingAdvisories: z.array(z.string().min(1).max(2_000)).max(30).optional(),
+    // Usage-feedback channel (Decision 090): operator-recorded field
+    // reports from the completed generation — what the shipped software
+    // actually did on real inputs. Injected into reopened interviews.
+    fieldReports: z.array(z.string().min(1).max(8_000)).max(10).optional(),
   })
   .strict();
 

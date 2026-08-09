@@ -28,6 +28,7 @@ import {
   type BuilderQuestion,
   type OperatorAnswer,
 } from "./builderMessage.js";
+import { fieldReportSchema, type FieldReport } from "./fieldReport.js";
 import {
   sliceSubmissionSchema,
   submissionDecisionSchema,
@@ -70,7 +71,8 @@ export type FoundryArtifactKind =
   | "build-completion"
   | "builder-note"
   | "builder-question"
-  | "operator-answer";
+  | "operator-answer"
+  | "field-report";
 
 export interface FoundryArtifactReference {
   id: string;
@@ -95,7 +97,8 @@ export type FoundryStoredArtifact =
   | { kind: "build-completion"; artifact: BuildCompletion }
   | { kind: "builder-note"; artifact: BuilderNote }
   | { kind: "builder-question"; artifact: BuilderQuestion }
-  | { kind: "operator-answer"; artifact: OperatorAnswer };
+  | { kind: "operator-answer"; artifact: OperatorAnswer }
+  | { kind: "field-report"; artifact: FieldReport };
 
 export interface FoundryArtifactSummary {
   id: string;
@@ -398,6 +401,23 @@ const kindDefinitions: Record<FoundryArtifactKind, FoundryKindDefinition> = {
       };
     },
   },
+  "field-report": {
+    parse: (value) => ({
+      kind: "field-report",
+      artifact: fieldReportSchema.parse(value),
+    }),
+    summarize: (id, path, stored) => {
+      const report = stored.artifact as FieldReport;
+      return {
+        id,
+        kind: "field-report",
+        path,
+        briefId: report.briefId,
+        briefVersion: report.briefVersion,
+        createdAt: report.createdAt,
+      };
+    },
+  },
   "operator-answer": {
     parse: (value) => ({
       kind: "operator-answer",
@@ -439,6 +459,7 @@ const orderedKinds: FoundryArtifactKind[] = [
   "builder-question",
   "builder-note",
   "operator-answer",
+  "field-report",
 ];
 
 function descriptor(
@@ -585,6 +606,11 @@ export class FoundryArtifactStore {
     return this.#write("operator-answer", validated.answerId, validated);
   }
 
+  async saveFieldReport(report: FieldReport): Promise<FoundryArtifactReference> {
+    const validated = fieldReportSchema.parse(report);
+    return this.#write("field-report", validated.fieldReportId, validated);
+  }
+
   async load(id: string): Promise<FoundryStoredArtifact> {
     if (!/^[a-zA-Z0-9-]+$/.test(id)) {
       throw new Error("Artifact ID contains unsupported characters.");
@@ -663,7 +689,8 @@ export class FoundryArtifactStore {
       | BuildCompletion
       | BuilderNote
       | BuilderQuestion
-      | OperatorAnswer,
+      | OperatorAnswer
+      | FieldReport,
   ): Promise<FoundryArtifactReference> {
     await mkdir(this.#root, { recursive: true });
     const path = join(this.#root, `${kind}-${id}.json`);

@@ -32,6 +32,14 @@ export function buildProjectIntakePrompt(
           "",
         ]
       : []),
+    ...(input.fieldReports && input.fieldReports.length > 0
+      ? [
+          "FIELD REPORTS — what the SHIPPED software actually did on the operator's real inputs. This is ground truth that outranks any assumption in the brief:",
+          ...input.fieldReports.map((report) => `- ${report}`),
+          "For EACH defect a field report describes: carry it into this brief as an acceptance criterion with an observable outcome, or ask the operator ONE question that pins it down. Never restate a failure as a vague goal.",
+          "",
+        ]
+      : []),
     "OPERATOR ANSWERS THIS TURN:",
     input.operatorAnswers.length === 0
       ? "None. This is the opening turn; interrogate the idea summary."

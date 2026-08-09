@@ -15,6 +15,7 @@ import type {
   FoundryArtifactStore,
 } from "../foundry/foundryArtifactStore.js";
 import { operatorAnswerSchema } from "../foundry/builderMessage.js";
+import { fieldReportSchema } from "../foundry/fieldReport.js";
 import type { BuildCompletionService } from "../foundry/buildCompletionService.js";
 import type { IntakeSessionController } from "../foundry/intakeSessionController.js";
 import { createProjectBriefDecision } from "../foundry/projectBriefDecision.js";
@@ -157,6 +158,14 @@ const foundryAnswerRequestSchema = z
   })
   .strict();
 
+// Operator field report against a completed generation (Decision 090).
+const foundryFieldReportRequestSchema = z
+  .object({
+    operatorId: z.string().min(1).max(200),
+    report: z.string().min(1).max(8_000),
+  })
+  .strict();
+
 // Operator-attributed generation closure (Decision 088).
 const foundryCompletionRequestSchema = z
   .object({
@@ -226,6 +235,7 @@ const foundryArtifactKinds: readonly FoundryArtifactKind[] = [
   "builder-note",
   "builder-question",
   "operator-answer",
+  "field-report",
 ];
 
 function parseFoundryKind(value: string): FoundryArtifactKind | null {
@@ -1082,6 +1092,44 @@ export async function buildAgentWebServer(
         });
         const reference = await foundry.saveOperatorAnswer(answer);
         return reply.code(201).send({ answer, reference });
+      },
+    );
+
+    // Operator field report against a completed generation (Decision 090):
+    // usage findings become evidence that seeds the next reopened
+    // interview instead of living in the operator's memory.
+    app.post<{ Params: { completionId: string } }>(
+      "/api/foundry/completions/:completionId/field-reports",
+      async (request, reply) => {
+        if (rejectWithoutOperatorToken(request, reply)) return undefined;
+        const parsed = foundryFieldReportRequestSchema.safeParse(
+          request.body ?? {},
+        );
+        if (!parsed.success) {
+          return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+        }
+        let stored;
+        try {
+          stored = await foundry.load(request.params.completionId);
+        } catch (error: unknown) {
+          return reply.code(404).send({ error: errorMessage(error) });
+        }
+        if (stored.kind !== "build-completion") {
+          return reply.code(404).send({
+            error: `Artifact ${request.params.completionId} is not a build-completion.`,
+          });
+        }
+        const report = fieldReportSchema.parse({
+          fieldReportId: randomUUID(),
+          completionId: stored.artifact.completionId,
+          briefId: stored.artifact.briefId,
+          briefVersion: stored.artifact.briefVersion,
+          operatorId: parsed.data.operatorId,
+          report: parsed.data.report,
+          createdAt: new Date().toISOString(),
+        });
+        const reference = await foundry.saveFieldReport(report);
+        return reply.code(201).send({ report, reference });
       },
     );
 

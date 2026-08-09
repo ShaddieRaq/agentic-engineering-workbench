@@ -12,6 +12,7 @@ import type {
   BuilderQuestion,
   OperatorAnswer,
 } from "../foundry/builderMessage.js";
+import type { FieldReport } from "../foundry/fieldReport.js";
 import type { IntakeTurnRecord } from "../foundry/intakeTurn.js";
 import type { ProjectBrief } from "../foundry/projectBrief.js";
 import type { ProjectBriefDecision } from "../foundry/projectBriefDecision.js";
@@ -238,6 +239,14 @@ export interface FoundryChainView {
     recordedRetroactively: boolean;
     operatorId: string;
     createdAt: string;
+    // Usage findings recorded against this generation (Decision 090),
+    // newest first; injected into the next reopened interview.
+    fieldReports: {
+      fieldReportId: string;
+      operatorId: string;
+      report: string;
+      createdAt: string;
+    }[];
   }[];
 }
 
@@ -277,6 +286,7 @@ interface ChainBuckets {
   builderNotes: BuilderNote[];
   builderQuestions: BuilderQuestion[];
   operatorAnswers: OperatorAnswer[];
+  fieldReports: FieldReport[];
   latestActivityAt: string;
 }
 
@@ -362,6 +372,7 @@ async function collectChainBuckets(
     builderNotes: [],
     builderQuestions: [],
     operatorAnswers: [],
+    fieldReports: [],
     latestActivityAt: "",
   };
 
@@ -418,6 +429,9 @@ async function collectChainBuckets(
         break;
       case "operator-answer":
         buckets.operatorAnswers.push(entry.artifact);
+        break;
+      case "field-report":
+        buckets.fieldReports.push(entry.artifact);
         break;
       default:
         break;
@@ -604,6 +618,15 @@ function buildViewFromBuckets(
       recordedRetroactively: completion.recordedRetroactively,
       operatorId: completion.operatorId,
       createdAt: completion.createdAt,
+      fieldReports: [...buckets.fieldReports]
+        .filter((report) => report.completionId === completion.completionId)
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+        .map(({ fieldReportId, operatorId, report, createdAt }) => ({
+          fieldReportId,
+          operatorId,
+          report,
+          createdAt,
+        })),
     }));
 
   // Answers are validated against the questions the interview last asked;

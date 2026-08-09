@@ -586,6 +586,12 @@ export interface FoundryChainView {
     recordedRetroactively: boolean;
     operatorId: string;
     createdAt: string;
+    fieldReports: {
+      fieldReportId: string;
+      operatorId: string;
+      report: string;
+      createdAt: string;
+    }[];
   }[];
   briefVersions: FoundryBriefVersionView[];
   plans: FoundryPlanView[];

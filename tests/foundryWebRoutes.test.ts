@@ -544,6 +544,75 @@ describe("foundry web routes", () => {
     await app.close();
   });
 
+  it("records field reports against a completion and joins them onto the chain view", async () => {
+    const store = await temporaryStore();
+    const chain = await persistFoundryChain(store);
+    const completionId = randomUUID();
+    await store.saveBuildCompletion({
+      completionId,
+      briefId: chain.fixture.brief.briefId,
+      briefVersion: chain.fixture.brief.version,
+      planId: randomUUID(),
+      planDigest: "a".repeat(64),
+      testSuiteId: chain.testSuiteId,
+      testSuiteDigest: "a".repeat(64),
+      projectRoot: "/tmp/generated/example-project",
+      mainCommitSha: "b".repeat(40),
+      treeDigest: "a".repeat(64),
+      builtSliceIds: [chain.fixture.sliceIds.first],
+      verification: {
+        files: [
+          {
+            path: "acceptance-tests/routing.test.ts",
+            visibility: "visible",
+            exitCode: 0,
+            passed: true,
+          },
+        ],
+        passed: true,
+        outputExcerpt: "ok",
+      },
+      operatorId: "rashad",
+      recordedRetroactively: false,
+      createdAt: new Date().toISOString(),
+    });
+
+    const { service } = await createConsoleTestService(false);
+    const app = await buildAgentWebServer({
+      service,
+      apiKeyConfigured: false,
+      foundry: store,
+    });
+    const recorded = await app.inject({
+      method: "POST",
+      url: `/api/foundry/completions/${completionId}/field-reports`,
+      payload: {
+        operatorId: "rashad",
+        report:
+          "Cold run on Downloads: labels are PDF plumbing (obj-filter-2) and grouping degenerates to singletons.",
+      },
+    });
+    expect(recorded.statusCode).toBe(201);
+
+    const view = await buildFoundryChainView(store, chain.fixture.brief.briefId);
+    const completion = view!.completions.find(
+      (entry) => entry.completionId === completionId,
+    )!;
+    expect(completion.fieldReports).toHaveLength(1);
+    expect(completion.fieldReports[0]!.report).toContain("obj-filter-2");
+    expect(completion.fieldReports[0]!.operatorId).toBe("rashad");
+
+    // Only completions accept field reports.
+    const wrongTarget = await app.inject({
+      method: "POST",
+      url: `/api/foundry/completions/${chain.testSuiteId}/field-reports`,
+      payload: { operatorId: "rashad", report: "x" },
+    });
+    expect(wrongTarget.statusCode).toBe(404);
+
+    await app.close();
+  });
+
   it("refuses decision-class writes without the operator token when one is configured", async () => {
     const store = await temporaryStore();
     const briefOnly = await persistBriefOnly(store);

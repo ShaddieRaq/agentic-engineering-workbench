@@ -520,7 +520,7 @@ function StageRail({ chain, active }: { chain: FoundryChainView; active: string 
 
 // The project hub: one card per stage with its status and headline
 // numbers; detail lives on the stage pages.
-function ProjectOverview({ chain }: { chain: FoundryChainView }) {
+function ProjectOverview({ chain, onReload }: { chain: FoundryChainView; onReload: () => void }) {
   const latest = chain.briefVersions[chain.briefVersions.length - 1];
   const plan = chain.plans.find(({ briefVersion }) => briefVersion === chain.latestVersion);
   const capability = plan
@@ -601,10 +601,18 @@ function ProjectOverview({ chain }: { chain: FoundryChainView }) {
         <div className="panel" style={{ marginTop: 14 }}>
           <span className="eyebrow">Generation closures</span>
           {chain.completions.map((completion) => (
-            <p className="muted-note" key={completion.completionId}>
-              <StatusBadge value="completed" /> Completion {shortId(completion.completionId)} · brief v{completion.briefVersion} · {completion.builtSliceCount} slice(s) · main {completion.mainCommitSha.slice(0, 10)} · {completion.operatorId}
-              {completion.recordedRetroactively && <> · recorded retroactively</>}
-            </p>
+            <div key={completion.completionId}>
+              <p className="muted-note">
+                <StatusBadge value="completed" /> Completion {shortId(completion.completionId)} · brief v{completion.briefVersion} · {completion.builtSliceCount} slice(s) · main {completion.mainCommitSha.slice(0, 10)} · {completion.operatorId}
+                {completion.recordedRetroactively && <> · recorded retroactively</>}
+              </p>
+              {completion.fieldReports.map((report) => (
+                <p className="muted-note field-report" key={report.fieldReportId}>
+                  <StatusBadge value="field report" /> {report.operatorId} · {when(report.createdAt)} — {report.report}
+                </p>
+              ))}
+              <FieldReportForm completionId={completion.completionId} onRecorded={onReload} />
+            </div>
           ))}
         </div>
       )}
@@ -871,6 +879,60 @@ function SubmissionDetails({ submission, onRecorded }: { submission: FoundrySubm
   );
 }
 
+// Field report against a completed generation (Decision 090): what the
+// shipped software actually did on real inputs. Seeds the next reopened
+// interview automatically.
+function FieldReportForm({ completionId, onRecorded }: { completionId: string; onRecorded: () => void }) {
+  const [operatorId, setOperatorId] = useState(
+    () => window.localStorage.getItem(OPERATOR_STORAGE_KEY) ?? "",
+  );
+  const [report, setReport] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      await api(`/api/foundry/completions/${completionId}/field-reports`, {
+        method: "POST",
+        body: JSON.stringify({ operatorId, report }),
+      });
+      window.localStorage.setItem(OPERATOR_STORAGE_KEY, operatorId);
+      setError(null);
+      setReport("");
+      onRecorded();
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <details className="decision-form">
+      <summary>Record field report (what the shipped software did on real inputs)</summary>
+      <form className="decision-form-body" onSubmit={(event) => void submit(event)}>
+        <p className="muted-note">
+          Concrete observations beat judgments: what you ran, what it produced,
+          what was wrong. This feeds the next reopened interview automatically.
+        </p>
+        <label>
+          Operator
+          <input required value={operatorId} onChange={(event) => setOperatorId(event.target.value)} />
+        </label>
+        <OperatorTokenField />
+        <label>
+          Report
+          <textarea required rows={4} value={report} onChange={(event) => setReport(event.target.value)} />
+        </label>
+        {error && <ErrorNotice message={error} />}
+        <button className="button" type="submit" disabled={busy}>Record field report</button>
+      </form>
+    </details>
+  );
+}
+
 // Operator answer to a builder question (Decision 090). Token-guarded
 // server-side; the answer becomes an artifact the builder polls for.
 function AnswerQuestionForm({ questionId, onRecorded }: { questionId: string; onRecorded: () => void }) {
@@ -973,7 +1035,7 @@ export function FoundryProjectPage() {
       <OperationsTray onSettled={resource.reload} />
       <StageRail chain={chain} active={stagePage} />
 
-      {stagePage === "overview" && <ProjectOverview chain={chain} />}
+      {stagePage === "overview" && <ProjectOverview chain={chain} onReload={resource.reload} />}
 
       {stagePage === "brief" && (<>
 
