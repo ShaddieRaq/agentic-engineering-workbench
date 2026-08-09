@@ -1082,6 +1082,21 @@ order, each with its plan:
    capped at human scale, content-based grouping) → full chain →
    isolated builder → first evolved release.
 
+JOB APPLICATION TRACKER GENERATION 1 SHIPPED 2026-08-09 under the
+recorded delegation (completion 428ff199, suite 72ef5976, five slices
+verified out-of-tree, field-trialed immediately with a real scenario
+and judged usable — field report 4b4dbd21). First product to meet the
+operator's usable-software bar. Defects fixed en route: designer
+baseline prompt lacked the enumerated coverage checklist (backported,
+0.3.0); designer model under-provisioned (switched to gpt-5.4 per
+Decision 086 evidence); suite week-arithmetic error caught by the
+BUILDER through ask_operator and fixed by surgical revision. Queued
+from this run: null-implementation gate for suites (substance check —
+a candidate suite must fail a stub program or be rejected); decision
+forms must name their target artifact; tilde-expansion on path inputs;
+builder sandbox currently denies git init; next should announce
+valid-but-empty results.
+
 OPERATOR DELEGATION, 2026-08-09 (job-tracker build): after three
 misfiled decisions caused by indistinguishable decision forms (UX
 defect, queued), the operator explicitly delegated the remainder of the
