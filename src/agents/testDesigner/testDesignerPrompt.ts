@@ -48,6 +48,28 @@ function renderEvolutionSection(
   ];
 }
 
+// Enumerated coverage checklist (the model complies with exact id lists,
+// drifts on "cover everything" said loosely — twice-confirmed lesson, and
+// the evolution path has carried this fix since generation 2; live
+// failures 2026-08-09 showed the baseline path never got it). Every
+// automated mapping's criterion id is listed by name with the visible-
+// coverage obligation stated per id.
+function renderCoverageChecklist(plan: ArchitecturePlan): string[] {
+  const automatedIds = [
+    ...new Set(
+      plan.content.acceptancePlan
+        .filter(({ testType }) => testType !== "manual")
+        .map(({ criterionId }) => criterionId),
+    ),
+  ];
+  if (automatedIds.length === 0) return [];
+  return [
+    "",
+    `COVERAGE CHECKLIST — these ${automatedIds.length} criterion ids REQUIRE visible coverage: ${automatedIds.join(", ")}.`,
+    "EVERY one of these ids must appear in the coveredCriterionIds of at least one VISIBLE test file — holdout coverage does not count toward this requirement. Before returning, walk this list id by id and confirm each appears in a visible file's coveredCriterionIds; add coverage for any that do not. The suite is rejected deterministically otherwise.",
+  ];
+}
+
 export function buildTestDesignerPrompt(
   brief: ProjectBrief,
   plan: ArchitecturePlan,
@@ -66,6 +88,9 @@ export function buildTestDesignerPrompt(
     "",
     "COVERAGE RULES:",
     ...instructions.coverageRules.map((rule) => `- ${rule}`),
+    // Evolution rounds enumerate their own new/changed id obligations in
+    // the evolution section; the checklist covers first-generation runs.
+    ...(evolution ? [] : renderCoverageChecklist(plan)),
     "",
     "APPROVED PROJECT BRIEF:",
     JSON.stringify(brief, null, 2),
