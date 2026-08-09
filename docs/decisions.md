@@ -2657,3 +2657,53 @@ Decided:
 Why: the incident is the thesis in miniature. Structure held wherever
 structure existed; obedience failed exactly where obedience was the
 control. Authority must be scoped by mechanism, never by phrasing.
+
+## Decision 090 (2026-08-08): The communication turn — authenticated writes, builder speech, field evidence
+
+Context: the generation-3 debrief converged on one diagnosis: every
+channel that mattered ran through the operator's clipboard. The builder
+could hand in work and read its grade but could not say anything; usage
+findings reached the platform as chat prose and hand-edited markdown;
+and any local process could POST an operator-attributed decision to the
+console (Decision 089 closed only the CLI path). Operator direction:
+infrastructure first — "our biggest problem is communication back to
+the workbench."
+
+Decided:
+1. Operator token on decision-class web routes. A 64-hex token is
+   minted once into .workbench/operator-token (inside the tree builder
+   sessions are denied from reading), printed only in the operator's
+   server terminal, and required as x-operator-token on foundry
+   decisions, completions, promotion decisions, operator answers,
+   field reports, and workspace preparation. Possession demonstrates
+   access to the operator's terminal or browser — the web counterpart
+   of 089's interactive-terminal guard. Reads stay open; stage-run
+   routes stay open (cost, not authority — recorded residual).
+2. Builder speech over the governed channel: submit_slice carries an
+   optional builder report stored with the submission; post_builder_note
+   records progress and disclosures; ask_operator renders as a console
+   answer form whose operator answer becomes an artifact the builder
+   polls via get_operator_answer. All builder text renders labeled
+   builder-authored/unverified; an unanswered question outranks
+   everything else in the next-step ladder; chain identity derives from
+   the work order, never from the builder.
+3. Field reports as evidence: operator-recorded observations of what
+   the shipped generation did on real inputs, attached to the
+   completion record and injected — with standing advisories — into
+   every reopened interview. Generation N+1's intake starts from
+   generation N's observed reality.
+4. Structural confinement check: the builder MCP server verifies the
+   workspace's deny entries, sandbox flags, and root pin before every
+   tool call and fails closed. A tampered workspace loses its only
+   sanctioned channel instead of operating unconfined.
+
+Why: a governed pipeline is only as strong as its weakest channel, and
+the weakest channels were the informal ones. Speech that influences
+decisions must travel where decisions are recorded; authority must be
+proven, not typed. The builder can now inform and ask — and still
+cannot act.
+
+Residuals: model-invoking stage routes accept unauthenticated POSTs
+(spend, not authority); operation acknowledgements are in-memory and
+reset on server restart; the operator token authenticates presence, not
+identity — a multi-operator deployment needs real accounts.
