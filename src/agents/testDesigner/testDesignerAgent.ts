@@ -56,7 +56,11 @@ export function createTestDesignerAgent(
         "before implementation exists, including a protected holdout subset.",
       owner: "local-platform",
       tags: ["foundry", "testing"],
-      defaultModel: "gpt-5.4-mini",
+      // Model qualification by live evidence (Decision 086 forced,
+      // 2026-08-09): mini failed this stage four distinct ways across
+      // three projects — the chain's largest single-shot generation task
+      // gets the strongest model, like the builder role always has.
+      defaultModel: "gpt-5.4",
       components: {
         workflowIds: [],
         harnessIds: [],
