@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type ImprovementProposalArtifact, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type ToolDescription, type ToolSummary } from "./api.js";
 import { ArtifactPresentationView } from "./artifactPresentation.js";
 import { AgentCard, EmptyState, ErrorNotice, Loading, OperationTrace, PageHeader, RunAgentPanel, StatusBadge } from "./components.js";
-import { FoundryArtifactPage, FoundryProjectPage, FoundryProjectsPage, OperatorTokenField } from "./foundry.js";
+import { FoundryArtifactPage, FoundryProjectPage, FoundryProjectsPage, OperatorSettingsPage } from "./foundry.js";
 import { useOperation, useResource } from "./hooks.js";
 import { LocalLink as Link, LocalNavLink as NavLink, usePathname } from "./router.js";
 import { WorkspaceProvider, useWorkspace } from "./workspace.js";
@@ -22,6 +22,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <NavLink to="/runs">Evidence</NavLink>
           <NavLink to="/evaluations">Evaluation Studio</NavLink>
           <NavLink to="/authoring">Authoring</NavLink>
+          <NavLink to="/operator">Operator</NavLink>
         </nav>
         <label className="workspace-switcher">Active workspace<select value={selectedWorkspaceId ?? ""} onChange={(event) => selectWorkspace(event.target.value)}>{workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.name}</option>)}</select></label>
         <div className="sidebar-note"><span className="pulse" />Local control plane</div>
@@ -472,7 +473,6 @@ function PromotionDecisionPanel({
             onChange={(event) => setOperatorId(event.target.value)}
           />
         </label>
-        <OperatorTokenField />
         <label>
           Rationale
           <textarea
@@ -705,6 +705,7 @@ function RoutedContent() {
   else if (/^\/evaluations\/[^/]+\/cases\/[^/]+\/[^/]+$/.test(pathname)) page = <EvaluationCasePage />;
   else if (/^\/evaluations\/[^/]+$/.test(pathname)) page = <EvaluationDetailPage />;
   else if (pathname === "/authoring") page = <AuthoringPage />;
+  else if (pathname === "/operator") page = <OperatorSettingsPage />;
   else page = <EmptyState>Page not found. <Link to="/">Return home</Link>.</EmptyState>;
   return <Shell>{page}</Shell>;
 }

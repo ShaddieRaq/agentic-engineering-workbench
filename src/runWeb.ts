@@ -118,7 +118,7 @@ async function main(): Promise<void> {
   const address = await app.listen({ host: "127.0.0.1", port });
   console.log(`Agent Workbench available at ${address}`);
   console.log(
-    `Operator decision token (paste once into any decision form): ${operatorToken}`,
+    `Operator decision token (enter once on the console's Operator page): ${operatorToken}`,
   );
   const shutdown = async () => {
     await app.close();

@@ -47,27 +47,129 @@ function DecisionList({ decisions }: { decisions: FoundryDecisionView[] }) {
 
 const OPERATOR_STORAGE_KEY = "workbench-operator-id";
 
-// Decision 090: operator-attributed writes need the token the server
-// printed at startup. Pasted once; api() attaches it from localStorage on
-// every request after that.
-export function OperatorTokenField() {
+// Identity is configuration, not a per-decision input: the Operator page
+// is the ONE place the token and default operator id live. Decision forms
+// only link here when no token is stored yet.
+export function OperatorSettingsPage() {
+  const [operatorId, setOperatorId] = useState(
+    () => window.localStorage.getItem(OPERATOR_STORAGE_KEY) ?? "",
+  );
   const [token, setToken] = useState(storedOperatorToken);
-  return (
-    <label>
-      Operator token
-      <input
-        type="password"
-        value={token}
-        placeholder="printed in the server terminal at startup"
-        onChange={(event) => {
-          setToken(event.target.value);
-          window.localStorage.setItem(
-            OPERATOR_TOKEN_STORAGE_KEY,
-            event.target.value.trim(),
+  const [status, setStatus] = useState<
+    | { state: "checking" }
+    | { state: "verified"; tokenRequired: boolean }
+    | { state: "rejected" }
+    | { state: "unreachable" }
+  >({ state: "checking" });
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void (async () => {
+        try {
+          const result = await api<{ tokenRequired: boolean; verified: boolean }>(
+            "/api/operator/verify",
           );
-        }}
-      />
-    </label>
+          if (!cancelled) {
+            setStatus({ state: "verified", tokenRequired: result.tokenRequired });
+          }
+        } catch (cause: unknown) {
+          if (cancelled) return;
+          const message = cause instanceof Error ? cause.message : String(cause);
+          setStatus(
+            message.includes("operator token") || message.includes("401")
+              ? { state: "rejected" }
+              : { state: "rejected" },
+          );
+        }
+      })();
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [token]);
+
+  return (
+    <>
+      <PageHeader eyebrow="Console configuration" title="Operator">
+        <StatusBadge
+          value={
+            status.state === "verified"
+              ? "verified"
+              : status.state === "checking"
+                ? "checking"
+                : "rejected"
+          }
+        />
+      </PageHeader>
+      <p className="lede">
+        Who decisions are recorded as, and the proof it&apos;s you. Set once —
+        this browser remembers both.
+      </p>
+      <div className="panel" style={{ maxWidth: 560 }}>
+        <label>
+          Operator id (the name signed onto decisions)
+          <input
+            value={operatorId}
+            placeholder="rashad"
+            onChange={(event) => {
+              setOperatorId(event.target.value);
+              window.localStorage.setItem(
+                OPERATOR_STORAGE_KEY,
+                event.target.value.trim(),
+              );
+            }}
+          />
+        </label>
+        <label>
+          Operator token
+          <input
+            type="password"
+            value={token}
+            placeholder="printed in the server terminal at startup"
+            onChange={(event) => {
+              setToken(event.target.value);
+              window.localStorage.setItem(
+                OPERATOR_TOKEN_STORAGE_KEY,
+                event.target.value.trim(),
+              );
+            }}
+          />
+        </label>
+        {status.state === "verified" && status.tokenRequired && (
+          <div className="notice notice-success" role="status">
+            Token verified — decisions will record as{" "}
+            <strong>{operatorId || "(set an operator id)"}</strong>.
+          </div>
+        )}
+        {status.state === "verified" && !status.tokenRequired && (
+          <div className="notice" role="status">
+            This server does not require a token; decisions record as{" "}
+            <strong>{operatorId || "(set an operator id)"}</strong>.
+          </div>
+        )}
+        {status.state === "rejected" && (
+          <ErrorNotice message="Token rejected. Copy it from the terminal running npm run web — it is printed at startup — or read .workbench/operator-token in the Workbench directory." />
+        )}
+        {status.state === "checking" && <p className="muted-note">Checking…</p>}
+        <p className="muted-note">
+          The token proves a decision came from your terminal or browser, not
+          from another process on this machine (Decision 090). It never leaves
+          this computer.
+        </p>
+      </div>
+    </>
+  );
+}
+
+// Shown inside operator-attributed forms only while no token is stored.
+function TokenHint() {
+  if (storedOperatorToken()) return null;
+  return (
+    <p className="muted-note">
+      No operator token set — <Link to="/operator">set it once on the Operator page</Link>.
+    </p>
   );
 }
 
@@ -730,7 +832,7 @@ function RecordCompletionPanel({
           Operator
           <input required value={operatorId} onChange={(event) => setOperatorId(event.target.value)} />
         </label>
-        <OperatorTokenField />
+        <TokenHint />
         <label className="checkbox-label">
           <input type="checkbox" checked={retroactive} onChange={(event) => setRetroactive(event.target.checked)} />
           {" "}Recorded retroactively (build predates completion records)
@@ -805,7 +907,7 @@ function DecisionForm({ action, onRecorded, allowReopen, defaultOpen }: { action
           Operator
           <input value={operatorId} onChange={(event) => setOperatorId(event.target.value)} placeholder="who is deciding" required />
         </label>
-        <OperatorTokenField />
+        <TokenHint />
         <label>
           Rationale
           <textarea rows={3} value={rationale} onChange={(event) => setRationale(event.target.value)} required />
@@ -965,7 +1067,7 @@ function FieldReportForm({ completionId, onRecorded }: { completionId: string; o
           Operator
           <input required value={operatorId} onChange={(event) => setOperatorId(event.target.value)} />
         </label>
-        <OperatorTokenField />
+        <TokenHint />
         <label>
           Report
           <textarea required rows={4} value={report} onChange={(event) => setReport(event.target.value)} />
@@ -1026,7 +1128,7 @@ function PrepareWorkspacePanel({ workOrderId, briefId }: { workOrderId: string; 
           Project root (absolute path)
           <input required value={projectRoot} onChange={(event) => setProjectRoot(event.target.value)} placeholder="/Users/you/Projects/generated/my-project" />
         </label>
-        <OperatorTokenField />
+        <TokenHint />
         {error && <ErrorNotice message={error} />}
         <button className="button" type="submit" disabled={busy}>Prepare workspace</button>
       </form>
@@ -1078,7 +1180,7 @@ function AnswerQuestionForm({ questionId, onRecorded }: { questionId: string; on
         Operator
         <input required value={operatorId} onChange={(event) => setOperatorId(event.target.value)} />
       </label>
-      <OperatorTokenField />
+      <TokenHint />
       <label>
         Answer
         <textarea required rows={3} value={answer} onChange={(event) => setAnswer(event.target.value)} />

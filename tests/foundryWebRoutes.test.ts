@@ -724,6 +724,20 @@ describe("foundry web routes", () => {
     });
     expect(right.statusCode).toBe(201);
 
+    // The Operator page's identity check mirrors the guard.
+    const verifyMissing = await app.inject({
+      method: "GET",
+      url: "/api/operator/verify",
+    });
+    expect(verifyMissing.statusCode).toBe(401);
+    const verifyRight = await app.inject({
+      method: "GET",
+      url: "/api/operator/verify",
+      headers: { "x-operator-token": operatorToken },
+    });
+    expect(verifyRight.statusCode).toBe(200);
+    expect(verifyRight.json()).toEqual({ tokenRequired: true, verified: true });
+
     await app.close();
   });
 

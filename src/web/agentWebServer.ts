@@ -295,11 +295,28 @@ export async function buildAgentWebServer(
     reply.code(401).send({
       error:
         "This action is operator-attributed and requires the operator token. " +
-        "It was printed when the console server started (and is stored in .workbench/operator-token). " +
-        "Paste it into the form's Operator token field once; this browser will remember it.",
+        "Set it once on the Operator page (top navigation); the token was printed " +
+        "when the console server started and is stored in .workbench/operator-token.",
     });
     return true;
   };
+
+  // Identity check for the Operator settings page: confirms the stored
+  // token before the operator relies on it, without recording anything.
+  app.get("/api/operator/verify", async (request, reply) => {
+    if (!options.operatorToken) {
+      return { tokenRequired: false, verified: true };
+    }
+    if (
+      operatorTokenMatches(
+        options.operatorToken,
+        request.headers["x-operator-token"],
+      )
+    ) {
+      return { tokenRequired: true, verified: true };
+    }
+    return reply.code(401).send({ tokenRequired: true, verified: false });
+  });
 
   app.addHook("onRequest", async (request, reply) => {
     if (!localHostname(request.hostname)) {
