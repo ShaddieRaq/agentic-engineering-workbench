@@ -650,7 +650,7 @@ function ProjectOverview({ chain, onReload }: { chain: FoundryChainView; onReloa
                 <StatusBadge value="completed" /> Completion {shortId(completion.completionId)} · brief v{completion.briefVersion} · {completion.builtSliceCount} slice(s) · main {completion.mainCommitSha.slice(0, 10)} · {completion.operatorId}
                 {completion.recordedRetroactively && <> · recorded retroactively</>}
               </p>
-              {completion.fieldReports.map((report) => (
+              {(completion.fieldReports ?? []).map((report) => (
                 <p className="muted-note field-report" key={report.fieldReportId}>
                   <StatusBadge value="field report" /> {report.operatorId} · {when(report.createdAt)} — {report.report}
                 </p>
@@ -1093,16 +1093,19 @@ function AnswerQuestionForm({ questionId, onRecorded }: { questionId: string; on
 // clearly labeled as builder-authored. The builder informs and asks; it
 // never decides.
 function BuilderSpeech({ slice, onRecorded }: { slice: FoundrySliceRow; onRecorded: () => void }) {
-  if (!slice.builderNotes.length && !slice.builderQuestions.length) return null;
+  // Tolerate views serialized before the speech channel existed.
+  const notes = slice.builderNotes ?? [];
+  const questions = slice.builderQuestions ?? [];
+  if (!notes.length && !questions.length) return null;
   return (
     <div className="builder-speech">
       <span className="eyebrow">Builder messages — builder-authored, unverified</span>
-      {slice.builderNotes.map((note) => (
+      {notes.map((note) => (
         <p className="muted-note" key={note.noteId}>
           <StatusBadge value="note" /> {when(note.createdAt)} — {note.note}
         </p>
       ))}
-      {slice.builderQuestions.map((question) => (
+      {questions.map((question) => (
         <div className={question.answer ? "builder-question answered" : "builder-question"} key={question.questionId}>
           <p>
             <StatusBadge value={question.answer ? "answered" : "question"} /> {when(question.createdAt)} — {question.question}
@@ -1267,7 +1270,7 @@ export function FoundryProjectPage() {
                 </strong>
               ) : null}
             </p>
-            {plan.slices.length > 0 && (
+            {(plan.slices ?? []).length > 0 && (
               <details className="panel history-strip">
                 <summary>Slice contents ({plan.slices.length})</summary>
                 {plan.slices.map((slice, index) => (

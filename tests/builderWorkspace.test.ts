@@ -2,7 +2,10 @@ import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { prepareBuilderWorkspace } from "../src/foundry/builderWorkspace.js";
+import {
+  prepareBuilderWorkspace,
+  verifyWorkspaceIntegrity,
+} from "../src/foundry/builderWorkspace.js";
 import { FoundryArtifactStore } from "../src/foundry/foundryArtifactStore.js";
 import type { TestSuite } from "../src/foundry/testSuite.js";
 import { WorkOrderService } from "../src/foundry/workOrderService.js";
@@ -138,6 +141,56 @@ describe("prepareBuilderWorkspace", () => {
     await expect(
       access(join(harness.projectRoot, harness.chain.fixture.filePaths.holdout)),
     ).rejects.toThrowError();
+  });
+
+  it("verifies workspace integrity and fails closed on tampering (v1.2 confinement)", async () => {
+    const harness = await workspaceHarness();
+    await prepareBuilderWorkspace(
+      { workOrders: harness.workOrders, testDesign: harness.testDesign },
+      {
+        workOrderId: harness.workOrderId,
+        projectRoot: harness.projectRoot,
+        workbenchRoot: WORKBENCH_ROOT,
+      },
+    );
+
+    // A freshly scaffolded workspace passes.
+    const intact = await verifyWorkspaceIntegrity({
+      projectRoot: harness.projectRoot,
+      workbenchRoot: WORKBENCH_ROOT,
+    });
+    expect(intact).toEqual({ ok: true, problems: [] });
+
+    // Removing one deny entry is detected by name.
+    const settingsPath = join(harness.projectRoot, ".claude", "settings.json");
+    const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+      permissions: { deny: string[] };
+    };
+    settings.permissions.deny = settings.permissions.deny.filter(
+      (entry) => !entry.startsWith("Read("),
+    );
+    await writeFile(settingsPath, JSON.stringify(settings), "utf8");
+    const tampered = await verifyWorkspaceIntegrity({
+      projectRoot: harness.projectRoot,
+      workbenchRoot: WORKBENCH_ROOT,
+    });
+    expect(tampered.ok).toBe(false);
+    expect(tampered.problems.join(" ")).toContain("deny entry is absent");
+
+    // A missing settings file fails closed, as does a lost root pin.
+    await rm(settingsPath);
+    const missing = await verifyWorkspaceIntegrity({
+      projectRoot: harness.projectRoot,
+      workbenchRoot: WORKBENCH_ROOT,
+    });
+    expect(missing.ok).toBe(false);
+    expect(missing.problems.join(" ")).toContain("settings.json is missing");
+
+    const otherRoot = await verifyWorkspaceIntegrity({
+      projectRoot: join(harness.projectRoot, "elsewhere"),
+      workbenchRoot: WORKBENCH_ROOT,
+    });
+    expect(otherRoot.ok).toBe(false);
   });
 
   it("merges .mcp.json preserving foreign servers and reruns idempotently", async () => {

@@ -203,6 +203,81 @@ describe("builder MCP server", () => {
     await harness.server.close();
   });
 
+  it("closes the channel when workspace integrity fails (v1.2 confinement)", async () => {
+    const storeDirectory = await mkdtemp(join(tmpdir(), "builder-store-"));
+    const projectRoot = await mkdtemp(join(tmpdir(), "builder-project-"));
+    createdDirectories.push(storeDirectory, projectRoot);
+    const store = new FoundryArtifactStore(storeDirectory);
+    const chain = await persistFoundryChain(store);
+    const { workOrderId } = await persistSliceTwoWorkOrder(store, chain);
+    const testDesign = {
+      async loadTestSuite(testSuiteId: string): Promise<TestSuite> {
+        const stored = await store.load(testSuiteId);
+        if (stored.kind !== "test-suite") {
+          throw new Error(`Artifact ${testSuiteId} is not a test suite.`);
+        }
+        return stored.artifact;
+      },
+      async deriveTestSuiteStatus(): Promise<
+        "draft" | "approved" | "rejected" | "revision-requested"
+      > {
+        throw new Error("Not part of the builder channel.");
+      },
+    };
+    const workOrders = new WorkOrderService({
+      testDesign,
+      architect: {
+        async loadPlan() {
+          throw new Error("Not part of the builder channel.");
+        },
+      },
+      briefs: {
+        async loadBrief() {
+          throw new Error("Not part of the builder channel.");
+        },
+      },
+      store,
+    });
+    const submissions = new SubmissionService({
+      workOrders,
+      testDesign,
+      store,
+      runner: scriptedRunner(chain),
+    });
+    // workbenchRoot set + no scaffolded guardrails in projectRoot: every
+    // tool refuses.
+    const server = buildBuilderMcpServer(
+      {
+        store,
+        workOrders,
+        submissions,
+        testDesign,
+        projectRoot,
+        workbenchRoot: "/fake/workbench/root",
+      },
+      "0.0.0-test",
+    );
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "builder-test-client", version: "0.0.0" });
+    await Promise.all([
+      server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
+
+    const result = await client.callTool({
+      name: "get_work_order",
+      arguments: { workOrderId },
+    });
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toContain(
+      "Workspace integrity check failed",
+    );
+
+    await client.close();
+    await server.close();
+  });
+
   it("redacts holdout paths from work orders and open lists", async () => {
     const harness = await builderHarness();
     const holdoutPath = harness.chain.fixture.filePaths.holdout;

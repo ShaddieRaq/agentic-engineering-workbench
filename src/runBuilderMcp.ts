@@ -75,6 +75,9 @@ async function main(): Promise<void> {
       submissions,
       testDesign,
       projectRoot: resolve(projectRoot),
+      // Structural confinement: every tool call verifies the workspace's
+      // guardrails are intact and fails closed otherwise.
+      workbenchRoot: workspaceRoot,
     },
     packageJson.version ?? "0.0.0",
   );

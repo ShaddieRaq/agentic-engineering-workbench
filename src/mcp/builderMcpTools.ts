@@ -30,6 +30,10 @@ export interface BuilderMcpDependencies {
   submissions: Pick<SubmissionService, "submitSlice" | "loadSubmission">;
   testDesign: Pick<TestDesignService, "loadTestSuite">;
   projectRoot: string;
+  // When set, every tool call first verifies the workspace's isolation
+  // guardrails (settings + sandbox + root pin) and fails closed if they
+  // were tampered with or lost (v1.2 structural confinement).
+  workbenchRoot?: string;
 }
 
 export interface BuilderWorkOrderView {
@@ -215,11 +219,30 @@ export function createBuilderMcpTools(deps: BuilderMcpDependencies) {
   const loadSuiteFor = async (workOrder: WorkOrder): Promise<TestSuite> =>
     deps.testDesign.loadTestSuite(workOrder.testSuiteId);
 
+  // The channel is only served into an intact cage. A tampered workspace
+  // loses its sanctioned channel instead of operating unconfined.
+  const ensureIntegrity = async (): Promise<void> => {
+    if (!deps.workbenchRoot) return;
+    const { verifyWorkspaceIntegrity } = await import(
+      "../foundry/builderWorkspace.js"
+    );
+    const result = await verifyWorkspaceIntegrity({
+      projectRoot: deps.projectRoot,
+      workbenchRoot: deps.workbenchRoot,
+    });
+    if (!result.ok) {
+      throw new Error(
+        `Workspace integrity check failed; the builder channel is closed until the operator re-runs builder-workspace. Problems: ${result.problems.join(" ")}`,
+      );
+    }
+  };
+
   return {
     // Open = no approve decision for the (suite, slice) pair (mirrors
     // WorkOrderService.#approvedSliceIds), the pinned suite digest still
     // matches the stored suite, and only the newest order per slice.
     async listOpenWorkOrders() {
+      await ensureIntegrity();
       const { artifacts } = await deps.store.list({
         kind: "work-order",
         limit: 500,
@@ -271,12 +294,14 @@ export function createBuilderMcpTools(deps: BuilderMcpDependencies) {
     },
 
     async getWorkOrder(input: { workOrderId: string }) {
+      await ensureIntegrity();
       const workOrder = await deps.workOrders.loadWorkOrder(input.workOrderId);
       const suite = await loadSuiteFor(workOrder);
       return redactWorkOrder(workOrder, suite);
     },
 
     async materializeTests(input: { workOrderId: string }) {
+      await ensureIntegrity();
       const written = await deps.workOrders.materializeVisibleTests({
         workOrderId: input.workOrderId,
         projectRoot: deps.projectRoot,
@@ -285,6 +310,7 @@ export function createBuilderMcpTools(deps: BuilderMcpDependencies) {
     },
 
     async submitSlice(input: { workOrderId: string; report?: string | undefined }) {
+      await ensureIntegrity();
       const workOrder = await deps.workOrders.loadWorkOrder(input.workOrderId);
       const suite = await loadSuiteFor(workOrder);
       const { submission } = await deps.submissions.submitSlice({
@@ -298,6 +324,7 @@ export function createBuilderMcpTools(deps: BuilderMcpDependencies) {
     // Builder speech channel (Decision 090): notes inform, questions ask.
     // Chain identity comes from the work order, never from the builder.
     async postBuilderNote(input: { workOrderId: string; note: string }) {
+      await ensureIntegrity();
       const workOrder = await deps.workOrders.loadWorkOrder(input.workOrderId);
       const note = builderNoteSchema.parse({
         noteId: randomUUID(),
@@ -314,6 +341,7 @@ export function createBuilderMcpTools(deps: BuilderMcpDependencies) {
     },
 
     async askOperator(input: { workOrderId: string; question: string }) {
+      await ensureIntegrity();
       const workOrder = await deps.workOrders.loadWorkOrder(input.workOrderId);
       const question = builderQuestionSchema.parse({
         questionId: randomUUID(),
@@ -335,6 +363,7 @@ export function createBuilderMcpTools(deps: BuilderMcpDependencies) {
     },
 
     async getOperatorAnswer(input: { questionId: string }) {
+      await ensureIntegrity();
       const stored = await deps.store.load(input.questionId);
       if (stored.kind !== "builder-question") {
         throw new Error(`Artifact ${input.questionId} is not a builder question.`);
@@ -366,6 +395,7 @@ export function createBuilderMcpTools(deps: BuilderMcpDependencies) {
     },
 
     async getSubmission(input: { submissionId: string }) {
+      await ensureIntegrity();
       const submission = await deps.submissions.loadSubmission(
         input.submissionId,
       );

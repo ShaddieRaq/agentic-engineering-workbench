@@ -108,6 +108,77 @@ function renderBuilderReadme(view: BuilderWorkOrderView): string {
   ].join("\n");
 }
 
+// Structural confinement check (v1.2, Decision 090 follow-through on 089):
+// the scaffold is not trusted to stay intact. The builder MCP channel
+// verifies the workspace's guardrails before serving, so a tampered or
+// stale workspace loses its only sanctioned channel instead of operating
+// unconfined. Fail-closed: unreadable files are integrity failures.
+export async function verifyWorkspaceIntegrity(input: {
+  projectRoot: string;
+  workbenchRoot: string;
+}): Promise<{ ok: boolean; problems: string[] }> {
+  const projectRoot = resolve(input.projectRoot);
+  const workbenchRoot = resolve(input.workbenchRoot);
+  const problems: string[] = [];
+
+  const required = builderSettings(workbenchRoot) as {
+    permissions: { deny: string[] };
+    sandbox: {
+      enabled: boolean;
+      filesystem: { denyRead: string[] };
+      allowUnsandboxedCommands: boolean;
+    };
+  };
+
+  let settings: typeof required | null = null;
+  try {
+    settings = JSON.parse(
+      await readFile(join(projectRoot, ".claude", "settings.json"), "utf8"),
+    ) as typeof required;
+  } catch {
+    problems.push(".claude/settings.json is missing or unreadable.");
+  }
+  if (settings) {
+    const deny = new Set(settings.permissions?.deny ?? []);
+    for (const entry of required.permissions.deny) {
+      if (!deny.has(entry)) {
+        problems.push(`Required permission deny entry is absent: ${entry}`);
+      }
+    }
+    if (settings.sandbox?.enabled !== true) {
+      problems.push("The OS sandbox is not enabled.");
+    }
+    const denyRead = new Set(settings.sandbox?.filesystem?.denyRead ?? []);
+    for (const entry of required.sandbox.filesystem.denyRead) {
+      if (!denyRead.has(entry)) {
+        problems.push(`Required sandbox denyRead entry is absent: ${entry}`);
+      }
+    }
+    if (settings.sandbox?.allowUnsandboxedCommands !== false) {
+      problems.push("Unsandboxed commands are not disabled.");
+    }
+  }
+
+  try {
+    const mcpConfig = JSON.parse(
+      await readFile(join(projectRoot, ".mcp.json"), "utf8"),
+    ) as {
+      mcpServers?: Record<string, { env?: Record<string, string> }>;
+    };
+    const pinned =
+      mcpConfig.mcpServers?.["workbench-builder"]?.env?.["BUILDER_PROJECT_ROOT"];
+    if (!pinned || resolve(pinned) !== projectRoot) {
+      problems.push(
+        ".mcp.json no longer pins BUILDER_PROJECT_ROOT to this workspace.",
+      );
+    }
+  } catch {
+    problems.push(".mcp.json is missing or unreadable.");
+  }
+
+  return { ok: problems.length === 0, problems };
+}
+
 export async function prepareBuilderWorkspace(
   deps: BuilderWorkspaceDependencies,
   input: { workOrderId: string; projectRoot: string; workbenchRoot: string },
