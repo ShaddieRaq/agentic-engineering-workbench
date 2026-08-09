@@ -76,9 +76,11 @@ export function OperatorSettingsPage() {
         } catch (cause: unknown) {
           if (cancelled) return;
           const message = cause instanceof Error ? cause.message : String(cause);
+          // A missing endpoint means the running server predates this page
+          // — that is not a wrong token and must not read as one.
           setStatus(
-            message.includes("operator token") || message.includes("401")
-              ? { state: "rejected" }
+            message.includes("404") || message.includes("Not Found")
+              ? { state: "unreachable" }
               : { state: "rejected" },
           );
         }
@@ -151,6 +153,9 @@ export function OperatorSettingsPage() {
         )}
         {status.state === "rejected" && (
           <ErrorNotice message="Token rejected. Copy it from the terminal running npm run web — it is printed at startup — or read .workbench/operator-token in the Workbench directory." />
+        )}
+        {status.state === "unreachable" && (
+          <ErrorNotice message="The running console server predates this page, so the token cannot be checked yet. Restart it: Ctrl-C in the npm run web terminal, then npm run web again, then reload this page." />
         )}
         {status.state === "checking" && <p className="muted-note">Checking…</p>}
         <p className="muted-note">
