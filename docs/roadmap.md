@@ -1159,7 +1159,13 @@ decision point (item 7).
    enforced from the start, the builder communication channel, and a
    brief seeded by recorded field reports (Exhibit A: the 2026-08-08
    cold run — obj-filter-2 labels, singleton batches, Organized
-   reshuffling).
+   reshuffling). SUCCESS BAR RESET 2026-08-09 by operator: the platform
+   is proven only when the app is one the operator actually finds
+   valuable on his real files — "the platform has to build an app
+   that's usable." Green gates against hollow criteria count for
+   nothing; gen-4's brief must encode usability as golden examples
+   against real documents, and the generation is judged by the
+   operator using the result, not by the completion record.
 7. DECISION POINT after generation 4: console-launched builder — the
    operator's stated direction ("the builder should live in the UI").
    The console spawns the builder session itself (Agent SDK) inside
