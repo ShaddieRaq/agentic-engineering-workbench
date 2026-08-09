@@ -1117,6 +1117,19 @@ biggest problem is communication back to the workbench... we need to
 go infrastructure first right now"): items 1-5 land before the
 generation-4 run, which then doubles as the validation of the new
 channels.
+
+ITEMS 1-5 SHIPPED 2026-08-08 (Decision 090, commits e623d1d..89cb00b,
+973 tests): operator token on decision-class routes; builder speech
+(submission reports, notes, ask_operator/answer round-trip, unanswered
+questions outrank all build steps); field reports on completions
+injected into reopened interviews; one-paste builder handoff from the
+build page + pinned failed operations + plan slice contents with
+carried/delta tags; per-call workspace integrity check failing the
+builder channel closed. NOTE: the operator must restart the console
+(npm run web) to pick these up — the server prints the operator token
+at startup, pasted once into any decision form. Remaining before gen-4:
+nothing. Next: generation 4 (item 6), then the console-launched builder
+decision point (item 7).
 1. Authenticated decision writes — console decision routes trust a
    typed operatorId; any local process can POST a decision today. A
    console-held session token closes the forgery class on the web
