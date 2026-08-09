@@ -480,6 +480,14 @@ export interface FoundryPlanView {
   mappingTestTypes: Record<string, number>;
   blockingConcerns: number;
   advisoryConcerns: number;
+  slices: {
+    sliceId: string;
+    title: string;
+    delivers: string;
+    dependsOnSliceIds: string[];
+    verifiedByCriterionIds: string[];
+    disposition: "carried" | "delta" | null;
+  }[];
   decisions: FoundryDecisionView[];
   revisedFromArtifactId?: string;
   evolvesFromCompletionId?: string;

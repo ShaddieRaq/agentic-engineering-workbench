@@ -166,6 +166,13 @@ const foundryFieldReportRequestSchema = z
   })
   .strict();
 
+// One-click builder handoff: server-side workspace preparation.
+const foundryWorkspacePrepRequestSchema = z
+  .object({
+    projectRoot: z.string().trim().min(1).max(1_000),
+  })
+  .strict();
+
 // Operator-attributed generation closure (Decision 088).
 const foundryCompletionRequestSchema = z
   .object({
@@ -201,6 +208,19 @@ export interface FoundryActionServices {
   // Optional so evidence-only deployments keep working; the completion
   // route answers 501 without it.
   completions?: Pick<BuildCompletionService, "recordCompletion">;
+  // One-click builder handoff (field-trial verdict: the terminal + full-
+  // UUID dance was "the worst workflow"). The console prepares the
+  // isolated workspace server-side; 501 without it.
+  builderWorkspaces?: {
+    prepare(input: {
+      workOrderId: string;
+      projectRoot: string;
+    }): Promise<{
+      projectRoot: string;
+      writtenTestFiles: string[];
+      writtenConfigFiles: string[];
+    }>;
+  };
 }
 
 export interface AgentWebServerOptions {
@@ -1172,15 +1192,44 @@ export async function buildAgentWebServer(
       app.get("/api/foundry/operations", async () => ({
         operations: operations
           .listRecent()
-          .map(({ operationId, label, agentId, status, createdAt, completedAt }) => ({
-            operationId,
-            label,
-            agentId,
-            status,
-            createdAt,
-            completedAt,
-          })),
+          .map(
+            ({
+              operationId,
+              label,
+              agentId,
+              status,
+              createdAt,
+              completedAt,
+              error,
+              acknowledged,
+            }) => ({
+              operationId,
+              label,
+              agentId,
+              status,
+              createdAt,
+              completedAt,
+              error,
+              acknowledged,
+            }),
+          ),
       }));
+
+      // Operator dismissal of a pinned failure (benign UI state; no token).
+      app.post<{ Params: { operationId: string } }>(
+        "/api/foundry/operations/:operationId/ack",
+        async (request, reply) => {
+          try {
+            const snapshot = operations.acknowledge(request.params.operationId);
+            return reply.code(200).send({
+              operationId: snapshot.operationId,
+              acknowledged: snapshot.acknowledged,
+            });
+          } catch (error: unknown) {
+            return reply.code(404).send({ error: errorMessage(error) });
+          }
+        },
+      );
 
       app.post("/api/foundry/intake", async (request, reply) => {
         const parsed = foundryIntakeStartSchema.safeParse(request.body ?? {});
@@ -1304,6 +1353,45 @@ export async function buildAgentWebServer(
           return reply.code(422).send({ error: errorMessage(error) });
         }
       });
+
+      // One-click handoff: the console prepares the isolated builder
+      // workspace (visible tests + deny settings + BUILDER.md) and returns
+      // the one command the operator pastes into a terminal. Token-guarded:
+      // it writes files to an operator-named path.
+      app.post<{ Params: { workOrderId: string } }>(
+        "/api/foundry/work-orders/:workOrderId/builder-workspace",
+        async (request, reply) => {
+          if (rejectWithoutOperatorToken(request, reply)) return undefined;
+          const parsed = foundryWorkspacePrepRequestSchema.safeParse(
+            request.body ?? {},
+          );
+          if (!parsed.success) {
+            return reply.code(422).send({ error: z.prettifyError(parsed.error) });
+          }
+          const builderWorkspaces = stages.builderWorkspaces;
+          if (!builderWorkspaces) {
+            return reply.code(501).send({
+              error: "Builder workspace preparation is not configured on this deployment.",
+            });
+          }
+          try {
+            const prepared = await builderWorkspaces.prepare({
+              workOrderId: request.params.workOrderId,
+              projectRoot: parsed.data.projectRoot,
+            });
+            return reply.code(201).send({
+              projectRoot: prepared.projectRoot,
+              writtenTestFiles: prepared.writtenTestFiles,
+              writtenConfigFiles: prepared.writtenConfigFiles,
+              handoffCommand: `cd ${prepared.projectRoot} && claude`,
+              builderKickoff:
+                "Read BUILDER.md and complete the work order it describes. Work only through the workbench-builder MCP tools.",
+            });
+          } catch (error: unknown) {
+            return reply.code(422).send({ error: errorMessage(error) });
+          }
+        },
+      );
 
       app.post("/api/foundry/completions", async (request, reply) => {
         if (rejectWithoutOperatorToken(request, reply)) return undefined;

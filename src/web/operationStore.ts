@@ -39,6 +39,10 @@ export interface OperationSnapshot {
   error: string | null;
   createdAt: string;
   completedAt: string | null;
+  // Failed operations stay pinned in the tray until the operator
+  // acknowledges them (field-trial verdict 2026-08-09: silent failures
+  // read as flaky triggers).
+  acknowledged: boolean;
 }
 
 type Subscriber = (event: OperationEvent, terminal: boolean) => void;
@@ -64,6 +68,7 @@ export class OperationStore {
       error: null,
       createdAt: new Date().toISOString(),
       completedAt: null,
+      acknowledged: false,
     };
     this.#operations.set(operation.operationId, operation);
     this.#emit(operation, "queued", "Operation accepted by the local platform.");
@@ -105,21 +110,50 @@ export class OperationStore {
   }
 
   // Read model for the operations tray (console UX settlement): every
-  // queued/running operation plus recently settled ones, newest first, so
-  // a page refresh reconstructs in-flight work from server state alone.
+  // queued/running operation, every unacknowledged failure, then recently
+  // settled ones, newest first — a page refresh reconstructs in-flight
+  // work from server state alone, and failures cannot silently scroll
+  // away.
   listRecent(limit = 10): OperationSnapshot[] {
     const all = [...this.#operations.values()];
     const active = all
       .filter(({ status }) => status === "queued" || status === "running")
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    const pinnedFailures = all
+      .filter(({ status, acknowledged }) => status === "failed" && !acknowledged)
+      .sort(
+        (left, right) =>
+          (right.completedAt ?? "").localeCompare(left.completedAt ?? ""),
+      );
+    const pinnedIds = new Set(pinnedFailures.map(({ operationId }) => operationId));
     const settled = all
-      .filter(({ status }) => status === "completed" || status === "failed")
+      .filter(
+        ({ status, operationId }) =>
+          (status === "completed" || status === "failed") &&
+          !pinnedIds.has(operationId),
+      )
       .sort(
         (left, right) =>
           (right.completedAt ?? "").localeCompare(left.completedAt ?? ""),
       )
-      .slice(0, Math.max(limit - active.length, 3));
-    return [...active, ...settled];
+      .slice(0, Math.max(limit - active.length - pinnedFailures.length, 3));
+    return [...active, ...pinnedFailures, ...settled].map((operation) =>
+      structuredClone(operation),
+    );
+  }
+
+  // Operator dismissal of a failed operation. Completed operations age out
+  // naturally and need no acknowledgement.
+  acknowledge(id: string): OperationSnapshot {
+    const operation = this.#operations.get(id);
+    if (!operation) throw new Error(`Unknown operation: ${id}`);
+    if (operation.status !== "failed") {
+      throw new Error(
+        `Operation ${id} is ${operation.status}; only failed operations need acknowledgement.`,
+      );
+    }
+    operation.acknowledged = true;
+    return this.snapshot(id);
   }
 
   #emit(

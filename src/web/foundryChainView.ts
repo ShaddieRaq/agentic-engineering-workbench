@@ -80,6 +80,16 @@ export interface FoundryPlanView {
   mappingTestTypes: Record<string, number>;
   blockingConcerns: number;
   advisoryConcerns: number;
+  // Slice contents for the decision panel (field-trial verdict: operators
+  // approved plans without ever seeing what the slices contain).
+  slices: {
+    sliceId: string;
+    title: string;
+    delivers: string;
+    dependsOnSliceIds: string[];
+    verifiedByCriterionIds: string[];
+    disposition: "carried" | "delta" | null;
+  }[];
   decisions: FoundryDecisionView[];
   revisedFromArtifactId?: string;
   // Present on evolution plans; re-runs must carry it (Decision 088).
@@ -522,6 +532,12 @@ function buildViewFromBuckets(
       mappingTestTypes[mapping.testType] =
         (mappingTestTypes[mapping.testType] ?? 0) + 1;
     }
+    const dispositionBySlice = new Map(
+      (plan.sliceDispositions ?? []).map(({ sliceId, disposition }) => [
+        sliceId,
+        disposition,
+      ]),
+    );
     return {
       planId: plan.planId,
       briefVersion: plan.briefVersion,
@@ -529,6 +545,14 @@ function buildViewFromBuckets(
       status: statusFromDecisions(decisions),
       componentCount: plan.content.components.length,
       sliceCount: plan.content.implementationSlices.length,
+      slices: plan.content.implementationSlices.map((slice) => ({
+        sliceId: slice.id,
+        title: slice.title,
+        delivers: slice.delivers,
+        dependsOnSliceIds: slice.dependsOnSliceIds,
+        verifiedByCriterionIds: slice.verifiedByCriterionIds,
+        disposition: dispositionBySlice.get(slice.id) ?? null,
+      })),
       mappingTestTypes,
       blockingConcerns: plan.content.concerns.filter(
         ({ severity }) => severity === "blocking",
@@ -1106,7 +1130,7 @@ export function computeNextStep(
       kind: "blocked",
       headline: `Waiting on the builder — "${ordered.title}"`,
       detail:
-        "Prepare the workspace (builder-workspace CLI) and hand the work order to the builder session; verification runs at submit_slice.",
+        "Use 'Prepare builder workspace' on the build page for the one-paste handoff; verification runs when the builder submits.",
       anchor: "build",
       action: null,
     };

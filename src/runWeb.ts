@@ -10,6 +10,7 @@ import {
 } from "./foundry/buildCompletionService.js";
 import { createProcessSubmissionRunner } from "./foundry/submissionService.js";
 import { CapabilityService } from "./foundry/capabilityService.js";
+import { prepareBuilderWorkspace } from "./foundry/builderWorkspace.js";
 import { FoundryArtifactStore } from "./foundry/foundryArtifactStore.js";
 import { IntakeSessionController } from "./foundry/intakeSessionController.js";
 import { ProjectBriefService } from "./foundry/projectBriefService.js";
@@ -70,6 +71,12 @@ async function main(): Promise<void> {
   const operatorToken = await loadOrCreateOperatorToken(
     resolve(workspaceRoot, ".workbench", "operator-token"),
   );
+  const workOrderService = new WorkOrderService({
+    testDesign: testDesignService,
+    architect: architectService,
+    briefs: briefService,
+    store: foundry,
+  });
   const app = await buildAgentWebServer({
     service,
     apiKeyConfigured: Boolean(apiKey),
@@ -84,12 +91,14 @@ async function main(): Promise<void> {
       architect: architectService,
       capability: capabilityService,
       testDesign: testDesignService,
-      workOrders: new WorkOrderService({
-        testDesign: testDesignService,
-        architect: architectService,
-        briefs: briefService,
-        store: foundry,
-      }),
+      workOrders: workOrderService,
+      builderWorkspaces: {
+        prepare: (input) =>
+          prepareBuilderWorkspace(
+            { workOrders: workOrderService, testDesign: testDesignService },
+            { ...input, workbenchRoot: workspaceRoot },
+          ),
+      },
       completions: new BuildCompletionService({
         testDesign: testDesignService,
         architect: architectService,

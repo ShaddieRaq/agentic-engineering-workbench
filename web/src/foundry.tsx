@@ -319,7 +319,14 @@ function IssueWorkOrderButton({
 // operation settles.
 function OperationsTray({ onSettled }: { onSettled: () => void }) {
   const [rows, setRows] = useState<
-    { operationId: string; label: string; status: string; createdAt: string }[]
+    {
+      operationId: string;
+      label: string;
+      status: string;
+      createdAt: string;
+      error?: string | null;
+      acknowledged?: boolean;
+    }[]
   >([]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const activeIds = useRef<Set<string>>(new Set());
@@ -359,14 +366,22 @@ function OperationsTray({ onSettled }: { onSettled: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const active = rows.filter(
-    ({ status }) => status === "queued" || status === "running",
+  // Failed operations stay pinned until acknowledged (field-trial verdict:
+  // a failure that scrolls away silently reads as a flaky trigger).
+  const shown = rows.filter(
+    ({ status, acknowledged }) =>
+      status === "queued" ||
+      status === "running" ||
+      (status === "failed" && !acknowledged),
   );
-  if (active.length === 0) return null;
+  if (shown.length === 0) return null;
   return (
     <div className="ops-tray">
-      {active.map((row) => (
-        <div className="ops-row" key={row.operationId}>
+      {shown.map((row) => (
+        <div
+          className={row.status === "failed" ? "ops-row ops-row-failed" : "ops-row"}
+          key={row.operationId}
+        >
           <button
             type="button"
             className="ops-row-head"
@@ -375,8 +390,37 @@ function OperationsTray({ onSettled }: { onSettled: () => void }) {
             }
           >
             <StatusBadge value={row.status} /> {row.label}
-            <span className="muted-note"> · started {when(row.createdAt)}</span>
+            <span className="muted-note">
+              {" "}· {row.status === "failed" ? "failed" : "started"} {when(row.createdAt)}
+            </span>
+            {row.status === "failed" && (
+              <span
+                className="ops-dismiss"
+                role="button"
+                tabIndex={0}
+                title="Acknowledge and dismiss this failure"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void api(`/api/foundry/operations/${row.operationId}/ack`, {
+                    method: "POST",
+                  }).then(() =>
+                    setRows((current) =>
+                      current.map((entry) =>
+                        entry.operationId === row.operationId
+                          ? { ...entry, acknowledged: true }
+                          : entry,
+                      ),
+                    ),
+                  );
+                }}
+              >
+                ✕
+              </span>
+            )}
           </button>
+          {row.status === "failed" && row.error && expanded !== row.operationId && (
+            <p className="ops-error">{row.error}</p>
+          )}
           {expanded === row.operationId && operation.data && (
             <OperationTrace operation={operation.data} />
           )}
@@ -933,6 +977,73 @@ function FieldReportForm({ completionId, onRecorded }: { completionId: string; o
   );
 }
 
+// One-click builder handoff: the server prepares the isolated workspace
+// (visible tests + deny settings + BUILDER.md) and this panel hands the
+// operator the single command to paste into a terminal.
+function PrepareWorkspacePanel({ workOrderId, briefId }: { workOrderId: string; briefId: string }) {
+  const storageKey = `workbench-project-root-${briefId}`;
+  const [projectRoot, setProjectRoot] = useState(
+    () => window.localStorage.getItem(storageKey) ?? "",
+  );
+  const [result, setResult] = useState<{
+    handoffCommand: string;
+    builderKickoff: string;
+    writtenTestFiles: string[];
+    writtenConfigFiles: string[];
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      const prepared = await api<{
+        handoffCommand: string;
+        builderKickoff: string;
+        writtenTestFiles: string[];
+        writtenConfigFiles: string[];
+      }>(`/api/foundry/work-orders/${workOrderId}/builder-workspace`, {
+        method: "POST",
+        body: JSON.stringify({ projectRoot }),
+      });
+      window.localStorage.setItem(storageKey, projectRoot);
+      setResult(prepared);
+      setError(null);
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+      setResult(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <details className="decision-form" open>
+      <summary>Prepare builder workspace (one-paste handoff)</summary>
+      <form className="decision-form-body" onSubmit={(event) => void submit(event)}>
+        <label>
+          Project root (absolute path)
+          <input required value={projectRoot} onChange={(event) => setProjectRoot(event.target.value)} placeholder="/Users/you/Projects/generated/my-project" />
+        </label>
+        <OperatorTokenField />
+        {error && <ErrorNotice message={error} />}
+        <button className="button" type="submit" disabled={busy}>Prepare workspace</button>
+      </form>
+      {result && (
+        <div className="handoff-card">
+          <p className="muted-note">
+            Workspace ready — {result.writtenTestFiles.length} visible test file(s), {result.writtenConfigFiles.length} isolation config file(s). Open a terminal and paste:
+          </p>
+          <pre className="evidence-json">{result.handoffCommand}</pre>
+          <p className="muted-note">Then give the builder its kickoff:</p>
+          <pre className="evidence-json">{result.builderKickoff}</pre>
+        </div>
+      )}
+    </details>
+  );
+}
+
 // Operator answer to a builder question (Decision 090). Token-guarded
 // server-side; the answer becomes an artifact the builder polls for.
 function AnswerQuestionForm({ questionId, onRecorded }: { questionId: string; onRecorded: () => void }) {
@@ -1156,6 +1267,24 @@ export function FoundryProjectPage() {
                 </strong>
               ) : null}
             </p>
+            {plan.slices.length > 0 && (
+              <details className="panel history-strip">
+                <summary>Slice contents ({plan.slices.length})</summary>
+                {plan.slices.map((slice, index) => (
+                  <div className="plan-slice" key={slice.sliceId}>
+                    <p>
+                      <strong>Slice {index + 1}: {slice.title}</strong>{" "}
+                      {slice.disposition && <StatusBadge value={slice.disposition} />}
+                    </p>
+                    <p className="muted-note">{slice.delivers}</p>
+                    <p className="muted-note">
+                      Verifies {slice.verifiedByCriterionIds.length} criterion/criteria
+                      {slice.dependsOnSliceIds.length > 0 && <> · depends on {slice.dependsOnSliceIds.map(shortId).join(", ")}</>}
+                    </p>
+                  </div>
+                ))}
+              </details>
+            )}
             <DecisionList decisions={plan.decisions} />
             {plan.status === "revision-requested" && (
               <StageRunControl
@@ -1378,6 +1507,12 @@ export function FoundryProjectPage() {
                     Work order {shortId(slice.workOrders[0]!.workOrderId)} · {slice.workOrders[0]!.applicableTestFilePaths.length} applicable test file(s) ·{" "}
                     <Link to={`/foundry/artifacts/${slice.workOrders[0]!.workOrderId}`}>raw →</Link>
                   </p>
+                )}
+                {slice.status === "ordered" && !!slice.workOrders.length && (
+                  <PrepareWorkspacePanel
+                    workOrderId={slice.workOrders[0]!.workOrderId}
+                    briefId={chain.briefId}
+                  />
                 )}
                 <BuilderSpeech slice={slice} onRecorded={resource.reload} />
                 {slice.submissions.map((submission) => (

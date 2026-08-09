@@ -293,3 +293,12 @@ tbody tr:last-child td { border-bottom: 0; }
 .builder-question { border: 1px solid rgba(240, 180, 41, .45); border-radius: 10px; padding: 9px 12px; }
 .builder-question.answered { border-color: var(--line); }
 .builder-question p { margin: 0 0 6px; font-size: 13px; white-space: pre-wrap; }
+.ops-row-failed { border-color: rgba(236, 93, 94, .5); }
+.ops-dismiss { margin-left: auto; color: var(--muted); padding: 2px 8px; border-radius: 6px; }
+.ops-dismiss:hover { color: var(--danger); background: rgba(236, 93, 94, .12); }
+.ops-error { margin: 0; padding: 0 16px 11px; font-size: 12.5px; color: var(--danger); overflow-wrap: anywhere; }
+.field-report { border-left: 2px solid var(--accent-2); padding-left: 10px; white-space: pre-wrap; }
+.handoff-card { border: 1px solid rgba(130, 143, 255, .4); border-radius: 10px; padding: 10px 13px; margin-top: 8px; }
+.handoff-card pre { user-select: all; }
+.plan-slice { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 8px; }
+.plan-slice p { margin: 2px 0; }

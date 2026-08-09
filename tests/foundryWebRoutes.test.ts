@@ -544,6 +544,58 @@ describe("foundry web routes", () => {
     await app.close();
   });
 
+  it("prepares builder workspaces server-side and returns the handoff command", async () => {
+    const store = await temporaryStore();
+    const chain = await persistFoundryChain(store);
+    const { service } = await createConsoleTestService(false);
+    const prepared: { workOrderId: string; projectRoot: string }[] = [];
+    const app = await buildAgentWebServer({
+      service,
+      apiKeyConfigured: true,
+      foundry: store,
+      foundryServices: {
+        intake: {
+          startIntake: () => Promise.reject(new Error("unused")),
+          runTurn: () => Promise.reject(new Error("unused")),
+        },
+        architect: { createPlan: () => Promise.reject(new Error("unused")) },
+        capability: {
+          createCapabilityPlan: () => Promise.reject(new Error("unused")),
+        },
+        testDesign: { createTestSuite: () => Promise.reject(new Error("unused")) },
+        workOrders: {
+          createWorkOrder: () => Promise.reject(new Error("unused")),
+          nextSlice: () => Promise.reject(new Error("unused")),
+        },
+        builderWorkspaces: {
+          async prepare(input) {
+            prepared.push(input);
+            return {
+              projectRoot: input.projectRoot,
+              writtenTestFiles: ["acceptance-tests/routing.test.ts"],
+              writtenConfigFiles: [".claude/settings.json", ".mcp.json", "BUILDER.md"],
+            };
+          },
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/foundry/work-orders/${chain.workOrderId}/builder-workspace`,
+      payload: { projectRoot: " /tmp/generated/example-project " },
+    });
+    expect(response.statusCode).toBe(201);
+    const body = response.json();
+    expect(body.handoffCommand).toBe("cd /tmp/generated/example-project && claude");
+    expect(body.builderKickoff).toContain("BUILDER.md");
+    // The same leading-space class that broke the gen-3 completion is
+    // trimmed here at the boundary.
+    expect(prepared[0]!.projectRoot).toBe("/tmp/generated/example-project");
+
+    await app.close();
+  });
+
   it("records field reports against a completion and joins them onto the chain view", async () => {
     const store = await temporaryStore();
     const chain = await persistFoundryChain(store);
@@ -601,6 +653,16 @@ describe("foundry web routes", () => {
     expect(completion.fieldReports).toHaveLength(1);
     expect(completion.fieldReports[0]!.report).toContain("obj-filter-2");
     expect(completion.fieldReports[0]!.operatorId).toBe("rashad");
+
+    // Plan panels expose slice contents with dispositions (ergonomics
+    // verdict: operators approved plans without seeing the slices).
+    const planView = view!.plans[0]!;
+    expect(planView.slices.length).toBeGreaterThan(0);
+    expect(planView.slices[0]).toMatchObject({
+      title: expect.any(String),
+      delivers: expect.any(String),
+      disposition: null,
+    });
 
     // Only completions accept field reports.
     const wrongTarget = await app.inject({
