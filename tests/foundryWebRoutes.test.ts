@@ -491,6 +491,58 @@ describe("foundry web routes", () => {
     await app.close();
   });
 
+  it("refuses decision-class writes without the operator token when one is configured", async () => {
+    const store = await temporaryStore();
+    const briefOnly = await persistBriefOnly(store);
+    const { service } = await createConsoleTestService(false);
+    const operatorToken = "test-operator-token-0123456789abcdef";
+    const app = await buildAgentWebServer({
+      service,
+      apiKeyConfigured: false,
+      foundry: store,
+      operatorToken,
+    });
+
+    const url = `/api/foundry/briefs/${briefOnly.briefId}/versions/1/decisions`;
+    const payload = {
+      decision: "approve",
+      operatorId: "rashad",
+      rationale: "Brief is complete.",
+    };
+
+    // Incident 2026-08-08: possession of localhost is not operator
+    // presence. Missing and wrong tokens are refused before any gate.
+    const missing = await app.inject({ method: "POST", url, payload });
+    expect(missing.statusCode).toBe(401);
+    expect(missing.json()).toMatchObject({
+      error: expect.stringContaining("operator token"),
+    });
+    const wrong = await app.inject({
+      method: "POST",
+      url,
+      payload,
+      headers: { "x-operator-token": "not-the-token" },
+    });
+    expect(wrong.statusCode).toBe(401);
+
+    // Reads stay open — the token guards writes, not visibility.
+    const read = await app.inject({
+      method: "GET",
+      url: `/api/foundry/projects/${briefOnly.briefId}`,
+    });
+    expect(read.statusCode).toBe(200);
+
+    const right = await app.inject({
+      method: "POST",
+      url,
+      payload,
+      headers: { "x-operator-token": operatorToken },
+    });
+    expect(right.statusCode).toBe(201);
+
+    await app.close();
+  });
+
   it("runs foundry stages as operations and enforces gates through them", async () => {
     const store = await temporaryStore();
     const chain = await persistFoundryChain(store);

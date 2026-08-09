@@ -622,11 +622,21 @@ export interface FoundryStoredArtifact {
   artifact: unknown;
 }
 
+// Decision 090: operator-attributed writes carry the token the server
+// printed at startup. Stored once per browser; harmlessly absent on reads.
+export const OPERATOR_TOKEN_STORAGE_KEY = "workbench-operator-token";
+
+export function storedOperatorToken(): string {
+  return window.localStorage.getItem(OPERATOR_TOKEN_STORAGE_KEY) ?? "";
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = storedOperatorToken();
   const response = await fetch(path, {
     ...init,
     headers: {
       ...(init?.body ? { "content-type": "application/json" } : {}),
+      ...(token ? { "x-operator-token": token } : {}),
       ...init?.headers,
     },
   });

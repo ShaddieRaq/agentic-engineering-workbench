@@ -25,6 +25,7 @@ import {
   buildFoundryProjectIndex,
 } from "./foundryChainView.js";
 import { OperationStore } from "./operationStore.js";
+import { operatorTokenMatches } from "./operatorToken.js";
 
 const runRequestSchema = z
   .object({
@@ -191,6 +192,10 @@ export interface AgentWebServerOptions {
   foundryServices?: FoundryActionServices;
   clientDirectory?: string;
   logger?: boolean;
+  // Decision 090: when set, decision-class routes (foundry decisions,
+  // completions, promotion decisions) require the x-operator-token header
+  // to match. Unset keeps the guard inert for evidence-only embeds/tests.
+  operatorToken?: string;
 }
 
 const foundryArtifactKinds: readonly FoundryArtifactKind[] = [
@@ -228,6 +233,29 @@ export async function buildAgentWebServer(
 ): Promise<FastifyInstance> {
   const app = Fastify({ logger: options.logger ?? false, bodyLimit: 1024 * 1024 });
   const operations = options.operations ?? new OperationStore();
+
+  // Returns true when the request was rejected (reply already sent). Any
+  // local process can reach 127.0.0.1; operator-attributed writes must
+  // additionally present the token only the operator's terminal shows
+  // (incident 2026-08-08: a builder session forged a decision by write
+  // access alone).
+  const rejectWithoutOperatorToken = (
+    request: { headers: Record<string, unknown> },
+    reply: { code: (status: number) => { send: (body: unknown) => unknown } },
+  ): boolean => {
+    const expected = options.operatorToken;
+    if (!expected) return false;
+    if (operatorTokenMatches(expected, request.headers["x-operator-token"])) {
+      return false;
+    }
+    reply.code(401).send({
+      error:
+        "This action is operator-attributed and requires the operator token. " +
+        "It was printed when the console server started (and is stored in .workbench/operator-token). " +
+        "Paste it into the form's Operator token field once; this browser will remember it.",
+    });
+    return true;
+  };
 
   app.addHook("onRequest", async (request, reply) => {
     if (!localHostname(request.hostname)) {
@@ -616,6 +644,7 @@ export async function buildAgentWebServer(
   app.post<{ Params: { candidateEvaluationId: string } }>(
     "/api/candidate-evaluations/:candidateEvaluationId/decisions",
     async (request, reply) => {
+      if (rejectWithoutOperatorToken(request, reply)) return undefined;
       const parsed = promotionDecisionRequestSchema.safeParse(request.body ?? {});
       if (!parsed.success) {
         return reply.code(422).send({ error: z.prettifyError(parsed.error) });
@@ -830,7 +859,7 @@ export async function buildAgentWebServer(
     // mismatch), then let the decision constructor enforce the approval
     // gates (422 on violation, e.g. "cannot be approved").
     const recordFoundryDecision = async (
-      request: { body: unknown },
+      request: { body: unknown; headers: Record<string, unknown> },
       reply: {
         code: (status: number) => { send: (body: unknown) => unknown };
       },
@@ -846,6 +875,7 @@ export async function buildAgentWebServer(
         },
       ) => Promise<unknown>,
     ): Promise<unknown> => {
+      if (rejectWithoutOperatorToken(request, reply)) return undefined;
       const parsed = foundryDecisionRequestSchema.safeParse(request.body ?? {});
       if (!parsed.success) {
         return reply.code(422).send({ error: z.prettifyError(parsed.error) });
@@ -1179,6 +1209,7 @@ export async function buildAgentWebServer(
       });
 
       app.post("/api/foundry/completions", async (request, reply) => {
+        if (rejectWithoutOperatorToken(request, reply)) return undefined;
         const parsed = foundryCompletionRequestSchema.safeParse(
           request.body ?? {},
         );

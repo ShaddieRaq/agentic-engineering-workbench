@@ -18,6 +18,7 @@ import { WorkOrderService } from "./foundry/workOrderService.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { createPlatformToolRegistry } from "./tools/toolRegistry.js";
 import { buildAgentWebServer } from "./web/agentWebServer.js";
+import { loadOrCreateOperatorToken } from "./web/operatorToken.js";
 import { FileWorkspaceStore } from "./workspaces/fileWorkspaceStore.js";
 
 async function main(): Promise<void> {
@@ -66,9 +67,13 @@ async function main(): Promise<void> {
     store: foundry,
   });
 
+  const operatorToken = await loadOrCreateOperatorToken(
+    resolve(workspaceRoot, ".workbench", "operator-token"),
+  );
   const app = await buildAgentWebServer({
     service,
     apiKeyConfigured: Boolean(apiKey),
+    operatorToken,
     foundry,
     foundryServices: {
       intake: new IntakeSessionController({
@@ -103,6 +108,9 @@ async function main(): Promise<void> {
   }
   const address = await app.listen({ host: "127.0.0.1", port });
   console.log(`Agent Workbench available at ${address}`);
+  console.log(
+    `Operator decision token (paste once into any decision form): ${operatorToken}`,
+  );
   const shutdown = async () => {
     await app.close();
     process.exit(0);

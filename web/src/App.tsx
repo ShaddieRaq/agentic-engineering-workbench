@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type ImprovementProposalArtifact, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type ToolDescription, type ToolSummary } from "./api.js";
 import { ArtifactPresentationView } from "./artifactPresentation.js";
 import { AgentCard, EmptyState, ErrorNotice, Loading, OperationTrace, PageHeader, RunAgentPanel, StatusBadge } from "./components.js";
-import { FoundryArtifactPage, FoundryProjectPage, FoundryProjectsPage } from "./foundry.js";
+import { FoundryArtifactPage, FoundryProjectPage, FoundryProjectsPage, OperatorTokenField } from "./foundry.js";
 import { useOperation, useResource } from "./hooks.js";
 import { LocalLink as Link, LocalNavLink as NavLink, usePathname } from "./router.js";
 import { WorkspaceProvider, useWorkspace } from "./workspace.js";
@@ -472,6 +472,7 @@ function PromotionDecisionPanel({
             onChange={(event) => setOperatorId(event.target.value)}
           />
         </label>
+        <OperatorTokenField />
         <label>
           Rationale
           <textarea

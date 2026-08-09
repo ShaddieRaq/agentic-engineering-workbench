@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   api,
+  OPERATOR_TOKEN_STORAGE_KEY,
+  storedOperatorToken,
   type FoundryChainView,
   type FoundryDecisionView,
   type FoundryProjectIndex,
@@ -43,6 +45,30 @@ function DecisionList({ decisions }: { decisions: FoundryDecisionView[] }) {
 }
 
 const OPERATOR_STORAGE_KEY = "workbench-operator-id";
+
+// Decision 090: operator-attributed writes need the token the server
+// printed at startup. Pasted once; api() attaches it from localStorage on
+// every request after that.
+export function OperatorTokenField() {
+  const [token, setToken] = useState(storedOperatorToken);
+  return (
+    <label>
+      Operator token
+      <input
+        type="password"
+        value={token}
+        placeholder="printed in the server terminal at startup"
+        onChange={(event) => {
+          setToken(event.target.value);
+          window.localStorage.setItem(
+            OPERATOR_TOKEN_STORAGE_KEY,
+            event.target.value.trim(),
+          );
+        }}
+      />
+    </label>
+  );
+}
 
 // Starts a model-invoking foundry stage as a tracked operation and calls
 // onDone with the operation result once it completes. Stage gates live in
@@ -651,6 +677,7 @@ function RecordCompletionPanel({
           Operator
           <input required value={operatorId} onChange={(event) => setOperatorId(event.target.value)} />
         </label>
+        <OperatorTokenField />
         <label className="checkbox-label">
           <input type="checkbox" checked={retroactive} onChange={(event) => setRetroactive(event.target.checked)} />
           {" "}Recorded retroactively (build predates completion records)
@@ -725,6 +752,7 @@ function DecisionForm({ action, onRecorded, allowReopen, defaultOpen }: { action
           Operator
           <input value={operatorId} onChange={(event) => setOperatorId(event.target.value)} placeholder="who is deciding" required />
         </label>
+        <OperatorTokenField />
         <label>
           Rationale
           <textarea rows={3} value={rationale} onChange={(event) => setRationale(event.target.value)} required />
