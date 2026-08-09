@@ -34,6 +34,10 @@ export interface BuilderMcpDependencies {
   // guardrails (settings + sandbox + root pin) and fails closed if they
   // were tampered with or lost (v1.2 structural confinement).
   workbenchRoot?: string;
+  // When set, list_open_work_orders serves only this project's orders.
+  // Live leak 2026-08-09: a drill builder was served a stale job-tracker
+  // order from the shared store.
+  briefId?: string;
 }
 
 export interface BuilderWorkOrderView {
@@ -263,10 +267,39 @@ export function createBuilderMcpTools(deps: BuilderMcpDependencies) {
         string,
         { workOrderId: string; sliceTitle: string; sliceDelivers: string; createdAt: string }
       >();
+      // Latest-decision-wins suite status, derived from the store so a
+      // superseded (revision-requested/rejected) suite's orders never
+      // surface as open (live leak 2026-08-09).
+      const suiteStatuses = new Map<string, string>();
+      const { artifacts: suiteDecisionSummaries } = await deps.store.list({
+        kind: "test-suite-decision",
+        limit: 500,
+      });
+      const suiteDecisions: {
+        testSuiteId: string;
+        decision: string;
+        decidedAt: string;
+        decisionId: string;
+      }[] = [];
+      for (const summary of suiteDecisionSummaries) {
+        const stored = await deps.store.load(summary.id);
+        if (stored.kind !== "test-suite-decision") continue;
+        suiteDecisions.push(stored.artifact);
+      }
+      for (const decision of suiteDecisions.sort(
+        (left, right) =>
+          left.decidedAt.localeCompare(right.decidedAt) ||
+          left.decisionId.localeCompare(right.decisionId),
+      )) {
+        suiteStatuses.set(decision.testSuiteId, decision.decision);
+      }
+
       for (const summary of artifacts) {
         const stored = await deps.store.load(summary.id);
         if (stored.kind !== "work-order") continue;
         const workOrder = stored.artifact;
+        if (deps.briefId && workOrder.briefId !== deps.briefId) continue;
+        if (suiteStatuses.get(workOrder.testSuiteId) !== "approve") continue;
         const key = `${workOrder.testSuiteId}:${workOrder.sliceId}`;
         if (approved.has(key)) continue;
         let suite: TestSuite;

@@ -129,7 +129,10 @@ describe("prepareBuilderWorkspace", () => {
       type: "stdio",
       command: "npm",
       args: ["--prefix", WORKBENCH_ROOT, "run", "--silent", "mcp:builder"],
-      env: { BUILDER_PROJECT_ROOT: harness.projectRoot },
+      env: {
+        BUILDER_PROJECT_ROOT: harness.projectRoot,
+        BUILDER_BRIEF_ID: harness.chain.fixture.brief.briefId,
+      },
     });
 
     const readme = await readFile(

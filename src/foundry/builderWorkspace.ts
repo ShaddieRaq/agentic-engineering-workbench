@@ -231,7 +231,7 @@ export async function prepareBuilderWorkspace(
       type: "stdio",
       command: "npm",
       args: ["--prefix", workbenchRoot, "run", "--silent", "mcp:builder"],
-      env: { BUILDER_PROJECT_ROOT: projectRoot },
+      env: { BUILDER_PROJECT_ROOT: projectRoot, BUILDER_BRIEF_ID: workOrder.briefId },
     },
   };
   await writeFile(mcpPath, `${JSON.stringify(mcpConfig, null, 2)}\n`, "utf8");

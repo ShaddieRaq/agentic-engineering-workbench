@@ -78,6 +78,9 @@ async function main(): Promise<void> {
       // Structural confinement: every tool call verifies the workspace's
       // guardrails are intact and fails closed otherwise.
       workbenchRoot: workspaceRoot,
+      ...(process.env.BUILDER_BRIEF_ID
+        ? { briefId: process.env.BUILDER_BRIEF_ID }
+        : {}),
     },
     packageJson.version ?? "0.0.0",
   );

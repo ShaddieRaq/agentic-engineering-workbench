@@ -122,7 +122,7 @@ async function builderHarness() {
     return JSON.parse(content[0]!.text) as unknown;
   };
 
-  return { store, chain, workOrderId, projectRoot, server, client, call };
+  return { store, chain, workOrderId, projectRoot, server, client, call, workOrders, submissions, testDesign };
 }
 
 describe("builder MCP server", () => {
@@ -276,6 +276,59 @@ describe("builder MCP server", () => {
 
     await client.close();
     await server.close();
+  });
+
+  it("scopes open orders to the pinned brief and drops superseded suites", async () => {
+    const harness = await builderHarness();
+    const { createBuilderMcpTools } = await import(
+      "../src/mcp/builderMcpTools.js"
+    );
+    const baseDeps = {
+      store: harness.store,
+      workOrders: harness.workOrders,
+      submissions: harness.submissions,
+      testDesign: harness.testDesign,
+      projectRoot: harness.projectRoot,
+    };
+
+    // Correct brief: the open order is served.
+    const scoped = createBuilderMcpTools({
+      ...baseDeps,
+      briefId: harness.chain.fixture.brief.briefId,
+    });
+    const served = (await scoped.listOpenWorkOrders()) as {
+      workOrders: unknown[];
+    };
+    expect(served.workOrders.length).toBeGreaterThan(0);
+
+    // Foreign brief: nothing leaks (live incident 2026-08-09: a drill
+    // builder was served a stale job-tracker order).
+    const foreign = createBuilderMcpTools({
+      ...baseDeps,
+      briefId: "00000000-0000-4000-8000-00000000dead",
+    });
+    expect(((await foreign.listOpenWorkOrders()) as { workOrders: unknown[] }).workOrders).toEqual([]);
+
+    // Superseding the suite (revise decision) closes its orders.
+    const { createTestSuiteDecision } = await import(
+      "../src/foundry/testSuiteDecision.js"
+    );
+    const suiteStored = await harness.store.load(harness.chain.testSuiteId);
+    if (suiteStored.kind !== "test-suite") throw new Error("fixture");
+    await harness.store.saveTestSuiteDecision(
+      createTestSuiteDecision({
+        testSuite: suiteStored.artifact,
+        testSuiteArtifactId: harness.chain.testSuiteId,
+        decision: "revise",
+        operatorId: "rashad",
+        rationale: "Superseding for the successor suite.",
+        requestedRevisions: ["Recompute."],
+      }),
+    );
+    expect(((await scoped.listOpenWorkOrders()) as { workOrders: unknown[] }).workOrders).toEqual([]);
+
+    await harness.client.close();
+    await harness.server.close();
   });
 
   it("redacts holdout paths from work orders and open lists", async () => {
