@@ -1111,6 +1111,22 @@ arrive with git initialized (sandbox denies builder-side init). Earlier
 same day: test-designer 0.3.0 (enumerated coverage checklist, gpt-5.4)
 and project-intake 0.6.0 (gpt-5.4) — model tiering by evidence.
 
+JOB TRACKER GENERATION 2 CLOSED 2026-08-09 (completion ee76c535,
+suite 1114912a, main c4885c2, field report 64d0cbe9) under the standing
+delegation. Shipped: contact-based inactivity (bookkeeping never
+resets the clock — verified on the operator's real store, where the
+gen-1 masking defect is gone), --jd attachments with collision-safe
+<recordId>-<basename> naming, default store path, announced empty
+results, --help documenting positional update, ratified ISO weeks and
+stable output tokens. The round surfaced and fixed two platform
+classes: silent 4k interface-contract truncation (cap raised to 16k)
+and stale byte-identical carries of changed-criterion files (now
+rejected deterministically; designer 0.4.0). The external builder
+session stalled mid-round; the assistant completed the build under the
+recorded delegation with disclosures in the field report. The builder's
+two suite-defect reports were both correct; operator-side verification
+initially erred on one and corrected itself on the evidence.
+
 OPERATOR DELEGATION, 2026-08-09 (job-tracker build): after three
 misfiled decisions caused by indistinguishable decision forms (UX
 defect, queued), the operator explicitly delegated the remainder of the
