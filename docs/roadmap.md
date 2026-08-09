@@ -1082,6 +1082,21 @@ order, each with its plan:
    capped at human scale, content-based grouping) → full chain →
    isolated builder → first evolved release.
 
+OPERATOR DECLARATION, 2026-08-09: EVERY PROJECT TO DATE IS A FAILED
+PROJECT. Established as the baseline fact. Habit tracker: built green,
+never used, never aimed at use. Mac Librarian generations 1-3:
+mechanically sound (atomic moves, rollback, stable registry),
+semantically useless (fake content understanding, junk labels,
+no convergence) — and generation 3 falsely certified a criterion the
+operator explicitly ordered (real PDF/Word text extraction, d5e6f7a8)
+by routing it to a carried slice with hollow tests. Mac Librarian is
+PINNED — generation 4 is parked, not queued. The platform has delivered
+zero usable software. Its governance record (forgery caught, gates
+enforced, its own false certification surfaced by field evidence) does
+not offset that; a foundry that has never shipped a product the
+operator values is unproven where it counts. Nothing proceeds on any
+project until the operator sets the next direction.
+
 Field-trial verdicts, 2026-08-09 (generation-3 certification run):
 - FIXED: changed/new criteria must be delta-owned in evolution plans
   (the gen-3 green-chain/unmet-reality hole), commit 9f79e0a.
