@@ -103,6 +103,62 @@ async function createController(steps: ScriptStep[]) {
 }
 
 describe("IntakeSessionController", () => {
+  it("filters near-verbatim repeat questions deterministically (circling guard)", async () => {
+    const unresolvedGoal = {
+      id: randomUUID(),
+      text: "Placeholder goal",
+      source: "unresolved" as const,
+    };
+    const q1 = question([unresolvedGoal.id]);
+    const repeat = {
+      id: randomUUID(),
+      // Same words, different case/punctuation — the live circling shape.
+      question: "  WHO are the users??  ",
+      targetEntryIds: [],
+      intent: "elicit-new" as const,
+    };
+    const fresh = {
+      id: randomUUID(),
+      question: "What platforms must be supported?",
+      targetEntryIds: [],
+      intent: "elicit-new" as const,
+    };
+    const { controller } = await createController([
+      {
+        kind: "output",
+        output: {
+          updatedBriefDraft: content({ goals: [unresolvedGoal] }),
+          nextQuestions: [{ ...q1, intent: "resolve-unresolved" }],
+          openIssues: [],
+        },
+      },
+      {
+        kind: "output",
+        output: {
+          updatedBriefDraft: content({ goals: [unresolvedGoal] }),
+          nextQuestions: [repeat, fresh],
+          openIssues: [],
+        },
+      },
+    ]);
+
+    const started = await controller.startIntake({
+      title: "Recipe planner",
+      idea: "Plan meals.",
+    });
+    const second = await controller.runTurn({
+      briefId: started.brief.briefId,
+      answers: [{ questionId: q1.id, answer: "Home cooks." }],
+    });
+
+    expect(second.record.nextQuestions.map(({ question: text }) => text)).toEqual([
+      "What platforms must be supported?",
+    ]);
+    expect(second.record.filteredDuplicateQuestions).toEqual([
+      "  WHO are the users??  ",
+    ]);
+  });
+
   it("runs a scripted interview to ready-for-decision with full lineage", async () => {
     const unresolvedGoal = {
       id: randomUUID(),
@@ -131,7 +187,16 @@ describe("IntakeSessionController", () => {
         kind: "output",
         output: {
           updatedBriefDraft: content({ goals: [resolvedGoal] }),
-          nextQuestions: [question()],
+          // Distinct text: the repeat-question guard filters near-verbatim
+          // re-asks, so a genuinely new question must read differently.
+          nextQuestions: [
+            {
+              id: randomUUID(),
+              question: "Which acceptance criteria define a complete plan?",
+              targetEntryIds: [],
+              intent: "elicit-new" as const,
+            },
+          ],
           openIssues: [
             {
               id: randomUUID(),

@@ -53,6 +53,17 @@ export interface IntakeStatusReport {
   provenanceConversion: ProvenanceConversionSummary | null;
 }
 
+// Case-, punctuation-, and whitespace-insensitive identity for the
+// repeat-question guard. Deliberately conservative: only near-verbatim
+// re-asks are filtered; genuinely rephrased questions still get through.
+export function normalizeQuestionText(question: string): string {
+  return question
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function deriveIntakeStatus(
   brief: ProjectBrief,
   output: IntakeTurnOutput,
@@ -319,6 +330,30 @@ export class IntakeSessionController {
       );
     }
 
+    // Deterministic repeat-question guard (live circling in both real
+    // projects, 2026-08-09): a question whose normalized text was already
+    // asked in ANY prior turn never reaches the operator again. Judgment
+    // ("do I have enough?") failed twice as prompt text; this is the
+    // structural cure — filtered before status derivation, so a turn made
+    // entirely of repeats cannot hold the interview open by itself.
+    const priorRecords = await this.#loadTurnRecords(turn.briefId);
+    const askedBefore = new Set(
+      priorRecords.flatMap(({ nextQuestions }) =>
+        nextQuestions.map(({ question }) => normalizeQuestionText(question)),
+      ),
+    );
+    const filteredDuplicateQuestions: string[] = [];
+    if (askedBefore.size > 0) {
+      const kept = output.nextQuestions.filter(({ question }) => {
+        if (askedBefore.has(normalizeQuestionText(question))) {
+          filteredDuplicateQuestions.push(question);
+          return false;
+        }
+        return true;
+      });
+      output = { ...output, nextQuestions: kept };
+    }
+
     const { brief: resultingBrief } = await this.#briefService.appendBriefVersion(
       turn.briefId,
       output.updatedBriefDraft,
@@ -341,6 +376,9 @@ export class IntakeSessionController {
       },
       status,
       startedAt,
+      ...(filteredDuplicateQuestions.length > 0
+        ? { filteredDuplicateQuestions }
+        : {}),
     });
 
     return { brief: resultingBrief, record, reconciliation: output.reconciliation };
@@ -359,6 +397,7 @@ export class IntakeSessionController {
     };
     status: IntakeTurnRecord["status"];
     startedAt: string;
+    filteredDuplicateQuestions?: string[];
   }): Promise<IntakeTurnRecord> {
     const record = intakeTurnRecordSchema.parse({
       turnId: randomUUID(),
@@ -376,6 +415,10 @@ export class IntakeSessionController {
       status: turn.status,
       startedAt: turn.startedAt,
       completedAt: new Date().toISOString(),
+      ...(turn.filteredDuplicateQuestions &&
+      turn.filteredDuplicateQuestions.length > 0
+        ? { filteredDuplicateQuestions: turn.filteredDuplicateQuestions }
+        : {}),
     });
     await this.#store.saveIntakeTurnRecord(record);
     return record;

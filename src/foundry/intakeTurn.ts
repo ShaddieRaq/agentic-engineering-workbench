@@ -27,6 +27,10 @@ export const intakeTurnRecordSchema = z
     status: intakeTurnStatusSchema,
     startedAt: z.string().min(1),
     completedAt: z.string().min(1),
+    // Repeat-question guard evidence (2026-08-09): model questions whose
+    // normalized text was already asked in a prior turn, filtered before
+    // reaching the operator. Optional so prior records load unchanged.
+    filteredDuplicateQuestions: z.array(z.string().min(1)).max(10).optional(),
   })
   .strict()
   .superRefine((record, context) => {
