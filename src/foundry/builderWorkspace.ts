@@ -1,4 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
   redactWorkOrder,
@@ -189,6 +191,23 @@ export async function prepareBuilderWorkspace(
   const workOrder = await deps.workOrders.loadWorkOrder(input.workOrderId);
   const suite = await deps.testDesign.loadTestSuite(workOrder.testSuiteId);
   const view = redactWorkOrder(workOrder, suite);
+
+  // The builder's sandbox denies git init (observed live 2026-08-09), so
+  // the scaffold provides the repository the same way it provides the
+  // settings: workbench-side, before the builder ever runs.
+  await mkdir(projectRoot, { recursive: true });
+  if (!existsSync(join(projectRoot, ".git"))) {
+    const init = spawnSync("git", ["init"], {
+      cwd: projectRoot,
+      encoding: "utf8",
+      timeout: 10_000,
+    });
+    if (init.status !== 0) {
+      throw new Error(
+        `git init failed in ${projectRoot}: ${(init.stderr || "").trim()}`,
+      );
+    }
+  }
 
   const writtenTestFiles = await deps.workOrders.materializeVisibleTests({
     workOrderId: input.workOrderId,

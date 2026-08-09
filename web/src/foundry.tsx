@@ -853,7 +853,7 @@ function RecordCompletionPanel({
 // Records an operator-attributed decision against a decisions endpoint.
 // Approval gates live server-side in the decision constructors; this form
 // only collects the human identity, verdict, and rationale.
-function DecisionForm({ action, onRecorded, allowReopen, defaultOpen }: { action: string; onRecorded: () => void; allowReopen?: boolean; defaultOpen?: boolean }) {
+function DecisionForm({ action, target, onRecorded, allowReopen, defaultOpen }: { action: string; target: string; onRecorded: () => void; allowReopen?: boolean; defaultOpen?: boolean }) {
   const [decision, setDecision] = useState<"approve" | "reject" | "revise" | "reopen">("approve");
   const [operatorId, setOperatorId] = useState(
     () => window.localStorage.getItem(OPERATOR_STORAGE_KEY) ?? "",
@@ -897,7 +897,7 @@ function DecisionForm({ action, onRecorded, allowReopen, defaultOpen }: { action
 
   return (
     <details className="decision-form" open={defaultOpen}>
-      <summary>Record decision</summary>
+      <summary>Record decision — {target}</summary>
       <form className="panel" onSubmit={submit}>
         <label>
           Decision
@@ -1022,6 +1022,7 @@ function SubmissionDetails({ submission, onRecorded }: { submission: FoundrySubm
       <DecisionList decisions={submission.decisions} />
       <DecisionForm
         action={`/api/foundry/submissions/${submission.submissionId}/decisions`}
+        target={`submission ${shortId(submission.submissionId)}`}
         onRecorded={onRecorded}
         defaultOpen={submission.decisions.length === 0}
       />
@@ -1291,6 +1292,7 @@ export function FoundryProjectPage() {
             )}
             <DecisionForm
               action={`/api/foundry/briefs/${chain.briefId}/versions/${version.version}/decisions`}
+              target={`brief v${version.version}`}
               onRecorded={resource.reload}
               allowReopen={version.version === chain.latestVersion && version.status === "approved"}
               defaultOpen={version.version === chain.latestVersion && version.status === "draft" && !chain.intakeCanContinue}
@@ -1412,6 +1414,7 @@ export function FoundryProjectPage() {
             )}
             <DecisionForm
               action={`/api/foundry/plans/${plan.planId}/decisions`}
+              target={`architecture plan ${shortId(plan.planId)}`}
               onRecorded={resource.reload}
               defaultOpen={plan.status === "draft"}
             />
@@ -1468,6 +1471,7 @@ export function FoundryProjectPage() {
             )}
             <DecisionForm
               action={`/api/foundry/capability-plans/${plan.capabilityPlanId}/decisions`}
+              target={`capability plan ${shortId(plan.capabilityPlanId)}`}
               onRecorded={resource.reload}
               defaultOpen={plan.status === "draft"}
             />
@@ -1541,6 +1545,7 @@ export function FoundryProjectPage() {
             )}
             <DecisionForm
               action={`/api/foundry/test-suites/${suite.testSuiteId}/decisions`}
+              target={`test suite ${shortId(suite.testSuiteId)}`}
               onRecorded={resource.reload}
               defaultOpen={suite.status === "draft"}
             />

@@ -16,6 +16,7 @@ import type {
 } from "../foundry/foundryArtifactStore.js";
 import { operatorAnswerSchema } from "../foundry/builderMessage.js";
 import { fieldReportSchema } from "../foundry/fieldReport.js";
+import { normalizeOperatorPath } from "../foundry/pathInput.js";
 import type { BuildCompletionService } from "../foundry/buildCompletionService.js";
 import type { IntakeSessionController } from "../foundry/intakeSessionController.js";
 import { createProjectBriefDecision } from "../foundry/projectBriefDecision.js";
@@ -1394,7 +1395,7 @@ export async function buildAgentWebServer(
           try {
             const prepared = await builderWorkspaces.prepare({
               workOrderId: request.params.workOrderId,
-              projectRoot: parsed.data.projectRoot,
+              projectRoot: normalizeOperatorPath(parsed.data.projectRoot),
             });
             return reply.code(201).send({
               projectRoot: prepared.projectRoot,
@@ -1431,7 +1432,7 @@ export async function buildAgentWebServer(
           );
           const saved = await completions.recordCompletion({
             testSuiteId: parsed.data.testSuiteId,
-            projectRoot: parsed.data.projectRoot,
+            projectRoot: normalizeOperatorPath(parsed.data.projectRoot),
             operatorId: parsed.data.operatorId,
             retroactive: parsed.data.retroactive ?? false,
           });

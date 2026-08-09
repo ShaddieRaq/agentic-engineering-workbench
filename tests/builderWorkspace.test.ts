@@ -1,6 +1,7 @@
 import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { existsSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   prepareBuilderWorkspace,
@@ -80,6 +81,9 @@ describe("prepareBuilderWorkspace", () => {
       },
     );
 
+    // The scaffold initializes the repository the sandbox forbids the
+    // builder from creating.
+    expect(existsSync(join(harness.projectRoot, ".git"))).toBe(true);
     expect(prepared.writtenConfigFiles).toEqual([
       ".mcp.json",
       ".claude/settings.json",

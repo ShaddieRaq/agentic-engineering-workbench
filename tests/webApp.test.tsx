@@ -575,7 +575,7 @@ describe("agent workbench web interface", () => {
     render(<AppRoutes />);
 
     expect(await screen.findByRole("heading", { name: "Note taker" })).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Record decision"));
+    fireEvent.click(screen.getByText(/^Record decision — /));
     fireEvent.change(screen.getByLabelText("Operator"), { target: { value: "rashad" } });
     fireEvent.change(screen.getByLabelText("Rationale"), { target: { value: "Complete and buildable." } });
     fireEvent.click(screen.getByRole("button", { name: "Record approve" }));

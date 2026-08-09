@@ -593,6 +593,18 @@ describe("foundry web routes", () => {
     // trimmed here at the boundary.
     expect(prepared[0]!.projectRoot).toBe("/tmp/generated/example-project");
 
+    // Unexpanded ~ nested a real workspace inside the workbench
+    // (2026-08-09); the boundary expands it now.
+    const tilde = await app.inject({
+      method: "POST",
+      url: `/api/foundry/work-orders/${chain.workOrderId}/builder-workspace`,
+      payload: { projectRoot: "~/generated/tilde-project" },
+    });
+    expect(tilde.statusCode).toBe(201);
+    expect(prepared[1]!.projectRoot.startsWith("/")).toBe(true);
+    expect(prepared[1]!.projectRoot.endsWith("/generated/tilde-project")).toBe(true);
+    expect(prepared[1]!.projectRoot).not.toContain("~");
+
     await app.close();
   });
 
