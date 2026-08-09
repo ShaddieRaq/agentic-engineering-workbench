@@ -230,7 +230,7 @@ describe("workbench MCP tools", () => {
 
     expect(agents).toHaveLength(10);
     expect(agents).toContainEqual(
-      expect.objectContaining({ id: "project-intake", version: "0.5.0" }),
+      expect.objectContaining({ id: "project-intake", version: "0.6.0" }),
     );
 
     const manifest = await tools.describeAgent({ agentId: "project-intake" });
