@@ -1124,8 +1124,15 @@ operator; conversation-only, nothing below started):
    documented, unsolved, and upstream is converging on exactly our
    pattern (PR #80820, issue #416) — upstream contribution is the
    high-visibility play.
-1. Tracker generation 3 (small round): --json on read commands + the
-   banked pile (field reports 3e9586a7 et al). Enabler for everything.
+1. DONE 2026-08-10 — Tracker generation 3 closed (completion 37ab85e4,
+   suite 612592e0, main bf2e749, field report 6470c6d5): --json on all
+   read commands with null-normalized keys, write-command rejection,
+   field-verified on the operator's real store. Round notes: FOURTH
+   designer calendar-arithmetic defect caught pre-approval (surgical
+   revision); platform candidate logged — deterministic date-math
+   validation of designer fixtures. 16k contract cap proved out (6.7k
+   contract intact). Driving guides updated (tracker --json; drill
+   --tag flag + global-flag ordering corrected).
 2. SHOWROOM generation 1 — the suite's face and the foundry's
    graduation project: one local web page (Tuesday glance: tracker
    next + drill today, two write buttons), deterministic only,
