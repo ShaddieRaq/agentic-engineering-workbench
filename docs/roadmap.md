@@ -1113,10 +1113,17 @@ and project-intake 0.6.0 (gpt-5.4) — model tiering by evidence.
 
 NORTH ROADMAP SET 2026-08-09 (late-night design session with the
 operator; conversation-only, nothing below started):
-0. Hermes research memo (assistant homework): Nous Research's Hermes
-   Agent — skill format on disk, MCP support, extension points,
-   security posture. Decides whether steps 3-4 are wiring or
-   construction.
+0. DONE 2026-08-09 — Hermes research memo at docs/research/
+   hermes-agent-memo.md (6-angle sweep + source-level follow-ups).
+   Verdicts: phase 3 is WIRING (full MCP client; our CLIs integrate as
+   MCP servers); phase 4 is FEASIBLE without forking (write_approval
+   staging + fail-closed pre_tool_call hooks + pending-queue
+   consumption; approve path is the fragile joint); trust surface is
+   SIGNIFICANT (containment prescription in memo is a precondition);
+   adoption real (~228k stars); the self-written-skill problem is
+   documented, unsolved, and upstream is converging on exactly our
+   pattern (PR #80820, issue #416) — upstream contribution is the
+   high-visibility play.
 1. Tracker generation 3 (small round): --json on read commands + the
    banked pile (field reports 3e9586a7 et al). Enabler for everything.
 2. SHOWROOM generation 1 — the suite's face and the foundry's
