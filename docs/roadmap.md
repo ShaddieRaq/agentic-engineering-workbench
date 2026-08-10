@@ -1165,9 +1165,21 @@ operator; conversation-only, nothing below started):
    via the foundry CLI plus a same-code side-port instance for
    token-authenticated decisions, recorded in each decision rationale).
    Naming settled: Workbench makes, Foundry builds, Showroom shows.
-3. Hermes phase 1 (if memo says yes): Hermes hosts the career agents —
-   product CLIs as tools, driving guides as instructions, messaging
-   the operator. Contained by CLI validation.
+3. IN PROGRESS 2026-08-10 — Hermes phase 1. WIRING DONE AND TESTED:
+   ~/Projects/generated/career-mcp (commit 3bb615d) — MCP server with
+   14 tools over both product CLIs (validation and stores stay with
+   the CLIs; deck/JD content travels as arguments, never paths; no
+   clock injection), plus the containment bridge: host.js loopback
+   listener under the operator account, shim.js as the ONLY file the
+   hermes user executes. 6/6 acceptance tests including the full
+   stdio→shim→TCP→host→server path. CONTAINMENT KIT READY:
+   docs/hermes/containment-setup.md (7 steps + pre-flight probes) and
+   hermes-kit/ (config.yaml template: write_approval + guard on,
+   gateway off; fail-closed pre_tool_call deny hook closing both
+   documented skill-gate bypasses). BLOCKED ON OPERATOR ADMIN ACTION:
+   dedicated `hermes` user creation + `chmod 700` home + Hermes
+   install as that user (steps 1-4). Hermes does NOT run until the
+   step-7 probes pass — containment is the precondition, on record.
 4. HORIZON — Hermes phase 2, the skill foundry: external agents'
    self-written skills routed through the pipeline (intake → blind
    suites → null gate → versioned gated release). The workbench
