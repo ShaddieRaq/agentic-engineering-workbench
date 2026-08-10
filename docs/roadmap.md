@@ -1133,7 +1133,12 @@ operator; conversation-only, nothing below started):
    validation of designer fixtures. 16k contract cap proved out (6.7k
    contract intact). Driving guides updated (tracker --json; drill
    --tag flag + global-flag ordering corrected).
-2. SHOWROOM generation 1 — the suite's face and the foundry's
+2. IN PROGRESS — Showroom generation 1. Platform prerequisite PROVEN
+   2026-08-10 with zero platform changes (docs/research/
+   web-verification-conventions.md): browser acceptance suites are
+   self-managing vitest+playwright files; real runner ran one green;
+   null gate correctly demands failure in the empty stub. Next: seed
+   and run the round. — the suite's face and the foundry's
    graduation project: one local web page (Tuesday glance: tracker
    next + drill today, two write buttons), deterministic only,
    consuming product --json; NO agents/chat/auth in gen 1. Platform
