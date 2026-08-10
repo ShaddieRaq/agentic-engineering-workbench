@@ -1111,6 +1111,37 @@ arrive with git initialized (sandbox denies builder-side init). Earlier
 same day: test-designer 0.3.0 (enumerated coverage checklist, gpt-5.4)
 and project-intake 0.6.0 (gpt-5.4) — model tiering by evidence.
 
+NORTH ROADMAP SET 2026-08-09 (late-night design session with the
+operator; conversation-only, nothing below started):
+0. Hermes research memo (assistant homework): Nous Research's Hermes
+   Agent — skill format on disk, MCP support, extension points,
+   security posture. Decides whether steps 3-4 are wiring or
+   construction.
+1. Tracker generation 3 (small round): --json on read commands + the
+   banked pile (field reports 3e9586a7 et al). Enabler for everything.
+2. SHOWROOM generation 1 — the suite's face and the foundry's
+   graduation project: one local web page (Tuesday glance: tracker
+   next + drill today, two write buttons), deterministic only,
+   consuming product --json; NO agents/chat/auth in gen 1. Platform
+   must grow Playwright acceptance verification (browser-driving
+   suites, null gate proven for them). Naming settled: Workbench
+   makes, Foundry builds, Showroom shows.
+3. Hermes phase 1 (if memo says yes): Hermes hosts the career agents —
+   product CLIs as tools, driving guides as instructions, messaging
+   the operator. Contained by CLI validation.
+4. HORIZON — Hermes phase 2, the skill foundry: external agents'
+   self-written skills routed through the pipeline (intake → blind
+   suites → null gate → versioned gated release). The workbench
+   repositioned: not building the operator's apps but underwriting
+   other agents' self-modification (Decision 086's endpoint). Gated on
+   phase-3 evidence and a full design round.
+Parked: brownfield mode for the operator's test framework (blocked on
+ownership/policy answer + work-intake shape); LinkedIn series (post 1
+drafted at ~/.job-tracker/drafts/, unposted by choice); certification
+3; Mac Librarian (pinned). Paper cut logged: drill today tag-filter
+flag differs from the driving guide — reconcile guide or product at
+tracker-gen-3 time.
+
 INTERVIEW PREP DRILL GENERATION 1 SHIPPED 2026-08-09 (completion
 340ef56e, suite 468e23fd, seven slices, field report ab91c06f) — third
 product, second shipped same-day, built end to end by a healthy
