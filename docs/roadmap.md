@@ -1133,18 +1133,38 @@ operator; conversation-only, nothing below started):
    validation of designer fixtures. 16k contract cap proved out (6.7k
    contract intact). Driving guides updated (tracker --json; drill
    --tag flag + global-flag ordering corrected).
-2. IN PROGRESS — Showroom generation 1. Platform prerequisite PROVEN
-   2026-08-10 with zero platform changes (docs/research/
-   web-verification-conventions.md): browser acceptance suites are
-   self-managing vitest+playwright files; real runner ran one green;
-   null gate correctly demands failure in the empty stub. Next: seed
-   and run the round. — the suite's face and the foundry's
-   graduation project: one local web page (Tuesday glance: tracker
-   next + drill today, two write buttons), deterministic only,
-   consuming product --json; NO agents/chat/auth in gen 1. Platform
-   must grow Playwright acceptance verification (browser-driving
-   suites, null gate proven for them). Naming settled: Workbench
-   makes, Foundry builds, Showroom shows.
+2. DONE 2026-08-10 — Showroom generation 1 closed (completion e32041e9,
+   suite 27442557, main 7508d36, field report 4e9a94ae): one local
+   dual-panel page over both product CLIs, write actions through
+   `update --contact --note` and `grade`, product empty/confirmation
+   lines rendered verbatim, stderr error boxes at HTTP 200, fail-closed
+   startup without store env. Field-verified on the real stores (all 5
+   real follow-ups, both at-risk badges, honest empty drill panel).
+   First browser-product round; web-verification conventions held with
+   zero verification-machinery changes. Round cost: THREE suite
+   revisions caught pre-build by verification-before-approval — (a)
+   fixture CLIs spoke a private protocol the real products don't
+   ({rows,emptyLine}, no --store; a green server would have written to
+   the operator's real default stores), (b) Playwright-test matchers
+   under vitest ('Invalid Chai property: toBeVisible' — unsatisfiable),
+   (c) grade-flow missing SHOWROOM_NOW (disappearance assertions
+   unsatisfiable) + holdout-only confirmation copy. One premature suite
+   approve by the delegated operator, self-caught and reversed on
+   record (decision ca683e52). Platform changes: test-file content cap
+   20k->64k (commit 328decc; third instance of the maxLength-truncation
+   class — designer emissions failed syntax gates at exactly the cap).
+   Platform candidates logged: (i) empty-applicable slice submissions
+   report bare "passed" — vacuous runs must be visibly marked; (ii)
+   single-file suite granularity x every-criterion-due applicability
+   means interim slices verify nothing until the last — consider
+   any-due semantics or per-slice file mandates; (iii) fixture-reality
+   contract validation — when a brief references another foundry
+   product, feed the designer that product's pinned interface contract.
+   NOTE: the operator console predates the cap raise; it cannot load
+   post-20k suite artifacts until its next restart (round was driven
+   via the foundry CLI plus a same-code side-port instance for
+   token-authenticated decisions, recorded in each decision rationale).
+   Naming settled: Workbench makes, Foundry builds, Showroom shows.
 3. Hermes phase 1 (if memo says yes): Hermes hosts the career agents —
    product CLIs as tools, driving guides as instructions, messaging
    the operator. Contained by CLI validation.
