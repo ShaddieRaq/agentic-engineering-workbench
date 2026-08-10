@@ -15,7 +15,7 @@ export const testFileSchema = z
         message:
           "Test paths must be relative, live under acceptance-tests/, and end with .test.ts.",
       }),
-    content: z.string().min(1).max(20_000),
+    content: z.string().min(1).max(64_000),
     visibility: testFileVisibilitySchema,
     coveredCriterionIds: z.array(z.uuid()).min(1).max(20),
     testType: z.enum(["unit", "integration", "end-to-end"]),
