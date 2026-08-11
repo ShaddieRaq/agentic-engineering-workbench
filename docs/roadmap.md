@@ -1208,7 +1208,47 @@ operator; conversation-only, nothing below started):
    chain, two-planes/containment wall) + "say it out loud" — the
    operator's training/explaining reference; stable picture only, the
    request-channel is deliberately excluded until it exists.
-4. NEXT — SKILL FOUNDRY, first real instance: a Playwright trace-artifact
+4. NEXT BUILD — PROFILE TOOL (decided 2026-08-11 on LIVE DEMAND: operator
+   is actively fielding recruiter correspondence and hand-generating
+   JD-tailored resumes; time to standardize). Jumps the queue ahead of
+   the trace analyzer because it has pressing real demand + a clean
+   deterministic core, whereas the analyzer is gated on sourcing a trace
+   dataset. ONE product, not two — the resume generator owns NO data of
+   its own, it's pure function over the profile store, so it's a
+   read-side subcommand, not a separate tool (the decision rule: a tool
+   that owns no store and is pure function over another's store is a
+   subcommand). Owns a STRUCTURED skills/profile store (CRUD; skills with
+   attributes — name, category, proficiency, evidence/where-demonstrated,
+   last-used). This is where ~/.job-tracker/profile.md graduates from a
+   flat doc to a validated store, and where the earlier resume→profile
+   thread lands (agent PROPOSES skills extracted from the resume, the
+   tool validates + applies; profile stays operator-disposed). SHARED
+   INFRA confirmed: tracker tailors applications from it, drill targets
+   weak skills from it, resume generates from it — three consumers = its
+   own home, NOT a Job Tracker feature (domain mismatch: tracker owns
+   applications, profile owns the person). `resume` read-side subcommand:
+   base / from-profile / JD-tailored = ONE command parameterized by input
+   (JD tailoring composes with the tracker's existing --jd attachments —
+   agent is the bus). THE ACCEPTANCE INSIGHT (the eval story, on-brand
+   for the operator's Skript role): cannot gate "is the resume good"
+   (subjective — the host model's job at use-time), but CAN gate
+   FAITHFULNESS (every claim traces to a real profile entry — no
+   fabricated skills/jobs; checkable BY CONSTRUCTION if the assembler
+   renders from structured selection emitting source ids), JD-keyword
+   COVERAGE, and FORMAT validity. That faithfulness gate is the
+   platform's hollow/fraudulent-output catch pointed at resumes. Chain:
+   deterministic core (store CRUD + JD matching/selection + assembly/
+   templating) is fully foundry-buildable (null gate + holdout); the
+   wordsmithing stays OUTSIDE as an agent driving-guide (generative,
+   uncertified by design — like every product's CLAUDE.md). SCOPE
+   DECISIONS before intake: skill-store schema/attributes; output formats
+   (markdown/plaintext first? PDF is a renderer stretch — likely later);
+   how skills seed (agent-from-resume vs manual entry). First move =
+   intake→brief. NOT started — operator has an interview 2026-08-11 and
+   is not coding today; DIRECTION LOCKED, build when ready.
+5. QUEUED (behind the profile tool by live demand; still gated on the
+   operator sourcing a trace dataset) — SKILL FOUNDRY, first real
+   instance: a Playwright trace-artifact
    analyzer, built through the normal chain and EXPORTED as a Claude Code
    skill (2026-08-11, operator wants "the real thing"). This is the
    phase-2 thesis made concrete outside the job-search products: the
@@ -1246,7 +1286,7 @@ operator; conversation-only, nothing below started):
    first foundry deliverable that's a SKILL not a CLI — expect to pave a
    little path at export. Offered next step: scaffold the extractor + a
    labeling harness so dropping in real traces is easy (operator to say go).
-5. HORIZON — full skill foundry / Hermes phase 2: external agents'
+6. HORIZON — full skill foundry / Hermes phase 2: external agents'
    self-written skills routed through the pipeline (intake → blind
    suites → null gate → versioned gated release), and Hermes filing
    governed IMPROVEMENT REQUESTS into the workbench (agent proposes,
