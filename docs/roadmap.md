@@ -1165,27 +1165,96 @@ operator; conversation-only, nothing below started):
    via the foundry CLI plus a same-code side-port instance for
    token-authenticated decisions, recorded in each decision rationale).
    Naming settled: Workbench makes, Foundry builds, Showroom shows.
-3. IN PROGRESS 2026-08-10 — Hermes phase 1. WIRING DONE AND TESTED:
-   ~/Projects/generated/career-mcp (commit 3bb615d) — MCP server with
-   14 tools over both product CLIs (validation and stores stay with
-   the CLIs; deck/JD content travels as arguments, never paths; no
-   clock injection), plus the containment bridge: host.js loopback
-   listener under the operator account, shim.js as the ONLY file the
-   hermes user executes. 6/6 acceptance tests including the full
-   stdio→shim→TCP→host→server path. CONTAINMENT KIT READY:
-   docs/hermes/containment-setup.md (7 steps + pre-flight probes) and
-   hermes-kit/ (config.yaml template: write_approval + guard on,
-   gateway off; fail-closed pre_tool_call deny hook closing both
-   documented skill-gate bypasses). BLOCKED ON OPERATOR ADMIN ACTION:
-   dedicated `hermes` user creation + `chmod 700` home + Hermes
-   install as that user (steps 1-4). Hermes does NOT run until the
-   step-7 probes pass — containment is the precondition, on record.
-4. HORIZON — Hermes phase 2, the skill foundry: external agents'
+3. DONE 2026-08-11 — Hermes phase 1 (containment proven live + clean
+   tool path). ~/Projects/generated/career-mcp: MCP server, 14 tools
+   over both product CLIs (validation + stores stay with the CLIs;
+   deck/JD content travels as arguments, never paths; no clock
+   injection), plus the containment bridge — host.js loopback listener
+   under the operator account, shim.js as the ONLY file the hermes user
+   runs. 6/6 acceptance tests incl. the full stdio→shim→TCP→host→server
+   path. OPERATOR ADMIN DONE: dedicated `hermes` user (uid 502), home
+   chmod 700, /Users/Shared/hermes drop (shim + deny hook + copied node
+   binary), hermes-agent 0.19.0 installed under that account. STEP-7
+   PROBES PASSED LIVE: (A) file boundary — agent searched for career
+   data, got nothing, /Users/lazy_genius unreachable; (B) skill
+   governance — skill_manage staged to ~/.hermes/pending/skills/, live
+   skills dir empty; (C) BYPASS BLOCKED — direct write_file to the
+   skills dir denied (the #60440 path that succeeded pre-hardening),
+   deny-hook reason echoed back; (D) data path — agent reached real
+   answers ONLY through the MCP server → CLIs → validation. Skills dir
+   hardened root:wheel + `chflags schg` so no hermes-process write
+   survives even if the fail-OPEN shell hook (0.19.0 has no fail_closed
+   for shell hooks) misses. KEY FINDING: the agent is a capable
+   localhost network client (when tools were briefly absent it read the
+   port from shim.js and hand-rolled a raw socket) — containment must
+   NOT rely on network isolation; it rests on OS file perms + every
+   localhost service requiring auth (the console's operator token).
+   ROOT-CAUSE dug from 0.19.0 source (no sudo needed): career tools
+   first failed to surface because `pip install hermes-agent` ships
+   WITHOUT the `mcp` Python SDK — the bare install has no MCP client;
+   `hermes mcp test` named it; fix is `pip install 'hermes-agent[mcp]'`.
+   Also learned from source: direct-OpenAI provider is registry id
+   `openai-api` (reads OPENAI_API_KEY, honors OPENAI_BASE_URL); model
+   block is `model:{provider,model}`; MCP config key `mcp_servers`;
+   context files SOUL.md/.hermes.md/AGENTS.md/CLAUDE.md auto-inject from
+   HERMES_HOME. LIVE ON REAL STORES now (~/.job-tracker/applications.json,
+   ~/.interview-drill/cards.json — verified no test-write leakage);
+   host runs via `npm run host` in a terminal tab (dies with the
+   session — LaunchAgent is optional polish). Guide hermes-kit/
+   hermes-home.md → ~/.hermes/.hermes.md names the mcp__career__* tools.
+   Setup doc updated to mandate the [mcp] extra. Deferred at operator's
+   pace: dedicated API key (on main OPENAI key for now, "fix later").
+   FIELD GUIDE published (artifact): terminology + two diagrams (foundry
+   chain, two-planes/containment wall) + "say it out loud" — the
+   operator's training/explaining reference; stable picture only, the
+   request-channel is deliberately excluded until it exists.
+4. NEXT — SKILL FOUNDRY, first real instance: a Playwright trace-artifact
+   analyzer, built through the normal chain and EXPORTED as a Claude Code
+   skill (2026-08-11, operator wants "the real thing"). This is the
+   phase-2 thesis made concrete outside the job-search products: the
+   workbench certifying importable agent-skills for any coding harness.
+   REFRAME that makes it fit: build as a workbench AGENT gated by a trace
+   dataset, then `export-claude-code` it as a SKILL.md — reuses the
+   existing agent-eval harness + export lifecycle; the platform wrapper
+   is the last swappable step (Claude Code now; Cursor/others later).
+   EXISTING playwrightFailureTriage agent is a PARTIAL seed only: it
+   triages error TEXT (message/stack/attachment metadata) into a 7-cat
+   taxonomy with schema {classification,confidence,evidence,
+   needsMoreEvidence}, dataset ~3 cases — WRONG MODALITY (never cracks
+   the trace.zip) and too thin. Salvage taxonomy + output schema +
+   labels, then supersede it. LOAD-BEARING PREREQUISITE (the whole
+   ballgame): a corpus of real labeled trace.zip artifacts (~15-30,
+   spread across the taxonomy, visible + holdout) — the operator's SDET
+   work is the irreplaceable input; without it the "governed" build is
+   theater. Deliverable shape: EXTRACTOR (deterministic script: trace.zip
+   → structured JSON of timeline/failing-step/network/console/snapshots;
+   null gate applies normally) + INSTRUCTIONS + SCHEMA (the skill's
+   intelligence is the HOST harness's model at use-time; the foundry
+   certifies the scaffold, not a model it runs). Chain: 0 seed+scope →
+   1 intake/brief (input raw-zip vs pre-extracted; output; taxonomy;
+   non-goals: doesn't fix the test, doesn't re-run the browser) →
+   2 dataset assembly (visible+holdout) → 3 arch+capability plan →
+   4 acceptance suite (deterministic extractor tests + null gate, PLUS
+   held-out-trace eval pass-rate = the certification) → 5 build
+   (extractor via isolated builder; instructions via improvement loop) →
+   6 verify → 7 completion → export SKILL.md into the operator's
+   Playwright project's .claude/skills/. OPERATOR DECISIONS before intake:
+   taxonomy (reuse the 7?), input shape, and WHERE the trace corpus comes
+   from + who labels it (gates everything). RISKS: dataset is the entire
+   foundation and only the operator can source it well; prose instructions
+   resist unit-testing (mitigated by the dataset eval, not eliminated);
+   first foundry deliverable that's a SKILL not a CLI — expect to pave a
+   little path at export. Offered next step: scaffold the extractor + a
+   labeling harness so dropping in real traces is easy (operator to say go).
+5. HORIZON — full skill foundry / Hermes phase 2: external agents'
    self-written skills routed through the pipeline (intake → blind
-   suites → null gate → versioned gated release). The workbench
-   repositioned: not building the operator's apps but underwriting
-   other agents' self-modification (Decision 086's endpoint). Gated on
-   phase-3 evidence and a full design round.
+   suites → null gate → versioned gated release), and Hermes filing
+   governed IMPROVEMENT REQUESTS into the workbench (agent proposes,
+   gates + operator dispose; never builder, never approver). Gated on
+   accumulated real-use evidence (use Hermes first) + a design round.
+   Decision recorded 2026-08-11: NOT designing the Hermes→workbench
+   request channel yet — it would be ahead of evidence; run Hermes on
+   the real job search first and let observed friction specify it.
 Parked: brownfield mode for the operator's test framework (blocked on
 ownership/policy answer + work-intake shape); LinkedIn series (post 1
 drafted at ~/.job-tracker/drafts/, unposted by choice); certification
