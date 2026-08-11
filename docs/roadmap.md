@@ -1246,6 +1246,23 @@ operator; conversation-only, nothing below started):
    how skills seed (agent-from-resume vs manual entry). First move =
    intake→brief. NOT started — operator has an interview 2026-08-11 and
    is not coding today; DIRECTION LOCKED, build when ready.
+   EXPANDED PLAN (2026-08-11): docs/plans/profile-tool.md — synthesized from a
+   7-facet design panel + completeness critic (ultracode workflow). Core thesis
+   unanimous: FAITHFULNESS-BY-CONSTRUCTION (render unit == store record == stable
+   id; no free-text render path). Panel surfaced 13 substrate contradictions, now
+   RECONCILED in the doc: store = tracker's model (kind-discriminated record array,
+   materialized head + append-only timeline, stable uuid = faithfulness anchor);
+   taxonomy includes a first-class `summary` entity; selection via named `variant`
+   records; coverage = present-but-unselected(hard) vs missing-from-store(note),
+   soft default; faithfulness = BYTE-EQUALITY (fuzzy verify dropped); ingestion = a
+   subcommand, v1 txt/md/html/docx (PDF deferred — non-deterministic, flakes the
+   coverage gate); transform whitelist pinned (= the gate spec); dates YYYY-MM;
+   migration dry-run via read command `import-plan --json`. SHARPEST CATCH: every
+   faithfulness test MUST be conjunctive (assert real claims present AND
+   fabrications absent) or it passes vacuously against the empty stub and the null
+   gate rejects it — a new test-authoring rule for the designer. Store name
+   `career-profile` at ~/.career-profile/profile.json. Build order: store →
+   assembler+gates → ingestion → migration → guide.
 5. QUEUED (behind the profile tool by live demand; still gated on the
    operator sourcing a trace dataset) — SKILL FOUNDRY, first real
    instance: a Playwright trace-artifact
