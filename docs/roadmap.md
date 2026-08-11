@@ -1262,6 +1262,27 @@ drafted at ~/.job-tracker/drafts/, unposted by choice); certification
 flag differs from the driving guide — reconcile guide or product at
 tracker-gen-3 time.
 
+DISCUSSION NOTE 2026-08-11 (off-the-cuff, NOT queued work): the foundry
+could generate contract-verified integration TOOLS for external
+test-infra products the operator's framework hooks into — e.g. Zephyr
+(test management / result posting) and BrowserStack (execution grid;
+they're migrating TO it). Each = a small CLI product (browserstack
+fetch-artifacts, zephyr post-result), optionally wrapped as an agent
+tool. Natural fit as the I/O PLUMBING around the Playwright trace
+analyzer: BrowserStack fetch = how the analyzer gets traces in the new
+stack, Zephyr post = where verdicts go. HONEST BOUNDARY: verifiable only
+against each API's documented CONTRACT via a local mock server (the
+Showroom fake-CLI convention generalized to a fake API server) — proves
+the tool speaks the protocol, NOT that the live service behaves as
+documented; real-API smoke with creds is an operator field step outside
+the gate. This is a concrete instance of the logged "fixture-reality
+contract validation" candidate. Do NOT ingest the existing framework
+(brownfield is parked); its scripts + docs are the INPUT/contract, tools
+are generated fresh. Open Qs if pursued: migration from-what; one job per
+tool; consumer (human framework vs agent vs both); credential handling
+(a containment concern if an agent ever calls them). Sequence AFTER the
+analyzer core; each its own gated round. Captured so it's not lost.
+
 INTERVIEW PREP DRILL GENERATION 1 SHIPPED 2026-08-09 (completion
 340ef56e, suite 468e23fd, seven slices, field report ab91c06f) — third
 product, second shipped same-day, built end to end by a healthy
