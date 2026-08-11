@@ -1332,6 +1332,35 @@ operator; conversation-only, nothing below started):
    Decision recorded 2026-08-11: NOT designing the Hermes→workbench
    request channel yet — it would be ahead of evidence; run Hermes on
    the real job search first and let observed friction specify it.
+7. CANDIDATE (operator-flagged 2026-08-11, "feels like something we should
+   have") — MODEL MATRIX: a first-class cross-model evaluation capability.
+   Run a SCORED task across a SET of models and output pass-rate + cost +
+   latency per model — an evidence-backed "tested on gpt-5.4-mini ✓ / full
+   ✓✓ / …" badge — so model selection is measured, not guessed. WHY it's
+   on-thesis: model selection is the universal AI question almost nobody
+   answers rigorously; a workbench that produces an evidence-backed model
+   matrix for a task IS the eval story (and a strong pitch/portfolio piece).
+   It generalizes what the foundry already does AD HOC — "model tiering by
+   evidence" (intake/architect/test-designer promoted mini→gpt-5.4 after
+   counted failures) — into a systematic capability. MECHANISM MOSTLY
+   EXISTS: agents carry a model param; datasets + assessors + experiments
+   (baseline-vs-candidate, repetitions, pass rate) exist; run evidence
+   already captures tokens/latency. NEW WORK: (a) a MODEL AXIS on
+   experiments (loop a set of models over one agent+dataset, aggregate);
+   (b) a matrix/badge report; (c) an OPENROUTER provider adapter to widen
+   the model set (OpenAI-compatible, so tractable — base_url + key + model
+   mapping). HONEST CAVEATS: the model matrix is CHEAP once a scored task
+   exists — the expensive part is always defining the scored task
+   (dataset + assessor), so this shines for agents that have datasets and
+   needs a task defined for anything else (a product behavior, an external
+   agent like Hermes). And structured-output/tool-calling support varies
+   across OpenRouter models — the matrix would EXPOSE which models can even
+   play the foundry's strict-JSON game (a useful result, not a bug).
+   Directly serves the immediate need too: turns "mini thrashed on the mock
+   interview" into a measured badge. RANK: arguably above step 5 as a
+   pitch/eval piece; gated only on prioritization. First move if pursued:
+   the model axis on the existing experiment harness for one agent that
+   already has a dataset (project-intake or project-architect).
 Parked: brownfield mode for the operator's test framework (blocked on
 ownership/policy answer + work-intake shape); LinkedIn series (post 1
 drafted at ~/.job-tracker/drafts/, unposted by choice); certification
