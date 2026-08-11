@@ -57,6 +57,25 @@ Per current official docs at hermes-agent.nousresearch.com (the .org
 site is an unofficial stale mirror). Python; install under
 /Users/hermes only. Do NOT run it yet.
 
+**MUST include the `[mcp]` extra** — the bare package ships WITHOUT the
+MCP Python SDK, so every `mcp_servers` entry silently fails to connect
+(`hermes mcp test <name>` → "requires the 'mcp' Python SDK") and the
+agent gets zero career tools. Install from a readable cwd (the hermes
+user cannot read the operator's home, so `cd /` first):
+
+```sh
+cd / && sudo -u hermes -H python3 -m pip install --user -U 'hermes-agent[mcp]'
+```
+
+Verify the live connection before proceeding:
+
+```sh
+sudo -u hermes -H sh -c 'cd ~ && PATH="$HOME/Library/Python/3.11/bin:$PATH" hermes mcp test career'
+```
+
+Expected: `✓` connected, 14 tools. (Requires the host from step 6
+already running.)
+
 ## Step 5 — Hermes config
 
 Copy `hermes-kit/config.yaml` to `/Users/hermes/.hermes/config.yaml`
