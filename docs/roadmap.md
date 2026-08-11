@@ -1208,7 +1208,27 @@ operator; conversation-only, nothing below started):
    chain, two-planes/containment wall) + "say it out loud" — the
    operator's training/explaining reference; stable picture only, the
    request-channel is deliberately excluded until it exists.
-4. NEXT BUILD — PROFILE TOOL (decided 2026-08-11 on LIVE DEMAND: operator
+4. DONE 2026-08-11 — PROFILE TOOL (career-profile) SHIPPED through the full
+   foundry chain under the "start building" delegation. Completion d66e11c1,
+   suite 315485cf, main 0327c11, field report ec37a354, at
+   ~/Projects/generated/career-profile. Chain: brief dcc7cf57 v8 (6 intake
+   turns → 30 tester-verifiable criteria, approved 14c278d0) → architecture
+   3d4f70c9 (10 components, 6 slices, all 30 mappings AUTOMATED, approved
+   50a308ea) → capability 921661f6 (approved b98b44bf) → suite 315485cf (ONE
+   revise 9bca713e that caught 4 real defects operator-review-only: hedged
+   stdin-write assertions, a store-corrupting id-rewrite .map(), a shallow
+   faithfulness check, and FAKE docx/pdf fixtures forcing a fake extractor —
+   fixed with operator-generated REAL base64 fixtures verified pdfjs-extractable;
+   approved 563e049e) → 6 slices built by the delegated builder → completion
+   re-ran all 4 visible files + the holdout out-of-tree, exit 0, at 0327c11.
+   Faithfulness-by-construction implemented and verified. Real text extraction
+   (fflate docx, pdfjs PDF). Field-checked end-to-end on the real binary.
+   Honest deviation on record (field report): --min-coverage gates on RAW
+   represented/total (as the suite encodes), not the exclude-honest-gaps model
+   described verbally in design; the executable contract won. Process artifact:
+   6 redundant scope-only slice-1 submissions from a first approval-loop bug
+   (one approved). ORIGINAL DESIGN (still accurate):
+   Profile tool jumps the queue on LIVE DEMAND: operator
    is actively fielding recruiter correspondence and hand-generating
    JD-tailored resumes; time to standardize). Jumps the queue ahead of
    the trace analyzer because it has pressing real demand + a clean
