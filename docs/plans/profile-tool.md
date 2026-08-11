@@ -71,14 +71,21 @@ is verifiable at all.
    exact fabrication surface byte-equality eliminates. (Resolves C9;
    removes M8.)
 
-6. **Ingestion → a subcommand, deterministic formats only in v1.**
-   `career-profile ingest <file>` (and the tracker's `--jd` grows the
-   same capability later). v1 scope: **txt, md, html, docx** — all
-   deterministically extractable. **PDF is deferred**, because PDF text
-   extraction is not byte-deterministic across library versions and the
-   JD path feeds the coverage gate with *no* operator review, so
-   non-deterministic JD text would flake the gate (M5). Scanned/image
-   PDF (OCR) is out. *Why a subcommand, not a shared Foundry package:*
+6. **Ingestion → a subcommand; v1 = txt, md, html, docx, and text-based
+   PDF.** `career-profile ingest <file>` (and the tracker's `--jd` grows
+   the same capability later). Text-based (digital) PDF IS included — it
+   extracts fine with a standard library and is the common case for real
+   JDs/resumes. (An earlier draft deferred PDF; that overstated the
+   limitation.) Two honest caveats, both handled rather than avoided:
+   (a) PDF extraction is not byte-identical across library versions, so
+   the acceptance tests assert on **normalized key-line presence, not
+   byte-equality** (M5); pin the extractor version. (b) Messy layouts
+   (multi-column, tables) can extract scrambled — so the fixtures MUST
+   include an ugly multi-column/table PDF, not just a clean one, and the
+   resume-import path relies on operator review of the extracted text
+   before commit. **Scanned/image PDF (OCR) is out of v1** — that is the
+   real limitation (no text layer). *Why a subcommand, not a shared
+   Foundry package:*
    the separate-package path has an unresolved infra question (how an
    isolated Foundry-built tree takes a dependency on another package)
    and would become a prerequisite product; a subcommand folds in with
@@ -255,8 +262,11 @@ and the gates are the risk.)
 - Prose quality is uncertified by design — mitigated, not eliminated, by
   the byte-equality gate (the tool guarantees *true*, the agent supplies
   *persuasive*).
-- PDF deferred keeps the coverage gate deterministic; revisit only with a
-  pinned extractor + golden fixtures.
+- Text-based PDF is IN v1 with a pinned extractor + normalized (key-line,
+  not byte-exact) assertions + deliberately ugly fixtures (multi-column,
+  table). The "works on a clean PDF, scrambles a real two-column resume"
+  failure is the one to test for on purpose. Scanned/OCR is the only PDF
+  case out of scope.
 - Concurrency: more writers than the tracker (CLI + agent proposals +
   career-mcp reads); low real risk for a single-user local store, but add
   an optimistic version/mtime check on write (G1).
