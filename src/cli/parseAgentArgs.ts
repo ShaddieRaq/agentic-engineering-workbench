@@ -18,6 +18,14 @@ export type AgentCliArgs =
       concurrency: number;
       model: string | null;
       workspaceId: string | null;
+    }
+  | {
+      command: "matrix";
+      agentId: string;
+      models: string[];
+      repetitions: number;
+      concurrency: number;
+      workspaceId: string | null;
     };
 
 function positional(args: string[], index: number, label: string): string {
@@ -95,7 +103,41 @@ export function parseAgentArgs(args: string[]): AgentCliArgs {
     };
   }
 
+  if (command === "matrix") {
+    const agentId = positional(args, 1, "agent ID");
+    const repetitions = Number(option(args, "--repetitions") ?? 1);
+    const concurrency = Number(option(args, "--concurrency") ?? 1);
+
+    if (!Number.isInteger(repetitions) || repetitions < 1) {
+      throw new Error("--repetitions must be a positive integer.");
+    }
+
+    if (!Number.isInteger(concurrency) || concurrency < 1) {
+      throw new Error("--concurrency must be a positive integer.");
+    }
+
+    const models = (option(args, "--models") ?? "")
+      .split(",")
+      .map((model) => model.trim())
+      .filter((model) => model.length > 0);
+
+    if (models.length === 0) {
+      throw new Error(
+        "--models must list at least one model (comma-separated).",
+      );
+    }
+
+    return {
+      command,
+      agentId,
+      models,
+      repetitions,
+      concurrency,
+      workspaceId: option(args, "--workspace"),
+    };
+  }
+
   throw new Error(
-    "Expected one of: list, describe <agent-id>, inventory, validate, scaffold <agent-id>, run <agent-id>, test <agent-id>.",
+    "Expected one of: list, describe <agent-id>, inventory, validate, scaffold <agent-id>, run <agent-id>, test <agent-id>, matrix <agent-id> --models <a,b,c>.",
   );
 }

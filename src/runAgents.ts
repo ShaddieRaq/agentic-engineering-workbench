@@ -3,6 +3,11 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { AgentApplicationService } from "./agents/agentApplicationService.js";
 import { assertAgentCatalogValid } from "./agents/agentCatalogValidator.js";
+import {
+  formatModelMatrixCell,
+  runAgentModelMatrix,
+} from "./agents/modelMatrix/agentModelMatrix.js";
+import { writeAgentModelMatrix } from "./agents/modelMatrix/agentModelMatrixWriter.js";
 import { scaffoldAgent } from "./agents/agentScaffolder.js";
 import { platformAgentRegistry } from "./agents/platformAgentRegistry.js";
 import { FileArtifactStore } from "./artifacts/fileArtifactStore.js";
@@ -72,6 +77,48 @@ async function main(): Promise<void> {
     console.log(`Agent scaffold created: ${result.agentId}`);
     for (const path of result.createdPaths) console.log(`Created: ${path}`);
     for (const step of result.nextSteps) console.log(`Next: ${step}`);
+    return;
+  }
+
+  if (args.command === "matrix") {
+    const registration = platformAgentRegistry.get(args.agentId);
+
+    if (registration.manifest.verification.datasetIds.length === 0) {
+      throw new Error(`Agent ${args.agentId} has no verification datasets.`);
+    }
+
+    const matrix = await runAgentModelMatrix(
+      (request) => service.verify(request),
+      {
+        agentId: args.agentId,
+        models: args.models,
+        repetitions: args.repetitions,
+        concurrency: args.concurrency,
+        ...(args.workspaceId ? { workspaceId: args.workspaceId } : {}),
+      },
+    );
+
+    const evidencePath = await writeAgentModelMatrix(matrix);
+
+    console.log(
+      `Model matrix: ${matrix.agentId}${
+        matrix.agentVersion ? `@${matrix.agentVersion}` : ""
+      } across ${matrix.cells.length} model(s)`,
+    );
+    console.log(
+      `Execution: repetitions=${matrix.execution.repetitions} concurrency=${matrix.execution.concurrency}`,
+    );
+
+    for (const cell of matrix.cells) {
+      console.log(formatModelMatrixCell(cell));
+    }
+
+    console.log(`Matrix evidence saved: ${evidencePath}`);
+
+    if (matrix.cells.some((cell) => cell.status === "error")) {
+      process.exitCode = 1;
+    }
+
     return;
   }
 
