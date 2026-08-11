@@ -1361,6 +1361,23 @@ operator; conversation-only, nothing below started):
    pitch/eval piece; gated only on prioritization. First move if pursued:
    the model axis on the existing experiment harness for one agent that
    already has a dataset (project-intake or project-architect).
+   FAILURE-HARVESTING EXTENSION (operator insight 2026-08-11, aligned):
+   the matrix is not just "pick a model" — deliberately DOWNSCALING the
+   model turns the model range into a cheap FAILURE-GENERATION ENGINE that
+   feeds the existing improvement loop. Two DISTINCT mechanisms: (1)
+   GATE-HARDENING = mutation testing for agents: a weak model's bad output
+   that a gate PASSES is a hole in the gate (needs ground truth = a scored
+   task). (2) PROMPT-HARDENING = ambiguity discovery: a weak model's
+   FAILURE marks where the instructions were under-specified — tighten
+   until even the weak model succeeds and the prompt is robust for all
+   models. Composition: model matrix (failure factory) + improvement loop
+   (analyst → prompt candidate → gated release) = a system that hardens
+   itself; weak models are the cheap fuel. TRIAGE CAVEAT: separate
+   AMBIGUITY failures (prompt/gate left room — fixable, valuable) from
+   CAPABILITY-FLOOR failures (model just can't reason — not fixable by
+   prompting, only tells you the model is too weak = the selection use).
+   Value lives in the ambiguity band. No standard name for
+   "capability-descent as a failure factory"; operator may name it.
 Parked: brownfield mode for the operator's test framework (blocked on
 ownership/policy answer + work-intake shape); LinkedIn series (post 1
 drafted at ~/.job-tracker/drafts/, unposted by choice); certification
