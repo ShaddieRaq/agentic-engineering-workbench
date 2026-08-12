@@ -7,6 +7,7 @@ import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { createPlatformToolRegistry } from "./tools/toolRegistry.js";
 import { FileWorkspaceStore } from "./workspaces/fileWorkspaceStore.js";
 import { runAgentModelMatrix } from "./agents/modelMatrix/agentModelMatrix.js";
+import { writeAgentModelMatrix } from "./agents/modelMatrix/agentModelMatrixWriter.js";
 import { loadEvaluationFailures } from "./agents/modelMatrix/modelMatrixArtifacts.js";
 import { triageModelMatrix } from "./agents/modelMatrix/agentModelMatrixTriage.js";
 import { isFloorApprovedModel } from "./agents/modelTierPolicy.js";
@@ -68,8 +69,12 @@ async function main(): Promise<void> {
     (request) => service.verify(request),
     { agentId, models, repetitions },
   );
+  // Persist the matrix so this run's evidence is inspectable (matrix-triage /
+  // matrix-report), consistent with the rest of the platform.
+  const matrixPath = await writeAgentModelMatrix(matrix);
   const failures = await loadEvaluationFailures(runsDirectory, matrix);
   const triage = triageModelMatrix(matrix, failures);
+  console.log(`Matrix evidence saved: ${matrixPath}`);
   console.log(
     `Triage: ${triage.ambiguity.length} ambiguity, ${triage.capabilityDependent.length} capability-dependent.`,
   );
