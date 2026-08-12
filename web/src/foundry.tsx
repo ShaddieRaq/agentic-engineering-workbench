@@ -975,11 +975,19 @@ export function FoundryProjectsPage() {
   );
 }
 
-function SubmissionDetails({ submission, onRecorded }: { submission: FoundrySubmissionView; onRecorded: () => void }) {
+export function SubmissionDetails({ submission, onRecorded }: { submission: FoundrySubmissionView; onRecorded: () => void }) {
+  const holdoutPassed = submission.files.filter((file) => file.visibility === "holdout" && file.passed).length;
+  const passedCount = submission.files.filter((file) => file.passed).length;
   return (
     <div className="submission-block">
       <div className="section-heading">
-        <h4>Submission {shortId(submission.submissionId)} · {when(submission.createdAt)}</h4>
+        <div>
+          <span className="eyebrow">Submission {shortId(submission.submissionId)} · {when(submission.createdAt)}</span>
+          <h4>{submission.status === "passed" ? "Verification passed" : submission.status === "failed" ? "Verification failed" : "Submitted"}</h4>
+          {!!submission.files.length && (
+            <small className="submission-sub">{passedCount}/{submission.files.length} test file(s) passed · verified out-of-tree</small>
+          )}
+        </div>
         <StatusBadge value={submission.status} />
       </div>
       {submission.builderReport && (
@@ -988,14 +996,27 @@ function SubmissionDetails({ submission, onRecorded }: { submission: FoundrySubm
           <p>{submission.builderReport}</p>
         </div>
       )}
-      <p>
-        Scope check: <StatusBadge value={submission.scopeCheck.passed ? "passed" : "failed"} />
-      </p>
-      {!!submission.scopeCheck.failures.length && (
-        <ul className="decision-list">
-          {submission.scopeCheck.failures.map((failure) => <li key={failure}>{failure}</li>)}
-        </ul>
+      {holdoutPassed > 0 && (
+        <div className="gate-verdict gate-holdout">
+          <span className="gate-mark" aria-hidden="true">✓</span>
+          <div>
+            <strong>{holdoutPassed} holdout test(s) passed on first exposure</strong>
+            <p>These tests were never shown to the builder — it could not have written toward them. They ran out-of-tree against the pinned commit and passed the first time the builder&apos;s code met them.</p>
+          </div>
+        </div>
       )}
+      <div className={`gate-verdict ${submission.scopeCheck.passed ? "gate-pass" : "gate-fail"}`}>
+        <span className="gate-mark" aria-hidden="true">{submission.scopeCheck.passed ? "✓" : "✗"}</span>
+        <div>
+          <strong>Scope check {submission.scopeCheck.passed ? "passed" : "failed"}</strong>
+          <p>The builder may submit only the tests it was given, unmodified — checked three ways: visible files byte-identical, no holdout tampering, no unexpected files added.</p>
+          {!!submission.scopeCheck.failures.length && (
+            <ul className="decision-list">
+              {submission.scopeCheck.failures.map((failure) => <li key={failure}>{failure}</li>)}
+            </ul>
+          )}
+        </div>
+      </div>
       {!!submission.files.length && (
         <div className="table-wrap">
           <table>
@@ -1004,7 +1025,9 @@ function SubmissionDetails({ submission, onRecorded }: { submission: FoundrySubm
               {submission.files.map((file) => (
                 <tr key={file.path}>
                   <td><code>{file.path}</code></td>
-                  <td><StatusBadge value={file.visibility} /></td>
+                  <td>{file.visibility === "holdout"
+                    ? <span className="cover-chip holdout" title="A holdout test the builder never saw.">holdout</span>
+                    : <span className="tag">visible</span>}</td>
                   <td>{file.exitCode}</td>
                   <td><StatusBadge value={file.passed ? "passed" : "failed"} /></td>
                 </tr>

@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "../web/src/App.js";
 import { CriteriaMatrix } from "../web/src/components.js";
+import { SubmissionDetails } from "../web/src/foundry.js";
 
 afterEach(() => {
   cleanup();
@@ -731,6 +732,35 @@ describe("agent workbench web interface", () => {
     expect(screen.getByText("Null-implementation gate")).toBeInTheDocument();
     expect(screen.getByText("Blind holdout")).toBeInTheDocument();
     expect(screen.getByText("Faithful evidence")).toBeInTheDocument();
+  });
+
+  it("submission leads with the verdict, named scope sub-checks, and a holdout first-exposure banner", () => {
+    render(
+      <SubmissionDetails
+        submission={{
+          submissionId: "s0000000-0000-4000-8000-000000000009",
+          createdAt: "2026-08-05T10:00:00.000Z",
+          status: "passed",
+          builderReport: null,
+          scopeCheck: { passed: true, failures: [] },
+          files: [
+            { path: "acceptance-tests/routing.test.ts", visibility: "visible", exitCode: 0, passed: true },
+            { path: "acceptance-tests/holdout.test.ts", visibility: "holdout", exitCode: 0, passed: true },
+          ],
+          outputExcerpt: "PASS",
+          decisions: [],
+        }}
+        onRecorded={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Verification passed" })).toBeInTheDocument();
+    expect(screen.getByText("Scope check passed")).toBeInTheDocument();
+    expect(screen.getByText(/no unexpected files added/)).toBeInTheDocument();
+    expect(screen.getByText("1 holdout test(s) passed on first exposure")).toBeInTheDocument();
+    // The holdout in the file table is a rigor chip with a teaching tooltip —
+    // not a danger-red status verdict (the color-bug fix).
+    expect(screen.getByTitle("A holdout test the builder never saw.")).toBeInTheDocument();
   });
 
   it("renders a raw foundry artifact with the holdout disclosure", async () => {

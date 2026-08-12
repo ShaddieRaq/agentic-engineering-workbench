@@ -116,7 +116,12 @@ section { margin-top: 34px; }
 
 .gate-verdict { display: flex; gap: 12px; align-items: flex-start; margin: 4px 0 16px; padding: 14px 16px; border: 1px solid var(--line); border-left-width: 3px; border-radius: 12px; background: var(--surface); }
 .gate-verdict.gate-pass { border-left-color: var(--success); }
+.gate-verdict.gate-fail { border-left-color: var(--danger); }
+.gate-verdict.gate-holdout { border-left-color: var(--accent); }
 .gate-verdict .gate-mark { flex: none; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(76, 195, 138, .15); color: var(--success); font-weight: 700; font-size: 13px; }
+.gate-verdict.gate-fail .gate-mark { background: rgba(236, 93, 94, .15); color: var(--danger); }
+.gate-verdict.gate-holdout .gate-mark { background: rgba(130, 143, 255, .15); color: var(--accent); }
+.submission-sub { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; }
 .gate-verdict strong { display: block; }
 .gate-verdict p { margin: 5px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.55; }
 
