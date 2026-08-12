@@ -120,6 +120,22 @@ section { margin-top: 34px; }
 .gate-verdict strong { display: block; }
 .gate-verdict p { margin: 5px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.55; }
 
+.orientation { margin: 6px 0 20px; }
+.orientation-claim { max-width: 800px; color: var(--muted); font-size: 15px; line-height: 1.6; margin: 0 0 18px; }
+.governed-chain { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.governed-chain li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.chain-index { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(130, 143, 255, .14); color: var(--accent); font: 700 12px DM Mono, monospace; }
+.governed-chain strong { display: block; font-size: 14px; }
+.governed-chain small { display: block; margin-top: 4px; color: var(--muted); font-size: 11.5px; line-height: 1.45; }
+.guarantees { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; margin-bottom: 30px; }
+.guarantee-card { display: block; padding: 20px; border: 1px solid var(--line); border-top-width: 3px; border-radius: 14px; background: var(--surface); text-decoration: none; color: inherit; transition: transform .15s, border-color .15s; }
+.guarantee-card:hover { transform: translateY(-2px); border-color: #4e675f; }
+.guarantee-card:nth-child(1) { border-top-color: var(--success); }
+.guarantee-card:nth-child(2) { border-top-color: var(--accent); }
+.guarantee-card:nth-child(3) { border-top-color: var(--accent-2); }
+.guarantee-card strong { display: block; font-size: 17px; margin-bottom: 8px; color: #edf4f1; }
+.guarantee-card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+
 .panel, .concept-card, .trace-panel { padding: 25px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .span-two { grid-column: span 2; }

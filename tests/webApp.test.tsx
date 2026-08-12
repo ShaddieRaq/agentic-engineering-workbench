@@ -712,6 +712,27 @@ describe("agent workbench web interface", () => {
     expect(screen.getByText("Streak resets after a missed day")).toBeInTheDocument();
   });
 
+  it("front door leads with the governed chain and guarantees even when data fails to load", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.endsWith("/api/workspaces")) {
+        return new Response(JSON.stringify({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      // Health/agents/artifacts all fail — the static orientation must survive.
+      return new Response("boom", { status: 500 });
+    }));
+
+    window.history.replaceState(null, "", "/");
+    render(<AppRoutes />);
+
+    expect(await screen.findByRole("heading", { name: "Turn an idea into software you can trust" })).toBeInTheDocument();
+    expect(screen.getByText(/governed chain the workbench drives/)).toBeInTheDocument();
+    expect(screen.getByText("Independent tests")).toBeInTheDocument();
+    expect(screen.getByText("Null-implementation gate")).toBeInTheDocument();
+    expect(screen.getByText("Blind holdout")).toBeInTheDocument();
+    expect(screen.getByText("Faithful evidence")).toBeInTheDocument();
+  });
+
   it("renders a raw foundry artifact with the holdout disclosure", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);

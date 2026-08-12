@@ -32,31 +32,75 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// The governed chain the demo drives — the real pipeline, not the runtime
+// execution path of one agent call. Static so it paints instantly and survives
+// a failed fetch: the screen-share opener can never blank to an error card.
+const GOVERNED_CHAIN = [
+  { step: "Interview", note: "an idea interrogated into a decision-ready brief; every fact tagged with its provenance" },
+  { step: "Architecture", note: "a plan where every acceptance criterion maps to a check, or it fails loudly" },
+  { step: "Capability", note: "what to build versus reuse, coverage-validated against the plan" },
+  { step: "Independent tests", note: "acceptance tests written blind to the code, with a hidden holdout" },
+  { step: "Gated build", note: "an isolated builder; tests verified out-of-tree, holdout on first exposure" },
+];
+
+function OrientationBand() {
+  return (
+    <>
+      <section className="orientation">
+        <p className="orientation-claim">
+          Every step from an idea to shipped code is gated by evidence a form can&apos;t fake. This is the governed chain the workbench drives:
+        </p>
+        <ol className="governed-chain">
+          {GOVERNED_CHAIN.map(({ step, note }, index) => (
+            <li key={step}>
+              <span className="chain-index">{index + 1}</span>
+              <div><strong>{step}</strong><small>{note}</small></div>
+            </li>
+          ))}
+        </ol>
+      </section>
+      <section className="guarantees">
+        <Link className="guarantee-card" to="/foundry">
+          <strong>Null-implementation gate</strong>
+          <p>Every generated test is run against an empty stub. A suite that passes on nothing is rejected by name — the tests can&apos;t be tautologies.</p>
+        </Link>
+        <Link className="guarantee-card" to="/foundry">
+          <strong>Blind holdout</strong>
+          <p>A hidden subset of tests the builder never sees. It must pass on first exposure — no teaching to the test.</p>
+        </Link>
+        <Link className="guarantee-card" to="/runs">
+          <strong>Faithful evidence</strong>
+          <p>Everything rendered is byte-equal to a stored record; every line maps to a source id. Fabrication is structurally impossible.</p>
+        </Link>
+      </section>
+    </>
+  );
+}
+
 function OverviewPage() {
   const { workspaces, selectedWorkspaceId } = useWorkspace();
   const health = useResource<Health>("/api/health");
   const agents = useResource<{ agents: AgentManifest[] }>("/api/agents");
   const artifacts = useResource<ArtifactList>("/api/artifacts?limit=5");
-  if (health.loading || agents.loading || artifacts.loading) return <Loading />;
-  if (health.error || agents.error || artifacts.error) return <ErrorNotice message={health.error ?? agents.error ?? artifacts.error ?? "Unknown error"} />;
+  const loading = health.loading || agents.loading || artifacts.loading;
+  const error = health.error ?? agents.error ?? artifacts.error;
   return (
     <>
-      <PageHeader eyebrow="Local agent platform" title="See the system around the model">
-        <div className="health-block"><span className="pulse" /><div><strong>Platform online</strong><small>{health.data?.catalogValid ? "Catalog validated" : "Catalog needs attention"}</small></div></div>
+      <PageHeader eyebrow="Local agent engineering platform" title="Turn an idea into software you can trust">
+        <Link className="button" to="/foundry">Start a project →</Link>
       </PageHeader>
-      <section className="hero-panel">
-        <div><span className="eyebrow">Agent lifecycle</span><h2>From a versioned definition to inspectable evidence.</h2><p>The workbench makes every boundary visible—contracts, permissions, workflow control, provider execution, assessment, and persistence.</p></div>
-        <div className="lifecycle-strip">
-          {['Agent', 'Input', 'Permissions', 'Workflow', 'Model', 'Assessment', 'Evidence'].map((stage, index) => <div key={stage}><span>{String(index + 1).padStart(2, '0')}</span><strong>{stage}</strong></div>)}
-        </div>
-      </section>
-      <section className="metric-grid">
-        <div><span>Registered agents</span><strong>{agents.data?.agents.length ?? 0}</strong></div>
-        <div><span>Recent artifacts</span><strong>{artifacts.data?.artifacts.length ?? 0}</strong></div>
-        <div><span>Provider</span><strong className="metric-word">{health.data?.apiKeyConfigured ? "Ready" : "Not configured"}</strong></div>
-        <div><span>Workspace</span><strong className="metric-path">{workspaces.find(({ id }) => id === selectedWorkspaceId)?.name ?? "Loading"}</strong></div>
-      </section>
-      <section><div className="section-heading"><div><span className="eyebrow">Products</span><h2>Registered agents</h2></div><Link to="/agents">View catalog →</Link></div><div className="card-grid">{agents.data?.agents.map((agent) => <AgentCard agent={agent} key={agent.id} />)}</div></section>
+      <OrientationBand />
+      {error ? <ErrorNotice message={error} /> : loading ? <Loading /> : (
+        <>
+          <section className="metric-grid">
+            <div><span>Registered agents</span><strong>{agents.data?.agents.length ?? 0}</strong></div>
+            <div><span>Recent artifacts</span><strong>{artifacts.data?.artifacts.length ?? 0}</strong></div>
+            <div><span>Provider</span><strong className="metric-word">{health.data?.apiKeyConfigured ? "Ready" : "Not configured"}</strong></div>
+            <div><span>Workspace</span><strong className="metric-path">{workspaces.find(({ id }) => id === selectedWorkspaceId)?.name ?? "Loading"}</strong></div>
+          </section>
+          <section><div className="section-heading"><div><span className="eyebrow">Products</span><h2>Registered agents</h2></div><Link to="/agents">View catalog →</Link></div><div className="card-grid">{agents.data?.agents.map((agent) => <AgentCard agent={agent} key={agent.id} />)}</div></section>
+        </>
+      )}
     </>
   );
 }
