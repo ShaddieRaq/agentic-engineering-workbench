@@ -27,6 +27,71 @@ export function ProvenanceChip({ source, count }: { source: string; count?: numb
   );
 }
 
+// Acceptance criteria as a requirements-traceability matrix, not a card stack:
+// a scannable, filterable table where each row is a criterion and the columns
+// are its provenance and how an independent tester verifies it. Scan a column
+// to find the gaps (which are unresolved?) instead of reading every card.
+const PROVENANCE_ORDER = ["user-stated", "agent-inferred", "unresolved"] as const;
+
+export function CriteriaMatrix({
+  criteria,
+}: {
+  criteria: { id: string; text: string; source: string; verification: string }[];
+}) {
+  const [filter, setFilter] = useState<string | null>(null);
+  if (criteria.length === 0) return null;
+  const shown = filter ? criteria.filter((criterion) => criterion.source === filter) : criteria;
+
+  return (
+    <div className="criteria-matrix">
+      <div className="criteria-health">
+        <strong>{criteria.length} acceptance criteria</strong>
+        {PROVENANCE_ORDER.map((source) => {
+          const count = criteria.filter((criterion) => criterion.source === source).length;
+          if (count === 0) return null;
+          const active = filter === source;
+          return (
+            <button
+              type="button"
+              key={source}
+              className={`chip-filter${active ? " active" : ""}`}
+              aria-pressed={active}
+              onClick={() => setFilter(active ? null : source)}
+            >
+              <ProvenanceChip source={source} count={count} />
+            </button>
+          );
+        })}
+        {filter && (
+          <button type="button" className="chip-clear" onClick={() => setFilter(null)}>
+            show all
+          </button>
+        )}
+      </div>
+      <div className="table-wrap">
+        <table className="criteria-table">
+          <thead>
+            <tr>
+              <th>Criterion</th>
+              <th>Source</th>
+              <th>Verified by an independent tester</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((criterion) => (
+              <tr key={criterion.id} className={`source-${criterion.source}`}>
+                <td className="cell-criterion">{criterion.text}</td>
+                <td><ProvenanceChip source={criterion.source} /></td>
+                <td className="cell-verify">{criterion.verification}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export function PageHeader({ eyebrow, title, children }: { eyebrow: string; title: string; children?: React.ReactNode }) {
   return <header className="page-header"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1></div>{children}</header>;
 }

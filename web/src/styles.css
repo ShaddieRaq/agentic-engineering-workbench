@@ -92,17 +92,21 @@ section { margin-top: 34px; }
 .status-agent-inferred { background: rgba(240, 180, 41, .13); color: var(--warning); }
 .status-unresolved { background: rgba(236, 93, 94, .13); color: var(--danger); }
 
-.criteria-block { display: grid; gap: 10px; margin: 18px 0; }
+.criteria-matrix { display: grid; gap: 12px; margin: 18px 0; }
 .criteria-health { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .criteria-health strong { margin-right: 4px; }
-.criterion-card { padding: 14px 16px; border: 1px solid var(--line); border-left-width: 3px; border-left-color: var(--accent-2); border-radius: 12px; background: var(--surface); }
-.criterion-card.source-user-stated { border-left-color: var(--success); }
-.criterion-card.source-agent-inferred { border-left-color: var(--warning); }
-.criterion-card.source-unresolved { border-left-color: var(--danger); }
-.criterion-text { margin: 0 0 10px; line-height: 1.55; }
-.criterion-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
-.criterion-check { color: var(--muted); font-size: 12px; line-height: 1.5; }
-.criterion-check-label { color: #71857f; font: 10px DM Mono, monospace; text-transform: uppercase; letter-spacing: .06em; margin-right: 6px; }
+.chip-filter { padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 999px; }
+.chip-filter .status { opacity: .8; }
+.chip-filter:hover .status, .chip-filter.active .status { opacity: 1; }
+.chip-filter.active .status { box-shadow: 0 0 0 1px currentColor; }
+.chip-clear { border: 0; background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; text-decoration: underline; }
+.criteria-table td { white-space: normal; vertical-align: top; }
+.criteria-table td:first-child { border-left: 3px solid transparent; }
+.criteria-table tr.source-user-stated td:first-child { border-left-color: var(--success); }
+.criteria-table tr.source-agent-inferred td:first-child { border-left-color: var(--warning); }
+.criteria-table tr.source-unresolved td:first-child { border-left-color: var(--danger); }
+.cell-criterion { max-width: 460px; color: #edf4f1; line-height: 1.5; }
+.cell-verify { max-width: 380px; color: var(--muted); font-size: 12px; line-height: 1.55; }
 
 .panel, .concept-card, .trace-panel { padding: 25px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }

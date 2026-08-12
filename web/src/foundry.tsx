@@ -11,7 +11,7 @@ import {
   type FoundrySubmissionView,
   type Operation,
 } from "./api.js";
-import { EmptyState, ErrorNotice, Loading, OperationTrace, PageHeader, ProvenanceChip, StatusBadge } from "./components.js";
+import { CriteriaMatrix, EmptyState, ErrorNotice, Loading, OperationTrace, PageHeader, StatusBadge } from "./components.js";
 import { useOperation, useResource } from "./hooks.js";
 import { LocalLink as Link, navigate, usePathname } from "./router.js";
 
@@ -1286,33 +1286,7 @@ export function FoundryProjectPage() {
                 ))}
               </div>
             )}
-            {version.acceptanceCriteria.length > 0 && (
-              <div className="criteria-block">
-                <div className="criteria-health">
-                  <strong>{version.acceptanceCriteria.length} acceptance criteria</strong>
-                  {(["user-stated", "agent-inferred", "unresolved"] as const).map((source) => {
-                    const count = version.acceptanceCriteria.filter(
-                      (criterion) => criterion.source === source,
-                    ).length;
-                    return count > 0 ? (
-                      <ProvenanceChip key={source} source={source} count={count} />
-                    ) : null;
-                  })}
-                </div>
-                {version.acceptanceCriteria.map((criterion) => (
-                  <div className={`criterion-card source-${criterion.source}`} key={criterion.id}>
-                    <p className="criterion-text">{criterion.text}</p>
-                    <div className="criterion-meta">
-                      <ProvenanceChip source={criterion.source} />
-                      <span className="criterion-check">
-                        <span className="criterion-check-label">Checked by</span>
-                        {criterion.verification}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <CriteriaMatrix criteria={version.acceptanceCriteria} />
             <DecisionList decisions={version.decisions} />
             {version.version === chain.latestVersion && chain.intakeCanContinue && (
               <IntakeTurnPanel briefId={chain.briefId} questions={chain.intakeQuestions} onDone={resource.reload} />
