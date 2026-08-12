@@ -77,6 +77,15 @@ export interface FoundryBriefVersionView {
   };
 }
 
+// A concern the planning agent raised about its own plan. The count alone
+// crossed the boundary before; the description is the hidden rigor — the
+// agent's own flagged risk, which the operator was approving blind.
+export interface FoundryConcernView {
+  id: string;
+  severity: "blocking" | "advisory";
+  description: string;
+}
+
 export interface FoundryPlanView {
   planId: string;
   briefVersion: number;
@@ -84,12 +93,16 @@ export interface FoundryPlanView {
   status: FoundryStageStatus;
   componentCount: number;
   sliceCount: number;
+  // The components the plan defines — name + responsibility, not just a count,
+  // so "10 components" becomes a legible list of what is being built.
+  components: { name: string; responsibility: string }[];
   // Acceptance-mapping test types by count (e.g. {integration: 7}). The
   // all-manual defect slipped past operator approval twice because the
   // summary hid this; "manual" here is a red flag the panel must show.
   mappingTestTypes: Record<string, number>;
   blockingConcerns: number;
   advisoryConcerns: number;
+  concerns: FoundryConcernView[];
   // Slice contents for the decision panel (field-trial verdict: operators
   // approved plans without ever seeing what the slices contain).
   slices: {
@@ -117,6 +130,23 @@ export interface FoundryCapabilityPlanView {
   proposedCapabilityCount: number;
   blockingConcerns: number;
   advisoryConcerns: number;
+  // Each need + how it resolves — the reuse-vs-build story the count hid:
+  // existing-agent/existing-tool = already have it; project-code/human/
+  // engineering-change-required = must be built or done by hand.
+  needs: {
+    id: string;
+    need: string;
+    resolution: string;
+    capabilityId: string | null;
+  }[];
+  // The new capabilities the plan proposes to build, and by which route.
+  proposedCapabilities: {
+    id: string;
+    name: string;
+    route: string;
+    contractSketch: string;
+  }[];
+  concerns: FoundryConcernView[];
   decisions: FoundryDecisionView[];
   revisedFromArtifactId?: string;
 }
@@ -566,6 +596,10 @@ function buildViewFromBuckets(
       status: statusFromDecisions(decisions),
       componentCount: plan.content.components.length,
       sliceCount: plan.content.implementationSlices.length,
+      components: plan.content.components.map((component) => ({
+        name: component.name,
+        responsibility: component.responsibility,
+      })),
       slices: plan.content.implementationSlices.map((slice) => ({
         sliceId: slice.id,
         title: slice.title,
@@ -581,6 +615,11 @@ function buildViewFromBuckets(
       advisoryConcerns: plan.content.concerns.filter(
         ({ severity }) => severity === "advisory",
       ).length,
+      concerns: plan.content.concerns.map((concern) => ({
+        id: concern.id,
+        severity: concern.severity,
+        description: concern.description,
+      })),
       decisions: decisionViews(decisions),
       ...(plan.revisedFromArtifactId
         ? { revisedFromArtifactId: plan.revisedFromArtifactId }
@@ -614,6 +653,23 @@ function buildViewFromBuckets(
       advisoryConcerns: plan.content.concerns.filter(
         ({ severity }) => severity === "advisory",
       ).length,
+      needs: plan.content.needs.map((need) => ({
+        id: need.id,
+        need: need.need,
+        resolution: need.resolution,
+        capabilityId: need.capabilityId,
+      })),
+      proposedCapabilities: plan.content.proposedCapabilities.map((capability) => ({
+        id: capability.id,
+        name: capability.name,
+        route: capability.route,
+        contractSketch: capability.contractSketch,
+      })),
+      concerns: plan.content.concerns.map((concern) => ({
+        id: concern.id,
+        severity: concern.severity,
+        description: concern.description,
+      })),
       decisions: decisionViews(decisions),
       ...(plan.revisedFromArtifactId
         ? { revisedFromArtifactId: plan.revisedFromArtifactId }

@@ -4,14 +4,16 @@ import {
   OPERATOR_TOKEN_STORAGE_KEY,
   storedOperatorToken,
   type FoundryChainView,
+  type FoundryConcernView,
   type FoundryDecisionView,
+  type FoundryPlanView,
   type FoundryProjectIndex,
   type FoundrySliceRow,
   type FoundryStoredArtifact,
   type FoundrySubmissionView,
   type Operation,
 } from "./api.js";
-import { CriteriaMatrix, EmptyState, ErrorNotice, JsonView, Loading, OperationTrace, PageHeader, RawDrawer, StatusBadge } from "./components.js";
+import { CriteriaMatrix, EmptyState, ErrorNotice, JsonView, Loading, MetricTile, OperationTrace, PageHeader, RawDrawer, StatusBadge } from "./components.js";
 import { useOperation, useResource } from "./hooks.js";
 import { LocalLink as Link, navigate, usePathname } from "./router.js";
 
@@ -607,6 +609,53 @@ function NextStepBanner({
       {operation.data && operation.data.status !== "completed" && (
         <OperationTrace operation={operation.data} />
       )}
+    </div>
+  );
+}
+
+// The concerns the planning agent raised about its own plan — surfaced as text,
+// not a count. Blocking is red, advisory amber; the operator was approving these
+// blind before (only the count crossed the view-model boundary).
+function ConcernList({ concerns }: { concerns: FoundryConcernView[] }) {
+  if (concerns.length === 0) return null;
+  return (
+    <div className="concern-block">
+      <span className="eyebrow">Concerns the planner raised</span>
+      <ul className="concern-list">
+        {concerns.map((concern) => (
+          <li className={`concern-row concern-${concern.severity}`} key={concern.id}>
+            <span className={`concern-badge concern-badge-${concern.severity}`}>{concern.severity}</span>
+            <span className="concern-text">{concern.description}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// The build plan's slices as a visible, ordered sequence. Field-trial verdict:
+// operators approved plans without ever seeing what the slices contained, so
+// this no longer hides behind a disclosure.
+function BuildSequence({ slices }: { slices: FoundryPlanView["slices"] }) {
+  if (slices.length === 0) return null;
+  return (
+    <div className="build-sequence">
+      <span className="eyebrow">Build sequence — {slices.length} slice(s)</span>
+      <ol className="slice-list">
+        {slices.map((slice) => (
+          <li className="slice-item" key={slice.sliceId}>
+            <div className="slice-head">
+              <strong>{slice.title}</strong>
+              {slice.disposition && <StatusBadge value={slice.disposition} />}
+            </div>
+            <p className="slice-delivers">{slice.delivers}</p>
+            <p className="slice-meta">
+              Verifies {slice.verifiedByCriterionIds.length} criterion/criteria
+              {slice.dependsOnSliceIds.length > 0 && <> · depends on {slice.dependsOnSliceIds.length} prior slice(s)</>}
+            </p>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
@@ -1404,11 +1453,18 @@ export function FoundryProjectPage() {
               <h3>Plan {shortId(plan.planId)} · {when(plan.createdAt)}</h3>
               <StatusBadge value={plan.status} />
             </div>
-            <p className="muted-note">
-              {plan.componentCount} component(s) · {plan.sliceCount} slice(s) · {plan.blockingConcerns} blocking / {plan.advisoryConcerns} advisory concern(s)
-              {plan.revisedFromArtifactId && <> · revision of {shortId(plan.revisedFromArtifactId)}</>}
-              {plan.evolvesFromCompletionId && <> · <strong>evolution plan</strong> ({plan.carriedSliceCount ?? 0} carried) from completion {shortId(plan.evolvesFromCompletionId)}</>}
-            </p>
+            {(plan.revisedFromArtifactId || plan.evolvesFromCompletionId) && (
+              <p className="muted-note">
+                {plan.revisedFromArtifactId && <>Revision of {shortId(plan.revisedFromArtifactId)}</>}
+                {plan.evolvesFromCompletionId && <> · <strong>evolution plan</strong> ({plan.carriedSliceCount ?? 0} carried) from completion {shortId(plan.evolvesFromCompletionId)}</>}
+              </p>
+            )}
+            <div className="metric-grid foundry-metrics">
+              <MetricTile label="Components" value={plan.componentCount} />
+              <MetricTile label="Build slices" value={plan.sliceCount} />
+              <MetricTile label="Blocking concerns" value={plan.blockingConcerns} tone={plan.blockingConcerns > 0 ? "critical" : undefined} />
+              <MetricTile label="Advisory concerns" value={plan.advisoryConcerns} tone={plan.advisoryConcerns > 0 ? "warn" : undefined} />
+            </div>
             <p className="muted-note">
               Acceptance mappings:{" "}
               {Object.entries(plan.mappingTestTypes).map(([type, count]) => (
@@ -1422,22 +1478,19 @@ export function FoundryProjectPage() {
                 </strong>
               ) : null}
             </p>
-            {(plan.slices ?? []).length > 0 && (
+            <ConcernList concerns={plan.concerns} />
+            <BuildSequence slices={plan.slices} />
+            {plan.components.length > 0 && (
               <details className="panel history-strip">
-                <summary>Slice contents ({plan.slices.length})</summary>
-                {plan.slices.map((slice, index) => (
-                  <div className="plan-slice" key={slice.sliceId}>
-                    <p>
-                      <strong>Slice {index + 1}: {slice.title}</strong>{" "}
-                      {slice.disposition && <StatusBadge value={slice.disposition} />}
-                    </p>
-                    <p className="muted-note">{slice.delivers}</p>
-                    <p className="muted-note">
-                      Verifies {slice.verifiedByCriterionIds.length} criterion/criteria
-                      {slice.dependsOnSliceIds.length > 0 && <> · depends on {slice.dependsOnSliceIds.map(shortId).join(", ")}</>}
-                    </p>
-                  </div>
-                ))}
+                <summary>Components ({plan.componentCount})</summary>
+                <ul className="component-list">
+                  {plan.components.map((component) => (
+                    <li key={component.name}>
+                      <strong>{component.name}</strong>
+                      <span>{component.responsibility}</span>
+                    </li>
+                  ))}
+                </ul>
               </details>
             )}
             <DecisionList decisions={plan.decisions} />
@@ -1500,9 +1553,58 @@ export function FoundryProjectPage() {
               <StatusBadge value={plan.status} />
             </div>
             <p className="muted-note">
-              {plan.needCount} need(s) · {plan.proposedCapabilityCount} proposed capability(ies) · for plan {shortId(plan.planId)}
+              For plan {shortId(plan.planId)}
               {plan.revisedFromArtifactId && <> · revision of {shortId(plan.revisedFromArtifactId)}</>}
             </p>
+            <div className="metric-grid foundry-metrics">
+              <MetricTile label="Needs" value={plan.needCount} />
+              <MetricTile label="New capabilities to build" value={plan.proposedCapabilityCount} tone={plan.proposedCapabilityCount > 0 ? "warn" : "good"} hint={plan.proposedCapabilityCount === 0 ? "everything resolves to existing capabilities" : undefined} />
+              <MetricTile label="Blocking concerns" value={plan.blockingConcerns} tone={plan.blockingConcerns > 0 ? "critical" : undefined} />
+              <MetricTile label="Advisory concerns" value={plan.advisoryConcerns} tone={plan.advisoryConcerns > 0 ? "warn" : undefined} />
+            </div>
+            {plan.needs.length > 0 && (() => {
+              const counts = new Map<string, number>();
+              for (const need of plan.needs) counts.set(need.resolution, (counts.get(need.resolution) ?? 0) + 1);
+              return (
+                <div className="resolution-block">
+                  <span className="eyebrow">How each need resolves — reuse vs. build</span>
+                  <div className="resolution-summary">
+                    {[...counts.entries()].map(([resolution, count]) => (
+                      <span className={`res-chip res-${resolution}`} key={resolution}>{resolution.replaceAll("-", " ")} ×{count}</span>
+                    ))}
+                  </div>
+                  <details className="panel history-strip">
+                    <summary>Needs ({plan.needCount})</summary>
+                    <ul className="need-list">
+                      {plan.needs.map((need) => (
+                        <li key={need.id}>
+                          <span className={`res-chip res-${need.resolution}`}>{need.resolution.replaceAll("-", " ")}</span>
+                          <span className="need-text">{need.need}</span>
+                          {need.capabilityId && <code className="need-capability">{need.capabilityId}</code>}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                </div>
+              );
+            })()}
+            {plan.proposedCapabilities.length > 0 && (
+              <div className="capability-block">
+                <span className="eyebrow">New capabilities the plan proposes to build</span>
+                <ul className="capability-list">
+                  {plan.proposedCapabilities.map((capability) => (
+                    <li key={capability.id}>
+                      <div className="cap-head">
+                        <strong>{capability.name}</strong>
+                        <span className="status status-visible">{capability.route.replaceAll("-", " ")}</span>
+                      </div>
+                      <p className="muted-note">{capability.contractSketch}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <ConcernList concerns={plan.concerns} />
             <DecisionList decisions={plan.decisions} />
             {plan.status === "revision-requested" && (
               <StageRunControl

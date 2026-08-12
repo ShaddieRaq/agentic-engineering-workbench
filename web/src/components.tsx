@@ -277,7 +277,7 @@ export function MetricTile({
 }: {
   label: string;
   value: React.ReactNode;
-  hint?: string;
+  hint?: string | undefined;
   tone?: "good" | "warn" | "critical" | "holdout" | undefined;
 }) {
   return (

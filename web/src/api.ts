@@ -476,6 +476,12 @@ export interface FoundryBriefVersionView {
   criterionChanges?: { added: string[]; changed: string[]; retired: string[] };
 }
 
+export interface FoundryConcernView {
+  id: string;
+  severity: "blocking" | "advisory";
+  description: string;
+}
+
 export interface FoundryPlanView {
   planId: string;
   briefVersion: number;
@@ -483,9 +489,11 @@ export interface FoundryPlanView {
   status: FoundryStageStatus;
   componentCount: number;
   sliceCount: number;
+  components: { name: string; responsibility: string }[];
   mappingTestTypes: Record<string, number>;
   blockingConcerns: number;
   advisoryConcerns: number;
+  concerns: FoundryConcernView[];
   slices: {
     sliceId: string;
     title: string;
@@ -510,6 +518,9 @@ export interface FoundryCapabilityPlanView {
   proposedCapabilityCount: number;
   blockingConcerns: number;
   advisoryConcerns: number;
+  needs: { id: string; need: string; resolution: string; capabilityId: string | null }[];
+  proposedCapabilities: { id: string; name: string; route: string; contractSketch: string }[];
+  concerns: FoundryConcernView[];
   decisions: FoundryDecisionView[];
   revisedFromArtifactId?: string;
 }

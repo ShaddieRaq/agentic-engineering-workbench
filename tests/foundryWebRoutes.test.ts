@@ -98,6 +98,30 @@ describe("buildFoundryChainView", () => {
     expect(build!.slices[1]!.status).toBe("not-started");
   });
 
+  it("carries plan components/concerns and capability needs across the boundary", async () => {
+    const store = await temporaryStore();
+    const chain = await persistFoundryChain(store);
+    const view = await buildFoundryChainView(store, chain.fixture.brief.briefId);
+    const resolved = view as FoundryChainView;
+
+    // The plan view no longer stops at a component COUNT — the names and
+    // responsibilities cross the boundary so the panel can list them.
+    expect(resolved.plans[0]!.components[0]).toMatchObject({
+      name: "Habit store",
+      responsibility: "Persist habits in a local JSON file.",
+    });
+    expect(Array.isArray(resolved.plans[0]!.concerns)).toBe(true);
+
+    // The capability view carries each need with HOW it resolves — the
+    // reuse-vs-build signal that a count hid.
+    expect(resolved.capabilityPlans[0]!.needs[0]).toMatchObject({
+      need: "Implement the CLI routing and streak logic.",
+      resolution: "project-code",
+      capabilityId: null,
+    });
+    expect(Array.isArray(resolved.capabilityPlans[0]!.proposedCapabilities)).toBe(true);
+  });
+
   it("computes the operator's next step from chain state", async () => {
     // Brief-only chain, no decisions: the next step is deciding the brief.
     const store = await temporaryStore();
