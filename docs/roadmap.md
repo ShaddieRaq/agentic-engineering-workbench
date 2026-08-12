@@ -1439,6 +1439,49 @@ operator; conversation-only, nothing below started):
    prompting, only tells you the model is too weak = the selection use).
    Value lives in the ambiguity band. No standard name for
    "capability-descent as a failure factory"; operator may name it.
+
+CONSOLE UX MASTERPLAN SHIPPED 2026-08-12 (commits 8fd036c, a46e527,
+8e8c9d7, 4d795d1, ca1d29a, 61815fe, 619827c, 438a115; 1033 tests green) —
+this CLOSES roadmap item "B. Console UX" (below) and goes well beyond its
+original scope (a next-action banner). Operator's ask: the console showed
+briefs/criteria as "blocks of text" with "a steep learning curve"; audience
+= other AI agent engineers who'd import features or run their agent through
+it; near-term = a legible + impressive screen-share the operator drives.
+A four-lens cold-evaluator audit found the ROOT CAUSE: rich rigor computed
+server-side then flattened to a COUNT (or dropped) at the view-model
+boundary before reaching the client — so most wins were "carry the evidence
+across the boundary + encode as FORM," not new verification. DESIGN
+LANGUAGE (Decision 092): summary before detail; state encoded in form
+(chips/color/severity); evidence as CLAIM→CHECK→RESULT (verdict first);
+reserve color for meaning (green=pass/user-stated, amber=inferred/attention,
+red=fail, indigo=holdout/rigor); ONE sanctioned raw-JSON escape hatch
+(RawDrawer), never a default render. SHIPPED as six phases: (0) a reusable
+component kit — SchemaView (contracts as field trees), JsonView (data as
+key/value), RawDrawer, MetricTile (state before detail), Stepper (staged
+narratives); (1) every default-render JSON wall killed, incl. the buried
+hidden-expectation reveal on the eval-case page; (2) the MODEL MATRIX brought
+into the UI — a comparison table encoding the model-selection trade-off as
+★ best-per-dimension chips (most reliable ≠ cheapest ≠ fastest) + failure
+triage in two columns (ambiguity/capability-dependent), over 2 new read-only
+routes /api/foundry/matrices[/:id] on a new src/web/modelMatrixView.ts; (3)
+the SELF-HARDENING LOOP brought into the UI — each cycle anchored on its
+promotion decision (which links proposal + gated comparison + disposition),
+rendered as a Stepper (proposal → gated comparison with every gate → operator
+decision), over /api/self-hardening[/:id] on src/web/selfHardeningView.ts,
+proven against the 13 real decisions (newest = the real project-intake 0.7.0
+release); (4) FOUNDRY PLAN + CAPABILITY DEPTH — the audit root cause fixed at
+its worst site: planner concerns now shown as TEXT (was a count approved
+blind), build slices as a visible numbered sequence, capability needs as a
+reuse-vs-build resolution breakdown (view-model foundryChainView.ts widened
+to forward the detail, not just .length); (5) polish — grouped nav
+(Build/Reliability/Catalog), cross-links between the reliability screens and
+the agent catalog, and live clickable front-door count tiles (ungated,
+demo-safe). Operator reviewed it live 2026-08-12: "This is a UI... I get a
+lot more information... a lot easier to use and go through... no notes...
+a major milestone." Both prior "demoware" proofs (model matrix + self-
+hardening loop) are now first-class console screens, not CLI-only. Masterplan
+artifact: scratchpad/console-ux-masterplan.html.
+
 Parked: brownfield mode for the operator's test framework (blocked on
 ownership/policy answer + work-intake shape); LinkedIn series (post 1
 drafted at ~/.job-tracker/drafts/, unposted by choice); certification
@@ -1627,11 +1670,13 @@ A. Advisory lifecycle — the concerns mechanism predicted both Mac
    the project page, injected into every reopened interview ("decide
    or explicitly defer each"), closed only by resolving criteria or
    operator retirement.
-B. Console UX — the operator reports the app is hard to move around
-   (observed friction: no next-step guidance, buried forms, long
-   pages). Approach: a guided next-action banner derived from the
-   chain state machine, collapsed completed stages, stage navigation.
-   Design proposal before build.
+B. Console UX — DONE 2026-08-12, far beyond the original scope. See
+   "CONSOLE UX MASTERPLAN SHIPPED 2026-08-12" above: the guided
+   next-action banner (stage state machine) landed in the earlier
+   legibility pass, and the full masterplan then rebuilt the console
+   around a design language — evidence as form, not blocks of text —
+   and brought the model matrix and self-hardening loop into the UI as
+   first-class screens. Operator signed off live ("a major milestone").
 C. Model qualification (Decision 086) — moved down by operator call.
 D. Foresight agent — DECISION DEFERRED: after one full generation runs
    with the advisory lifecycle, examine the residual gaps that no

@@ -2786,3 +2786,55 @@ same agent version predates the floor. documentation-auditor and
 playwright-triage were floored on principle, without measured evidence.
 capability-planner remains a reasoning-heavy doer on mini with no dataset
 to measure it.
+
+## Decision 092 (2026-08-12): The Console Presents Evidence as Form
+
+The platform's value IS its evidence — gates, blind holdouts, model
+trade-offs, the self-hardening loop. If that evidence renders as a wall of
+JSON or blocks of prose, the rigor is invisible and un-auditable: a viewer
+cannot tell governance from theater. So the operator console presents
+evidence as FORM, and legibility is treated as a first-class property of the
+platform, not cosmetic polish. The audience is explicit — other AI
+engineers, who judge whether the rigor is real by looking at it — so the
+console is where the substance either shows or hides.
+
+Root cause we found (a four-lens cold-evaluator audit converged on it): the
+rich rigor was computed server-side and then flattened to a COUNT, or dropped
+entirely, at the view-model boundary before it reached the client. "2 blocking
+concerns" crossed; the concern text did not. The planning agent's own flagged
+risks became an integer the operator approved blind. The fix, in the large,
+was not more verification — it was carrying the evidence across the boundary
+and encoding it as form.
+
+The design language (binding for console work):
+1. Summary before detail — state the verdict/counts before the reader hits
+   the substance; every screen leads with what happened.
+2. State encoded in form — a chip, a severity stripe, a colored dot, a
+   badge — not only a number, so what needs attention reads at a glance.
+3. Evidence as CLAIM → CHECK → RESULT — verdict first, then what was
+   checked, then the raw.
+4. Reserve color for meaning — green = pass / user-stated, amber =
+   inferred / attention, red = fail, indigo = holdout / rigor. Color is a
+   language, not decoration.
+5. One sanctioned raw escape hatch — a RawDrawer disclosure holds the
+   byte-exact JSON for deliberate inspection; a `JSON.stringify` <pre> is
+   never a screen's default render.
+A small reusable component kit (SchemaView, JsonView, RawDrawer, MetricTile,
+Stepper) enforces the language so it holds across every screen rather than
+being re-decided per page.
+
+Scope: this governs the OPERATOR console only. The builder's channel stays a
+redacted projection (Decision 087) — legibility for the operator never
+relaxes holdout secrecy for the builder. Widening a view-model to carry more
+detail is a console concern; it must never widen what the builder MCP server
+projects.
+
+Evidence: the console UX masterplan (2026-08-12, six phases, 1033 tests
+green) rebuilt the console on this language and brought two previously
+CLI-only capabilities — the model matrix and the self-hardening loop — into
+first-class screens; the operator reviewed it live and signed off ("a lot
+more information… a lot easier to use… a major milestone"). Residual: the
+language is a convention plus this record and a component kit, not a
+lint-enforced rule; a new screen can still hand-roll a JSON dump. The kit
+makes the right thing the easy thing, which is the enforcement that fits a
+one-person console.

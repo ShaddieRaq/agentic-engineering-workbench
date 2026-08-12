@@ -588,6 +588,31 @@ is now fully drivable from the browser; only the builder session and
 its materialize/submit commands remain on the CLI/MCP channel by
 design.
 
+Console UX masterplan (2026-08-12, Decision 092): the console was rebuilt
+around a design language — evidence presented as FORM, not blocks of text
+or JSON. Root cause found by a four-lens cold-evaluator audit: rich rigor
+computed server-side was flattened to a count (or dropped) at the
+view-model boundary; the fix carries the detail across and encodes it. A
+reusable component kit (web/src/components.tsx) — SchemaView (contracts as
+field trees), JsonView (data as key/value), RawDrawer (the one sanctioned
+raw-JSON escape hatch), MetricTile (state before detail), Stepper (staged
+narratives) — enforces the language across screens. Every default-render
+JSON wall is gone. TWO previously CLI-only capabilities are now first-class
+screens: the MODEL MATRIX (web/src/modelMatrix.tsx; a comparison table
+encoding the model-selection trade-off as ★ best-per-dimension chips +
+ambiguity/capability failure triage; served by GET
+/api/foundry/matrices[/:matrixId] over src/web/modelMatrixView.ts) and the
+SELF-HARDENING LOOP (web/src/selfHardening.tsx; each cycle anchored on its
+promotion decision and rendered as a proposal → gated comparison → decision
+Stepper; served by GET /api/self-hardening[/:decisionId] over
+src/web/selfHardeningView.ts, composed from the existing improvement-loop
+artifacts with no new run). The foundry plan/capability stages were deepened
+(foundryChainView.ts widened): planner concerns now render as text with
+severity color instead of a count approved blind, build slices as a visible
+numbered sequence, capability needs as a reuse-vs-build resolution breakdown.
+Nav grouped (Build/Reliability/Catalog), reliability screens cross-linked,
+and a demo-safe live-count pulse on the front door. 1033 tests green.
+
 Builder-session isolation (2026-08-05, Decision 087): builders get a
 dedicated keyless MCP server (workbench-builder, npm run mcp:builder,
 five tools) whose responses are allowlist projections — holdout paths
@@ -672,19 +697,27 @@ final-turn blocking reports without questions are legitimate.
 
 ## Immediate Next Step
 
-Phase 43 is complete: the full Foundry premise is live-proven end to end
-(idea → interviewed brief → architecture plan → capability plan →
-independent tests → governed build → working, holdout-verified software).
-Next candidates, in the operator's stated priority frame:
+The full Foundry premise is live-proven end to end (idea → interviewed brief
+→ architecture plan → capability plan → independent tests → governed build →
+working, holdout-verified software), builder-session isolation is structural
+(Decision 087), the model-matrix / self-hardening loop is complete, and the
+console UX masterplan closed 2026-08-12 (Decision 092) — every governed
+capability now has a legible first-class screen. Direction is being regrouped
+with the operator. Standing candidates (see the roadmap's north-star section
+for detail):
 
-1. Builder-session isolation for true holdout secrecy (the recorded
-   Phase 43 limitation): a builder session scoped to the generated project
-   only, with work orders and submissions flowing over MCP or exported
-   artifacts rather than shared filesystem access.
-2. Phase 42 third iteration on the `agentic-workbench` MCP server (now 22
-   tools including the governed-build quartet): long-running evidence
-   operations (gate runs, improvement-analysis starts) backed by operation
-   polling, and the feedback-verification lineage policy decision.
+1. Playwright trace-analyzer skill (roadmap step 5) — the first foundry
+   deliverable that ships as a SKILL.md, not a CLI; the load-bearing
+   prerequisite is the operator sourcing a labeled real-trace corpus.
+2. Capability-Planner verification dataset + gate — the one pipeline agent
+   still without a dataset, so it can't be matrix-measured (a WATCH-ITEM).
+3. Matrix-optimizer follow-up — the live evidence that some agents pass
+   100% on the cheaper model (a measured DOWNGRADE candidate to save cost),
+   complementing the judge-floor guardrail.
+4. OpenRouter provider adapter — widen the model set the matrix can test
+   (needs a new provider class: Chat Completions + json_schema, not a
+   base_url swap, since OpenAIProvider uses the Responses API).
+
 Permission model fixed by Decision 084: read everything; write evidence
 freely; write decisions with a human attached; never write policy or source.
 MCP is the primary agent channel on the Workbench machine; exports remain
