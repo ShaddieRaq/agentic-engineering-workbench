@@ -185,6 +185,13 @@ describe("TestDesignService", () => {
       capabilityPlanId: cleanPlan.capabilityPlanId,
     });
     expect(saved.testSuite.testSuiteId).toBeTruthy();
+    // The passing gate is now persisted evidence — visible when it works, not
+    // only when it fires: every file was checked against the empty stub.
+    expect(saved.testSuite.vacuityCheck).not.toBeNull();
+    expect(saved.testSuite.vacuityCheck?.checkedFileCount).toBe(
+      saved.testSuite.content.testFiles.length,
+    );
+    expect(saved.testSuite.vacuityCheck?.checkedFileCount).toBeGreaterThan(0);
   });
 
   it("refuses to design tests for an unapproved capability plan", async () => {

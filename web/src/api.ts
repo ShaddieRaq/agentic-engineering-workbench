@@ -529,6 +529,7 @@ export interface FoundryTestSuiteView {
   createdAt: string;
   status: FoundryStageStatus;
   interfaceContract: string;
+  vacuityCheck: { checkedFileCount: number } | null;
   files: FoundryTestFileView[];
   decisions: FoundryDecisionView[];
   revisedFromArtifactId?: string;

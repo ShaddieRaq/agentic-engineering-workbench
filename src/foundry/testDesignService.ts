@@ -213,6 +213,7 @@ export class TestDesignService {
     // Null-implementation gate: every file must FAIL against a project
     // that contains nothing. A file that passes there cannot tell the
     // product's absence from its presence and verifies nothing.
+    let vacuityCheck: { checkedFileCount: number } | null = null;
     if (this.#vacuityCheck) {
       const vacuousFiles = await this.#vacuityCheck(
         content.testFiles.map(({ path, content: fileContent }) => ({
@@ -227,6 +228,9 @@ export class TestDesignService {
           )} PASS against an empty project with no implementation, so they verify nothing. Every test file must execute the real product and fail until it exists.`,
         );
       }
+      // Passing evidence: every file demanded a real implementation. Persist
+      // it so the gate is visible when it works, not only when it fires.
+      vacuityCheck = { checkedFileCount: content.testFiles.length };
     }
 
     const testSuite = testSuiteSchema.parse({
@@ -240,6 +244,7 @@ export class TestDesignService {
       content,
       reconciliation,
       createdAt: new Date().toISOString(),
+      ...(vacuityCheck ? { vacuityCheck } : {}),
       ...(input.reviseFromId
         ? { revisedFromArtifactId: input.reviseFromId }
         : {}),

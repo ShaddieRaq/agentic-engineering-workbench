@@ -136,6 +136,9 @@ export interface FoundryTestSuiteView {
   createdAt: string;
   status: FoundryStageStatus;
   interfaceContract: string;
+  // Null-implementation gate result: present when the gate ran, carrying how
+  // many files were run against an empty stub (all failed). Null otherwise.
+  vacuityCheck: { checkedFileCount: number } | null;
   files: FoundryTestFileView[];
   decisions: FoundryDecisionView[];
   revisedFromArtifactId?: string;
@@ -630,6 +633,7 @@ function buildViewFromBuckets(
       createdAt: suite.createdAt,
       status: statusFromDecisions(decisions),
       interfaceContract: suite.content.interfaceContract,
+      vacuityCheck: suite.vacuityCheck,
       // File content is deliberately omitted: the chain view stays light and
       // paste-safe; full content (including holdouts) lives on the raw
       // artifact page.

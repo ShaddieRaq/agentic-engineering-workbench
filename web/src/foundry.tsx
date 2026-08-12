@@ -1535,6 +1535,17 @@ export function FoundryProjectPage() {
               <h3>Suite {shortId(suite.testSuiteId)} · {when(suite.createdAt)}</h3>
               <StatusBadge value={suite.status} />
             </div>
+            {suite.vacuityCheck && (
+              <div className="gate-verdict gate-pass">
+                <span className="gate-mark" aria-hidden="true">✓</span>
+                <div>
+                  <strong>Substance-checked · null-implementation gate</strong>
+                  <p>
+                    All {suite.vacuityCheck.checkedFileCount} test file(s) were run against an empty stub project with no implementation, and every one <em>failed</em>. A file that passes on nothing verifies nothing — the suite would have been rejected by name. These tests demand the real product, not tautologies.
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="table-wrap">
               <table>
                 <thead><tr><th>Test file</th><th>Visibility</th><th>Type</th><th>Criteria</th></tr></thead>

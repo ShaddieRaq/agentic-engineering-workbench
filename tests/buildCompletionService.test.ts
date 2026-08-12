@@ -77,6 +77,7 @@ function suiteFixture() {
         concerns: [],
       },
       reconciliation: null,
+      vacuityCheck: null,
       createdAt: "2026-08-07T00:00:00.000Z",
     },
   };

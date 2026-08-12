@@ -130,6 +130,16 @@ export const testSuiteSchema = z
     content: testSuiteContentSchema,
     reconciliation: testSuiteReconciliationSchema.nullable(),
     createdAt: z.string().min(1),
+    // Null-implementation gate evidence (the placebo-suite incident): how many
+    // test files were run against an empty stub project, all of which FAILED —
+    // a file that passed there would have rejected the whole suite by name.
+    // Null when the gate did not run (no runner injected) or for artifacts
+    // persisted before it existed. Its presence IS the substance guarantee.
+    vacuityCheck: z
+      .object({ checkedFileCount: z.number().int().nonnegative() })
+      .strict()
+      .nullable()
+      .default(null),
     // Optional so artifacts persisted before revision lineage existed load.
     revisedFromArtifactId: z.string().min(1).optional(),
     revisionDecisionId: z.uuid().optional(),
