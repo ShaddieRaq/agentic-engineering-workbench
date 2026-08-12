@@ -814,6 +814,8 @@ describe("agent workbench web interface", () => {
 
     expect(await screen.findByRole("heading", { name: "test-suite" })).toBeInTheDocument();
     expect(await screen.findByText(/holdout test content/i)).toBeInTheDocument();
-    expect(screen.getByText(/describe\('secret'\)/)).toBeInTheDocument();
+    // Operator sees the holdout content: in the readable structured view and in
+    // the raw-evidence drawer. Both carry it — the operator sees all evidence.
+    expect(screen.getAllByText(/describe\('secret'\)/).length).toBeGreaterThan(0);
   });
 });

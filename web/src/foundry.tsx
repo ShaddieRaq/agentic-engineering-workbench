@@ -11,7 +11,7 @@ import {
   type FoundrySubmissionView,
   type Operation,
 } from "./api.js";
-import { CriteriaMatrix, EmptyState, ErrorNotice, Loading, OperationTrace, PageHeader, StatusBadge } from "./components.js";
+import { CriteriaMatrix, EmptyState, ErrorNotice, JsonView, Loading, OperationTrace, PageHeader, RawDrawer, StatusBadge } from "./components.js";
 import { useOperation, useResource } from "./hooks.js";
 import { LocalLink as Link, navigate, usePathname } from "./router.js";
 
@@ -1722,10 +1722,12 @@ export function FoundryArtifactPage() {
           materialized for builders; it is shown here because the operator sees all evidence.
         </div>
       )}
-      <details className="panel evidence-details" open>
-        <summary>Complete raw artifact</summary>
-        <pre className="evidence-json">{JSON.stringify(stored.artifact, null, 2)}</pre>
-      </details>
+      <section className="panel">
+        <span className="eyebrow">Structured evidence</span>
+        <h2>Artifact contents</h2>
+        <JsonView value={stored.artifact} />
+      </section>
+      <RawDrawer label="Complete raw artifact JSON" value={stored.artifact} />
     </>
   );
 }
