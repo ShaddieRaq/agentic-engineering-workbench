@@ -42,7 +42,7 @@ export const playwrightFailureTriageAgent = defineAgent({
       "Classifies Playwright failures from sanitized reports and bounded repository evidence.",
     owner: "local-platform",
     tags: ["playwright", "quality-engineering", "failure-triage"],
-    defaultModel: "gpt-5.4-mini",
+    defaultModel: "gpt-5.4",
     components: {
       workflowIds: ["playwright-failure-triage"],
       harnessIds: [],

@@ -2707,3 +2707,72 @@ Residuals: model-invoking stage routes accept unauthenticated POSTs
 (spend, not authority); operation acknowledgements are in-memory and
 reset on server restart; the operator token authenticates presence, not
 identity — a multi-operator deployment needs real accounts.
+
+## Decision 091 (2026-08-12): Judgment Seats Run on the Strong Model, By Floor
+
+The distinction that governs model choice: a **doer** produces work that
+a judge or a deterministic gate checks; a **judge** emits a verdict the
+rest of the system trusts. A weak doer is survivable — it produces
+weaker work and a good judge catches it. A weak judge is invisible
+poison: it waves garbage through or rejects good work, and it is the very
+thing you trust to tell you, so the corruption is silent and travels
+downstream.
+
+State we found: model tiering was incidental, not designed. The three
+agents exercised hardest during foundry development —
+project-intake, project-architect, test-designer — failed on
+gpt-5.4-mini under real pressure and were promoted to gpt-5.4. Every
+other agent inherited the mini default and was never pressured enough to
+trigger a promotion. `defaultModel` was an undocumented field with no
+recorded rationale.
+
+The floor: model-based JUDGMENT seats run on the strong model (gpt-5.4),
+on purpose, and are not silently downgraded. Floored this decision from
+mini to gpt-5.4:
+1. agent-improvement-analyst — judges what is wrong and whether a fix is
+   worth proposing; its verdict feeds the candidate → promotion loop.
+2. change-risk-reviewer — judges whether a change is risky or
+   under-tested.
+3. documentation-auditor and playwright-failure-triage — judges by
+   nature but lower stakes (advisory / not yet wired into a trust chain);
+   floored for consistency so they are right when they are used.
+test-designer was already on gpt-5.4 — it is the judge-MAKER (it writes
+the tests that judge everything), and the placebo-suite incident (a mini
+test-designer once produced `expect(true)` tests that passed every
+automated check, caught only by a human reading them) is why.
+
+What stays measurable: the DOERS. project-intake and project-architect
+are on gpt-5.4 from exercise; capability-planner, tool-builder, and
+repository-assistant remain on gpt-5.4-mini and are matrix-optimizable —
+the model matrix proves whether a cheaper model holds before we trust it
+cheap. Watch-item: capability-planner is reasoning-heavy AND has no
+verification dataset, so it cannot be matrix-measured today; its mini
+default is a known risk, not a validated decision.
+
+Evidence: this session's by-hand improvement-loop run on gpt-5.4-mini.
+The analyst took three attempts to emit one policy-valid proposal (first
+an invalid evidence citation, then a disposition/patch contradiction) —
+correct substance, unreliable form: capability-floor behavior. The
+deterministic gates caught every malformed proposal, and the eventual
+candidate was a regression the promotion gates rejected. The gates held
+even while the model-judge flailed — which is exactly why the exposure is
+the judge's chair, not the gate.
+
+Why: the platform's value is evidence and gates, and most gates are
+deterministic code — the null-implementation gate runs the tests,
+coverage is counted, promotion gates compare pass-rate numbers, per-run
+pass/fail is a fixed checker. Those do not get dumber on a weak model.
+The only exposure is where a MODEL sits in the judge's chair; a weak
+model there silently corrupts the evidence the rest of the system trusts.
+So judgment seats get the strong model by floor, kept separate from
+doers, which stay measurable and cost-optimizable.
+
+Residuals: the floor is a default change plus this record, not structural
+enforcement — a `--model` flag can still downgrade a judge below its
+floor; a manifest reasoning-tier/floor field that rejects sub-floor
+models is the follow-up. No version bump accompanied the change (a policy
+floor, not a measured capability release), so evidence labeled at the
+same agent version predates the floor. documentation-auditor and
+playwright-triage were floored on principle, without measured evidence.
+capability-planner remains a reasoning-heavy doer on mini with no dataset
+to measure it.

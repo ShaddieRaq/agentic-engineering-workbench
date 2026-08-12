@@ -258,7 +258,7 @@ describe("AgentApplicationService", () => {
     expect(result.run).toMatchObject({
       agentId: "change-risk-reviewer",
       configuration: {
-        model: "gpt-5.4-mini",
+        model: "gpt-5.4",
         workspaceId: "workbench",
         permittedToolIds: [
           "inspect-git-diff",

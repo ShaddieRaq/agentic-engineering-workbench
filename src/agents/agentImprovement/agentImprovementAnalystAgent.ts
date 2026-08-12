@@ -59,7 +59,7 @@ export const agentImprovementAnalystAgent = defineAgent({
       "Analyzes bounded evaluation evidence and produces grounded, policy-checked agent improvement proposals.",
     owner: "local-platform",
     tags: ["agent-development", "evaluation", "optimization"],
-    defaultModel: "gpt-5.4-mini",
+    defaultModel: "gpt-5.4",
     components: {
       workflowIds: ["agent-improvement-analysis"],
       harnessIds: [],

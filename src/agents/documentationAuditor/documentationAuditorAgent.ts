@@ -75,7 +75,7 @@ export function createDocumentationAuditorAgent(
       description: "Finds stale, inconsistent, missing, and accurate repository documentation using cited local evidence.",
       owner: "local-platform",
       tags: ["documentation", "engineering", "repository-analysis"],
-      defaultModel: "gpt-5.4-mini",
+      defaultModel: "gpt-5.4",
       components: {
         workflowIds: ["documentation-audit"],
         harnessIds: [],

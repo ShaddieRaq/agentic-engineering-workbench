@@ -62,7 +62,7 @@ export const changeRiskReviewerAgent = defineAgent({
       "Reviews repository changes for evidence-backed risk and missing tests.",
     owner: "local-platform",
     tags: ["change-review", "engineering", "reliability"],
-    defaultModel: "gpt-5.4-mini",
+    defaultModel: "gpt-5.4",
     components: {
       workflowIds: ["change-risk-review"],
       harnessIds: [],
