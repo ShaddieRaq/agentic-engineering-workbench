@@ -38,10 +38,10 @@ describe("capabilityPlannerDataset", () => {
     expect(parsed.agentId).toBe("capability-planner");
     expect(parsed.purpose).toBe("development");
     expect(parsed.cases.map(({ id }) => id)).toEqual([
-      "reuses-an-existing-catalog-agent",
+      "feasible-plan-fabricates-nothing",
       "ordinary-work-stays-project-code",
-      "recognizes-a-capability-gap",
-      "mixed-plan-keeps-buckets-separate",
+      "novel-need-stays-feasible-without-hallucinated-reuse",
+      "mixed-plan-keeps-ordinary-work-as-project-code",
     ]);
   });
 
@@ -69,45 +69,74 @@ describe("capabilityPlannerDataset", () => {
     });
   });
 
-  it("passes an all-project-code plan and fails a fabricated proposal", () => {
-    const expected = capabilityPlannerDataset.cases[1]!.expected;
+  it("holds the project-code discipline and catches over-engineering", () => {
+    const projectCode = capabilityPlannerDataset.cases[1]!.expected;
     expect(
       assessCapabilityPlannerExpectation(
         output({ resolutions: [{ resolution: "project-code" }] }),
-        expected,
+        projectCode,
       ).passed,
     ).toBe(true);
-    // A proposal the plan does not need trips maxProposedCapabilities: 0.
+    // A proposal the empty-catalog plan does not need trips maxProposedCapabilities: 0.
     expect(
       assessCapabilityPlannerExpectation(
         output({ resolutions: [{ resolution: "project-code" }], proposals: 1 }),
-        expected,
+        projectCode,
       ).passed,
     ).toBe(false);
   });
 
-  it("requires a proposal for a genuine gap and a reused resolution for reuse", () => {
-    const gapExpected = capabilityPlannerDataset.cases[2]!.expected;
+  it("gates the unambiguous floor without asserting the reuse-vs-build call", () => {
+    // Feasible plan: reuse OR project-code both pass; a fabricated capability or
+    // a false blocking concern fails.
+    const feasible = capabilityPlannerDataset.cases[0]!.expected;
     expect(
-      assessCapabilityPlannerExpectation(output({ proposals: 0 }), gapExpected).passed,
+      assessCapabilityPlannerExpectation(
+        output({ resolutions: [{ resolution: "existing-agent", capabilityId: "x" }] }),
+        feasible,
+      ).passed,
+    ).toBe(true);
+    expect(
+      assessCapabilityPlannerExpectation(
+        output({ resolutions: [{ resolution: "project-code" }], proposals: 1 }),
+        feasible,
+      ).passed,
     ).toBe(false);
     expect(
-      assessCapabilityPlannerExpectation(output({ proposals: 1 }), gapExpected).passed,
-    ).toBe(true);
+      assessCapabilityPlannerExpectation(
+        output({ resolutions: [{ resolution: "project-code" }], blocking: 1 }),
+        feasible,
+      ).passed,
+    ).toBe(false);
 
-    const reuseExpected = capabilityPlannerDataset.cases[0]!.expected;
-    // Reinventing it as project-code misses the existing-agent reuse.
+    // Novel-need case: anything but hallucinated existing-agent reuse passes.
+    const novel = capabilityPlannerDataset.cases[2]!.expected;
+    expect(
+      assessCapabilityPlannerExpectation(
+        output({ resolutions: [{ resolution: "engineering-change-required" }] }),
+        novel,
+      ).passed,
+    ).toBe(true);
+    expect(
+      assessCapabilityPlannerExpectation(
+        output({ resolutions: [{ resolution: "existing-agent", capabilityId: "x" }] }),
+        novel,
+      ).passed,
+    ).toBe(false);
+
+    // Mixed case: at least one need must be ordinary project-code.
+    const mixed = capabilityPlannerDataset.cases[3]!.expected;
     expect(
       assessCapabilityPlannerExpectation(
         output({ resolutions: [{ resolution: "project-code" }] }),
-        reuseExpected,
-      ).passed,
-    ).toBe(false);
-    expect(
-      assessCapabilityPlannerExpectation(
-        output({ resolutions: [{ resolution: "existing-agent", capabilityId: "project-intake" }] }),
-        reuseExpected,
+        mixed,
       ).passed,
     ).toBe(true);
+    expect(
+      assessCapabilityPlannerExpectation(
+        output({ resolutions: [{ resolution: "engineering-change-required" }] }),
+        mixed,
+      ).passed,
+    ).toBe(false);
   });
 });

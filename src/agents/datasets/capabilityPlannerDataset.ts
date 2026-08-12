@@ -201,27 +201,44 @@ const mixedPlan = planInput({
   },
 });
 
+// Ground truth calibrated by an adversarial panel (one proposer + two skeptics
+// per case, 2026-08-12). The first draft over-asserted: it required the planner
+// to reuse a catalog agent, to propose a capability for an SMS gap, and forbade
+// blocking concerns on a plan that plausibly warranted one — and the STRONG
+// model failed it MORE than the weak one, the classic miscalibrated-test tell.
+// The reuse-vs-build call is genuinely context-dependent (a standalone product
+// can reasonably build its own capability OR reuse a catalog one; SMS can
+// reasonably be project-code, an engineering change, or a proposal), so this
+// dataset gates only the UNAMBIGUOUS floor that every competent plan meets and
+// leaves the judgment calls unasserted rather than penalizing sophistication.
 export const capabilityPlannerDataset: AgentDatasetDefinition = {
   id: "capability-planner-smoke",
   description:
-    "Hidden-expectation reuse-vs-build cases for the capability-planner agent: " +
-    "reuse a catalog capability that already covers a need, keep ordinary work " +
-    "as project-code, recognize a genuine capability gap as something to build, " +
-    "and handle a mixed plan without collapsing the buckets. A judgment " +
+    "Unambiguous-floor cases for the capability-planner agent: ordinary work " +
+    "stays project-code, no fabricated capabilities on a feasible plan, no " +
+    "hallucinated reuse of a catalog entry that is not there, and no false " +
+    "blocking concern on a feasible plan. The context-dependent reuse-vs-build " +
+    "judgment is deliberately NOT gated (an adversarial panel found it too " +
+    "ambiguous to assert without penalizing a competent planner). A judgment " +
     "dataset for cross-model measurement, not a hard release gate.",
   agentId: "capability-planner",
   purpose: "development",
   cases: [
     {
-      id: "reuses-an-existing-catalog-agent",
+      // A feasible plan whose need may be reused OR built as project-code —
+      // both defensible, so neither is asserted. What holds either way: no
+      // blocking concern (it is feasible) and no fabricated capability (the
+      // need is not a genuine gap).
+      id: "feasible-plan-fabricates-nothing",
       input: reusePlan,
       expected: {
-        requireResolutions: ["existing-agent"],
         maxProposedCapabilities: 0,
         forbidBlockingConcerns: true,
       },
     },
     {
+      // The unambiguous case: ordinary work against an empty catalog is
+      // project-code, with nothing to reuse, propose, or block.
       id: "ordinary-work-stays-project-code",
       input: projectCodePlan,
       expected: {
@@ -232,19 +249,23 @@ export const capabilityPlannerDataset: AgentDatasetDefinition = {
       },
     },
     {
-      id: "recognizes-a-capability-gap",
+      // A novel service need (SMS). How it resolves is a judgment call, but the
+      // catalog has NO agents, so resolving it to an existing-agent is
+      // hallucinated reuse; and the feature is feasible, so no blocking concern.
+      id: "novel-need-stays-feasible-without-hallucinated-reuse",
       input: gapPlan,
       expected: {
-        requireProposedCapability: true,
+        forbidResolutions: ["existing-agent"],
+        forbidBlockingConcerns: true,
       },
     },
     {
-      id: "mixed-plan-keeps-buckets-separate",
+      // A mixed plan whose storage slice is unmistakably ordinary code; the OCR
+      // slice's resolution is a judgment call and is left unasserted.
+      id: "mixed-plan-keeps-ordinary-work-as-project-code",
       input: mixedPlan,
       expected: {
         requireResolutions: ["project-code"],
-        requireProposedCapability: true,
-        forbidBlockingConcerns: true,
       },
     },
   ],
