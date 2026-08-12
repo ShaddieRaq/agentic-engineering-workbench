@@ -56,6 +56,16 @@ export interface FoundryBriefVersionView {
   title: string;
   createdAt: string;
   status: FoundryStageStatus;
+  // The acceptance criteria carried across the view-model boundary: each one
+  // gates every downstream stage, and its `source` provenance (user-stated /
+  // agent-inferred / unresolved) is the guarantee that a vague answer was
+  // never silently promoted to a fact. Rendered as scannable cards, not JSON.
+  acceptanceCriteria: {
+    id: string;
+    text: string;
+    source: "user-stated" | "agent-inferred" | "unresolved";
+    verification: string;
+  }[];
   openQuestions: { id: string; question: string }[];
   decisions: FoundryDecisionView[];
   // Criterion delta vs the previous version (Decision 088: the operator
@@ -510,6 +520,14 @@ function buildViewFromBuckets(
       title: artifact.title,
       createdAt: artifact.createdAt,
       status: statusFromDecisions(decisions),
+      acceptanceCriteria: artifact.acceptanceCriteria.map(
+        ({ id, text, source, verification }) => ({
+          id,
+          text,
+          source,
+          verification,
+        }),
+      ),
       openQuestions: artifact.openQuestions.map(({ id, question }) => ({
         id,
         question,

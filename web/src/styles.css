@@ -88,6 +88,21 @@ section { margin-top: 34px; }
 .status-rejected, .status-submitted-failed, .status-reject, .status-holdout { background: rgba(236, 93, 94, .13); color: var(--danger); }
 .status-carried { background: rgba(110, 121, 214, .14); color: #A9B1E8; }
 .status-draft, .status-missing, .status-not-started { background: rgba(156, 160, 171, .12); color: var(--muted); }
+.status-user-stated { background: rgba(76, 195, 138, .13); color: var(--success); }
+.status-agent-inferred { background: rgba(240, 180, 41, .13); color: var(--warning); }
+.status-unresolved { background: rgba(236, 93, 94, .13); color: var(--danger); }
+
+.criteria-block { display: grid; gap: 10px; margin: 18px 0; }
+.criteria-health { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.criteria-health strong { margin-right: 4px; }
+.criterion-card { padding: 14px 16px; border: 1px solid var(--line); border-left-width: 3px; border-left-color: var(--accent-2); border-radius: 12px; background: var(--surface); }
+.criterion-card.source-user-stated { border-left-color: var(--success); }
+.criterion-card.source-agent-inferred { border-left-color: var(--warning); }
+.criterion-card.source-unresolved { border-left-color: var(--danger); }
+.criterion-text { margin: 0 0 10px; line-height: 1.55; }
+.criterion-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
+.criterion-check { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.criterion-check-label { color: #71857f; font: 10px DM Mono, monospace; text-transform: uppercase; letter-spacing: .06em; margin-right: 6px; }
 
 .panel, .concept-card, .trace-panel { padding: 25px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }

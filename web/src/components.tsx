@@ -8,6 +8,25 @@ export function StatusBadge({ value }: { value: string }) {
   return <span className={`status status-${value}`}>{value.replaceAll("-", " ")}</span>;
 }
 
+// Provenance is the "no silent fabrication" guarantee: each criterion is
+// tagged with where it came from. The tooltip teaches why it matters in
+// context, at zero layout cost.
+export const provenanceTitle: Record<string, string> = {
+  "user-stated": "User-stated — the operator said this explicitly.",
+  "agent-inferred":
+    "Agent-inferred — the model deduced this; the operator never confirmed it.",
+  unresolved: "Unresolved — a placeholder for a decision that has not been made.",
+};
+
+export function ProvenanceChip({ source, count }: { source: string; count?: number }) {
+  return (
+    <span className={`status status-${source}`} title={provenanceTitle[source] ?? source}>
+      {count === undefined ? "" : `${count} `}
+      {source.replaceAll("-", " ")}
+    </span>
+  );
+}
+
 export function PageHeader({ eyebrow, title, children }: { eyebrow: string; title: string; children?: React.ReactNode }) {
   return <header className="page-header"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1></div>{children}</header>;
 }

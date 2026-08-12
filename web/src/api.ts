@@ -465,6 +465,12 @@ export interface FoundryBriefVersionView {
   title: string;
   createdAt: string;
   status: FoundryStageStatus;
+  acceptanceCriteria: {
+    id: string;
+    text: string;
+    source: "user-stated" | "agent-inferred" | "unresolved";
+    verification: string;
+  }[];
   openQuestions: { id: string; question: string }[];
   decisions: FoundryDecisionView[];
   criterionChanges?: { added: string[]; changed: string[]; retired: string[] };
