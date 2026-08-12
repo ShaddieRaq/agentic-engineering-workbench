@@ -15,6 +15,7 @@ import {
   type CapabilityPlannerPolicy,
 } from "./capabilityPlannerPolicy.js";
 import { buildCapabilityPlannerPrompt } from "./capabilityPlannerPrompt.js";
+import { assessCapabilityPlannerExpectation } from "./capabilityPlannerExpectation.js";
 
 export const capabilityPlannerInputSchema = z
   .object({
@@ -49,7 +50,10 @@ export function createCapabilityPlannerAgent(
         datasetIds: [],
       },
       permissions: { toolIds: [] },
-      verification: { datasetIds: [], minimumPassRate: null },
+      verification: {
+        datasetIds: ["capability-planner-smoke"],
+        minimumPassRate: null,
+      },
     },
     inputSchema: capabilityPlannerInputSchema,
     outputSchema: capabilityPlanOutputSchema,
@@ -84,6 +88,9 @@ export function createCapabilityPlannerAgent(
         input.plan,
         input.catalog,
       );
+    },
+    assessDatasetCase(_input, output, expected) {
+      return assessCapabilityPlannerExpectation(output, expected);
     },
     assess(output) {
       if (output.needs.length === 0) {
