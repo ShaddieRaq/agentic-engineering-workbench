@@ -1380,11 +1380,31 @@ operator; conversation-only, nothing below started):
    SAME case (contradiction-is-surfaced-not-silently-resolved) — a SHARED
    failure (even the strong model misses it) sits in the AMBIGUITY band, not
    a capability floor; the matrix located a real intake defect to triage.
-   NEXT SLICES: (b) a matrix/badge report surface (web/markdown);
-   (c) OpenRouter provider — NOTE it needs a NEW provider class (Chat
-   Completions + json_schema response_format), NOT a base_url swap, because
-   OpenAIProvider is built on the Responses API; then wire the
-   failure-harvesting loop.
+   SLICE 2 SHIPPED 2026-08-11 (commit 2fe8de3): shareable markdown REPORT
+   surface — renderModelMatrixMarkdown + `npm run matrix-report [--id] [--out]`
+   renders any stored matrix into a faithful badge table (per-model gate,
+   pass-rate, tokens, cost, latency) + notes (cheapest passing model / honest
+   "none passed" / error cells). New: agentModelMatrixReport.ts, runMatrixReport.ts.
+   SLICE 3a SHIPPED 2026-08-11 (commit 24e461e): the FAILURE-HARVESTING
+   TRIAGE — triageModelMatrix() reads a run's per-model failed cases (from the
+   linked evaluation artifacts) and classifies each failing case by "did it
+   pass on ANY considered model": failed-on-every-model → "ambiguity"
+   (prompt/gate-hardening target, feed the improvement loop); failed-on-some,
+   passed-on-≥1 → "capability-dependent" (model-selection signal, not a prompt
+   bug). No model-strength ranking needed; cases keyed by (datasetId, caseId);
+   single-model matrix flagged not-meaningful. `npm run matrix-triage`. New:
+   agentModelMatrixTriage.ts, modelMatrixArtifacts.ts (shared loaders),
+   runMatrixTriage.ts. PROVEN: auto-flagged the contradiction case as ambiguity
+   on the live run (the by-hand finding, now systematic). Also: interviewer
+   updated — 9 model-matrix cards imported into the drill (~/.interview-drill,
+   36→45), drillable now via `--tag model-matrix`.
+   NEXT SLICES: (3b) AUTO-HANDOFF — route triaged AMBIGUITY cases into the
+   existing agent-improvement-analyst → prompt candidate → gated comparison →
+   operator promotion (the loop half exists; 3b wires the triaged failures in
+   as its input; the contradiction case is the ready first input). DEFERRED by
+   operator: OpenRouter provider — needs a NEW provider class (Chat Completions
+   + json_schema response_format), NOT a base_url swap, because OpenAIProvider
+   is built on the Responses API.
    FAILURE-HARVESTING EXTENSION (operator insight 2026-08-11, aligned):
    the matrix is not just "pick a model" — deliberately DOWNSCALING the
    model turns the model range into a cheap FAILURE-GENERATION ENGINE that
