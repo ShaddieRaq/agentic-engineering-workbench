@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type ImprovementProposalArtifact, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type ToolDescription, type ToolSummary } from "./api.js";
+import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type ImprovementProposalArtifact, type ModelMatrixIndex, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type SelfHardeningIndex, type ToolDescription, type ToolSummary } from "./api.js";
 import { ArtifactPresentationView } from "./artifactPresentation.js";
 import { AgentCard, EmptyState, ErrorNotice, JsonView, Loading, OperationTrace, PageHeader, RawDrawer, RunAgentPanel, SchemaView, StatusBadge } from "./components.js";
 import { FoundryArtifactPage, FoundryProjectPage, FoundryProjectsPage, OperatorSettingsPage } from "./foundry.js";
@@ -17,14 +17,17 @@ function Shell({ children }: { children: React.ReactNode }) {
         <Link className="brand" to="/"><span className="brand-mark">AE</span><span>Agentic<br />Workbench</span></Link>
         <nav aria-label="Primary navigation">
           <NavLink to="/" end>Overview</NavLink>
-          <NavLink to="/agents">Agents</NavLink>
-          <NavLink to="/tools">Tools</NavLink>
-          <NavLink to="/workspaces">Workspaces</NavLink>
+          <span className="nav-group">Build</span>
           <NavLink to="/foundry">Foundry</NavLink>
           <NavLink to="/runs">Evidence</NavLink>
+          <span className="nav-group">Reliability</span>
           <NavLink to="/evaluations">Evaluation Studio</NavLink>
           <NavLink to="/matrices">Model Matrix</NavLink>
           <NavLink to="/self-hardening">Self-Hardening</NavLink>
+          <span className="nav-group">Catalog</span>
+          <NavLink to="/agents">Agents</NavLink>
+          <NavLink to="/tools">Tools</NavLink>
+          <NavLink to="/workspaces">Workspaces</NavLink>
           <NavLink to="/authoring">Authoring</NavLink>
           <NavLink to="/operator">Operator</NavLink>
         </nav>
@@ -86,6 +89,10 @@ function OverviewPage() {
   const health = useResource<Health>("/api/health");
   const agents = useResource<{ agents: AgentManifest[] }>("/api/agents");
   const artifacts = useResource<ArtifactList>("/api/artifacts?limit=5");
+  // Ungated: these enrich the pulse but must never block or blank the front
+  // door — a failure just leaves their tiles at 0.
+  const matrices = useResource<ModelMatrixIndex>("/api/foundry/matrices");
+  const selfHardening = useResource<SelfHardeningIndex>("/api/self-hardening");
   const loading = health.loading || agents.loading || artifacts.loading;
   const error = health.error ?? agents.error ?? artifacts.error;
   return (
@@ -96,8 +103,10 @@ function OverviewPage() {
       <OrientationBand />
       {error ? <ErrorNotice message={error} /> : loading ? <Loading /> : (
         <>
-          <section className="metric-grid">
+          <section className="metric-grid overview-metrics">
             <div><span>Registered agents</span><strong>{agents.data?.agents.length ?? 0}</strong></div>
+            <div><Link to="/matrices"><span>Model matrix runs</span><strong>{matrices.data?.matrices.length ?? 0}</strong></Link></div>
+            <div><Link to="/self-hardening"><span>Self-hardening cycles</span><strong>{selfHardening.data?.cycles.length ?? 0}</strong></Link></div>
             <div><span>Recent artifacts</span><strong>{artifacts.data?.artifacts.length ?? 0}</strong></div>
             <div><span>Provider</span><strong className="metric-word">{health.data?.apiKeyConfigured ? "Ready" : "Not configured"}</strong></div>
             <div><span>Workspace</span><strong className="metric-path">{workspaces.find(({ id }) => id === selectedWorkspaceId)?.name ?? "Loading"}</strong></div>

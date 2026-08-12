@@ -208,6 +208,11 @@ export function SelfHardeningDetailPage() {
         . The gates — not plausibility — decided whether it could ship.
       </p>
 
+      <div className="cross-links">
+        <Link to={`/agents/${cycle.subjectAgentId}`}>Agent contract →</Link>
+        <Link to="/matrices">Model matrix runs →</Link>
+      </div>
+
       <Stepper steps={cycleSteps(cycle)} />
 
       <RawDrawer label="Raw cycle view" value={cycle} />

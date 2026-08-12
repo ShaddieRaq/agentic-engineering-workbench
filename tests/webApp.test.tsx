@@ -734,6 +734,31 @@ describe("agent workbench web interface", () => {
     expect(screen.getByText("Faithful evidence")).toBeInTheDocument();
   });
 
+  it("groups the nav and shows live matrix/self-hardening counts on the front door", async () => {
+    const json = (body: unknown) =>
+      new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.endsWith("/api/workspaces")) return json({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] });
+      if (path.endsWith("/api/health")) return json({ apiKeyConfigured: true });
+      if (path.includes("/api/foundry/matrices")) return json({ matrices: [{ matrixId: "m1" }] });
+      if (path.includes("/api/self-hardening")) return json({ cycles: [{ decisionId: "d1" }, { decisionId: "d2" }] });
+      if (path.includes("/api/agents")) return json({ agents: [] });
+      if (path.includes("/api/artifacts")) return json({ artifacts: [] });
+      return json({});
+    }));
+
+    window.history.replaceState(null, "", "/");
+    render(<AppRoutes />);
+
+    // The grouped nav teaches the mental model instead of a flat list.
+    expect(await screen.findByText("Reliability")).toBeInTheDocument();
+    expect(screen.getByText("Catalog")).toBeInTheDocument();
+    // The two new capabilities have a live pulse on the front door.
+    expect(await screen.findByText("Model matrix runs")).toBeInTheDocument();
+    expect(screen.getByText("Self-hardening cycles")).toBeInTheDocument();
+  });
+
   it("submission leads with the verdict, named scope sub-checks, and a holdout first-exposure banner", () => {
     render(
       <SubmissionDetails

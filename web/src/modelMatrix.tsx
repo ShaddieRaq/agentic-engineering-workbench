@@ -188,6 +188,11 @@ export function ModelMatrixDetailPage() {
         cheapest nor the fastest; the badges mark the winner per dimension.
       </p>
 
+      <div className="cross-links">
+        <Link to={`/agents/${view.agentId}`}>Agent contract →</Link>
+        <Link to="/self-hardening">Self-hardening cycles →</Link>
+      </div>
+
       <section className="metric-grid matrix-summary">
         <MetricTile label="Models tested" value={summary.modelCount} />
         <MetricTile
