@@ -84,6 +84,7 @@ async function main(): Promise<void> {
     apiKeyConfigured: Boolean(apiKey),
     operatorToken,
     foundry,
+    matrixRunsDirectory: resolve(workspaceRoot, "runs"),
     foundryServices: {
       intake: new IntakeSessionController({
         agentService: service,

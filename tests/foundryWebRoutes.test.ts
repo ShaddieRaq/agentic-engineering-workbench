@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -344,6 +344,55 @@ describe("foundry web routes", () => {
     });
 
     await app.close();
+  });
+
+  it("serves the model-matrix index and detail, 404 on an unknown id", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "matrix-routes-"));
+    createdDirectories.push(directory);
+    const matrixId = "33333333-3333-3333-3333-333333333333";
+    await writeFile(
+      join(directory, `model-matrix-${matrixId}.json`),
+      JSON.stringify({
+        matrixId,
+        agentId: "project-intake",
+        agentVersion: "0.6.0",
+        execution: { repetitions: 1, concurrency: 1 },
+        models: ["gpt-5.4", "gpt-5.4-mini"],
+        completedAt: "2026-08-11T23:41:51.332Z",
+        cells: [
+          { model: "gpt-5.4", status: "ok", passed: true, passRate: 1, totalRuns: 4, passedRuns: 4, totalTokens: 100, avgTokensPerRun: 25, estimatedCostUsd: 0.2, avgLatencyMs: 1700, evaluationArtifactId: "eval-a", error: null },
+          { model: "gpt-5.4-mini", status: "ok", passed: false, passRate: 0.5, totalRuns: 4, passedRuns: 2, totalTokens: 90, avgTokensPerRun: 22, estimatedCostUsd: 0.05, avgLatencyMs: 1500, evaluationArtifactId: "eval-b", error: null },
+        ],
+      }),
+    );
+
+    const { service } = await createConsoleTestService(false);
+    const app = await buildAgentWebServer({
+      service,
+      apiKeyConfigured: false,
+      matrixRunsDirectory: directory,
+    });
+
+    try {
+      const index = await app.inject({ method: "GET", url: "/api/foundry/matrices" });
+      expect(index.statusCode).toBe(200);
+      expect(index.json()).toMatchObject({
+        matrices: [{ matrixId, agentId: "project-intake", modelsPassing: 1, hasTriage: false }],
+      });
+
+      const detail = await app.inject({ method: "GET", url: `/api/foundry/matrices/${matrixId}` });
+      expect(detail.statusCode).toBe(200);
+      expect(detail.json()).toMatchObject({
+        matrixId,
+        summary: { modelsPassing: 1, modelsFailing: 1 },
+        cells: [{ model: "gpt-5.4", verdict: "pass" }, { model: "gpt-5.4-mini", verdict: "fail", lowestCost: true }],
+      });
+
+      const missing = await app.inject({ method: "GET", url: "/api/foundry/matrices/nope" });
+      expect(missing.statusCode).toBe(404);
+    } finally {
+      await app.close();
+    }
   });
 
   it("rejects bad queries and unknown resources with the house error shape", async () => {

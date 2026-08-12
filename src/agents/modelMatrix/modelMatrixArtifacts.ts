@@ -6,7 +6,16 @@ import {
   agentModelMatrixSchema,
   type AgentModelMatrix,
 } from "./agentModelMatrix.js";
-import type { ModelCaseFailures } from "./agentModelMatrixTriage.js";
+import {
+  modelMatrixTriageSchema,
+  type ModelCaseFailures,
+  type ModelMatrixTriage,
+} from "./agentModelMatrixTriage.js";
+
+// The uuid-named matrix artifact, capturing the id. Mirrors the guard in
+// resolveModelMatrixFile: the derived triage/report files carry a "triage"/
+// "report" word before the uuid, whose letters fall outside [0-9a-f-].
+const MATRIX_FILE_PATTERN = /^model-matrix-([0-9a-f-]{36})\.json$/;
 
 /** Resolves the newest model-matrix artifact, or the one for a given id. */
 export async function resolveModelMatrixFile(
@@ -50,6 +59,51 @@ export async function loadModelMatrix(
   const file = await resolveModelMatrixFile(runsDirectory, id);
   const raw = JSON.parse(await readFile(file, "utf8")) as unknown;
   return agentModelMatrixSchema.parse(raw);
+}
+
+/**
+ * Ids of every matrix artifact in the runs directory, newest first. Returns []
+ * (rather than throwing) when the directory is absent or holds no matrices —
+ * the index view treats "none yet" as an empty list, not an error.
+ */
+export async function listModelMatrixIds(runsDirectory: string): Promise<string[]> {
+  let entries: string[];
+  try {
+    entries = await readdir(runsDirectory);
+  } catch {
+    return [];
+  }
+  const matrices = entries
+    .map((path) => MATRIX_FILE_PATTERN.exec(path))
+    .filter((match): match is RegExpExecArray => match !== null);
+  const withTimes = await Promise.all(
+    matrices.map(async (match) => ({
+      id: match[1]!,
+      mtimeMs: (await stat(join(runsDirectory, match[0]))).mtimeMs,
+    })),
+  );
+  withTimes.sort((left, right) => right.mtimeMs - left.mtimeMs);
+  return withTimes.map((entry) => entry.id);
+}
+
+/**
+ * The failure-triage sibling for a matrix, or null when none was written.
+ * Triage is optional enrichment (produced by `npm run matrix:triage`); a
+ * missing or unreadable sibling leaves the matrix view to stand on its cells.
+ */
+export async function loadModelMatrixTriage(
+  runsDirectory: string,
+  id: string,
+): Promise<ModelMatrixTriage | null> {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(
+      await readFile(join(runsDirectory, `model-matrix-triage-${id}.json`), "utf8"),
+    );
+  } catch {
+    return null;
+  }
+  return modelMatrixTriageSchema.parse(raw);
 }
 
 /**

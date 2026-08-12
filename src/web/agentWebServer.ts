@@ -28,6 +28,10 @@ import {
   buildFoundryChainView,
   buildFoundryProjectIndex,
 } from "./foundryChainView.js";
+import {
+  buildModelMatrixIndex,
+  buildModelMatrixView,
+} from "./modelMatrixView.js";
 import { OperationStore } from "./operationStore.js";
 import { operatorTokenMatches } from "./operatorToken.js";
 
@@ -230,6 +234,10 @@ export interface AgentWebServerOptions {
   operations?: OperationStore;
   foundry?: FoundryArtifactStore;
   foundryServices?: FoundryActionServices;
+  // Directory holding model-matrix artifacts (the artifact-store root, i.e.
+  // runs/). When set, the two read-only matrix routes are served; unset leaves
+  // them off for embeds/tests that never surface the matrix.
+  matrixRunsDirectory?: string;
   clientDirectory?: string;
   logger?: boolean;
   // Decision 090: when set, decision-class routes (foundry decisions,
@@ -862,6 +870,30 @@ export async function buildAgentWebServer(
       }
     },
   );
+
+  if (options.matrixRunsDirectory) {
+    const matrixRunsDirectory = options.matrixRunsDirectory;
+
+    app.get("/api/foundry/matrices", async () => {
+      return buildModelMatrixIndex(matrixRunsDirectory);
+    });
+
+    app.get<{ Params: { matrixId: string } }>(
+      "/api/foundry/matrices/:matrixId",
+      async (request, reply) => {
+        const view = await buildModelMatrixView(
+          matrixRunsDirectory,
+          request.params.matrixId,
+        );
+        if (!view) {
+          return reply
+            .code(404)
+            .send({ error: `Unknown model matrix: ${request.params.matrixId}.` });
+        }
+        return view;
+      },
+    );
+  }
 
   if (options.foundry) {
     const foundry = options.foundry;
