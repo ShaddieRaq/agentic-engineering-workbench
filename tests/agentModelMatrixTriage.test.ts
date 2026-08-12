@@ -34,7 +34,11 @@ function matrixOf(models: string[]): AgentModelMatrix {
   });
 }
 
-const fail = (datasetId: string, caseId: string) => ({ datasetId, caseId });
+const fail = (datasetId: string, caseId: string, passRate = 0) => ({
+  datasetId,
+  caseId,
+  passRate,
+});
 
 describe("triageModelMatrix", () => {
   it("classifies a case that fails on every model as ambiguity", () => {
@@ -93,6 +97,28 @@ describe("triageModelMatrix", () => {
     expect(triage.ambiguity).toHaveLength(1);
   });
 
+  it("flags a marginal ambiguity case where a failing model partially passed", () => {
+    const failures: ModelCaseFailures[] = [
+      { model: "gpt-5.4", failedCases: [fail("ds", "flaky", 0.67)] },
+      { model: "gpt-5.4-mini", failedCases: [fail("ds", "flaky", 0.33)] },
+    ];
+    const triage = triageModelMatrix(matrixOf(["gpt-5.4", "gpt-5.4-mini"]), failures);
+    const [c] = triage.ambiguity;
+    expect(c!.marginal).toBe(true);
+    expect(c!.worstFailurePassRate).toBe(0.67);
+  });
+
+  it("does not flag a hard failure (all failing models scored 0) as marginal", () => {
+    const failures: ModelCaseFailures[] = [
+      { model: "gpt-5.4", failedCases: [fail("ds", "hard", 0)] },
+      { model: "gpt-5.4-mini", failedCases: [fail("ds", "hard", 0)] },
+    ];
+    const triage = triageModelMatrix(matrixOf(["gpt-5.4", "gpt-5.4-mini"]), failures);
+    const [c] = triage.ambiguity;
+    expect(c!.marginal).toBe(false);
+    expect(c!.worstFailurePassRate).toBe(0);
+  });
+
   it("produces no triaged cases when nothing failed", () => {
     const failures: ModelCaseFailures[] = [
       { model: "a", failedCases: [] },
@@ -125,5 +151,15 @@ describe("renderModelMatrixTriageMarkdown", () => {
     expect(md).toContain("Ambiguity — prompt/gate-hardening targets (0)");
     expect(md).toContain("None — no case failed across every model.");
     expect(md).toContain("Capability-dependent — model-selection signals (1)");
+  });
+
+  it("warns when an ambiguity case is marginal (flaky)", () => {
+    const triage = triageModelMatrix(matrixOf(["a", "b"]), [
+      { model: "a", failedCases: [fail("ds", "flaky", 0.67)] },
+      { model: "b", failedCases: [fail("ds", "flaky", 0.5)] },
+    ]);
+    const md = renderModelMatrixTriageMarkdown(triage);
+    expect(md).toContain("1 of these are **marginal**");
+    expect(md).toContain("MARGINAL (a failing model still scored 67%");
   });
 });

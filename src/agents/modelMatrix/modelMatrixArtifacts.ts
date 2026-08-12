@@ -1,6 +1,7 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { agentEvaluationExperimentSchema } from "../evaluations/agentEvaluationExperiment.js";
+import { agentDatasetRunResultSchema } from "../datasets/agentDatasetRunner.js";
 import {
   agentModelMatrixSchema,
   type AgentModelMatrix,
@@ -12,8 +13,11 @@ export async function resolveModelMatrixFile(
   runsDirectory: string,
   id: string | null,
 ): Promise<string> {
+  // Match only the uuid-named matrix artifacts — NOT the derived
+  // model-matrix-triage-*.json / model-matrix-report-*.md files, whose
+  // "triage"/"report" prefix contains non-hex letters and so is excluded.
   const files = (await readdir(runsDirectory)).filter((path) =>
-    /^model-matrix-.+\.json$/.test(path),
+    /^model-matrix-[0-9a-f-]{36}\.json$/.test(path),
   );
 
   if (files.length === 0) {
@@ -54,6 +58,18 @@ export async function loadModelMatrix(
  * evaluation). Throws if a referenced evaluation artifact is missing, so a
  * model is never silently treated as having zero failures.
  */
+async function readArtifactJson(
+  runsDirectory: string,
+  fileName: string,
+  label: string,
+): Promise<unknown> {
+  try {
+    return JSON.parse(await readFile(join(runsDirectory, fileName), "utf8"));
+  } catch {
+    throw new Error(`${label} is missing or unreadable.`);
+  }
+}
+
 export async function loadEvaluationFailures(
   runsDirectory: string,
   matrix: AgentModelMatrix,
@@ -63,26 +79,39 @@ export async function loadEvaluationFailures(
   for (const cell of matrix.cells) {
     if (cell.status !== "ok" || cell.evaluationArtifactId === null) continue;
 
-    const file = join(
-      runsDirectory,
-      `agent-evaluation-${cell.evaluationArtifactId}.json`,
+    const evaluation = agentEvaluationExperimentSchema.parse(
+      await readArtifactJson(
+        runsDirectory,
+        `agent-evaluation-${cell.evaluationArtifactId}.json`,
+        `Evaluation artifact ${cell.evaluationArtifactId} for model ${cell.model}`,
+      ),
     );
-    let raw: unknown;
-    try {
-      raw = JSON.parse(await readFile(file, "utf8"));
-    } catch {
-      throw new Error(
-        `Evaluation artifact ${cell.evaluationArtifactId} for model ${cell.model} is missing or unreadable.`,
-      );
-    }
-    const evaluation = agentEvaluationExperimentSchema.parse(raw);
 
-    const failedCases = evaluation.datasets.flatMap((dataset) =>
-      dataset.verification.failedCaseIds.map((caseId) => ({
-        datasetId: dataset.datasetId,
-        caseId,
-      })),
-    );
+    const failedCases: ModelCaseFailures["failedCases"] = [];
+    for (const dataset of evaluation.datasets) {
+      // Per-case pass-rates live on the dataset run, not the evaluation summary.
+      const datasetRun = agentDatasetRunResultSchema.parse(
+        await readArtifactJson(
+          runsDirectory,
+          `agent-dataset-run-${dataset.datasetRunArtifactId}.json`,
+          `Dataset-run artifact ${dataset.datasetRunArtifactId} for model ${cell.model}`,
+        ),
+      );
+      const passRateByCase = new Map(
+        datasetRun.caseSummaries.map((summary) => [
+          summary.datasetCaseId,
+          summary.passRate,
+        ]),
+      );
+      for (const caseId of dataset.verification.failedCaseIds) {
+        failedCases.push({
+          datasetId: dataset.datasetId,
+          caseId,
+          passRate: passRateByCase.get(caseId) ?? null,
+        });
+      }
+    }
+
     results.push({ model: cell.model, failedCases });
   }
 
