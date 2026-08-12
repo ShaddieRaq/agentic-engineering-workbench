@@ -61,6 +61,7 @@ export function createTestDesignerAgent(
       // three projects — the chain's largest single-shot generation task
       // gets the strongest model, like the builder role always has.
       defaultModel: "gpt-5.4",
+      reasoningTier: "advanced",
       components: {
         workflowIds: [],
         harnessIds: [],

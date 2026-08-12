@@ -17,6 +17,7 @@ export const agentManifestSchema = z
     owner: z.string().min(1),
     tags: uniqueIds,
     defaultModel: z.string().min(1),
+    reasoningTier: z.enum(["standard", "advanced"]).optional(),
     components: z
       .object({
         workflowIds: uniqueIds,

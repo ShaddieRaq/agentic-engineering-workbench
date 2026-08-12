@@ -63,6 +63,7 @@ export const changeRiskReviewerAgent = defineAgent({
     owner: "local-platform",
     tags: ["change-review", "engineering", "reliability"],
     defaultModel: "gpt-5.4",
+    reasoningTier: "advanced",
     components: {
       workflowIds: ["change-risk-review"],
       harnessIds: [],

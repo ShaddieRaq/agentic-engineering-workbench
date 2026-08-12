@@ -60,6 +60,7 @@ export const agentImprovementAnalystAgent = defineAgent({
     owner: "local-platform",
     tags: ["agent-development", "evaluation", "optimization"],
     defaultModel: "gpt-5.4",
+    reasoningTier: "advanced",
     components: {
       workflowIds: ["agent-improvement-analysis"],
       harnessIds: [],

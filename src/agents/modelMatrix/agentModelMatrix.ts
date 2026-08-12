@@ -64,6 +64,7 @@ export type ModelMatrixVerifier = (request: {
   repetitions?: number;
   concurrency?: number;
   workspaceId?: string;
+  allowBelowFloor?: boolean;
 }) => Promise<AgentEvaluationEvidence>;
 
 function buildCell(
@@ -128,6 +129,10 @@ export async function runAgentModelMatrix(
         model,
         repetitions: execution.repetitions,
         concurrency: execution.concurrency,
+        // Measurement is the deliberate below-floor exception: a judgment-seat
+        // agent must still be measurable on a weak model — that is how the
+        // floor earns its evidence (Decision 091).
+        allowBelowFloor: true,
         ...(request.workspaceId ? { workspaceId: request.workspaceId } : {}),
       });
       agentVersion = agentVersion ?? evidence.experiment.agentVersion;

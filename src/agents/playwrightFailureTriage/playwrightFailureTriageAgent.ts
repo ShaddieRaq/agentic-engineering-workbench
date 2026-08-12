@@ -43,6 +43,7 @@ export const playwrightFailureTriageAgent = defineAgent({
     owner: "local-platform",
     tags: ["playwright", "quality-engineering", "failure-triage"],
     defaultModel: "gpt-5.4",
+    reasoningTier: "advanced",
     components: {
       workflowIds: ["playwright-failure-triage"],
       harnessIds: [],

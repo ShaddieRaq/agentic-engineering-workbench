@@ -2770,7 +2770,17 @@ doers, which stay measurable and cost-optimizable.
 Residuals: the floor is a default change plus this record, not structural
 enforcement — a `--model` flag can still downgrade a judge below its
 floor; a manifest reasoning-tier/floor field that rejects sub-floor
-models is the follow-up. No version bump accompanied the change (a policy
+models is the follow-up. [RESOLVED 2026-08-12: shipped. Optional manifest
+`reasoningTier: "advanced"` marks the five judgment seats (analyst,
+change-risk-reviewer, documentation-auditor, playwright-triage,
+test-designer); `assertModelMeetsFloor` (src/agents/modelTierPolicy.ts)
+enforces at the operational choke points — run(), verify(), and the
+improvement analyst — so a judge cannot run below the floor by accident.
+The model matrix opts out via `allowBelowFloor` so judges stay MEASURABLE
+on weak models, since that measurement is how the floor earns its
+evidence. The floor-approved allowlist is a pattern matching gpt-5.4 (and
+dated snapshots) but not mini; it grows only as the matrix validates more
+models.] No version bump accompanied the change (a policy
 floor, not a measured capability release), so evidence labeled at the
 same agent version predates the floor. documentation-auditor and
 playwright-triage were floored on principle, without measured evidence.

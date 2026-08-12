@@ -31,6 +31,7 @@ import {
   findEvaluationCase,
 } from "./evaluations/agentEvaluationView.js";
 import { runAgentImprovementAnalysis } from "./agentImprovement/agentImprovementAnalysis.js";
+import { assertModelMeetsFloor } from "./modelTierPolicy.js";
 import { validateCandidatePolicyPatch } from "./agentImprovement/agentCandidateBuilder.js";
 import { buildAgentCandidate } from "./agentImprovement/agentCandidateBuilder.js";
 import {
@@ -73,6 +74,12 @@ export interface VerifyAgentRequest {
   concurrency?: number;
   model?: string;
   workspaceId?: string;
+  /**
+   * Measurement escape for the model matrix: allows an advanced (judgment-seat)
+   * agent to be verified on a below-floor model so it can be measured. Every
+   * non-measurement caller leaves this false and the floor is enforced.
+   */
+  allowBelowFloor?: boolean;
 }
 
 export interface AgentVerificationEvidence {
@@ -665,6 +672,7 @@ export class AgentApplicationService {
     });
     const analyst = this.agents.get("agent-improvement-analyst");
     const model = request.model ?? analyst.manifest.defaultModel;
+    assertModelMeetsFloor(analyst.manifest, model);
     const analysis = await runAgentImprovementAnalysis(
       this.providerFactory(model),
       packet,
@@ -689,6 +697,7 @@ export class AgentApplicationService {
   async run(request: RunAgentRequest): Promise<RunAgentResponse> {
     const registration = this.agents.get(request.agentId);
     const model = request.model ?? registration.manifest.defaultModel;
+    assertModelMeetsFloor(registration.manifest, model);
     const workspace = await this.workspaces.get(request.workspaceId ?? this.workspaces.defaultWorkspace.id);
     const tools = this.toolFactory(workspace.rootPath);
     const run = await runAgent(request.agentId, request.input, {
@@ -708,6 +717,9 @@ export class AgentApplicationService {
   ): Promise<AgentEvaluationEvidence> {
     const registration = this.agents.get(request.agentId);
     const model = request.model ?? registration.manifest.defaultModel;
+    assertModelMeetsFloor(registration.manifest, model, {
+      allowBelowFloor: request.allowBelowFloor ?? false,
+    });
     const workspace = await this.workspaces.get(request.workspaceId ?? this.workspaces.defaultWorkspace.id);
     const tools = this.toolFactory(workspace.rootPath);
     const provider = this.providerFactory(model);

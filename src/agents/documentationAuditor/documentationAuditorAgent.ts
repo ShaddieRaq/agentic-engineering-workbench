@@ -76,6 +76,7 @@ export function createDocumentationAuditorAgent(
       owner: "local-platform",
       tags: ["documentation", "engineering", "repository-analysis"],
       defaultModel: "gpt-5.4",
+      reasoningTier: "advanced",
       components: {
         workflowIds: ["documentation-audit"],
         harnessIds: [],
