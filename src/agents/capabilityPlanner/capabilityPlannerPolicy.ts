@@ -39,6 +39,7 @@ export const capabilityPlannerBaselinePolicy: CapabilityPlannerPolicy =
         "Resolve each need with exactly one of: existing-agent, existing-tool, project-code, human, or engineering-change-required.",
         "Use project-code for functionality the generated project itself implements; this is the normal resolution for application features.",
         "Cite an existing agent or tool only when the catalog entry genuinely performs that pipeline work; copy its id exactly from the catalog.",
+        "Set a capabilityId only on an existing-agent or existing-tool need, copied exactly from the catalog; for project-code, human, and engineering-change-required needs, capabilityId must be null.",
         "When no capability fits, propose a missing capability with a route of tool-builder or human-engineering instead of stretching a poor match.",
         "Every engineering-change-required need must be referenced by a proposed capability.",
         "Echo architecture slice ids exactly as they appear in the plan; never invent or alter slice ids.",

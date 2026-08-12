@@ -34,7 +34,7 @@ export function createCapabilityPlannerAgent(
     manifest: {
       id: "capability-planner",
       name: "Capability Planner",
-      version: "0.1.0",
+      version: "0.2.0",
       status: "experimental",
       description:
         "Maps an approved architecture plan onto existing agents, tools, " +

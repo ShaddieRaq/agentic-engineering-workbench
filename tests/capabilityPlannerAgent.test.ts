@@ -35,7 +35,7 @@ function scriptedProvider(
 describe("capabilityPlannerAgent", () => {
   it("is registered with an instructions revision surface", () => {
     const registration = platformAgentRegistry.get("capability-planner");
-    expect(registration.manifest.version).toBe("0.1.0");
+    expect(registration.manifest.version).toBe("0.2.0");
     expect(registration.manifest.permissions.toolIds).toEqual([]);
     expect(registration.revisionSurface?.mutableFields).toEqual(["instructions"]);
     expect(

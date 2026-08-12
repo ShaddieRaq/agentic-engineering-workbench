@@ -23,7 +23,7 @@ describe("buildAgentCatalogReport", () => {
     });
     expect(report.agents.map(({ id, version }) => `${id}@${version}`)).toEqual([
       "agent-improvement-analyst@0.2.0",
-      "capability-planner@0.1.0",
+      "capability-planner@0.2.0",
       "change-risk-reviewer@1.0.0",
       "documentation-auditor@1.2.0",
       "playwright-failure-triage@0.1.0",
