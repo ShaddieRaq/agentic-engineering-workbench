@@ -1398,13 +1398,30 @@ operator; conversation-only, nothing below started):
    on the live run (the by-hand finding, now systematic). Also: interviewer
    updated — 9 model-matrix cards imported into the drill (~/.interview-drill,
    36→45), drillable now via `--tag model-matrix`.
-   NEXT SLICES: (3b) AUTO-HANDOFF — route triaged AMBIGUITY cases into the
-   existing agent-improvement-analyst → prompt candidate → gated comparison →
-   operator promotion (the loop half exists; 3b wires the triaged failures in
-   as its input; the contradiction case is the ready first input). DEFERRED by
-   operator: OpenRouter provider — needs a NEW provider class (Chat Completions
-   + json_schema response_format), NOT a base_url swap, because OpenAIProvider
-   is built on the Responses API.
+   SLICE 3b SHIPPED 2026-08-12 (commits c4041e0 + 43b41a3): AUTO-HANDOFF —
+   `npm run auto-improve <agent>` wires matrix → triage → analyst → gated
+   comparison into ONE self-running command; skips marginal cases; bakes in
+   the hardened analyst request (citation + disposition-consistency + additive)
+   with bounded retries; STOPS at a candidate (promotable/gate-rejected/
+   analyst-failed), records NO decision. Injected analyze/evaluate → fully
+   unit-tested. LIVE-PROVEN on 2 agents: intake@0.7.0 (0 ambiguity, correctly
+   nothing to fix — we already shipped its fix) and architect@0.3.0 (100% pass
+   both models, nothing to fix). The automation drives the loop correctly and
+   conserves cost; candidate-PRODUCTION was proven by the by-hand run that
+   shipped 0.7.0. Candidates appear only for genuine AMBIGUITY gaps (rare on
+   hardened agents). Also landed the two supporting slices: STRUCTURAL FLOOR
+   (0ed3b94, judges can't run below tier — enforced, not just a default) and
+   the FLAKINESS GUARD (ed8bbd8, triage flags marginal/likely-variance cases).
+   MODEL-MATRIX ARC (step 7) is functionally COMPLETE.
+   DEFERRED by operator: OpenRouter provider — needs a NEW provider class (Chat
+   Completions + json_schema response_format), NOT a base_url swap, because
+   OpenAIProvider is built on the Responses API.
+   OPEN FOLLOW-UP (matrix OPTIMIZER direction, surfaced live 2026-08-12):
+   architect@0.3.0 passes 100% on gpt-5.4-mini at ~3.5x lower cost + ~2x faster
+   — a concrete DOWNGRADE candidate (doer on full → mini). The matrix's cost
+   optimizer works, but a real downgrade wants broader coverage than the smoke
+   suite; a downgrade decision + a "matrix says cheaper model holds" report row
+   is a clean next slice if pursued.
    FAILURE-HARVESTING EXTENSION (operator insight 2026-08-11, aligned):
    the matrix is not just "pick a model" — deliberately DOWNSCALING the
    model turns the model range into a cheap FAILURE-GENERATION ENGINE that
