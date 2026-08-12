@@ -27,6 +27,62 @@ export function ProvenanceChip({ source, count }: { source: string; count?: numb
   );
 }
 
+// The one sanctioned "reveal raw evidence" drawer. A JSON.stringify <pre> is an
+// escape hatch behind a disclosure, never the default render of a page.
+export function RawDrawer({ value, label = "Reveal raw evidence" }: { value: unknown; label?: string }) {
+  return (
+    <details className="raw-drawer">
+      <summary>{label}</summary>
+      <pre className="evidence-json">{typeof value === "string" ? value : JSON.stringify(value, null, 2)}</pre>
+    </details>
+  );
+}
+
+function schemaTypeLabel(schema: JsonSchema): string {
+  if (Array.isArray(schema.enum)) {
+    return `enum(${schema.enum.map((value) => JSON.stringify(value)).join(" | ")})`;
+  }
+  if (schema.type === "array") {
+    return `array<${schema.items ? schemaTypeLabel(schema.items) : "any"}>`;
+  }
+  return schema.type ?? "any";
+}
+
+// Renders a JSON schema as a readable field tree — name · type · required ·
+// description — instead of a raw JSON dump. Recurses one level into nested
+// objects / arrays-of-objects.
+export function SchemaView({ schema }: { schema: JsonSchema }) {
+  const properties = schema.properties ?? {};
+  const required = new Set(schema.required ?? []);
+  const entries = Object.entries(properties);
+  if (entries.length === 0) {
+    return <p className="schema-empty">{schemaTypeLabel(schema)}</p>;
+  }
+  return (
+    <div className="schema-view">
+      {entries.map(([name, property]) => {
+        const nested =
+          property.type === "object" && property.properties
+            ? property
+            : property.type === "array" && property.items?.type === "object" && property.items.properties
+              ? property.items
+              : null;
+        return (
+          <div className="schema-row" key={name}>
+            <div className="schema-field">
+              <code className="schema-name">{name}</code>
+              <span className="schema-type">{schemaTypeLabel(property)}</span>
+              {required.has(name) && <span className="schema-req">required</span>}
+            </div>
+            {property.description && <p className="schema-desc">{property.description}</p>}
+            {nested && <div className="schema-nested"><SchemaView schema={nested} /></div>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // Acceptance criteria as a requirements-traceability matrix, not a card stack:
 // a scannable, filterable table where each row is a criterion and the columns
 // are its provenance and how an independent tester verifies it. Scan a column

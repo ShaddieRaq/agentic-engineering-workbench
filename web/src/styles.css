@@ -141,6 +141,19 @@ section { margin-top: 34px; }
 .guarantee-card strong { display: block; font-size: 17px; margin-bottom: 8px; color: #edf4f1; }
 .guarantee-card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
 
+.raw-drawer { margin-top: 14px; }
+.raw-drawer summary { color: var(--accent); cursor: pointer; font-size: 12px; font-weight: 600; }
+.raw-drawer pre { margin-top: 10px; }
+.schema-view { display: grid; gap: 12px; }
+.schema-row { border-left: 2px solid var(--line); padding-left: 12px; }
+.schema-field { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.schema-name { background: transparent; padding: 0; color: #edf4f1; font-size: 13px; }
+.schema-type { color: var(--accent-2); font: 11px DM Mono, monospace; }
+.schema-req { color: var(--warning); font: 10px DM Mono, monospace; text-transform: uppercase; letter-spacing: .05em; }
+.schema-desc { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.schema-empty { color: var(--muted); font: 12px DM Mono, monospace; }
+.schema-nested { margin-top: 10px; }
+
 .panel, .concept-card, .trace-panel { padding: 25px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .span-two { grid-column: span 2; }

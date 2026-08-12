@@ -3,7 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "../web/src/App.js";
-import { CriteriaMatrix } from "../web/src/components.js";
+import { CriteriaMatrix, SchemaView } from "../web/src/components.js";
 import { SubmissionDetails } from "../web/src/foundry.js";
 
 afterEach(() => {
@@ -761,6 +761,27 @@ describe("agent workbench web interface", () => {
     // The holdout in the file table is a rigor chip with a teaching tooltip —
     // not a danger-red status verdict (the color-bug fix).
     expect(screen.getByTitle("A holdout test the builder never saw.")).toBeInTheDocument();
+  });
+
+  it("renders a JSON schema as a readable field tree, not a dump", () => {
+    render(
+      <SchemaView
+        schema={{
+          type: "object",
+          required: ["idea"],
+          properties: {
+            idea: { type: "string", description: "The software idea to interview." },
+            maxTurns: { type: "integer", description: "Turn budget." },
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText("idea")).toBeInTheDocument();
+    expect(screen.getByText("string")).toBeInTheDocument();
+    expect(screen.getByText("The software idea to interview.")).toBeInTheDocument();
+    // Only the required field is marked required.
+    expect(screen.getAllByText("required")).toHaveLength(1);
   });
 
   it("renders a raw foundry artifact with the holdout disclosure", async () => {

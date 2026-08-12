@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type ImprovementProposalArtifact, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type ToolDescription, type ToolSummary } from "./api.js";
 import { ArtifactPresentationView } from "./artifactPresentation.js";
-import { AgentCard, EmptyState, ErrorNotice, Loading, OperationTrace, PageHeader, RunAgentPanel, StatusBadge } from "./components.js";
+import { AgentCard, EmptyState, ErrorNotice, Loading, OperationTrace, PageHeader, RawDrawer, RunAgentPanel, SchemaView, StatusBadge } from "./components.js";
 import { FoundryArtifactPage, FoundryProjectPage, FoundryProjectsPage, OperatorSettingsPage } from "./foundry.js";
 import { useOperation, useResource } from "./hooks.js";
 import { LocalLink as Link, LocalNavLink as NavLink, usePathname } from "./router.js";
@@ -125,7 +125,7 @@ function ToolDetailPage() {
   if (resource.loading) return <Loading />;
   if (resource.error || !resource.data) return <ErrorNotice message={resource.error ?? "Tool not found"} />;
   const tool = resource.data;
-  return <><PageHeader eyebrow="Controlled TypeScript capability" title={tool.id}><StatusBadge value="active" /></PageHeader><p className="lede">{tool.description}</p><section className="detail-grid"><ListBlock title="Permitted agent consumers" values={tool.consumerAgentIds} /><div className="detail-block"><h3>Registration boundary</h3><p>This tool is explicitly imported into the platform registry and rebuilt for the selected workspace root.</p></div></section><section className="contract-grid"><div className="panel"><span className="eyebrow">Validated input</span><pre>{JSON.stringify(tool.inputSchema, null, 2)}</pre></div><div className="panel"><span className="eyebrow">Validated output</span><pre>{JSON.stringify(tool.outputSchema, null, 2)}</pre></div></section></>;
+  return <><PageHeader eyebrow="Controlled TypeScript capability" title={tool.id}><StatusBadge value="active" /></PageHeader><p className="lede">{tool.description}</p><section className="detail-grid"><ListBlock title="Permitted agent consumers" values={tool.consumerAgentIds} /><div className="detail-block"><h3>Registration boundary</h3><p>This tool is explicitly imported into the platform registry and rebuilt for the selected workspace root.</p></div></section><section className="contract-grid"><div className="panel"><span className="eyebrow">Validated input</span><SchemaView schema={tool.inputSchema} /><RawDrawer label="Raw input schema" value={tool.inputSchema} /></div><div className="panel"><span className="eyebrow">Validated output</span><SchemaView schema={tool.outputSchema} /><RawDrawer label="Raw output schema" value={tool.outputSchema} /></div></section></>;
 }
 
 function ListBlock({ title, values }: { title: string; values: string[] }) {
@@ -149,7 +149,7 @@ function AgentDetailPage() {
         <ListBlock title="Verification datasets" values={manifest.verification.datasetIds} />
         <ListBlock title="Harnesses and scenarios" values={[...manifest.components.harnessIds, ...manifest.components.scenarioIds]} />
       </section>
-      <section className="contract-grid"><div className="panel"><span className="eyebrow">Input contract</span><pre>{JSON.stringify(inputSchema, null, 2)}</pre></div><div className="panel"><span className="eyebrow">Output contract</span><pre>{JSON.stringify(outputSchema, null, 2)}</pre></div></section>
+      <section className="contract-grid"><div className="panel"><span className="eyebrow">Input contract</span><SchemaView schema={inputSchema} /><RawDrawer label="Raw input schema" value={inputSchema} /></div><div className="panel"><span className="eyebrow">Output contract</span><SchemaView schema={outputSchema} /><RawDrawer label="Raw output schema" value={outputSchema} /></div></section>
       <RunAgentPanel agent={manifest} schema={inputSchema} />
     </>
   );
