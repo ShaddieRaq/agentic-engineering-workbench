@@ -38,6 +38,38 @@ export function RawDrawer({ value, label = "Reveal raw evidence" }: { value: unk
   );
 }
 
+// Readable rendering of arbitrary JSON data (agent inputs, evaluation
+// expectations, structured outputs): objects become key/value rows, arrays
+// become lists, strings render as text — not quoted JSON. The companion to
+// SchemaView (which renders schemas); this renders data.
+export function JsonView({ value }: { value: unknown }) {
+  if (value === null || value === undefined) return <span className="json-null">null</span>;
+  if (typeof value === "string") return <span className="json-string">{value}</span>;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return <span className="json-scalar">{String(value)}</span>;
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <span className="json-empty">empty list</span>;
+    return (
+      <ul className="json-array">
+        {value.map((item, index) => <li key={index}><JsonView value={item} /></li>)}
+      </ul>
+    );
+  }
+  const entries = Object.entries(value as Record<string, unknown>);
+  if (entries.length === 0) return <span className="json-empty">empty</span>;
+  return (
+    <div className="json-object">
+      {entries.map(([key, child]) => (
+        <div className="json-row" key={key}>
+          <span className="json-key">{key}</span>
+          <div className="json-value"><JsonView value={child} /></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function schemaTypeLabel(schema: JsonSchema): string {
   if (Array.isArray(schema.enum)) {
     return `enum(${schema.enum.map((value) => JSON.stringify(value)).join(" | ")})`;

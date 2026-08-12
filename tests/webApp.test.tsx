@@ -3,7 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "../web/src/App.js";
-import { CriteriaMatrix, SchemaView } from "../web/src/components.js";
+import { CriteriaMatrix, JsonView, SchemaView } from "../web/src/components.js";
 import { SubmissionDetails } from "../web/src/foundry.js";
 
 afterEach(() => {
@@ -782,6 +782,16 @@ describe("agent workbench web interface", () => {
     expect(screen.getByText("The software idea to interview.")).toBeInTheDocument();
     // Only the required field is marked required.
     expect(screen.getAllByText("required")).toHaveLength(1);
+  });
+
+  it("renders arbitrary data as key/value rows, not a JSON blob", () => {
+    render(<JsonView value={{ persona: "SDET", turns: 3, topics: ["gating", "evidence"] }} />);
+
+    expect(screen.getByText("persona")).toBeInTheDocument();
+    expect(screen.getByText("SDET")).toBeInTheDocument();
+    // Array members render as list items, strings as text (not quoted JSON).
+    expect(screen.getByText("gating")).toBeInTheDocument();
+    expect(screen.getByText("evidence")).toBeInTheDocument();
   });
 
   it("renders a raw foundry artifact with the holdout disclosure", async () => {
