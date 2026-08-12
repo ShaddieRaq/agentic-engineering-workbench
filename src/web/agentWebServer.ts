@@ -32,6 +32,10 @@ import {
   buildModelMatrixIndex,
   buildModelMatrixView,
 } from "./modelMatrixView.js";
+import {
+  buildSelfHardeningCycle,
+  buildSelfHardeningIndex,
+} from "./selfHardeningView.js";
 import { OperationStore } from "./operationStore.js";
 import { operatorTokenMatches } from "./operatorToken.js";
 
@@ -894,6 +898,26 @@ export async function buildAgentWebServer(
       },
     );
   }
+
+  app.get("/api/self-hardening", async () => {
+    return buildSelfHardeningIndex(options.service.artifacts);
+  });
+
+  app.get<{ Params: { decisionId: string } }>(
+    "/api/self-hardening/:decisionId",
+    async (request, reply) => {
+      const cycle = await buildSelfHardeningCycle(
+        options.service.artifacts,
+        request.params.decisionId,
+      );
+      if (!cycle) {
+        return reply
+          .code(404)
+          .send({ error: `Unknown self-hardening cycle: ${request.params.decisionId}.` });
+      }
+      return cycle;
+    },
+  );
 
   if (options.foundry) {
     const foundry = options.foundry;

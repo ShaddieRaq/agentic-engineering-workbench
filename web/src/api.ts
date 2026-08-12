@@ -726,6 +726,62 @@ export interface ModelMatrixIndex {
   matrices: ModelMatrixIndexEntry[];
 }
 
+// Client mirror of src/web/selfHardeningView.ts. Keep in sync with the server.
+export interface SelfHardeningSignalView {
+  proposalArtifactId: string;
+  model: string;
+  repetitions: number;
+  disposition: string | null;
+  recommendationCount: number;
+  hasPolicyPatch: boolean;
+  policyValid: boolean | null;
+}
+
+export interface SelfHardeningGateView {
+  gateId: string;
+  status: "passed" | "failed" | "not-applicable";
+  message: string;
+}
+
+export interface SelfHardeningComparisonView {
+  candidateEvaluationArtifactId: string;
+  improvedCases: number;
+  regressedCases: number;
+  unchangedCases: number;
+  insufficientEvidenceCases: number;
+  gatesPassed: boolean;
+  gates: SelfHardeningGateView[];
+}
+
+export interface SelfHardeningCycleView {
+  decisionId: string;
+  subjectAgentId: string;
+  subjectAgentVersion: string;
+  decision: "approve" | "reject" | "revise";
+  gatesPassed: boolean;
+  released: boolean;
+  releaseActions: string[];
+  operatorId: string;
+  rationale: string;
+  decidedAt: string;
+  signal: SelfHardeningSignalView | null;
+  comparison: SelfHardeningComparisonView | null;
+}
+
+export interface SelfHardeningIndexEntry {
+  decisionId: string;
+  subjectAgentId: string;
+  subjectAgentVersion: string;
+  decision: "approve" | "reject" | "revise";
+  gatesPassed: boolean;
+  released: boolean;
+  decidedAt: string;
+}
+
+export interface SelfHardeningIndex {
+  cycles: SelfHardeningIndexEntry[];
+}
+
 // Decision 090: operator-attributed writes carry the token the server
 // printed at startup. Stored once per browser; harmlessly absent on reads.
 export const OPERATOR_TOKEN_STORAGE_KEY = "workbench-operator-token";

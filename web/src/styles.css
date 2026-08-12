@@ -206,6 +206,39 @@ section { margin-top: 34px; }
 .triage-models dd { margin: 0; font-size: 12px; }
 @media (max-width: 860px) { .triage-groups { grid-template-columns: 1fr; } }
 
+/* Stepper — a staged narrative with a connector line and a per-step outcome dot. */
+.stepper { list-style: none; margin: 26px 0 0; padding: 0; }
+.stepper-step { position: relative; padding: 0 0 26px 34px; }
+.stepper-step:last-child { padding-bottom: 0; }
+.stepper-step::before { content: ""; position: absolute; left: 9px; top: 6px; bottom: 0; width: 2px; background: var(--line); }
+.stepper-step:last-child::before { display: none; }
+.stepper-dot { position: absolute; left: 2px; top: 4px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); box-sizing: border-box; }
+.step-pass .stepper-dot { border-color: var(--success); background: var(--success); }
+.step-fail .stepper-dot { border-color: var(--danger); background: var(--danger); }
+.step-warn .stepper-dot { border-color: var(--warning); background: var(--warning); }
+.step-neutral .stepper-dot { border-color: var(--muted); }
+.stepper-heading h3 { margin: 0; font-size: 15px; }
+.stepper-summary { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.stepper-detail { margin-top: 12px; }
+
+.cycle-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 0 0 12px; }
+.cycle-facts > div { display: grid; gap: 3px; }
+.cycle-facts dt { color: var(--muted); font-size: 11px; }
+.cycle-facts dd { margin: 0; font-size: 13px; }
+.cycle-link { display: inline-block; font-size: 13px; color: var(--accent); }
+.cycle-counts { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 12px; font-size: 13px; }
+.count-improved { color: var(--success); }
+.count-regressed { color: var(--danger); }
+.count-muted { color: var(--muted); }
+.gate-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.gate-list li { display: grid; grid-template-columns: max-content max-content 1fr; gap: 10px; align-items: baseline; }
+.gate-name { font: 500 12px DM Mono, monospace; }
+.gate-message { color: var(--muted); font-size: 12px; }
+.cycle-rationale { margin: 0 0 12px; font-size: 13px; line-height: 1.55; }
+.cycle-release { border-left: 2px solid var(--success); padding-left: 14px; }
+.cycle-actions { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 12px; display: grid; gap: 4px; }
+.status-not-applicable { background: rgba(156, 160, 171, .12); color: var(--muted); }
+
 .panel, .concept-card, .trace-panel { padding: 25px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .span-two { grid-column: span 2; }

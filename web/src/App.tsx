@@ -4,6 +4,7 @@ import { ArtifactPresentationView } from "./artifactPresentation.js";
 import { AgentCard, EmptyState, ErrorNotice, JsonView, Loading, OperationTrace, PageHeader, RawDrawer, RunAgentPanel, SchemaView, StatusBadge } from "./components.js";
 import { FoundryArtifactPage, FoundryProjectPage, FoundryProjectsPage, OperatorSettingsPage } from "./foundry.js";
 import { ModelMatrixDetailPage, ModelMatrixListPage } from "./modelMatrix.js";
+import { SelfHardeningDetailPage, SelfHardeningListPage } from "./selfHardening.js";
 import { useOperation, useResource } from "./hooks.js";
 import { LocalLink as Link, LocalNavLink as NavLink, usePathname } from "./router.js";
 import { WorkspaceProvider, useWorkspace } from "./workspace.js";
@@ -23,6 +24,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <NavLink to="/runs">Evidence</NavLink>
           <NavLink to="/evaluations">Evaluation Studio</NavLink>
           <NavLink to="/matrices">Model Matrix</NavLink>
+          <NavLink to="/self-hardening">Self-Hardening</NavLink>
           <NavLink to="/authoring">Authoring</NavLink>
           <NavLink to="/operator">Operator</NavLink>
         </nav>
@@ -749,6 +751,8 @@ function RoutedContent() {
   else if (/^\/foundry\/[^/]+(\/(brief|plan|capability|tests|build))?$/.test(pathname)) page = <FoundryProjectPage />;
   else if (pathname === "/matrices") page = <ModelMatrixListPage />;
   else if (/^\/matrices\/[^/]+$/.test(pathname)) page = <ModelMatrixDetailPage />;
+  else if (pathname === "/self-hardening") page = <SelfHardeningListPage />;
+  else if (/^\/self-hardening\/[^/]+$/.test(pathname)) page = <SelfHardeningDetailPage />;
   else if (pathname === "/evaluations" || pathname === "/verification") page = <EvaluationStudioPage />;
   else if (/^\/evaluations\/[^/]+\/cases\/[^/]+\/[^/]+$/.test(pathname)) page = <EvaluationCasePage />;
   else if (/^\/evaluations\/[^/]+$/.test(pathname)) page = <EvaluationDetailPage />;

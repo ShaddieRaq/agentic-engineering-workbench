@@ -831,6 +831,44 @@ describe("agent workbench web interface", () => {
     expect(screen.getByText("contradiction-is-surfaced")).toBeInTheDocument();
   });
 
+  it("renders a self-hardening cycle as a staged narrative with gate outcomes", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.endsWith("/api/workspaces")) {
+        return new Response(JSON.stringify({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (path.includes("/api/self-hardening/")) {
+        return new Response(JSON.stringify({
+          decisionId: "d1",
+          subjectAgentId: "project-intake",
+          subjectAgentVersion: "0.6.0",
+          decision: "approve",
+          gatesPassed: true,
+          released: true,
+          releaseActions: ["Apply the validated patch verbatim"],
+          operatorId: "claude-delegated-by-rashad",
+          rationale: "All gates passed; two cases improved, none regressed.",
+          decidedAt: "2026-08-12T02:19:38.570Z",
+          signal: { proposalArtifactId: "p1", model: "gpt-5.4", repetitions: 3, disposition: "candidate-ready", recommendationCount: 1, hasPolicyPatch: true, policyValid: true },
+          comparison: { candidateEvaluationArtifactId: "c1", improvedCases: 2, regressedCases: 0, unchangedCases: 6, insufficientEvidenceCases: 0, gatesPassed: true, gates: [{ gateId: "regression", status: "passed", message: "No case regressed." }, { gateId: "improvement", status: "passed", message: "2 improved." }] },
+        }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      return new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } });
+    }));
+
+    window.history.replaceState(null, "", "/self-hardening/d1");
+    render(<AppRoutes />);
+
+    expect(await screen.findByRole("heading", { name: "Self-hardening cycle" })).toBeInTheDocument();
+    // The three stages of the loop, each a heading in the Stepper.
+    expect(screen.getByRole("heading", { name: "Analyst proposal" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Gated comparison" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Operator decision" })).toBeInTheDocument();
+    // A named gate outcome and the release action prove the depth rendered.
+    expect(screen.getByText("regression")).toBeInTheDocument();
+    expect(screen.getByText("Apply the validated patch verbatim")).toBeInTheDocument();
+  });
+
   it("renders a raw foundry artifact with the holdout disclosure", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);

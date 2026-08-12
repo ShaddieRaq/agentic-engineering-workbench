@@ -395,6 +395,24 @@ describe("foundry web routes", () => {
     }
   });
 
+  it("serves the self-hardening index and 404s an unknown cycle", async () => {
+    const { service } = await createConsoleTestService(false);
+    const app = await buildAgentWebServer({ service, apiKeyConfigured: false });
+
+    try {
+      const index = await app.inject({ method: "GET", url: "/api/self-hardening" });
+      expect(index.statusCode).toBe(200);
+      // A fresh store holds no promotion decisions — the route returns an empty
+      // list, never an error.
+      expect(index.json()).toMatchObject({ cycles: [] });
+
+      const missing = await app.inject({ method: "GET", url: "/api/self-hardening/nope" });
+      expect(missing.statusCode).toBe(404);
+    } finally {
+      await app.close();
+    }
+  });
+
   it("rejects bad queries and unknown resources with the house error shape", async () => {
     const store = await temporaryStore();
     await persistBriefOnly(store);

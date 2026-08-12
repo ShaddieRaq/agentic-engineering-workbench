@@ -236,6 +236,36 @@ export function EmptyState({ children }: { children: React.ReactNode }) {
   return <div className="empty-state">{children}</div>;
 }
 
+// A staged narrative — the primitive for "this happened, then this, then this."
+// Each step carries its own outcome (pass/fail/warn/neutral) so a multi-stage
+// process reads as a sequence of verdicts, not a wall of prose.
+export interface StepperStep {
+  key: string;
+  title: string;
+  status: "pass" | "fail" | "warn" | "neutral";
+  summary?: string;
+  detail?: React.ReactNode;
+}
+
+export function Stepper({ steps }: { steps: StepperStep[] }) {
+  return (
+    <ol className="stepper">
+      {steps.map((step) => (
+        <li className={`stepper-step step-${step.status}`} key={step.key}>
+          <span className="stepper-dot" aria-hidden="true" />
+          <div className="stepper-body">
+            <div className="stepper-heading">
+              <h3>{step.title}</h3>
+            </div>
+            {step.summary ? <p className="stepper-summary">{step.summary}</p> : null}
+            {step.detail ? <div className="stepper-detail">{step.detail}</div> : null}
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 // A single summary figure — the "state before detail" primitive. `tone` reaches
 // for the reserved semantic colors (good=pass, warn=inferred/attention,
 // critical=fail, holdout=withheld/rigor); omit it for a neutral figure.
