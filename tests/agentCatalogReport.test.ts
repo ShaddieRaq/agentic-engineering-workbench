@@ -28,7 +28,7 @@ describe("buildAgentCatalogReport", () => {
       "documentation-auditor@1.2.0",
       "playwright-failure-triage@0.1.0",
       "project-architect@0.3.0",
-      "project-intake@0.6.0",
+      "project-intake@0.7.0",
       "repository-assistant@1.0.0",
       "test-designer@0.4.0",
       "tool-builder@0.1.0",

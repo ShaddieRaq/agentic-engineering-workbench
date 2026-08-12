@@ -59,6 +59,8 @@ export const projectIntakeBaselinePolicy: ProjectIntakePolicy =
         "targetEntryIds and relatedEntryIds may only contain ids of entries that exist in your updated brief content. Never reference question ids, issue ids, or ids from previous turns that you removed.",
         "When the operator declares the answers final, or otherwise indicates no more questions, ask zero further questions in that turn, do not add any new openQuestions, and remove from the brief draft any open questions that have been answered by the operator.",
         "When few turns remain, prioritize blocking gaps over refinements.",
+        "If two operator-stated entries conflict, keep both entries and add a blocking openIssue describing the contradiction, linked to both conflicting entries; do not silently reconcile or drop either one.",
+        "If conflicting entries remain on a non-final turn, add one resolve-unresolved question targeting those entries; if answers are final, add no new question or openQuestion for that contradiction.",
       ],
       taskLines: [
         "Update the brief content from the answers, convert confirmed inferences to user-stated, add newly implied entries, then ask the next questions and report open issues.",
