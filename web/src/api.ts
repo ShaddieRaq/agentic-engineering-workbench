@@ -654,6 +654,78 @@ export interface FoundryStoredArtifact {
   artifact: unknown;
 }
 
+// Client mirror of src/web/modelMatrixView.ts. Keep in sync with the server.
+export interface ModelMatrixCellView {
+  model: string;
+  status: "ok" | "error";
+  verdict: "pass" | "fail" | "error";
+  passRate: number | null;
+  passedRuns: number;
+  totalRuns: number;
+  totalTokens: number | null;
+  avgTokensPerRun: number | null;
+  estimatedCostUsd: number | null;
+  avgLatencyMs: number | null;
+  evaluationArtifactId: string | null;
+  error: string | null;
+  bestReliability: boolean;
+  lowestCost: boolean;
+  lowestLatency: boolean;
+}
+
+export interface ModelMatrixTriageCaseView {
+  datasetId: string;
+  caseId: string;
+  classification: "ambiguity" | "capability-dependent";
+  failedModels: string[];
+  passedModels: string[];
+  worstFailurePassRate: number | null;
+  marginal: boolean;
+}
+
+export interface ModelMatrixTriageView {
+  meaningful: boolean;
+  ambiguity: ModelMatrixTriageCaseView[];
+  capabilityDependent: ModelMatrixTriageCaseView[];
+}
+
+export interface ModelMatrixSummaryView {
+  modelCount: number;
+  modelsPassing: number;
+  modelsFailing: number;
+  modelsErrored: number;
+  passRateSpread: number | null;
+  ambiguityCount: number;
+  capabilityDependentCount: number;
+}
+
+export interface ModelMatrixView {
+  matrixId: string;
+  agentId: string;
+  agentVersion: string | null;
+  models: string[];
+  execution: { repetitions: number; concurrency: number };
+  completedAt: string;
+  summary: ModelMatrixSummaryView;
+  cells: ModelMatrixCellView[];
+  triage: ModelMatrixTriageView | null;
+}
+
+export interface ModelMatrixIndexEntry {
+  matrixId: string;
+  agentId: string;
+  agentVersion: string | null;
+  models: string[];
+  completedAt: string;
+  modelCount: number;
+  modelsPassing: number;
+  hasTriage: boolean;
+}
+
+export interface ModelMatrixIndex {
+  matrices: ModelMatrixIndexEntry[];
+}
+
 // Decision 090: operator-attributed writes carry the token the server
 // printed at startup. Stored once per browser; harmlessly absent on reads.
 export const OPERATOR_TOKEN_STORAGE_KEY = "workbench-operator-token";

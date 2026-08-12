@@ -794,6 +794,43 @@ describe("agent workbench web interface", () => {
     expect(screen.getByText("evidence")).toBeInTheDocument();
   });
 
+  it("renders the model matrix comparison with best-per-dimension chips and triage", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path.endsWith("/api/workspaces")) {
+        return new Response(JSON.stringify({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (path.includes("/api/foundry/matrices/")) {
+        return new Response(JSON.stringify({
+          matrixId: "m1",
+          agentId: "project-intake",
+          agentVersion: "0.7.0",
+          models: ["gpt-5.4", "gpt-5.4-mini"],
+          execution: { repetitions: 1, concurrency: 1 },
+          completedAt: "2026-08-11T23:41:51.332Z",
+          summary: { modelCount: 2, modelsPassing: 1, modelsFailing: 1, modelsErrored: 0, passRateSpread: 0.25, ambiguityCount: 1, capabilityDependentCount: 0 },
+          cells: [
+            { model: "gpt-5.4", status: "ok", verdict: "pass", passRate: 1, passedRuns: 8, totalRuns: 8, totalTokens: 100, avgTokensPerRun: 25, estimatedCostUsd: 0.23, avgLatencyMs: 17000, evaluationArtifactId: "e1", error: null, bestReliability: true, lowestCost: false, lowestLatency: false },
+            { model: "gpt-5.4-mini", status: "ok", verdict: "fail", passRate: 0.75, passedRuns: 6, totalRuns: 8, totalTokens: 90, avgTokensPerRun: 22, estimatedCostUsd: 0.06, avgLatencyMs: 15000, evaluationArtifactId: "e2", error: null, bestReliability: false, lowestCost: true, lowestLatency: true },
+          ],
+          triage: { meaningful: true, ambiguity: [{ datasetId: "project-intake-smoke", caseId: "contradiction-is-surfaced", classification: "ambiguity", failedModels: ["gpt-5.4", "gpt-5.4-mini"], passedModels: [], worstFailurePassRate: 0, marginal: false }], capabilityDependent: [] },
+        }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      return new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } });
+    }));
+
+    window.history.replaceState(null, "", "/matrices/m1");
+    render(<AppRoutes />);
+
+    expect(await screen.findByRole("heading", { name: "Model matrix" })).toBeInTheDocument();
+    expect(await screen.findByText("gpt-5.4-mini")).toBeInTheDocument();
+    // The trade-off, encoded as separate winner chips: reliability vs cost.
+    expect(screen.getByText(/★ most reliable/)).toBeInTheDocument();
+    expect(screen.getByText(/★ cheapest/)).toBeInTheDocument();
+    // The failure triage names the ambiguity case (a prompt gap, not a model gap).
+    expect(screen.getByText("contradiction-is-surfaced")).toBeInTheDocument();
+  });
+
   it("renders a raw foundry artifact with the holdout disclosure", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);

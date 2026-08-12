@@ -236,6 +236,29 @@ export function EmptyState({ children }: { children: React.ReactNode }) {
   return <div className="empty-state">{children}</div>;
 }
 
+// A single summary figure — the "state before detail" primitive. `tone` reaches
+// for the reserved semantic colors (good=pass, warn=inferred/attention,
+// critical=fail, holdout=withheld/rigor); omit it for a neutral figure.
+export function MetricTile({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+  tone?: "good" | "warn" | "critical" | "holdout" | undefined;
+}) {
+  return (
+    <div className={`metric-tile${tone ? ` tone-${tone}` : ""}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {hint ? <small>{hint}</small> : null}
+    </div>
+  );
+}
+
 export function Loading() {
   return <div className="loading" role="status"><span />Loading platform evidence…</div>;
 }
