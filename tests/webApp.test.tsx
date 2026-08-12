@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "../web/src/App.js";
+import { CriteriaMatrix } from "../web/src/components.js";
 
 afterEach(() => {
   cleanup();
@@ -684,6 +685,31 @@ describe("agent workbench web interface", () => {
     expect(postedTurnBody).toEqual({
       answers: [{ questionId: "q1", answer: "Tweed and JFK via train." }],
     });
+  });
+
+  it("renders the criteria traceability matrix with coverage and filtering", () => {
+    render(
+      <CriteriaMatrix
+        criteria={[
+          { id: "k1", text: "Marks a habit complete for today", source: "user-stated", verification: "Complete via CLI and confirm today shows done." },
+          { id: "k2", text: "Streak resets after a missed day", source: "unresolved", verification: "Skip a day and confirm the streak is zero." },
+        ]}
+        coverage={{ k1: { test: true, holdout: false }, k2: { test: false, holdout: true } }}
+      />,
+    );
+
+    // The RTM shows the coverage column, threading criterion -> test/holdout.
+    expect(screen.getByText("Covered by a test")).toBeInTheDocument();
+    expect(screen.getByTitle("A visible test covers this criterion.")).toBeInTheDocument();
+    expect(screen.getByTitle(/a test the builder never saw/)).toBeInTheDocument();
+    expect(screen.getByText(/2 covered/)).toBeInTheDocument();
+    expect(screen.getByText(/1 behind a holdout/)).toBeInTheDocument();
+
+    // Filtering by provenance floats the gap up: click "unresolved" and only
+    // that row remains.
+    fireEvent.click(screen.getByRole("button", { name: /1 unresolved/ }));
+    expect(screen.queryByText("Marks a habit complete for today")).not.toBeInTheDocument();
+    expect(screen.getByText("Streak resets after a missed day")).toBeInTheDocument();
   });
 
   it("renders a raw foundry artifact with the holdout disclosure", async () => {

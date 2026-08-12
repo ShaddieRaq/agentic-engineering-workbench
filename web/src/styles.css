@@ -107,6 +107,12 @@ section { margin-top: 34px; }
 .criteria-table tr.source-unresolved td:first-child { border-left-color: var(--danger); }
 .cell-criterion { max-width: 460px; color: #edf4f1; line-height: 1.5; }
 .cell-verify { max-width: 380px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.criteria-coverage-summary { color: var(--muted); font-size: 12px; }
+.cover-chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.cover-chip { display: inline-flex; padding: 4px 8px; border-radius: 999px; font: 500 10px DM Mono, monospace; text-transform: uppercase; letter-spacing: .05em; }
+.cover-chip.test { background: rgba(76, 195, 138, .13); color: var(--success); }
+.cover-chip.holdout { background: rgba(130, 143, 255, .14); color: var(--accent); }
+.cover-gap { color: var(--warning); font-size: 12px; }
 
 .panel, .concept-card, .trace-panel { padding: 25px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }

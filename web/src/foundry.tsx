@@ -1266,7 +1266,26 @@ export function FoundryProjectPage() {
         {(() => {
           const newestFirst = [...chain.briefVersions].reverse();
           const [currentVersion, ...versionHistory] = newestFirst;
-          const renderVersion = (version: typeof newestFirst[number]) => (
+          // Thread each criterion to the tests that verify it: the latest
+          // suite's files carry coveredCriterionIds + visibility, so we can
+          // tell test-covered from holdout-covered from a coverage gap. Only
+          // the current version is scored against the latest suite.
+          const latestSuite = chain.testSuites[0];
+          const coverage = latestSuite
+            ? latestSuite.files.reduce<Record<string, { test: boolean; holdout: boolean }>>((acc, file) => {
+                for (const criterionId of file.coveredCriterionIds) {
+                  const entry = acc[criterionId] ?? { test: false, holdout: false };
+                  if (file.visibility === "holdout") entry.holdout = true;
+                  else entry.test = true;
+                  acc[criterionId] = entry;
+                }
+                return acc;
+              }, {})
+            : undefined;
+          const renderVersion = (
+            version: typeof newestFirst[number],
+            versionCoverage?: Record<string, { test: boolean; holdout: boolean }>,
+          ) => (
           <div className="panel foundry-panel" key={version.artifactId}>
             <div className="section-heading">
               <h3>Version {version.version} · {when(version.createdAt)}</h3>
@@ -1286,7 +1305,7 @@ export function FoundryProjectPage() {
                 ))}
               </div>
             )}
-            <CriteriaMatrix criteria={version.acceptanceCriteria} />
+            <CriteriaMatrix criteria={version.acceptanceCriteria} coverage={versionCoverage} />
             <DecisionList decisions={version.decisions} />
             {version.version === chain.latestVersion && chain.intakeCanContinue && (
               <IntakeTurnPanel briefId={chain.briefId} questions={chain.intakeQuestions} onDone={resource.reload} />
@@ -1303,11 +1322,11 @@ export function FoundryProjectPage() {
           );
           return (
             <>
-              {currentVersion && renderVersion(currentVersion)}
+              {currentVersion && renderVersion(currentVersion, coverage)}
               {versionHistory.length > 0 && (
                 <details className="history-strip">
                   <summary>{versionHistory.length} earlier version(s) — collapsed history</summary>
-                  {versionHistory.map(renderVersion)}
+                  {versionHistory.map((version) => renderVersion(version))}
                 </details>
               )}
             </>

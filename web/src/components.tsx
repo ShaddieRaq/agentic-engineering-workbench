@@ -35,12 +35,16 @@ const PROVENANCE_ORDER = ["user-stated", "agent-inferred", "unresolved"] as cons
 
 export function CriteriaMatrix({
   criteria,
+  coverage,
 }: {
   criteria: { id: string; text: string; source: string; verification: string }[];
+  coverage?: Record<string, { test: boolean; holdout: boolean }> | undefined;
 }) {
   const [filter, setFilter] = useState<string | null>(null);
   if (criteria.length === 0) return null;
   const shown = filter ? criteria.filter((criterion) => criterion.source === filter) : criteria;
+  const coveredCount = coverage ? criteria.filter((criterion) => coverage[criterion.id]).length : 0;
+  const holdoutCount = coverage ? criteria.filter((criterion) => coverage[criterion.id]?.holdout).length : 0;
 
   return (
     <div className="criteria-matrix">
@@ -67,6 +71,13 @@ export function CriteriaMatrix({
             show all
           </button>
         )}
+        {coverage && (
+          <span className="criteria-coverage-summary">
+            · {coveredCount} covered
+            {holdoutCount > 0 ? ` · ${holdoutCount} behind a holdout` : ""}
+            {criteria.length - coveredCount > 0 ? ` · ${criteria.length - coveredCount} gap` : ""}
+          </span>
+        )}
       </div>
       <div className="table-wrap">
         <table className="criteria-table">
@@ -75,6 +86,7 @@ export function CriteriaMatrix({
               <th>Criterion</th>
               <th>Source</th>
               <th>Verified by an independent tester</th>
+              {coverage && <th>Covered by a test</th>}
             </tr>
           </thead>
           <tbody>
@@ -83,12 +95,48 @@ export function CriteriaMatrix({
                 <td className="cell-criterion">{criterion.text}</td>
                 <td><ProvenanceChip source={criterion.source} /></td>
                 <td className="cell-verify">{criterion.verification}</td>
+                {coverage && (
+                  <td className="cell-cover">
+                    <CoverageCell entry={coverage[criterion.id]} />
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
     </div>
+  );
+}
+
+// The coverage cell threads the criterion to the tests that verify it. A
+// holdout-covered criterion is the blind-verification rigor — rendered as its
+// own indigo signal (NOT danger red), with a tooltip that teaches what a
+// holdout is. A criterion no test touches is a gap worth flagging.
+function CoverageCell({ entry }: { entry?: { test: boolean; holdout: boolean } | undefined }) {
+  if (!entry || (!entry.test && !entry.holdout)) {
+    return (
+      <span className="cover-gap" title="No test in the current suite covers this criterion.">
+        — not yet
+      </span>
+    );
+  }
+  return (
+    <span className="cover-chips">
+      {entry.test && (
+        <span className="cover-chip test" title="A visible test covers this criterion.">
+          test
+        </span>
+      )}
+      {entry.holdout && (
+        <span
+          className="cover-chip holdout"
+          title="Covered by a holdout — a test the builder never saw, checked on first exposure."
+        >
+          holdout
+        </span>
+      )}
+    </span>
   );
 }
 
