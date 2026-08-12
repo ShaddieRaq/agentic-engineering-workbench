@@ -10,6 +10,7 @@
     "matrix": "tsx src/runAgents.ts matrix",
     "matrix-report": "tsx src/runMatrixReport.ts",
     "matrix-triage": "tsx src/runMatrixTriage.ts",
+    "auto-improve": "tsx src/runAutoImprove.ts",
     "web": "npm run web:build && tsx src/runWeb.ts",
     "web:build": "vite build --config web/vite.config.ts",
     "web:client": "vite --config web/vite.config.ts --host 127.0.0.1",
