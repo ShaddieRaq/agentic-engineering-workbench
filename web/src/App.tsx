@@ -1,9 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type ImprovementProposalArtifact, type ModelMatrixIndex, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type SelfHardeningIndex, type ToolDescription, type ToolSummary } from "./api.js";
+import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type ImprovementProposalArtifact, type ModelComparisonIndex, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type SelfHardeningIndex, type ToolDescription, type ToolSummary } from "./api.js";
 import { ArtifactPresentationView } from "./artifactPresentation.js";
 import { AgentCard, EmptyState, ErrorNotice, JsonView, Loading, OperationTrace, PageHeader, RawDrawer, RunAgentPanel, SchemaView, StatusBadge } from "./components.js";
 import { FoundryArtifactPage, FoundryProjectPage, FoundryProjectsPage, OperatorSettingsPage } from "./foundry.js";
-import { ModelMatrixDetailPage, ModelMatrixListPage } from "./modelMatrix.js";
+import { ModelComparisonDetailPage, ModelComparisonListPage } from "./modelComparison.js";
 import { SelfHardeningDetailPage, SelfHardeningListPage } from "./selfHardening.js";
 import { useOperation, useResource } from "./hooks.js";
 import { LocalLink as Link, LocalNavLink as NavLink, usePathname } from "./router.js";
@@ -22,7 +22,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <NavLink to="/runs">Evidence</NavLink>
           <span className="nav-group">Reliability</span>
           <NavLink to="/evaluations">Evaluation Studio</NavLink>
-          <NavLink to="/matrices">Model Matrix</NavLink>
+          <NavLink to="/model-comparisons">Model Comparison Eval</NavLink>
           <NavLink to="/self-hardening">Self-Hardening</NavLink>
           <span className="nav-group">Catalog</span>
           <NavLink to="/agents">Agents</NavLink>
@@ -91,7 +91,7 @@ function OverviewPage() {
   const artifacts = useResource<ArtifactList>("/api/artifacts?limit=5");
   // Ungated: these enrich the pulse but must never block or blank the front
   // door — a failure just leaves their tiles at 0.
-  const matrices = useResource<ModelMatrixIndex>("/api/foundry/matrices");
+  const modelComparisons = useResource<ModelComparisonIndex>("/api/foundry/model-comparisons");
   const selfHardening = useResource<SelfHardeningIndex>("/api/self-hardening");
   const loading = health.loading || agents.loading || artifacts.loading;
   const error = health.error ?? agents.error ?? artifacts.error;
@@ -105,7 +105,7 @@ function OverviewPage() {
         <>
           <section className="metric-grid overview-metrics">
             <div><span>Registered agents</span><strong>{agents.data?.agents.length ?? 0}</strong></div>
-            <div><Link to="/matrices"><span>Model matrix runs</span><strong>{matrices.data?.matrices.length ?? 0}</strong></Link></div>
+            <div><Link to="/model-comparisons"><span>Model comparison eval runs</span><strong>{modelComparisons.data?.modelComparisons.length ?? 0}</strong></Link></div>
             <div><Link to="/self-hardening"><span>Self-hardening cycles</span><strong>{selfHardening.data?.cycles.length ?? 0}</strong></Link></div>
             <div><span>Recent artifacts</span><strong>{artifacts.data?.artifacts.length ?? 0}</strong></div>
             <div><span>Provider</span><strong className="metric-word">{health.data?.apiKeyConfigured ? "Ready" : "Not configured"}</strong></div>
@@ -758,8 +758,8 @@ function RoutedContent() {
   else if (pathname === "/foundry") page = <FoundryProjectsPage />;
   else if (/^\/foundry\/artifacts\/[^/]+$/.test(pathname)) page = <FoundryArtifactPage />;
   else if (/^\/foundry\/[^/]+(\/(brief|plan|capability|tests|build))?$/.test(pathname)) page = <FoundryProjectPage />;
-  else if (pathname === "/matrices") page = <ModelMatrixListPage />;
-  else if (/^\/matrices\/[^/]+$/.test(pathname)) page = <ModelMatrixDetailPage />;
+  else if (pathname === "/model-comparisons") page = <ModelComparisonListPage />;
+  else if (/^\/model-comparisons\/[^/]+$/.test(pathname)) page = <ModelComparisonDetailPage />;
   else if (pathname === "/self-hardening") page = <SelfHardeningListPage />;
   else if (/^\/self-hardening\/[^/]+$/.test(pathname)) page = <SelfHardeningDetailPage />;
   else if (pathname === "/evaluations" || pathname === "/verification") page = <EvaluationStudioPage />;

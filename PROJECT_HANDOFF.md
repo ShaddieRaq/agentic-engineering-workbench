@@ -474,7 +474,7 @@ Phase 40 Slice D candidate workflow and promotion decisions: complete
 Phase 40 Slice D Tool Builder handoff: complete
 Phase 40 Slice D Change Risk Reviewer handoff: complete
 Documentation Auditor protected non-regression coverage: complete
-General-agent live improvement validation matrix: complete
+General-agent live improvement validation modelComparison: complete
 Playwright Failure Triage live improvement validation: deliberately deferred
 Phase 41 clean-clone health check: complete locally
 Foundry Slice 1 project brief artifact boundary: complete
@@ -598,10 +598,10 @@ field trees), JsonView (data as key/value), RawDrawer (the one sanctioned
 raw-JSON escape hatch), MetricTile (state before detail), Stepper (staged
 narratives) — enforces the language across screens. Every default-render
 JSON wall is gone. TWO previously CLI-only capabilities are now first-class
-screens: the MODEL MATRIX (web/src/modelMatrix.tsx; a comparison table
+screens: the MODEL COMPARISON EVAL (web/src/modelComparison.tsx; a comparison table
 encoding the model-selection trade-off as ★ best-per-dimension chips +
 ambiguity/capability failure triage; served by GET
-/api/foundry/matrices[/:matrixId] over src/web/modelMatrixView.ts) and the
+/api/foundry/model-comparisons[/:modelComparisonId] over src/web/modelComparisonView.ts) and the
 SELF-HARDENING LOOP (web/src/selfHardening.tsx; each cycle anchored on its
 promotion decision and rendered as a proposal → gated comparison → decision
 Stepper; served by GET /api/self-hardening[/:decisionId] over
@@ -700,7 +700,7 @@ final-turn blocking reports without questions are legitimate.
 The full Foundry premise is live-proven end to end (idea → interviewed brief
 → architecture plan → capability plan → independent tests → governed build →
 working, holdout-verified software), builder-session isolation is structural
-(Decision 087), the model-matrix / self-hardening loop is complete, and the
+(Decision 087), the model-comparison / self-hardening loop is complete, and the
 console UX masterplan closed 2026-08-12 (Decision 092) — every governed
 capability now has a legible first-class screen. Direction is being regrouped
 with the operator. Standing candidates (see the roadmap's north-star section
@@ -710,11 +710,11 @@ for detail):
    deliverable that ships as a SKILL.md, not a CLI; the load-bearing
    prerequisite is the operator sourcing a labeled real-trace corpus.
 2. Capability-Planner verification dataset + gate — the one pipeline agent
-   still without a dataset, so it can't be matrix-measured (a WATCH-ITEM).
-3. Matrix-optimizer follow-up — the live evidence that some agents pass
+   still without a dataset, so it can't be model-comparison-measured (a WATCH-ITEM).
+3. ModelComparison-optimizer follow-up — the live evidence that some agents pass
    100% on the cheaper model (a measured DOWNGRADE candidate to save cost),
    complementing the judge-floor guardrail.
-4. OpenRouter provider adapter — widen the model set the matrix can test
+4. OpenRouter provider adapter — widen the model set the modelComparison can test
    (needs a new provider class: Chat Completions + json_schema, not a
    base_url swap, since OpenAIProvider uses the Responses API).
 

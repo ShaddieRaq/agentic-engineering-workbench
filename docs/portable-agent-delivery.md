@@ -69,7 +69,7 @@ Before connecting an employer repository, verify:
 - Tool Builder remains proposal-only and policy-valid
 - Change Risk Reviewer blocks clean, failed, or incomplete Git evidence before
   model review
-- Improvement Analyst passes its hidden disposition matrix and never creates a
+- Improvement Analyst passes its hidden disposition modelComparison and never creates a
   candidate patch for an agent without a revision surface
 
 Playwright Failure Triage remains the final validation milestone.

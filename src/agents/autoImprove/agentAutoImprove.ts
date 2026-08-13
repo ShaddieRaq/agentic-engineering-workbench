@@ -3,7 +3,7 @@ import type {
   AgentImprovementEvidence,
   AnalyzeAgentImprovementRequest,
 } from "../agentApplicationService.js";
-import type { TriagedCase } from "../modelMatrix/agentModelMatrixTriage.js";
+import type { TriagedCase } from "../modelComparison/agentModelComparisonTriage.js";
 
 /** Injected wrapper over AgentApplicationService.analyzeEvaluation. */
 export type ImprovementAnalyzer = (
@@ -61,7 +61,7 @@ export const HARDENED_ANALYST_CONSTRAINTS: readonly string[] = [
 function describeCase(triaged: Pick<TriagedCase, "datasetId" | "caseId">): string {
   return (
     `The case "${triaged.caseId}" in dataset "${triaged.datasetId}" fails on every model ` +
-    `measured by the model matrix — an ambiguity failure, meaning the task is under-specified ` +
+    `measured by the model comparison eval — an ambiguity failure, meaning the task is under-specified ` +
     `or the expectation is off rather than a model-capability limit. Propose an additive ` +
     `instruction change on the exposed revision surface so this case passes without ` +
     `regressing any other case.`

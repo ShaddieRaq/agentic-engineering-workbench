@@ -210,7 +210,7 @@ export function SelfHardeningDetailPage() {
 
       <div className="cross-links">
         <Link to={`/agents/${cycle.subjectAgentId}`}>Agent contract →</Link>
-        <Link to="/matrices">Model matrix runs →</Link>
+        <Link to="/model-comparisons">Model comparison eval runs →</Link>
       </div>
 
       <Stepper steps={cycleSteps(cycle)} />

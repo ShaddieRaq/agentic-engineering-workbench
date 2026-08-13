@@ -6,10 +6,10 @@ import { FileArtifactStore } from "./artifacts/fileArtifactStore.js";
 import { OpenAIProvider } from "./providers/openaiProvider.js";
 import { createPlatformToolRegistry } from "./tools/toolRegistry.js";
 import { FileWorkspaceStore } from "./workspaces/fileWorkspaceStore.js";
-import { runAgentModelMatrix } from "./agents/modelMatrix/agentModelMatrix.js";
-import { writeAgentModelMatrix } from "./agents/modelMatrix/agentModelMatrixWriter.js";
-import { loadEvaluationFailures } from "./agents/modelMatrix/modelMatrixArtifacts.js";
-import { triageModelMatrix } from "./agents/modelMatrix/agentModelMatrixTriage.js";
+import { runAgentModelComparison } from "./agents/modelComparison/agentModelComparison.js";
+import { writeAgentModelComparison } from "./agents/modelComparison/agentModelComparisonWriter.js";
+import { loadEvaluationFailures } from "./agents/modelComparison/modelComparisonArtifacts.js";
+import { triageModelComparison } from "./agents/modelComparison/agentModelComparisonTriage.js";
 import { isFloorApprovedModel } from "./agents/modelTierPolicy.js";
 import {
   formatAutoImproveResult,
@@ -63,28 +63,28 @@ async function main(): Promise<void> {
   );
 
   console.log(
-    `Auto-improve ${agentId}: matrix over [${models.join(", ")}] at reps=${repetitions} …`,
+    `Auto-improve ${agentId}: modelComparison over [${models.join(", ")}] at reps=${repetitions} …`,
   );
-  const matrix = await runAgentModelMatrix(
+  const modelComparison = await runAgentModelComparison(
     (request) => service.verify(request),
     { agentId, models, repetitions },
   );
-  // Persist the matrix so this run's evidence is inspectable (matrix-triage /
-  // matrix-report), consistent with the rest of the platform.
-  const matrixPath = await writeAgentModelMatrix(matrix);
-  const failures = await loadEvaluationFailures(runsDirectory, matrix);
-  const triage = triageModelMatrix(matrix, failures);
-  console.log(`Matrix evidence saved: ${matrixPath}`);
+  // Persist the modelComparison so this run's evidence is inspectable (model-comparison-triage /
+  // model-comparison-report), consistent with the rest of the platform.
+  const modelComparisonPath = await writeAgentModelComparison(modelComparison);
+  const failures = await loadEvaluationFailures(runsDirectory, modelComparison);
+  const triage = triageModelComparison(modelComparison, failures);
+  console.log(`ModelComparison evidence saved: ${modelComparisonPath}`);
   console.log(
     `Triage: ${triage.ambiguity.length} ambiguity, ${triage.capabilityDependent.length} capability-dependent.`,
   );
 
-  const strongCell = matrix.cells.find(
+  const strongCell = modelComparison.cells.find(
     (cell) => cell.status === "ok" && isFloorApprovedModel(cell.model),
   );
   if (!strongCell || strongCell.evaluationArtifactId === null) {
     throw new Error(
-      "Auto-improve needs a floor-approved (strong) model in the matrix to source the improvement baseline. Include gpt-5.4 in --models.",
+      "Auto-improve needs a floor-approved (strong) model in the modelComparison to source the improvement baseline. Include gpt-5.4 in --models.",
     );
   }
 

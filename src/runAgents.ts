@@ -4,10 +4,10 @@ import { resolve } from "node:path";
 import { AgentApplicationService } from "./agents/agentApplicationService.js";
 import { assertAgentCatalogValid } from "./agents/agentCatalogValidator.js";
 import {
-  formatModelMatrixCell,
-  runAgentModelMatrix,
-} from "./agents/modelMatrix/agentModelMatrix.js";
-import { writeAgentModelMatrix } from "./agents/modelMatrix/agentModelMatrixWriter.js";
+  formatModelComparisonCell,
+  runAgentModelComparison,
+} from "./agents/modelComparison/agentModelComparison.js";
+import { writeAgentModelComparison } from "./agents/modelComparison/agentModelComparisonWriter.js";
 import { scaffoldAgent } from "./agents/agentScaffolder.js";
 import { platformAgentRegistry } from "./agents/platformAgentRegistry.js";
 import { FileArtifactStore } from "./artifacts/fileArtifactStore.js";
@@ -80,14 +80,14 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (args.command === "matrix") {
+  if (args.command === "model-comparison") {
     const registration = platformAgentRegistry.get(args.agentId);
 
     if (registration.manifest.verification.datasetIds.length === 0) {
       throw new Error(`Agent ${args.agentId} has no verification datasets.`);
     }
 
-    const matrix = await runAgentModelMatrix(
+    const modelComparison = await runAgentModelComparison(
       (request) => service.verify(request),
       {
         agentId: args.agentId,
@@ -98,24 +98,24 @@ async function main(): Promise<void> {
       },
     );
 
-    const evidencePath = await writeAgentModelMatrix(matrix);
+    const evidencePath = await writeAgentModelComparison(modelComparison);
 
     console.log(
-      `Model matrix: ${matrix.agentId}${
-        matrix.agentVersion ? `@${matrix.agentVersion}` : ""
-      } across ${matrix.cells.length} model(s)`,
+      `Model comparison eval: ${modelComparison.agentId}${
+        modelComparison.agentVersion ? `@${modelComparison.agentVersion}` : ""
+      } across ${modelComparison.cells.length} model(s)`,
     );
     console.log(
-      `Execution: repetitions=${matrix.execution.repetitions} concurrency=${matrix.execution.concurrency}`,
+      `Execution: repetitions=${modelComparison.execution.repetitions} concurrency=${modelComparison.execution.concurrency}`,
     );
 
-    for (const cell of matrix.cells) {
-      console.log(formatModelMatrixCell(cell));
+    for (const cell of modelComparison.cells) {
+      console.log(formatModelComparisonCell(cell));
     }
 
-    console.log(`Matrix evidence saved: ${evidencePath}`);
+    console.log(`ModelComparison evidence saved: ${evidencePath}`);
 
-    if (matrix.cells.some((cell) => cell.status === "error")) {
+    if (modelComparison.cells.some((cell) => cell.status === "error")) {
       process.exitCode = 1;
     }
 

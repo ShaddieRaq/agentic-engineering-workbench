@@ -115,13 +115,13 @@ export function SchemaView({ schema }: { schema: JsonSchema }) {
   );
 }
 
-// Acceptance criteria as a requirements-traceability matrix, not a card stack:
+// Acceptance criteria as a requirements-traceability modelComparison, not a card stack:
 // a scannable, filterable table where each row is a criterion and the columns
 // are its provenance and how an independent tester verifies it. Scan a column
 // to find the gaps (which are unresolved?) instead of reading every card.
 const PROVENANCE_ORDER = ["user-stated", "agent-inferred", "unresolved"] as const;
 
-export function CriteriaMatrix({
+export function CriteriaModelComparison({
   criteria,
   coverage,
 }: {
@@ -135,7 +135,7 @@ export function CriteriaMatrix({
   const holdoutCount = coverage ? criteria.filter((criterion) => coverage[criterion.id]?.holdout).length : 0;
 
   return (
-    <div className="criteria-matrix">
+    <div className="criteria-modelComparison">
       <div className="criteria-health">
         <strong>{criteria.length} acceptance criteria</strong>
         {PROVENANCE_ORDER.map((source) => {

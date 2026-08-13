@@ -2,12 +2,12 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   loadEvaluationFailures,
-  loadModelMatrix,
-} from "./agents/modelMatrix/modelMatrixArtifacts.js";
+  loadModelComparison,
+} from "./agents/modelComparison/modelComparisonArtifacts.js";
 import {
-  renderModelMatrixTriageMarkdown,
-  triageModelMatrix,
-} from "./agents/modelMatrix/agentModelMatrixTriage.js";
+  renderModelComparisonTriageMarkdown,
+  triageModelComparison,
+} from "./agents/modelComparison/agentModelComparisonTriage.js";
 
 function option(args: string[], name: string): string | null {
   const index = args.indexOf(name);
@@ -24,18 +24,18 @@ async function main(): Promise<void> {
   const runsDirectory = join(process.cwd(), "runs");
   const id = option(args, "--id");
 
-  const matrix = await loadModelMatrix(runsDirectory, id);
-  const failures = await loadEvaluationFailures(runsDirectory, matrix);
-  const triage = triageModelMatrix(matrix, failures);
+  const modelComparison = await loadModelComparison(runsDirectory, id);
+  const failures = await loadEvaluationFailures(runsDirectory, modelComparison);
+  const triage = triageModelComparison(modelComparison, failures);
 
-  const markdown = renderModelMatrixTriageMarkdown(triage);
+  const markdown = renderModelComparisonTriageMarkdown(triage);
   const jsonPath = join(
     runsDirectory,
-    `model-matrix-triage-${triage.matrixId}.json`,
+    `model-comparison-triage-${triage.modelComparisonId}.json`,
   );
   const mdPath =
     option(args, "--out") ??
-    join(runsDirectory, `model-matrix-triage-${triage.matrixId}.md`);
+    join(runsDirectory, `model-comparison-triage-${triage.modelComparisonId}.md`);
 
   await writeFile(jsonPath, JSON.stringify(triage, null, 2), "utf8");
   await writeFile(mdPath, markdown, "utf8");
@@ -46,6 +46,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error("Matrix triage failed:", error);
+  console.error("ModelComparison triage failed:", error);
   process.exit(1);
 });

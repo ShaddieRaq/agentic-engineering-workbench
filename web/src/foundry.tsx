@@ -13,7 +13,7 @@ import {
   type FoundrySubmissionView,
   type Operation,
 } from "./api.js";
-import { CriteriaMatrix, EmptyState, ErrorNotice, JsonView, Loading, MetricTile, OperationTrace, PageHeader, RawDrawer, StatusBadge } from "./components.js";
+import { CriteriaModelComparison, EmptyState, ErrorNotice, JsonView, Loading, MetricTile, OperationTrace, PageHeader, RawDrawer, StatusBadge } from "./components.js";
 import { useOperation, useResource } from "./hooks.js";
 import { LocalLink as Link, navigate, usePathname } from "./router.js";
 
@@ -1377,7 +1377,7 @@ export function FoundryProjectPage() {
                 ))}
               </div>
             )}
-            <CriteriaMatrix criteria={version.acceptanceCriteria} coverage={versionCoverage} />
+            <CriteriaModelComparison criteria={version.acceptanceCriteria} coverage={versionCoverage} />
             <DecisionList decisions={version.decisions} />
             {version.version === chain.latestVersion && chain.intakeCanContinue && (
               <IntakeTurnPanel briefId={chain.briefId} questions={chain.intakeQuestions} onDone={resource.reload} />

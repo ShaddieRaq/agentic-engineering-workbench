@@ -1332,14 +1332,14 @@ operator; conversation-only, nothing below started):
    Decision recorded 2026-08-11: NOT designing the Hermes→workbench
    request channel yet — it would be ahead of evidence; run Hermes on
    the real job search first and let observed friction specify it.
-7. IN PROGRESS (slice 1 shipped 2026-08-11) — MODEL MATRIX: a first-class
+7. IN PROGRESS (slice 1 shipped 2026-08-11) — MODEL COMPARISON EVAL: a first-class
    cross-model evaluation capability.
    Run a SCORED task across a SET of models and output pass-rate + cost +
    latency per model — an evidence-backed "tested on gpt-5.4-mini ✓ / full
    ✓✓ / …" badge — so model selection is measured, not guessed. WHY it's
    on-thesis: model selection is the universal AI question almost nobody
    answers rigorously; a workbench that produces an evidence-backed model
-   matrix for a task IS the eval story (and a strong pitch/portfolio piece).
+   modelComparison for a task IS the eval story (and a strong pitch/portfolio piece).
    It generalizes what the foundry already does AD HOC — "model tiering by
    evidence" (intake/architect/test-designer promoted mini→gpt-5.4 after
    counted failures) — into a systematic capability. MECHANISM MOSTLY
@@ -1347,23 +1347,23 @@ operator; conversation-only, nothing below started):
    (baseline-vs-candidate, repetitions, pass rate) exist; run evidence
    already captures tokens/latency. NEW WORK: (a) a MODEL AXIS on
    experiments (loop a set of models over one agent+dataset, aggregate);
-   (b) a matrix/badge report; (c) an OPENROUTER provider adapter to widen
+   (b) a modelComparison/badge report; (c) an OPENROUTER provider adapter to widen
    the model set (OpenAI-compatible, so tractable — base_url + key + model
-   mapping). HONEST CAVEATS: the model matrix is CHEAP once a scored task
+   mapping). HONEST CAVEATS: the model comparison eval is CHEAP once a scored task
    exists — the expensive part is always defining the scored task
    (dataset + assessor), so this shines for agents that have datasets and
    needs a task defined for anything else (a product behavior, an external
    agent like Hermes). And structured-output/tool-calling support varies
-   across OpenRouter models — the matrix would EXPOSE which models can even
+   across OpenRouter models — the modelComparison would EXPOSE which models can even
    play the foundry's strict-JSON game (a useful result, not a bug).
    Directly serves the immediate need too: turns "mini thrashed on the mock
    interview" into a measured badge. RANK: arguably above step 5 as a
    pitch/eval piece; gated only on prioritization.
    SLICE 1 SHIPPED 2026-08-11: the model axis on the AGENT verify path —
-   `agents matrix <agent> --models a,b,c` (npm run matrix) loops
+   `agents modelComparison <agent> --models a,b,c` (npm run modelComparison) loops
    AgentApplicationService.verify() once per model and rolls up pass-rate +
    total tokens + est. cost + avg latency per model into a persisted,
-   schema-validated matrix artifact (runs/model-matrix-<id>.json); each cell
+   schema-validated modelComparison artifact (runs/model-comparison-<id>.json); each cell
    links its per-model evaluation artifact for lineage. CORRECTION to the
    original "first move" note: the "existing experiment harness"
    (runScenarioDatasetExperiment) only serves harness-ROLE datasets;
@@ -1372,34 +1372,34 @@ operator; conversation-only, nothing below started):
    runAgent/providers/schemas — model was already first-class end to end.
    Weak models fail GRACEFULLY (bad structured output → failed run → low
    pass-rate, not a crash), so the failure-generation engine is structural.
-   New: src/agents/modelMatrix/{agentModelMatrix,agentModelMatrixWriter}.ts +
-   tests/agentModelMatrix.test.ts + `matrix` CLI command/script. FIRST LIVE
+   New: src/agents/modelComparison/{agentModelComparison,agentModelComparisonWriter}.ts +
+   tests/agentModelComparison.test.ts + `modelComparison` CLI command/script. FIRST LIVE
    BADGE (project-intake@0.6.0, 1 rep, 8 runs each): gpt-5.4 88% pass ·
    $0.2325 · 17.5s ; gpt-5.4-mini 88% pass · $0.0619 · 15.6s — mini ~3.75x
    cheaper at IDENTICAL pass-rate. DIAGNOSTIC PAYOFF: BOTH models failed the
    SAME case (contradiction-is-surfaced-not-silently-resolved) — a SHARED
    failure (even the strong model misses it) sits in the AMBIGUITY band, not
-   a capability floor; the matrix located a real intake defect to triage.
+   a capability floor; the modelComparison located a real intake defect to triage.
    SLICE 2 SHIPPED 2026-08-11 (commit 2fe8de3): shareable markdown REPORT
-   surface — renderModelMatrixMarkdown + `npm run matrix-report [--id] [--out]`
-   renders any stored matrix into a faithful badge table (per-model gate,
+   surface — renderModelComparisonMarkdown + `npm run model-comparison-report [--id] [--out]`
+   renders any stored modelComparison into a faithful badge table (per-model gate,
    pass-rate, tokens, cost, latency) + notes (cheapest passing model / honest
-   "none passed" / error cells). New: agentModelMatrixReport.ts, runMatrixReport.ts.
+   "none passed" / error cells). New: agentModelComparisonReport.ts, runModelComparisonReport.ts.
    SLICE 3a SHIPPED 2026-08-11 (commit 24e461e): the FAILURE-HARVESTING
-   TRIAGE — triageModelMatrix() reads a run's per-model failed cases (from the
+   TRIAGE — triageModelComparison() reads a run's per-model failed cases (from the
    linked evaluation artifacts) and classifies each failing case by "did it
    pass on ANY considered model": failed-on-every-model → "ambiguity"
    (prompt/gate-hardening target, feed the improvement loop); failed-on-some,
    passed-on-≥1 → "capability-dependent" (model-selection signal, not a prompt
    bug). No model-strength ranking needed; cases keyed by (datasetId, caseId);
-   single-model matrix flagged not-meaningful. `npm run matrix-triage`. New:
-   agentModelMatrixTriage.ts, modelMatrixArtifacts.ts (shared loaders),
-   runMatrixTriage.ts. PROVEN: auto-flagged the contradiction case as ambiguity
+   single-model comparison eval flagged not-meaningful. `npm run model-comparison-triage`. New:
+   agentModelComparisonTriage.ts, modelComparisonArtifacts.ts (shared loaders),
+   runModelComparisonTriage.ts. PROVEN: auto-flagged the contradiction case as ambiguity
    on the live run (the by-hand finding, now systematic). Also: interviewer
-   updated — 9 model-matrix cards imported into the drill (~/.interview-drill,
-   36→45), drillable now via `--tag model-matrix`.
+   updated — 9 model-comparison cards imported into the drill (~/.interview-drill,
+   36→45), drillable now via `--tag model-comparison`.
    SLICE 3b SHIPPED 2026-08-12 (commits c4041e0 + 43b41a3): AUTO-HANDOFF —
-   `npm run auto-improve <agent>` wires matrix → triage → analyst → gated
+   `npm run auto-improve <agent>` wires modelComparison → triage → analyst → gated
    comparison into ONE self-running command; skips marginal cases; bakes in
    the hardened analyst request (citation + disposition-consistency + additive)
    with bounded retries; STOPS at a candidate (promotable/gate-rejected/
@@ -1412,18 +1412,18 @@ operator; conversation-only, nothing below started):
    hardened agents). Also landed the two supporting slices: STRUCTURAL FLOOR
    (0ed3b94, judges can't run below tier — enforced, not just a default) and
    the FLAKINESS GUARD (ed8bbd8, triage flags marginal/likely-variance cases).
-   MODEL-MATRIX ARC (step 7) is functionally COMPLETE.
+   MODEL-COMPARISON ARC (step 7) is functionally COMPLETE.
    DEFERRED by operator: OpenRouter provider — needs a NEW provider class (Chat
    Completions + json_schema response_format), NOT a base_url swap, because
    OpenAIProvider is built on the Responses API.
-   OPEN FOLLOW-UP (matrix OPTIMIZER direction, surfaced live 2026-08-12):
+   OPEN FOLLOW-UP (modelComparison OPTIMIZER direction, surfaced live 2026-08-12):
    architect@0.3.0 passes 100% on gpt-5.4-mini at ~3.5x lower cost + ~2x faster
-   — a concrete DOWNGRADE candidate (doer on full → mini). The matrix's cost
+   — a concrete DOWNGRADE candidate (doer on full → mini). The modelComparison's cost
    optimizer works, but a real downgrade wants broader coverage than the smoke
-   suite; a downgrade decision + a "matrix says cheaper model holds" report row
+   suite; a downgrade decision + a "modelComparison says cheaper model holds" report row
    is a clean next slice if pursued.
    FAILURE-HARVESTING EXTENSION (operator insight 2026-08-11, aligned):
-   the matrix is not just "pick a model" — deliberately DOWNSCALING the
+   the modelComparison is not just "pick a model" — deliberately DOWNSCALING the
    model turns the model range into a cheap FAILURE-GENERATION ENGINE that
    feeds the existing improvement loop. Two DISTINCT mechanisms: (1)
    GATE-HARDENING = mutation testing for agents: a weak model's bad output
@@ -1431,7 +1431,7 @@ operator; conversation-only, nothing below started):
    task). (2) PROMPT-HARDENING = ambiguity discovery: a weak model's
    FAILURE marks where the instructions were under-specified — tighten
    until even the weak model succeeds and the prompt is robust for all
-   models. Composition: model matrix (failure factory) + improvement loop
+   models. Composition: model comparison eval (failure factory) + improvement loop
    (analyst → prompt candidate → gated release) = a system that hardens
    itself; weak models are the cheap fuel. TRIAGE CAVEAT: separate
    AMBIGUITY failures (prompt/gate left room — fixable, valuable) from
@@ -1459,11 +1459,11 @@ red=fail, indigo=holdout/rigor); ONE sanctioned raw-JSON escape hatch
 component kit — SchemaView (contracts as field trees), JsonView (data as
 key/value), RawDrawer, MetricTile (state before detail), Stepper (staged
 narratives); (1) every default-render JSON wall killed, incl. the buried
-hidden-expectation reveal on the eval-case page; (2) the MODEL MATRIX brought
+hidden-expectation reveal on the eval-case page; (2) the MODEL COMPARISON EVAL brought
 into the UI — a comparison table encoding the model-selection trade-off as
 ★ best-per-dimension chips (most reliable ≠ cheapest ≠ fastest) + failure
 triage in two columns (ambiguity/capability-dependent), over 2 new read-only
-routes /api/foundry/matrices[/:id] on a new src/web/modelMatrixView.ts; (3)
+routes /api/foundry/model-comparisons[/:id] on a new src/web/modelComparisonView.ts; (3)
 the SELF-HARDENING LOOP brought into the UI — each cycle anchored on its
 promotion decision (which links proposal + gated comparison + disposition),
 rendered as a Stepper (proposal → gated comparison with every gate → operator
@@ -1478,7 +1478,7 @@ to forward the detail, not just .length); (5) polish — grouped nav
 the agent catalog, and live clickable front-door count tiles (ungated,
 demo-safe). Operator reviewed it live 2026-08-12: "This is a UI... I get a
 lot more information... a lot easier to use and go through... no notes...
-a major milestone." Both prior "demoware" proofs (model matrix + self-
+a major milestone." Both prior "demoware" proofs (model comparison eval + self-
 hardening loop) are now first-class console screens, not CLI-only. Masterplan
 artifact: scratchpad/console-ux-masterplan.html.
 
@@ -1675,7 +1675,7 @@ B. Console UX — DONE 2026-08-12, far beyond the original scope. See
    next-action banner (stage state machine) landed in the earlier
    legibility pass, and the full masterplan then rebuilt the console
    around a design language — evidence as form, not blocks of text —
-   and brought the model matrix and self-hardening loop into the UI as
+   and brought the model comparison eval and self-hardening loop into the UI as
    first-class screens. Operator signed off live ("a major milestone").
 C. Model qualification (Decision 086) — moved down by operator call.
 D. Foresight agent — DECISION DEFERRED: after one full generation runs

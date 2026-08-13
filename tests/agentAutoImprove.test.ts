@@ -3,7 +3,7 @@ import type {
   AgentCandidateEvaluationEvidence,
   AgentImprovementEvidence,
 } from "../src/agents/agentApplicationService.js";
-import type { TriagedCase } from "../src/agents/modelMatrix/agentModelMatrixTriage.js";
+import type { TriagedCase } from "../src/agents/modelComparison/agentModelComparisonTriage.js";
 import { runAutoImprove } from "../src/agents/autoImprove/agentAutoImprove.js";
 
 function ambiguityCase(caseId: string, marginal = false): TriagedCase {

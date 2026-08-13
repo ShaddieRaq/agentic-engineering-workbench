@@ -7,7 +7,7 @@ import { summarizeLatencies } from "../../orchestration/latencyComparison.js";
 import { summarizeTokenCosts } from "../../orchestration/tokenCostComparison.js";
 import type { AgentEvaluationEvidence } from "../agentApplicationService.js";
 
-export const agentModelMatrixCellSchema = z
+export const agentModelComparisonCellSchema = z
   .object({
     model: z.string().min(1),
     status: z.enum(["ok", "error"]),
@@ -24,9 +24,9 @@ export const agentModelMatrixCellSchema = z
   })
   .strict();
 
-export const agentModelMatrixSchema = z
+export const agentModelComparisonSchema = z
   .object({
-    matrixId: z.string().min(1),
+    modelComparisonId: z.string().min(1),
     agentId: z.string().min(1),
     agentVersion: z.string().min(1).nullable(),
     execution: z
@@ -36,15 +36,15 @@ export const agentModelMatrixSchema = z
       })
       .strict(),
     models: z.array(z.string().min(1)).min(1),
-    cells: z.array(agentModelMatrixCellSchema).min(1),
+    cells: z.array(agentModelComparisonCellSchema).min(1),
     completedAt: z.string().min(1),
   })
   .strict();
 
-export type AgentModelMatrixCell = z.infer<typeof agentModelMatrixCellSchema>;
-export type AgentModelMatrix = z.infer<typeof agentModelMatrixSchema>;
+export type AgentModelComparisonCell = z.infer<typeof agentModelComparisonCellSchema>;
+export type AgentModelComparison = z.infer<typeof agentModelComparisonSchema>;
 
-export interface AgentModelMatrixRequest {
+export interface AgentModelComparisonRequest {
   agentId: string;
   models: string[];
   repetitions?: number;
@@ -53,12 +53,12 @@ export interface AgentModelMatrixRequest {
 }
 
 /**
- * The narrow slice of {@link AgentApplicationService.verify} the matrix depends
+ * The narrow slice of {@link AgentApplicationService.verify} the modelComparison depends
  * on. Injecting the verifier (rather than the whole service) keeps the axis a
  * pure aggregation over per-model evaluation evidence — one live model at a
  * time — and lets it be exercised without booting real agents or providers.
  */
-export type ModelMatrixVerifier = (request: {
+export type ModelComparisonVerifier = (request: {
   agentId: string;
   model: string;
   repetitions?: number;
@@ -70,7 +70,7 @@ export type ModelMatrixVerifier = (request: {
 function buildCell(
   model: string,
   evidence: AgentEvaluationEvidence,
-): AgentModelMatrixCell {
+): AgentModelComparisonCell {
   const runs = evidence.datasets.flatMap((dataset) =>
     dataset.datasetRun.runs.map((run) => run.agentRun),
   );
@@ -103,23 +103,23 @@ function buildCell(
  * parallel across cases internally), so the outer axis runs sequentially to
  * avoid cross-model rate-limit contention. A model that cannot run at all
  * (missing key, construction failure) becomes an `error` cell rather than
- * aborting the matrix; a model that runs but produces bad output simply scores
+ * aborting the modelComparison; a model that runs but produces bad output simply scores
  * a low pass-rate — the intended failure signal, not an exception.
  */
-export async function runAgentModelMatrix(
-  verify: ModelMatrixVerifier,
-  request: AgentModelMatrixRequest,
-): Promise<AgentModelMatrix> {
+export async function runAgentModelComparison(
+  verify: ModelComparisonVerifier,
+  request: AgentModelComparisonRequest,
+): Promise<AgentModelComparison> {
   const execution = parseExecutionOptions({
     repetitions: request.repetitions,
     concurrency: request.concurrency,
   });
   const models = [...new Set(request.models)];
   if (models.length === 0) {
-    throw new Error("A model matrix requires at least one model.");
+    throw new Error("A model comparison eval requires at least one model.");
   }
 
-  const cells: AgentModelMatrixCell[] = [];
+  const cells: AgentModelComparisonCell[] = [];
   let agentVersion: string | null = null;
 
   for (const model of models) {
@@ -155,8 +155,8 @@ export async function runAgentModelMatrix(
     }
   }
 
-  return agentModelMatrixSchema.parse({
-    matrixId: randomUUID(),
+  return agentModelComparisonSchema.parse({
+    modelComparisonId: randomUUID(),
     agentId: request.agentId,
     agentVersion,
     execution,
@@ -166,8 +166,8 @@ export async function runAgentModelMatrix(
   });
 }
 
-/** Renders one matrix cell as a single badge line for the CLI. */
-export function formatModelMatrixCell(cell: AgentModelMatrixCell): string {
+/** Renders one modelComparison cell as a single badge line for the CLI. */
+export function formatModelComparisonCell(cell: AgentModelComparisonCell): string {
   const model = cell.model.padEnd(24);
 
   if (cell.status === "error") {

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
-  agentModelMatrixSchema,
-  type AgentModelMatrix,
-} from "../src/agents/modelMatrix/agentModelMatrix.js";
-import { renderModelMatrixMarkdown } from "../src/agents/modelMatrix/agentModelMatrixReport.js";
+  agentModelComparisonSchema,
+  type AgentModelComparison,
+} from "../src/agents/modelComparison/agentModelComparison.js";
+import { renderModelComparisonMarkdown } from "../src/agents/modelComparison/agentModelComparisonReport.js";
 
-function matrix(cells: AgentModelMatrix["cells"]): AgentModelMatrix {
-  return agentModelMatrixSchema.parse({
-    matrixId: "11111111-1111-1111-1111-111111111111",
+function modelComparison(cells: AgentModelComparison["cells"]): AgentModelComparison {
+  return agentModelComparisonSchema.parse({
+    modelComparisonId: "11111111-1111-1111-1111-111111111111",
     agentId: "project-intake",
     agentVersion: "0.6.0",
     execution: { repetitions: 1, concurrency: 1 },
@@ -20,8 +20,8 @@ function matrix(cells: AgentModelMatrix["cells"]): AgentModelMatrix {
 function okCell(
   model: string,
   passed: boolean,
-  overrides: Partial<AgentModelMatrix["cells"][number]> = {},
-): AgentModelMatrix["cells"][number] {
+  overrides: Partial<AgentModelComparison["cells"][number]> = {},
+): AgentModelComparison["cells"][number] {
   return {
     model,
     status: "ok",
@@ -39,10 +39,10 @@ function okCell(
   };
 }
 
-describe("renderModelMatrixMarkdown", () => {
+describe("renderModelComparisonMarkdown", () => {
   it("renders a header, a row per model, and the badge metrics", () => {
-    const md = renderModelMatrixMarkdown(
-      matrix([
+    const md = renderModelComparisonMarkdown(
+      modelComparison([
         okCell("gpt-5.4", true),
         okCell("gpt-5.4-mini", false, {
           estimatedCostUsd: 0.0619,
@@ -51,7 +51,7 @@ describe("renderModelMatrixMarkdown", () => {
       ]),
     );
 
-    expect(md).toContain("# Model Matrix — project-intake@0.6.0");
+    expect(md).toContain("# Model Comparison Eval — project-intake@0.6.0");
     expect(md).toContain("| gpt-5.4 | ✓ pass | 100% | 8 |");
     expect(md).toContain("| gpt-5.4-mini | ✗ FAIL | 88% | 8 |");
     expect(md).toContain("$0.2325");
@@ -60,8 +60,8 @@ describe("renderModelMatrixMarkdown", () => {
   });
 
   it("names the cheapest passing model", () => {
-    const md = renderModelMatrixMarkdown(
-      matrix([
+    const md = renderModelComparisonMarkdown(
+      modelComparison([
         okCell("gpt-5.4", true, { estimatedCostUsd: 0.2325 }),
         okCell("gpt-5.4-mini", true, { estimatedCostUsd: 0.0619 }),
       ]),
@@ -70,15 +70,15 @@ describe("renderModelMatrixMarkdown", () => {
   });
 
   it("states honestly when no model passed", () => {
-    const md = renderModelMatrixMarkdown(
-      matrix([okCell("gpt-5.4", false), okCell("gpt-5.4-mini", false)]),
+    const md = renderModelComparisonMarkdown(
+      modelComparison([okCell("gpt-5.4", false), okCell("gpt-5.4-mini", false)]),
     );
     expect(md).toContain("No model passed the verification gate");
   });
 
   it("renders null token/cost/latency as n/a and surfaces error cells", () => {
-    const md = renderModelMatrixMarkdown(
-      matrix([
+    const md = renderModelComparisonMarkdown(
+      modelComparison([
         okCell("mystery", true, {
           totalTokens: null,
           avgTokensPerRun: null,

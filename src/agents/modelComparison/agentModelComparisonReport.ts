@@ -1,4 +1,4 @@
-import type { AgentModelMatrix, AgentModelMatrixCell } from "./agentModelMatrix.js";
+import type { AgentModelComparison, AgentModelComparisonCell } from "./agentModelComparison.js";
 
 function pct(value: number | null): string {
   return value === null ? "n/a" : `${Math.round(value * 100)}%`;
@@ -16,47 +16,47 @@ function ms(value: number | null): string {
   return value === null ? "n/a" : `${Math.round(value)} ms`;
 }
 
-function gate(cell: AgentModelMatrixCell): string {
+function gate(cell: AgentModelComparisonCell): string {
   if (cell.status === "error") return "error";
   return cell.passed ? "✓ pass" : "✗ FAIL";
 }
 
-function row(cell: AgentModelMatrixCell): string {
+function row(cell: AgentModelComparisonCell): string {
   return `| ${cell.model} | ${gate(cell)} | ${pct(cell.passRate)} | ${cell.totalRuns} | ${int(cell.totalTokens)} | ${int(cell.avgTokensPerRun)} | ${usd(cell.estimatedCostUsd)} | ${ms(cell.avgLatencyMs)} |`;
 }
 
 /**
- * Renders a model matrix as a self-contained markdown report — the shareable
+ * Renders a model comparison eval as a self-contained markdown report — the shareable
  * form of the "tested on X" badge. Faithful to the artifact: every number
  * comes straight from a cell; nothing is inferred or embellished.
  */
-export function renderModelMatrixMarkdown(matrix: AgentModelMatrix): string {
-  const version = matrix.agentVersion ? `@${matrix.agentVersion}` : "";
+export function renderModelComparisonMarkdown(modelComparison: AgentModelComparison): string {
+  const version = modelComparison.agentVersion ? `@${modelComparison.agentVersion}` : "";
   const lines: string[] = [];
 
-  lines.push(`# Model Matrix — ${matrix.agentId}${version}`);
+  lines.push(`# Model Comparison Eval — ${modelComparison.agentId}${version}`);
   lines.push("");
   lines.push(
-    `Cross-model evaluation over the agent's verification datasets · repetitions ${matrix.execution.repetitions} · concurrency ${matrix.execution.concurrency}.`,
+    `Cross-model evaluation over the agent's verification datasets · repetitions ${modelComparison.execution.repetitions} · concurrency ${modelComparison.execution.concurrency}.`,
   );
   lines.push("");
   lines.push(
     "| Model | Gate | Pass rate | Runs | Tokens | Avg/run | Est. cost | Avg latency |",
   );
   lines.push("|---|---|---:|---:|---:|---:|---:|---:|");
-  for (const cell of matrix.cells) {
+  for (const cell of modelComparison.cells) {
     lines.push(row(cell));
   }
   lines.push("");
 
   // Honest takeaways derived only from the cells.
-  const ok = matrix.cells.filter((cell) => cell.status === "ok");
+  const ok = modelComparison.cells.filter((cell) => cell.status === "ok");
   const passing = ok.filter((cell) => cell.passed);
-  const errored = matrix.cells.filter((cell) => cell.status === "error");
+  const errored = modelComparison.cells.filter((cell) => cell.status === "error");
 
   lines.push("## Notes");
   lines.push("");
-  lines.push(`- ${matrix.cells.length} model(s) compared.`);
+  lines.push(`- ${modelComparison.cells.length} model(s) compared.`);
 
   if (passing.length > 0) {
     const priced = passing.filter((cell) => cell.estimatedCostUsd !== null);
@@ -83,7 +83,7 @@ export function renderModelMatrixMarkdown(matrix: AgentModelMatrix): string {
   }
 
   lines.push("");
-  lines.push(`_Matrix ${matrix.matrixId} · generated ${matrix.completedAt}._`);
+  lines.push(`_ModelComparison ${modelComparison.modelComparisonId} · generated ${modelComparison.completedAt}._`);
   lines.push("");
 
   return lines.join("\n");

@@ -100,7 +100,7 @@ section { margin-top: 34px; }
 .status-agent-inferred { background: rgba(240, 180, 41, .13); color: var(--warning); }
 .status-unresolved { background: rgba(236, 93, 94, .13); color: var(--danger); }
 
-.criteria-matrix { display: grid; gap: 12px; margin: 18px 0; }
+.criteria-modelComparison { display: grid; gap: 12px; margin: 18px 0; }
 .criteria-health { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .criteria-health strong { margin-right: 4px; }
 .chip-filter { padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 999px; }
@@ -175,7 +175,7 @@ section { margin-top: 34px; }
 .panel-holdout { border-left: 2px solid var(--holdout); }
 .panel-note { margin: 2px 0 10px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 
-/* Model matrix — verdict badges reuse the reserved palette (green pass, red
+/* Model comparison eval — verdict badges reuse the reserved palette (green pass, red
    fail/error), indigo carries "triaged/withheld", amber carries "marginal". */
 .status-pass { background: rgba(76, 195, 138, .13); color: var(--success); }
 .status-fail, .status-error { background: rgba(236, 93, 94, .13); color: var(--danger); }
@@ -187,13 +187,13 @@ section { margin-top: 34px; }
 .metric-tile.tone-critical { box-shadow: inset 0 3px 0 var(--danger); }
 .metric-tile.tone-holdout { box-shadow: inset 0 3px 0 var(--holdout); }
 .metric-tile small { color: var(--muted); font-size: 11px; line-height: 1.4; }
-.metric-grid.matrix-summary { grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); }
+.metric-grid.model-comparison-summary { grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); }
 
 .best-chip { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 999px; background: rgba(76, 195, 138, .13); color: var(--success); font: 10px DM Mono, monospace; letter-spacing: .03em; vertical-align: middle; white-space: nowrap; }
-.matrix-table { font-variant-numeric: tabular-nums; }
-.matrix-model { font: 500 13px DM Mono, monospace; }
-.matrix-row-error td { color: var(--muted); }
-.matrix-error-cell { color: var(--danger); font-size: 12px; }
+.model-comparison-table { font-variant-numeric: tabular-nums; }
+.model-comparison-model { font: 500 13px DM Mono, monospace; }
+.model-comparison-row-error td { color: var(--muted); }
+.model-comparison-error-cell { color: var(--danger); font-size: 12px; }
 
 .triage-groups { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .triage-group { border: 1px solid var(--line); border-radius: 14px; padding: 20px; background: var(--surface); }

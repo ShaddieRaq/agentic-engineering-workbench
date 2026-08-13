@@ -370,14 +370,14 @@ describe("foundry web routes", () => {
     await app.close();
   });
 
-  it("serves the model-matrix index and detail, 404 on an unknown id", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "matrix-routes-"));
+  it("serves the model-comparison index and detail, 404 on an unknown id", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "model-comparison-routes-"));
     createdDirectories.push(directory);
-    const matrixId = "33333333-3333-3333-3333-333333333333";
+    const modelComparisonId = "33333333-3333-3333-3333-333333333333";
     await writeFile(
-      join(directory, `model-matrix-${matrixId}.json`),
+      join(directory, `model-comparison-${modelComparisonId}.json`),
       JSON.stringify({
-        matrixId,
+        modelComparisonId,
         agentId: "project-intake",
         agentVersion: "0.6.0",
         execution: { repetitions: 1, concurrency: 1 },
@@ -394,25 +394,25 @@ describe("foundry web routes", () => {
     const app = await buildAgentWebServer({
       service,
       apiKeyConfigured: false,
-      matrixRunsDirectory: directory,
+      modelComparisonRunsDirectory: directory,
     });
 
     try {
-      const index = await app.inject({ method: "GET", url: "/api/foundry/matrices" });
+      const index = await app.inject({ method: "GET", url: "/api/foundry/model-comparisons" });
       expect(index.statusCode).toBe(200);
       expect(index.json()).toMatchObject({
-        matrices: [{ matrixId, agentId: "project-intake", modelsPassing: 1, hasTriage: false }],
+        modelComparisons: [{ modelComparisonId, agentId: "project-intake", modelsPassing: 1, hasTriage: false }],
       });
 
-      const detail = await app.inject({ method: "GET", url: `/api/foundry/matrices/${matrixId}` });
+      const detail = await app.inject({ method: "GET", url: `/api/foundry/model-comparisons/${modelComparisonId}` });
       expect(detail.statusCode).toBe(200);
       expect(detail.json()).toMatchObject({
-        matrixId,
+        modelComparisonId,
         summary: { modelsPassing: 1, modelsFailing: 1 },
         cells: [{ model: "gpt-5.4", verdict: "pass" }, { model: "gpt-5.4-mini", verdict: "fail", lowestCost: true }],
       });
 
-      const missing = await app.inject({ method: "GET", url: "/api/foundry/matrices/nope" });
+      const missing = await app.inject({ method: "GET", url: "/api/foundry/model-comparisons/nope" });
       expect(missing.statusCode).toBe(404);
     } finally {
       await app.close();

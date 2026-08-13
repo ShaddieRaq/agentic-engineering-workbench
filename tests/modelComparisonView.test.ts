@@ -3,12 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-  buildModelMatrixIndex,
-  buildModelMatrixView,
-} from "../src/web/modelMatrixView.js";
+  buildModelComparisonIndex,
+  buildModelComparisonView,
+} from "../src/web/modelComparisonView.js";
 
-const MATRIX_A = "11111111-1111-1111-1111-111111111111";
-const MATRIX_B = "22222222-2222-2222-2222-222222222222";
+const MODEL_COMPARISON_A = "11111111-1111-1111-1111-111111111111";
+const MODEL_COMPARISON_B = "22222222-2222-2222-2222-222222222222";
 
 function okCell(overrides: Record<string, unknown>): Record<string, unknown> {
   return {
@@ -27,13 +27,13 @@ function okCell(overrides: Record<string, unknown>): Record<string, unknown> {
   };
 }
 
-describe("model matrix view-model", () => {
+describe("model comparison eval view-model", () => {
   let directory: string;
 
   beforeEach(async () => {
-    directory = await mkdtemp(join(tmpdir(), "matrix-view-"));
-    const matrixA = {
-      matrixId: MATRIX_A,
+    directory = await mkdtemp(join(tmpdir(), "model-comparison-view-"));
+    const modelComparisonA = {
+      modelComparisonId: MODEL_COMPARISON_A,
       agentId: "project-intake",
       agentVersion: "0.6.0",
       execution: { repetitions: 1, concurrency: 1 },
@@ -61,7 +61,7 @@ describe("model matrix view-model", () => {
       ],
     };
     const triageA = {
-      matrixId: MATRIX_A,
+      modelComparisonId: MODEL_COMPARISON_A,
       agentId: "project-intake",
       modelsConsidered: ["gpt-5.4", "gpt-5.4-mini"],
       meaningful: true,
@@ -88,9 +88,9 @@ describe("model matrix view-model", () => {
         },
       ],
     };
-    // Matrix B: an error cell, a null agentVersion, and NO triage sibling.
-    const matrixB = {
-      matrixId: MATRIX_B,
+    // ModelComparison B: an error cell, a null agentVersion, and NO triage sibling.
+    const modelComparisonB = {
+      modelComparisonId: MODEL_COMPARISON_B,
       agentId: "test-designer",
       agentVersion: null,
       execution: { repetitions: 2, concurrency: 1 },
@@ -114,9 +114,9 @@ describe("model matrix view-model", () => {
         },
       ],
     };
-    await writeFile(join(directory, `model-matrix-${MATRIX_A}.json`), JSON.stringify(matrixA));
-    await writeFile(join(directory, `model-matrix-triage-${MATRIX_A}.json`), JSON.stringify(triageA));
-    await writeFile(join(directory, `model-matrix-${MATRIX_B}.json`), JSON.stringify(matrixB));
+    await writeFile(join(directory, `model-comparison-${MODEL_COMPARISON_A}.json`), JSON.stringify(modelComparisonA));
+    await writeFile(join(directory, `model-comparison-triage-${MODEL_COMPARISON_A}.json`), JSON.stringify(triageA));
+    await writeFile(join(directory, `model-comparison-${MODEL_COMPARISON_B}.json`), JSON.stringify(modelComparisonB));
   });
 
   afterEach(async () => {
@@ -124,8 +124,8 @@ describe("model matrix view-model", () => {
   });
 
   it("flags the winning cell per dimension and folds in triage", async () => {
-    const view = await buildModelMatrixView(directory, MATRIX_A);
-    if (!view) throw new Error("expected a matrix view");
+    const view = await buildModelComparisonView(directory, MODEL_COMPARISON_A);
+    if (!view) throw new Error("expected a modelComparison view");
 
     expect(view.agentVersion).toBe("0.6.0");
     const [strong, mini] = view.cells;
@@ -148,8 +148,8 @@ describe("model matrix view-model", () => {
   });
 
   it("marks error cells and stands without a triage sibling", async () => {
-    const view = await buildModelMatrixView(directory, MATRIX_B);
-    if (!view) throw new Error("expected a matrix view");
+    const view = await buildModelComparisonView(directory, MODEL_COMPARISON_B);
+    if (!view) throw new Error("expected a modelComparison view");
 
     expect(view.agentVersion).toBeNull();
     const errored = view.cells.find((cell) => cell.model === "broken-model");
@@ -160,25 +160,25 @@ describe("model matrix view-model", () => {
     expect(view.summary.ambiguityCount).toBe(0);
   });
 
-  it("returns null for an unknown matrix id", async () => {
-    expect(await buildModelMatrixView(directory, "does-not-exist")).toBeNull();
+  it("returns null for an unknown modelComparison id", async () => {
+    expect(await buildModelComparisonView(directory, "does-not-exist")).toBeNull();
   });
 
-  it("indexes every matrix newest-first with a triage flag", async () => {
-    const index = await buildModelMatrixIndex(directory);
-    expect(index.matrices).toHaveLength(2);
+  it("indexes every modelComparison newest-first with a triage flag", async () => {
+    const index = await buildModelComparisonIndex(directory);
+    expect(index.modelComparisons).toHaveLength(2);
 
-    const a = index.matrices.find((entry) => entry.matrixId === MATRIX_A);
-    const b = index.matrices.find((entry) => entry.matrixId === MATRIX_B);
+    const a = index.modelComparisons.find((entry) => entry.modelComparisonId === MODEL_COMPARISON_A);
+    const b = index.modelComparisons.find((entry) => entry.modelComparisonId === MODEL_COMPARISON_B);
     expect(a?.hasTriage).toBe(true);
     expect(a?.modelsPassing).toBe(1);
     expect(b?.hasTriage).toBe(false);
   });
 
-  it("returns an empty index when the directory has no matrices", async () => {
-    const empty = await mkdtemp(join(tmpdir(), "matrix-empty-"));
+  it("returns an empty index when the directory has no modelComparisons", async () => {
+    const empty = await mkdtemp(join(tmpdir(), "model-comparison-empty-"));
     try {
-      expect((await buildModelMatrixIndex(empty)).matrices).toHaveLength(0);
+      expect((await buildModelComparisonIndex(empty)).modelComparisons).toHaveLength(0);
     } finally {
       await rm(empty, { recursive: true, force: true });
     }

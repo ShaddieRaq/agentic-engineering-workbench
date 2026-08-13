@@ -665,8 +665,8 @@ export interface FoundryStoredArtifact {
   artifact: unknown;
 }
 
-// Client mirror of src/web/modelMatrixView.ts. Keep in sync with the server.
-export interface ModelMatrixCellView {
+// Client mirror of src/web/modelComparisonView.ts. Keep in sync with the server.
+export interface ModelComparisonCellView {
   model: string;
   status: "ok" | "error";
   verdict: "pass" | "fail" | "error";
@@ -684,7 +684,7 @@ export interface ModelMatrixCellView {
   lowestLatency: boolean;
 }
 
-export interface ModelMatrixTriageCaseView {
+export interface ModelComparisonTriageCaseView {
   datasetId: string;
   caseId: string;
   classification: "ambiguity" | "capability-dependent";
@@ -694,13 +694,13 @@ export interface ModelMatrixTriageCaseView {
   marginal: boolean;
 }
 
-export interface ModelMatrixTriageView {
+export interface ModelComparisonTriageView {
   meaningful: boolean;
-  ambiguity: ModelMatrixTriageCaseView[];
-  capabilityDependent: ModelMatrixTriageCaseView[];
+  ambiguity: ModelComparisonTriageCaseView[];
+  capabilityDependent: ModelComparisonTriageCaseView[];
 }
 
-export interface ModelMatrixSummaryView {
+export interface ModelComparisonSummaryView {
   modelCount: number;
   modelsPassing: number;
   modelsFailing: number;
@@ -710,20 +710,20 @@ export interface ModelMatrixSummaryView {
   capabilityDependentCount: number;
 }
 
-export interface ModelMatrixView {
-  matrixId: string;
+export interface ModelComparisonView {
+  modelComparisonId: string;
   agentId: string;
   agentVersion: string | null;
   models: string[];
   execution: { repetitions: number; concurrency: number };
   completedAt: string;
-  summary: ModelMatrixSummaryView;
-  cells: ModelMatrixCellView[];
-  triage: ModelMatrixTriageView | null;
+  summary: ModelComparisonSummaryView;
+  cells: ModelComparisonCellView[];
+  triage: ModelComparisonTriageView | null;
 }
 
-export interface ModelMatrixIndexEntry {
-  matrixId: string;
+export interface ModelComparisonIndexEntry {
+  modelComparisonId: string;
   agentId: string;
   agentVersion: string | null;
   models: string[];
@@ -733,8 +733,8 @@ export interface ModelMatrixIndexEntry {
   hasTriage: boolean;
 }
 
-export interface ModelMatrixIndex {
-  matrices: ModelMatrixIndexEntry[];
+export interface ModelComparisonIndex {
+  modelComparisons: ModelComparisonIndexEntry[];
 }
 
 // Client mirror of src/web/selfHardeningView.ts. Keep in sync with the server.

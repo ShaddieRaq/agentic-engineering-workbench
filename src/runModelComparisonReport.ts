@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { loadModelMatrix } from "./agents/modelMatrix/modelMatrixArtifacts.js";
-import { renderModelMatrixMarkdown } from "./agents/modelMatrix/agentModelMatrixReport.js";
+import { loadModelComparison } from "./agents/modelComparison/modelComparisonArtifacts.js";
+import { renderModelComparisonMarkdown } from "./agents/modelComparison/agentModelComparisonReport.js";
 
 function option(args: string[], name: string): string | null {
   const index = args.indexOf(name);
@@ -18,12 +18,12 @@ async function main(): Promise<void> {
   const runsDirectory = join(process.cwd(), "runs");
   const id = option(args, "--id");
 
-  const matrix = await loadModelMatrix(runsDirectory, id);
+  const modelComparison = await loadModelComparison(runsDirectory, id);
 
-  const markdown = renderModelMatrixMarkdown(matrix);
+  const markdown = renderModelComparisonMarkdown(modelComparison);
   const outPath =
     option(args, "--out") ??
-    join(runsDirectory, `model-matrix-report-${matrix.matrixId}.md`);
+    join(runsDirectory, `model-comparison-report-${modelComparison.modelComparisonId}.md`);
   await writeFile(outPath, markdown, "utf8");
 
   console.log(markdown);
@@ -31,6 +31,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error("Matrix report failed:", error);
+  console.error("ModelComparison report failed:", error);
   process.exit(1);
 });

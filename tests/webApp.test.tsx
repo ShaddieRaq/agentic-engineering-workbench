@@ -3,7 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "../web/src/App.js";
-import { CriteriaMatrix, JsonView, SchemaView } from "../web/src/components.js";
+import { CriteriaModelComparison, JsonView, SchemaView } from "../web/src/components.js";
 import { SubmissionDetails } from "../web/src/foundry.js";
 
 afterEach(() => {
@@ -688,9 +688,9 @@ describe("agent workbench web interface", () => {
     });
   });
 
-  it("renders the criteria traceability matrix with coverage and filtering", () => {
+  it("renders the criteria traceability modelComparison with coverage and filtering", () => {
     render(
-      <CriteriaMatrix
+      <CriteriaModelComparison
         criteria={[
           { id: "k1", text: "Marks a habit complete for today", source: "user-stated", verification: "Complete via CLI and confirm today shows done." },
           { id: "k2", text: "Streak resets after a missed day", source: "unresolved", verification: "Skip a day and confirm the streak is zero." },
@@ -734,14 +734,14 @@ describe("agent workbench web interface", () => {
     expect(screen.getByText("Faithful evidence")).toBeInTheDocument();
   });
 
-  it("groups the nav and shows live matrix/self-hardening counts on the front door", async () => {
+  it("groups the nav and shows live modelComparison/self-hardening counts on the front door", async () => {
     const json = (body: unknown) =>
       new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);
       if (path.endsWith("/api/workspaces")) return json({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] });
       if (path.endsWith("/api/health")) return json({ apiKeyConfigured: true });
-      if (path.includes("/api/foundry/matrices")) return json({ matrices: [{ matrixId: "m1" }] });
+      if (path.includes("/api/foundry/model-comparisons")) return json({ modelComparisons: [{ modelComparisonId: "m1" }] });
       if (path.includes("/api/self-hardening")) return json({ cycles: [{ decisionId: "d1" }, { decisionId: "d2" }] });
       if (path.includes("/api/agents")) return json({ agents: [] });
       if (path.includes("/api/artifacts")) return json({ artifacts: [] });
@@ -755,7 +755,7 @@ describe("agent workbench web interface", () => {
     expect(await screen.findByText("Reliability")).toBeInTheDocument();
     expect(screen.getByText("Catalog")).toBeInTheDocument();
     // The two new capabilities have a live pulse on the front door.
-    expect(await screen.findByText("Model matrix runs")).toBeInTheDocument();
+    expect(await screen.findByText("Model comparison eval runs")).toBeInTheDocument();
     expect(screen.getByText("Self-hardening cycles")).toBeInTheDocument();
   });
 
@@ -819,15 +819,15 @@ describe("agent workbench web interface", () => {
     expect(screen.getByText("evidence")).toBeInTheDocument();
   });
 
-  it("renders the model matrix comparison with best-per-dimension chips and triage", async () => {
+  it("renders the model comparison eval comparison with best-per-dimension chips and triage", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);
       if (path.endsWith("/api/workspaces")) {
         return new Response(JSON.stringify({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] }), { status: 200, headers: { "content-type": "application/json" } });
       }
-      if (path.includes("/api/foundry/matrices/")) {
+      if (path.includes("/api/foundry/model-comparisons/")) {
         return new Response(JSON.stringify({
-          matrixId: "m1",
+          modelComparisonId: "m1",
           agentId: "project-intake",
           agentVersion: "0.7.0",
           models: ["gpt-5.4", "gpt-5.4-mini"],
@@ -844,10 +844,10 @@ describe("agent workbench web interface", () => {
       return new Response(JSON.stringify({}), { status: 200, headers: { "content-type": "application/json" } });
     }));
 
-    window.history.replaceState(null, "", "/matrices/m1");
+    window.history.replaceState(null, "", "/model-comparisons/m1");
     render(<AppRoutes />);
 
-    expect(await screen.findByRole("heading", { name: "Model matrix" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Model comparison eval" })).toBeInTheDocument();
     expect(await screen.findByText("gpt-5.4-mini")).toBeInTheDocument();
     // The trade-off, encoded as separate winner chips: reliability vs cost.
     expect(screen.getByText(/★ most reliable/)).toBeInTheDocument();

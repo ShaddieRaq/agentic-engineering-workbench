@@ -1,19 +1,19 @@
 import {
-  listModelMatrixIds,
-  loadModelMatrix,
-  loadModelMatrixTriage,
-} from "../agents/modelMatrix/modelMatrixArtifacts.js";
-import type { AgentModelMatrix } from "../agents/modelMatrix/agentModelMatrix.js";
+  listModelComparisonIds,
+  loadModelComparison,
+  loadModelComparisonTriage,
+} from "../agents/modelComparison/modelComparisonArtifacts.js";
+import type { AgentModelComparison } from "../agents/modelComparison/agentModelComparison.js";
 import type {
-  ModelMatrixTriage,
+  ModelComparisonTriage,
   TriagedCase,
-} from "../agents/modelMatrix/agentModelMatrixTriage.js";
+} from "../agents/modelComparison/agentModelComparisonTriage.js";
 
-// One model's column in the matrix, shaped for the console. Verdict is the
+// One model's column in the modelComparison, shaped for the console. Verdict is the
 // three-state form the table renders as a badge; the three "best" flags mark
 // the winning cell per dimension so the operator reads the trade-off at a
 // glance (most reliable model may not be the cheapest or fastest).
-export interface ModelMatrixCellView {
+export interface ModelComparisonCellView {
   model: string;
   status: "ok" | "error";
   verdict: "pass" | "fail" | "error";
@@ -31,7 +31,7 @@ export interface ModelMatrixCellView {
   lowestLatency: boolean;
 }
 
-export interface ModelMatrixTriageCaseView {
+export interface ModelComparisonTriageCaseView {
   datasetId: string;
   caseId: string;
   classification: "ambiguity" | "capability-dependent";
@@ -41,16 +41,16 @@ export interface ModelMatrixTriageCaseView {
   marginal: boolean;
 }
 
-export interface ModelMatrixTriageView {
+export interface ModelComparisonTriageView {
   meaningful: boolean;
-  ambiguity: ModelMatrixTriageCaseView[];
-  capabilityDependent: ModelMatrixTriageCaseView[];
+  ambiguity: ModelComparisonTriageCaseView[];
+  capabilityDependent: ModelComparisonTriageCaseView[];
 }
 
 // Summary before detail: the counts and spread that let the operator judge the
 // run before reading a single cell. ambiguityCount = prompt/gate gaps the
 // improvement loop can fix; capabilityDependentCount = model-selection signals.
-export interface ModelMatrixSummaryView {
+export interface ModelComparisonSummaryView {
   modelCount: number;
   modelsPassing: number;
   modelsFailing: number;
@@ -60,20 +60,20 @@ export interface ModelMatrixSummaryView {
   capabilityDependentCount: number;
 }
 
-export interface ModelMatrixView {
-  matrixId: string;
+export interface ModelComparisonView {
+  modelComparisonId: string;
   agentId: string;
   agentVersion: string | null;
   models: string[];
   execution: { repetitions: number; concurrency: number };
   completedAt: string;
-  summary: ModelMatrixSummaryView;
-  cells: ModelMatrixCellView[];
-  triage: ModelMatrixTriageView | null;
+  summary: ModelComparisonSummaryView;
+  cells: ModelComparisonCellView[];
+  triage: ModelComparisonTriageView | null;
 }
 
-export interface ModelMatrixIndexEntry {
-  matrixId: string;
+export interface ModelComparisonIndexEntry {
+  modelComparisonId: string;
   agentId: string;
   agentVersion: string | null;
   models: string[];
@@ -83,16 +83,16 @@ export interface ModelMatrixIndexEntry {
   hasTriage: boolean;
 }
 
-export interface ModelMatrixIndex {
-  matrices: ModelMatrixIndexEntry[];
+export interface ModelComparisonIndex {
+  modelComparisons: ModelComparisonIndexEntry[];
 }
 
 function definedNumbers(values: Array<number | null>): number[] {
   return values.filter((value): value is number => value !== null);
 }
 
-function cellViews(matrix: AgentModelMatrix): ModelMatrixCellView[] {
-  const okCells = matrix.cells.filter((cell) => cell.status === "ok");
+function cellViews(modelComparison: AgentModelComparison): ModelComparisonCellView[] {
+  const okCells = modelComparison.cells.filter((cell) => cell.status === "ok");
   // "Best" is only meaningful as a comparison — with a single measured model
   // there is nothing to be best against, so suppress the flags.
   const rank = okCells.length >= 2;
@@ -104,7 +104,7 @@ function cellViews(matrix: AgentModelMatrix): ModelMatrixCellView[] {
   const lowestCost = costs.length > 0 ? Math.min(...costs) : null;
   const lowestLatency = latencies.length > 0 ? Math.min(...latencies) : null;
 
-  return matrix.cells.map((cell) => {
+  return modelComparison.cells.map((cell) => {
     const ok = cell.status === "ok";
     return {
       model: cell.model,
@@ -129,7 +129,7 @@ function cellViews(matrix: AgentModelMatrix): ModelMatrixCellView[] {
   });
 }
 
-function triageCaseView(triaged: TriagedCase): ModelMatrixTriageCaseView {
+function triageCaseView(triaged: TriagedCase): ModelComparisonTriageCaseView {
   return {
     datasetId: triaged.datasetId,
     caseId: triaged.caseId,
@@ -141,7 +141,7 @@ function triageCaseView(triaged: TriagedCase): ModelMatrixTriageCaseView {
   };
 }
 
-function triageView(triage: ModelMatrixTriage | null): ModelMatrixTriageView | null {
+function triageView(triage: ModelComparisonTriage | null): ModelComparisonTriageView | null {
   if (!triage) return null;
   return {
     meaningful: triage.meaningful,
@@ -151,9 +151,9 @@ function triageView(triage: ModelMatrixTriage | null): ModelMatrixTriageView | n
 }
 
 function summaryView(
-  cells: ModelMatrixCellView[],
-  triage: ModelMatrixTriageView | null,
-): ModelMatrixSummaryView {
+  cells: ModelComparisonCellView[],
+  triage: ModelComparisonTriageView | null,
+): ModelComparisonSummaryView {
   const passRates = definedNumbers(
     cells.filter((cell) => cell.status === "ok").map((cell) => cell.passRate),
   );
@@ -169,43 +169,43 @@ function summaryView(
   };
 }
 
-/** The detail view-model for one matrix, or null when the id is unknown. */
-export async function buildModelMatrixView(
+/** The detail view-model for one modelComparison, or null when the id is unknown. */
+export async function buildModelComparisonView(
   runsDirectory: string,
-  matrixId: string,
-): Promise<ModelMatrixView | null> {
-  let matrix: AgentModelMatrix;
+  modelComparisonId: string,
+): Promise<ModelComparisonView | null> {
+  let modelComparison: AgentModelComparison;
   try {
-    matrix = await loadModelMatrix(runsDirectory, matrixId);
+    modelComparison = await loadModelComparison(runsDirectory, modelComparisonId);
   } catch {
     return null;
   }
-  const cells = cellViews(matrix);
-  const triage = triageView(await loadModelMatrixTriage(runsDirectory, matrixId));
+  const cells = cellViews(modelComparison);
+  const triage = triageView(await loadModelComparisonTriage(runsDirectory, modelComparisonId));
   return {
-    matrixId: matrix.matrixId,
-    agentId: matrix.agentId,
-    agentVersion: matrix.agentVersion,
-    models: matrix.models,
-    execution: matrix.execution,
-    completedAt: matrix.completedAt,
+    modelComparisonId: modelComparison.modelComparisonId,
+    agentId: modelComparison.agentId,
+    agentVersion: modelComparison.agentVersion,
+    models: modelComparison.models,
+    execution: modelComparison.execution,
+    completedAt: modelComparison.completedAt,
     summary: summaryView(cells, triage),
     cells,
     triage,
   };
 }
 
-/** The index of every matrix run, newest first. */
-export async function buildModelMatrixIndex(
+/** The index of every modelComparison run, newest first. */
+export async function buildModelComparisonIndex(
   runsDirectory: string,
-): Promise<ModelMatrixIndex> {
-  const ids = await listModelMatrixIds(runsDirectory);
-  const matrices: ModelMatrixIndexEntry[] = [];
+): Promise<ModelComparisonIndex> {
+  const ids = await listModelComparisonIds(runsDirectory);
+  const modelComparisons: ModelComparisonIndexEntry[] = [];
   for (const id of ids) {
-    const view = await buildModelMatrixView(runsDirectory, id);
+    const view = await buildModelComparisonView(runsDirectory, id);
     if (!view) continue;
-    matrices.push({
-      matrixId: view.matrixId,
+    modelComparisons.push({
+      modelComparisonId: view.modelComparisonId,
       agentId: view.agentId,
       agentVersion: view.agentVersion,
       models: view.models,
@@ -215,5 +215,5 @@ export async function buildModelMatrixIndex(
       hasTriage: view.triage !== null,
     });
   }
-  return { matrices };
+  return { modelComparisons };
 }

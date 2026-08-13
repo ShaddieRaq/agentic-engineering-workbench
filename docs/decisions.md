@@ -2743,10 +2743,10 @@ automated check, caught only by a human reading them) is why.
 
 What stays measurable: the DOERS. project-intake and project-architect
 are on gpt-5.4 from exercise; capability-planner, tool-builder, and
-repository-assistant remain on gpt-5.4-mini and are matrix-optimizable —
-the model matrix proves whether a cheaper model holds before we trust it
+repository-assistant remain on gpt-5.4-mini and are model-comparison-optimizable —
+the model comparison eval proves whether a cheaper model holds before we trust it
 cheap. Watch-item: capability-planner is reasoning-heavy AND has no
-verification dataset, so it cannot be matrix-measured today; its mini
+verification dataset, so it cannot be model-comparison-measured today; its mini
 default is a known risk, not a validated decision.
 
 Evidence: this session's by-hand improvement-loop run on gpt-5.4-mini.
@@ -2776,10 +2776,10 @@ change-risk-reviewer, documentation-auditor, playwright-triage,
 test-designer); `assertModelMeetsFloor` (src/agents/modelTierPolicy.ts)
 enforces at the operational choke points — run(), verify(), and the
 improvement analyst — so a judge cannot run below the floor by accident.
-The model matrix opts out via `allowBelowFloor` so judges stay MEASURABLE
+The model comparison eval opts out via `allowBelowFloor` so judges stay MEASURABLE
 on weak models, since that measurement is how the floor earns its
 evidence. The floor-approved allowlist is a pattern matching gpt-5.4 (and
-dated snapshots) but not mini; it grows only as the matrix validates more
+dated snapshots) but not mini; it grows only as the modelComparison validates more
 models.] No version bump accompanied the change (a policy
 floor, not a measured capability release), so evidence labeled at the
 same agent version predates the floor. documentation-auditor and
@@ -2831,7 +2831,7 @@ projects.
 
 Evidence: the console UX masterplan (2026-08-12, six phases, 1033 tests
 green) rebuilt the console on this language and brought two previously
-CLI-only capabilities — the model matrix and the self-hardening loop — into
+CLI-only capabilities — the model comparison eval and the self-hardening loop — into
 first-class screens; the operator reviewed it live and signed off ("a lot
 more information… a lot easier to use… a major milestone"). Residual: the
 language is a convention plus this record and a component kit, not a

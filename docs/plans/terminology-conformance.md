@@ -41,7 +41,7 @@ Already industry-standard, leave alone: **evaluation / eval**, holdout, acceptan
 - Verify: `git grep -i <oldterm>` returns 0 in tracked files (except this plan + a decisions note).
 
 ## Order
-1. Model Comparison Eval  ← in progress
+1. Model Comparison Eval  ← DONE (files, types, routes, CLI `npm run model-comparison`, UI, CSS, artifact files + schema field `modelComparisonId`, docs, tests; on-disk evidence migrated; 1038 green)
 2. golden dataset / eval set
 3. held-out ground truth
 4. error analysis

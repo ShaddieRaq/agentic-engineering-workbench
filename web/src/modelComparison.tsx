@@ -1,8 +1,8 @@
 import type {
-  ModelMatrixCellView,
-  ModelMatrixIndex,
-  ModelMatrixTriageCaseView,
-  ModelMatrixView,
+  ModelComparisonCellView,
+  ModelComparisonIndex,
+  ModelComparisonTriageCaseView,
+  ModelComparisonView,
 } from "./api.js";
 import {
   EmptyState,
@@ -37,26 +37,26 @@ function agentLabel(agentId: string, agentVersion: string | null): string {
   return agentVersion ? `${agentId}@${agentVersion}` : agentId;
 }
 
-// A "best per dimension" marker. The chip is the whole point of the matrix:
+// A "best per dimension" marker. The chip is the whole point of the modelComparison:
 // the most reliable model is rarely also the cheapest or the fastest, so each
 // winner is called out where the operator is already reading that number.
 function BestChip({ label }: { label: string }) {
   return <span className="best-chip" title={`Best ${label} in this run`}>★ {label}</span>;
 }
 
-function MatrixRow({ cell }: { cell: ModelMatrixCellView }) {
+function ModelComparisonRow({ cell }: { cell: ModelComparisonCellView }) {
   if (cell.status === "error") {
     return (
-      <tr className="matrix-row-error">
-        <td className="matrix-model">{cell.model}</td>
+      <tr className="model-comparison-row-error">
+        <td className="model-comparison-model">{cell.model}</td>
         <td><StatusBadge value="error" /></td>
-        <td colSpan={5} className="matrix-error-cell">{cell.error ?? "Run failed before evidence was produced."}</td>
+        <td colSpan={5} className="model-comparison-error-cell">{cell.error ?? "Run failed before evidence was produced."}</td>
       </tr>
     );
   }
   return (
     <tr>
-      <td className="matrix-model">{cell.model}</td>
+      <td className="model-comparison-model">{cell.model}</td>
       <td><StatusBadge value={cell.verdict} /></td>
       <td>
         {percent(cell.passRate)}
@@ -76,7 +76,7 @@ function MatrixRow({ cell }: { cell: ModelMatrixCellView }) {
   );
 }
 
-function TriageCaseCard({ triaged }: { triaged: ModelMatrixTriageCaseView }) {
+function TriageCaseCard({ triaged }: { triaged: ModelComparisonTriageCaseView }) {
   return (
     <article className="triage-card">
       <div className="triage-heading">
@@ -110,23 +110,23 @@ function TriageCaseCard({ triaged }: { triaged: ModelMatrixTriageCaseView }) {
   );
 }
 
-export function ModelMatrixListPage() {
-  const resource = useResource<ModelMatrixIndex>("/api/foundry/matrices");
+export function ModelComparisonListPage() {
+  const resource = useResource<ModelComparisonIndex>("/api/foundry/model-comparisons");
   if (resource.loading) return <Loading />;
   if (resource.error) return <ErrorNotice message={resource.error} />;
-  const matrices = resource.data?.matrices ?? [];
+  const modelComparisons = resource.data?.modelComparisons ?? [];
 
   return (
     <>
-      <PageHeader eyebrow="Cross-model reliability" title="Model matrix" />
+      <PageHeader eyebrow="Cross-model reliability" title="Model comparison eval" />
       <p className="lede">
         One agent, run across a set of models, scored the same way. Each run shows where a weaker
         model still holds the gate — and where a failure is the prompt's fault, not the model's.
       </p>
-      {matrices.length === 0 ? (
+      {modelComparisons.length === 0 ? (
         <EmptyState>
-          No model-matrix runs recorded yet. Produce one with <code>npm run matrix</code>, then{" "}
-          <code>npm run matrix:triage</code> to classify the failures.
+          No model-comparison runs recorded yet. Produce one with <code>npm run modelComparison</code>, then{" "}
+          <code>npm run modelComparison:triage</code> to classify the failures.
         </EmptyState>
       ) : (
         <div className="table-wrap">
@@ -141,10 +141,10 @@ export function ModelMatrixListPage() {
               </tr>
             </thead>
             <tbody>
-              {matrices.map((entry) => (
-                <tr key={entry.matrixId}>
+              {modelComparisons.map((entry) => (
+                <tr key={entry.modelComparisonId}>
                   <td>
-                    <Link to={`/matrices/${entry.matrixId}`}>
+                    <Link to={`/model-comparisons/${entry.modelComparisonId}`}>
                       {agentLabel(entry.agentId, entry.agentVersion)}
                     </Link>
                   </td>
@@ -162,14 +162,14 @@ export function ModelMatrixListPage() {
   );
 }
 
-export function ModelMatrixDetailPage() {
-  const matrixId = usePathname().split("/")[2];
-  const resource = useResource<ModelMatrixView>(
-    matrixId ? `/api/foundry/matrices/${matrixId}` : null,
+export function ModelComparisonDetailPage() {
+  const modelComparisonId = usePathname().split("/")[2];
+  const resource = useResource<ModelComparisonView>(
+    modelComparisonId ? `/api/foundry/model-comparisons/${modelComparisonId}` : null,
   );
   if (resource.loading) return <Loading />;
   if (resource.error || !resource.data) {
-    return <ErrorNotice message={resource.error ?? "Matrix not found"} />;
+    return <ErrorNotice message={resource.error ?? "ModelComparison not found"} />;
   }
   const view = resource.data;
   const { summary, triage } = view;
@@ -177,7 +177,7 @@ export function ModelMatrixDetailPage() {
 
   return (
     <>
-      <PageHeader eyebrow={agentLabel(view.agentId, view.agentVersion)} title="Model matrix">
+      <PageHeader eyebrow={agentLabel(view.agentId, view.agentVersion)} title="Model comparison eval">
         <span className={`status status-${allPass ? "pass" : "fail"}`}>
           {summary.modelsPassing}/{summary.modelCount} models pass
         </span>
@@ -193,7 +193,7 @@ export function ModelMatrixDetailPage() {
         <Link to="/self-hardening">Self-hardening cycles →</Link>
       </div>
 
-      <section className="metric-grid matrix-summary">
+      <section className="metric-grid model-comparison-summary">
         <MetricTile label="Models tested" value={summary.modelCount} />
         <MetricTile
           label="Passing the gate"
@@ -235,7 +235,7 @@ export function ModelMatrixDetailPage() {
           </div>
         </div>
         <div className="table-wrap">
-          <table className="matrix-table">
+          <table className="model-comparison-table">
             <thead>
               <tr>
                 <th>Model</th>
@@ -248,7 +248,7 @@ export function ModelMatrixDetailPage() {
               </tr>
             </thead>
             <tbody>
-              {view.cells.map((cell) => <MatrixRow cell={cell} key={cell.model} />)}
+              {view.cells.map((cell) => <ModelComparisonRow cell={cell} key={cell.model} />)}
             </tbody>
           </table>
         </div>
@@ -305,13 +305,13 @@ export function ModelMatrixDetailPage() {
         </section>
       ) : (
         <section className="notice">
-          <strong>Failures not yet triaged.</strong> Run <code>npm run matrix:triage</code> to
+          <strong>Failures not yet triaged.</strong> Run <code>npm run modelComparison:triage</code> to
           classify each failure as an ambiguity (prompt gap) or capability-dependent
           (model-selection) signal.
         </section>
       )}
 
-      <RawDrawer label="Raw matrix view" value={view} />
+      <RawDrawer label="Raw modelComparison view" value={view} />
     </>
   );
 }

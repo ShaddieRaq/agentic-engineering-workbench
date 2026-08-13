@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { AgentEvaluationEvidence } from "../src/agents/agentApplicationService.js";
 import {
-  agentModelMatrixSchema,
-  formatModelMatrixCell,
-  runAgentModelMatrix,
-  type ModelMatrixVerifier,
-} from "../src/agents/modelMatrix/agentModelMatrix.js";
+  agentModelComparisonSchema,
+  formatModelComparisonCell,
+  runAgentModelComparison,
+  type ModelComparisonVerifier,
+} from "../src/agents/modelComparison/agentModelComparison.js";
 import type { AIProviderEvidence } from "../src/providers/aiProvider.js";
 
 function usage(
@@ -31,7 +31,7 @@ interface FakeRun {
 }
 
 /**
- * Builds an evaluation-evidence stand-in carrying only the fields the matrix
+ * Builds an evaluation-evidence stand-in carrying only the fields the modelComparison
  * aggregator reads. The runner trusts `verify`'s output, so a structurally
  * minimal fake is enough to exercise the rollup without booting real agents.
  */
@@ -71,9 +71,9 @@ function fakeEvidence(input: {
   } as unknown as AgentEvaluationEvidence;
 }
 
-describe("runAgentModelMatrix", () => {
+describe("runAgentModelComparison", () => {
   it("rolls up pass-rate, tokens, cost, and latency per model in order", async () => {
-    const verify: ModelMatrixVerifier = async ({ model }) => {
+    const verify: ModelComparisonVerifier = async ({ model }) => {
       if (model === "gpt-5.4") {
         return fakeEvidence({
           agentVersion: "2.0.0",
@@ -102,20 +102,20 @@ describe("runAgentModelMatrix", () => {
       });
     };
 
-    const matrix = await runAgentModelMatrix(verify, {
+    const modelComparison = await runAgentModelComparison(verify, {
       agentId: "project-intake",
       models: ["gpt-5.4", "gpt-5.4-mini"],
     });
 
-    expect(agentModelMatrixSchema.safeParse(matrix).success).toBe(true);
-    expect(matrix.agentVersion).toBe("2.0.0");
-    expect(matrix.cells.map((cell) => cell.model)).toEqual([
+    expect(agentModelComparisonSchema.safeParse(modelComparison).success).toBe(true);
+    expect(modelComparison.agentVersion).toBe("2.0.0");
+    expect(modelComparison.cells.map((cell) => cell.model)).toEqual([
       "gpt-5.4",
       "gpt-5.4-mini",
     ]);
 
-    const strong = matrix.cells[0]!;
-    const weak = matrix.cells[1]!;
+    const strong = modelComparison.cells[0]!;
+    const weak = modelComparison.cells[1]!;
     expect(strong.status).toBe("ok");
     expect(strong.passed).toBe(true);
     expect(strong.passRate).toBe(1);
@@ -136,7 +136,7 @@ describe("runAgentModelMatrix", () => {
   });
 
   it("reports null token/cost fields when a model yields no usage evidence", async () => {
-    const verify: ModelMatrixVerifier = async () =>
+    const verify: ModelComparisonVerifier = async () =>
       fakeEvidence({
         passed: true,
         passRate: 1,
@@ -145,12 +145,12 @@ describe("runAgentModelMatrix", () => {
         runs: [{ durationMs: 700 }, { durationMs: 900 }],
       });
 
-    const matrix = await runAgentModelMatrix(verify, {
+    const modelComparison = await runAgentModelComparison(verify, {
       agentId: "project-intake",
       models: ["mystery-model"],
     });
 
-    const cell = matrix.cells[0]!;
+    const cell = modelComparison.cells[0]!;
     expect(cell.status).toBe("ok");
     expect(cell.totalTokens).toBeNull();
     expect(cell.avgTokensPerRun).toBeNull();
@@ -159,8 +159,8 @@ describe("runAgentModelMatrix", () => {
     expect(cell.avgLatencyMs).toBe(800);
   });
 
-  it("isolates a failing model as an error cell without aborting the matrix", async () => {
-    const verify: ModelMatrixVerifier = async ({ model }) => {
+  it("isolates a failing model as an error cell without aborting the modelComparison", async () => {
+    const verify: ModelComparisonVerifier = async ({ model }) => {
       if (model === "broken") {
         throw new Error("OPENAI_API_KEY is missing for broken");
       }
@@ -173,25 +173,25 @@ describe("runAgentModelMatrix", () => {
       });
     };
 
-    const matrix = await runAgentModelMatrix(verify, {
+    const modelComparison = await runAgentModelComparison(verify, {
       agentId: "project-intake",
       models: ["broken", "gpt-5.4"],
     });
 
-    const broken = matrix.cells[0]!;
-    const working = matrix.cells[1]!;
+    const broken = modelComparison.cells[0]!;
+    const working = modelComparison.cells[1]!;
     expect(broken.status).toBe("error");
     expect(broken.error).toContain("missing for broken");
     expect(broken.passed).toBe(false);
     expect(broken.evaluationArtifactId).toBeNull();
     expect(working.status).toBe("ok");
     // agentVersion is taken from the first model that actually ran.
-    expect(matrix.agentVersion).toBe("1.0.0");
+    expect(modelComparison.agentVersion).toBe("1.0.0");
   });
 
   it("deduplicates repeated models while preserving first-seen order", async () => {
     const seen: string[] = [];
-    const verify: ModelMatrixVerifier = async ({ model }) => {
+    const verify: ModelComparisonVerifier = async ({ model }) => {
       seen.push(model);
       return fakeEvidence({
         passed: true,
@@ -202,14 +202,14 @@ describe("runAgentModelMatrix", () => {
       });
     };
 
-    const matrix = await runAgentModelMatrix(verify, {
+    const modelComparison = await runAgentModelComparison(verify, {
       agentId: "project-intake",
       models: ["a", "b", "a"],
     });
 
     expect(seen).toEqual(["a", "b"]);
-    expect(matrix.models).toEqual(["a", "b"]);
-    expect(matrix.cells).toHaveLength(2);
+    expect(modelComparison.models).toEqual(["a", "b"]);
+    expect(modelComparison.cells).toHaveLength(2);
   });
 
   it("threads execution options into each verify call", async () => {
@@ -217,7 +217,7 @@ describe("runAgentModelMatrix", () => {
       repetitions: number | undefined;
       concurrency: number | undefined;
     }> = [];
-    const verify: ModelMatrixVerifier = async (request) => {
+    const verify: ModelComparisonVerifier = async (request) => {
       requests.push({
         repetitions: request.repetitions,
         concurrency: request.concurrency,
@@ -231,21 +231,21 @@ describe("runAgentModelMatrix", () => {
       });
     };
 
-    const matrix = await runAgentModelMatrix(verify, {
+    const modelComparison = await runAgentModelComparison(verify, {
       agentId: "project-intake",
       models: ["gpt-5.4"],
       repetitions: 3,
       concurrency: 2,
     });
 
-    expect(matrix.execution).toEqual({ repetitions: 3, concurrency: 2 });
+    expect(modelComparison.execution).toEqual({ repetitions: 3, concurrency: 2 });
     expect(requests[0]).toEqual({ repetitions: 3, concurrency: 2 });
   });
 });
 
-describe("formatModelMatrixCell", () => {
+describe("formatModelComparisonCell", () => {
   it("renders a passing cell with its badge metrics", () => {
-    const line = formatModelMatrixCell({
+    const line = formatModelComparisonCell({
       model: "gpt-5.4",
       status: "ok",
       passed: true,
@@ -269,7 +269,7 @@ describe("formatModelMatrixCell", () => {
   });
 
   it("renders an error cell with its message", () => {
-    const line = formatModelMatrixCell({
+    const line = formatModelComparisonCell({
       model: "broken",
       status: "error",
       passed: false,

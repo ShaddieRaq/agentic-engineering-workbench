@@ -4,7 +4,7 @@ import type { AgentManifest } from "./agentManifest.js";
  * Models trusted to sit in a JUDGMENT seat (Decision 091). An advanced-tier
  * agent — one whose output is a verdict the rest of the system trusts — may
  * only run operationally on one of these. This allowlist is deliberately
- * small and grows only as the model matrix produces evidence that another
+ * small and grows only as the model comparison eval produces evidence that another
  * model is strong enough for judgment; it is a receipt, not a guess.
  *
  * The pattern matches "gpt-5.4" and dated snapshots ("gpt-5.4-2026-08-01")
@@ -26,7 +26,7 @@ export function requiresStrongModel(manifest: AgentManifest): boolean {
  * only run OPERATIONALLY on a floor-approved model, so a weak model can never
  * end up in the judge's chair by accident.
  *
- * Measurement is the deliberate exception: the model matrix passes
+ * Measurement is the deliberate exception: the model comparison eval passes
  * allowBelowFloor so a judge can still be MEASURED on a weak model — that
  * measurement is exactly how a model earns (or fails) its place on the
  * allowlist. Only the measurement path opts out; every operational path
@@ -42,7 +42,7 @@ export function assertModelMeetsFloor(
   if (isFloorApprovedModel(model)) return;
   throw new Error(
     `Agent ${manifest.id} is an advanced (judgment-seat) agent and must run on a ` +
-      `floor-approved strong model, not "${model}". Measure it with the model matrix, ` +
+      `floor-approved strong model, not "${model}". Measure it with the model comparison eval, ` +
       `which is allowed to run below the floor deliberately.`,
   );
 }

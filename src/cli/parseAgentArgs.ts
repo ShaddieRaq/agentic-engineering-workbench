@@ -20,7 +20,7 @@ export type AgentCliArgs =
       workspaceId: string | null;
     }
   | {
-      command: "matrix";
+      command: "model-comparison";
       agentId: string;
       models: string[];
       repetitions: number;
@@ -103,7 +103,7 @@ export function parseAgentArgs(args: string[]): AgentCliArgs {
     };
   }
 
-  if (command === "matrix") {
+  if (command === "model-comparison") {
     const agentId = positional(args, 1, "agent ID");
     const repetitions = Number(option(args, "--repetitions") ?? 1);
     const concurrency = Number(option(args, "--concurrency") ?? 1);
@@ -138,6 +138,6 @@ export function parseAgentArgs(args: string[]): AgentCliArgs {
   }
 
   throw new Error(
-    "Expected one of: list, describe <agent-id>, inventory, validate, scaffold <agent-id>, run <agent-id>, test <agent-id>, matrix <agent-id> --models <a,b,c>.",
+    "Expected one of: list, describe <agent-id>, inventory, validate, scaffold <agent-id>, run <agent-id>, test <agent-id>, model-comparison <agent-id> --models <a,b,c>.",
   );
 }

@@ -75,7 +75,7 @@ export interface VerifyAgentRequest {
   model?: string;
   workspaceId?: string;
   /**
-   * Measurement escape for the model matrix: allows an advanced (judgment-seat)
+   * Measurement escape for the model comparison eval: allows an advanced (judgment-seat)
    * agent to be verified on a below-floor model so it can be measured. Every
    * non-measurement caller leaves this false and the floor is enforced.
    */

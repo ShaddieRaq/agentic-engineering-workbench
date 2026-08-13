@@ -29,9 +29,9 @@ import {
   buildFoundryProjectIndex,
 } from "./foundryChainView.js";
 import {
-  buildModelMatrixIndex,
-  buildModelMatrixView,
-} from "./modelMatrixView.js";
+  buildModelComparisonIndex,
+  buildModelComparisonView,
+} from "./modelComparisonView.js";
 import {
   buildSelfHardeningCycle,
   buildSelfHardeningIndex,
@@ -238,10 +238,10 @@ export interface AgentWebServerOptions {
   operations?: OperationStore;
   foundry?: FoundryArtifactStore;
   foundryServices?: FoundryActionServices;
-  // Directory holding model-matrix artifacts (the artifact-store root, i.e.
-  // runs/). When set, the two read-only matrix routes are served; unset leaves
-  // them off for embeds/tests that never surface the matrix.
-  matrixRunsDirectory?: string;
+  // Directory holding model-comparison artifacts (the artifact-store root, i.e.
+  // runs/). When set, the two read-only modelComparison routes are served; unset leaves
+  // them off for embeds/tests that never surface the modelComparison.
+  modelComparisonRunsDirectory?: string;
   clientDirectory?: string;
   logger?: boolean;
   // Decision 090: when set, decision-class routes (foundry decisions,
@@ -875,24 +875,24 @@ export async function buildAgentWebServer(
     },
   );
 
-  if (options.matrixRunsDirectory) {
-    const matrixRunsDirectory = options.matrixRunsDirectory;
+  if (options.modelComparisonRunsDirectory) {
+    const modelComparisonRunsDirectory = options.modelComparisonRunsDirectory;
 
-    app.get("/api/foundry/matrices", async () => {
-      return buildModelMatrixIndex(matrixRunsDirectory);
+    app.get("/api/foundry/model-comparisons", async () => {
+      return buildModelComparisonIndex(modelComparisonRunsDirectory);
     });
 
-    app.get<{ Params: { matrixId: string } }>(
-      "/api/foundry/matrices/:matrixId",
+    app.get<{ Params: { modelComparisonId: string } }>(
+      "/api/foundry/model-comparisons/:modelComparisonId",
       async (request, reply) => {
-        const view = await buildModelMatrixView(
-          matrixRunsDirectory,
-          request.params.matrixId,
+        const view = await buildModelComparisonView(
+          modelComparisonRunsDirectory,
+          request.params.modelComparisonId,
         );
         if (!view) {
           return reply
             .code(404)
-            .send({ error: `Unknown model matrix: ${request.params.matrixId}.` });
+            .send({ error: `Unknown model comparison eval: ${request.params.modelComparisonId}.` });
         }
         return view;
       },
