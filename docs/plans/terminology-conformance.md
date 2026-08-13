@@ -42,12 +42,14 @@ Already industry-standard, leave alone: **evaluation / eval**, holdout, acceptan
 
 ## Order
 1. Model Comparison Eval  ← DONE (files, types, routes, CLI `npm run model-comparison`, UI, CSS, artifact files + schema field `modelComparisonId`, docs, tests; on-disk evidence migrated; 1038 green)
-2. golden dataset / eval set
-3. held-out ground truth
-4. error analysis
-5. regression gate wording + grader wording
-6. differentiator tethering (docs + card language)
-7. canonical glossary doc + refresh interview-drill cards (external store)
+2–6. DONE via a **wording pass** (not code churn — the remaining words were already close to
+   standard; deep-renaming acceptable identifiers like `dataset`/`comparison`/`judge`/`triage`
+   is churn+risk for no interview value). Operator-facing labels conformed: "Hidden evaluation
+   expectation" → "Held-out expected output"; "Failure triage" → "Error analysis"; "Gated
+   comparison" → "Regression eval (quality gate)"; ground-truth → reference wording. Differentiators
+   tethered in the glossary.
+7. DONE — canonical glossary at `docs/glossary.md` (the Workbench in industry vocabulary; interview
+   cheat-sheet + portfolio asset).
 
-Deferred: interview-drill card text/tags live in `~/.interview-drill` (separate product) — update
-after the code terms settle.
+Deferred: interview-drill card text/tags live in `~/.interview-drill` (separate product) — refresh
+those to the glossary vocabulary next.

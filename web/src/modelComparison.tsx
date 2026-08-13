@@ -258,7 +258,7 @@ export function ModelComparisonDetailPage() {
         <section>
           <div className="section-heading">
             <div>
-              <span className="eyebrow">Failure triage</span>
+              <span className="eyebrow">Error analysis</span>
               <h2>What the failures mean</h2>
             </div>
           </div>

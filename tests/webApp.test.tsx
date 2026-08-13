@@ -887,7 +887,7 @@ describe("agent workbench web interface", () => {
     expect(await screen.findByRole("heading", { name: "Self-hardening cycle" })).toBeInTheDocument();
     // The three stages of the loop, each a heading in the Stepper.
     expect(screen.getByRole("heading", { name: "Analyst proposal" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Gated comparison" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Regression eval (quality gate)" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Operator decision" })).toBeInTheDocument();
     // A named gate outcome and the release action prove the depth rendered.
     expect(screen.getByText("regression")).toBeInTheDocument();

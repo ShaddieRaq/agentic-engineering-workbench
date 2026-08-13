@@ -75,7 +75,7 @@ function ComparisonDetail({ comparison }: { comparison: SelfHardeningComparisonV
         ))}
       </ul>
       <Link className="cycle-link" to={`/runs/${comparison.candidateEvaluationArtifactId}`}>
-        Open the gated comparison →
+        Open the regression eval →
       </Link>
     </>
   );
@@ -94,7 +94,7 @@ function cycleSteps(cycle: SelfHardeningCycleView): StepperStep[] {
     },
     {
       key: "comparison",
-      title: "Gated comparison",
+      title: "Regression eval (quality gate)",
       status: cycle.comparison ? (cycle.comparison.gatesPassed ? "pass" : "fail") : "neutral",
       summary: cycle.comparison
         ? `${cycle.comparison.improvedCases} improved · ${cycle.comparison.regressedCases} regressed — promotion gates ${cycle.comparison.gatesPassed ? "passed" : "failed"}`
