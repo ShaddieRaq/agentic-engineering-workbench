@@ -1694,8 +1694,17 @@ operator-recorded; merged to main with acceptance tests green. Three
 platform defects were found and fixed live during the run (intake answer
 ids, hidden zero-question intake form, and the earlier stale-openQuestions
 stall pattern).
-2. Capability Planner verification dataset and gate (same rhythm as intake
-   and architect).
+2. Capability Planner verification dataset and gate — SHIPPED 2026-08-12
+   (commits 5fb546c → d8dcdda → 4f5d39a; Decision 093):
+   assessCapabilityPlannerExpectation + a registered capabilityPlannerDataset
+   make the reasoning-heavy planner model-comparison-measurable like intake and
+   architect, CLOSING the Decision 091 watch-item. The dataset's first draft was
+   miscalibrated and the model comparison eval caught it — the STRONG model scored
+   LOWER (gpt-5.4 25% vs mini 67%), the answer-key tell — so an adversarial panel
+   recalibrated it to unambiguous capability-floor cases. Surfaced a real policy
+   gap, shipped as capability-planner@0.2.0: the capabilityId mapping rule (set
+   only on existing-agent / existing-tool needs; null for project-code, human,
+   and engineering-change-required needs).
 3. Evidence-backed model qualification, promoted per Decision 086: add an
    Anthropic provider so evaluation can run on the model an agent serves on.
 4. Declarative agent registration via MCP as subjects under test

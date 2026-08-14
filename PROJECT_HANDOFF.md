@@ -509,6 +509,12 @@ capability-planner 0.1.0 mapped the approved habit-tracker plan first
 try (five project-code needs covering all six slices, no platform
 over-assignment, advisory-only concerns), operator-approved as the
 first brief-to-plan-to-capabilities chain (decision 8b9c81cb)
+Capability Planner verification dataset + 0.2.0 (2026-08-12, Decision 093):
+the planner now has assessCapabilityPlannerExpectation + a registered dataset,
+making it model-comparison-measurable and closing the Decision 091 watch-item;
+the model comparison eval caught the dataset's first-draft miscalibration (the
+strong model scored lower), recalibrated by an adversarial panel; released
+capability-planner@0.2.0 with the capabilityId mapping rule
 Phase 43 delivery 1 (Test Designer): complete; test-designer 0.1.0
 produced a live suite for the habit tracker (4 files, 3 visible plus 1
 holdout, real subprocess-spawning Vitest integration tests) that the
@@ -700,17 +706,23 @@ final-turn blocking reports without questions are legitimate.
 The full Foundry premise is live-proven end to end (idea → interviewed brief
 → architecture plan → capability plan → independent tests → governed build →
 working, holdout-verified software), builder-session isolation is structural
-(Decision 087), the model-comparison / self-hardening loop is complete, and the
-console UX masterplan closed 2026-08-12 (Decision 092) — every governed
-capability now has a legible first-class screen. Direction is being regrouped
+(Decision 087), the model-comparison / self-hardening loop is complete,
+capability-planner now carries a verification dataset (Decision 093, closing the
+Decision 091 watch-item — the last unmeasured pipeline doer), and the console UX
+masterplan closed 2026-08-12 (Decision 092) — every governed capability now has a
+legible first-class screen. Direction is being regrouped
 with the operator. Standing candidates (see the roadmap's north-star section
 for detail):
 
 1. Playwright trace-analyzer skill (roadmap step 5) — the first foundry
    deliverable that ships as a SKILL.md, not a CLI; the load-bearing
    prerequisite is the operator sourcing a labeled real-trace corpus.
-2. Capability-Planner verification dataset + gate — the one pipeline agent
-   still without a dataset, so it can't be model-comparison-measured (a WATCH-ITEM).
+2. Capability-Planner verification dataset + gate — SHIPPED 2026-08-12
+   (Decision 093; commits 5fb546c → d8dcdda → 4f5d39a): the last pipeline doer now
+   HAS a dataset and is model-comparison-measurable, closing the Decision 091
+   watch-item. Released capability-planner@0.2.0 (capabilityId mapping rule); the
+   model comparison eval caught the first draft's miscalibration (strong model
+   scored lower), recalibrated by an adversarial panel to unambiguous-floor cases.
 3. ModelComparison-optimizer follow-up — the live evidence that some agents pass
    100% on the cheaper model (a measured DOWNGRADE candidate to save cost),
    complementing the judge-floor guardrail.

@@ -2747,7 +2747,10 @@ repository-assistant remain on gpt-5.4-mini and are model-comparison-optimizable
 the model comparison eval proves whether a cheaper model holds before we trust it
 cheap. Watch-item: capability-planner is reasoning-heavy AND has no
 verification dataset, so it cannot be model-comparison-measured today; its mini
-default is a known risk, not a validated decision.
+default is a known risk, not a validated decision. [RESOLVED 2026-08-12 by
+Decision 093: capability-planner now has a verification dataset
+(assessCapabilityPlannerExpectation + a registered dataset) and is
+model-comparison-measurable; released as capability-planner@0.2.0.]
 
 Evidence: this session's by-hand improvement-loop run on gpt-5.4-mini.
 The analyst took three attempts to emit one policy-valid proposal (first
@@ -2785,7 +2788,7 @@ floor, not a measured capability release), so evidence labeled at the
 same agent version predates the floor. documentation-auditor and
 playwright-triage were floored on principle, without measured evidence.
 capability-planner remains a reasoning-heavy doer on mini with no dataset
-to measure it.
+to measure it. [RESOLVED 2026-08-12 by Decision 093 — it now has one.]
 
 ## Decision 092 (2026-08-12): The Console Presents Evidence as Form
 
@@ -2838,3 +2841,39 @@ language is a convention plus this record and a component kit, not a
 lint-enforced rule; a new screen can still hand-roll a JSON dump. The kit
 makes the right thing the easy thing, which is the enforcement that fits a
 one-person console.
+
+## Decision 093 (2026-08-12): The Verification Dataset Is Itself Validated by the Eval That Consumes It
+
+This closes the Decision 091 watch-item. capability-planner was the one pipeline
+doer with no verification dataset, so its gpt-5.4-mini default was an unmeasured
+risk rather than a validated choice. It now has one — `assessCapabilityPlannerExpectation`
+plus a registered `capabilityPlannerDataset` — so the reasoning-heavy planner is
+model-comparison-measurable like intake and architect, and the mini default can be
+validated or rejected on evidence instead of assumed.
+
+The lesson is in HOW the dataset was hardened. The first draft looked reasonable
+and was wrong: the model comparison eval ran it and the STRONG model scored LOWER
+than the weak one (gpt-5.4 25% vs gpt-5.4-mini 67%). A stronger reasoner disagreeing
+MORE with your "correct" answers is diagnostic of a miscalibrated answer key, not a
+weak model — the same placebo tell a human reader once caught in a mini test-designer
+suite (Decision 091), this time surfaced by the eval itself. The dataset was the
+thing under test; the eval that consumes it was the instrument that caught it.
+
+Fix: an adversarial panel re-derived the ground truth, arguing the opposite verdict
+on each case, and the dataset was recalibrated to unambiguous capability-floor
+cases — cases where a competent planner's verdict is not in genuine dispute, so a
+miss is a real capability gap and not answer-key noise. The recalibration also
+surfaced a real policy gap, shipped as **capability-planner@0.2.0**: the capabilityId
+mapping rule — a capabilityId is set only on an existing-agent or existing-tool need;
+for project-code, human, and engineering-change-required needs it must be null.
+
+Principle (reusable): a verification dataset is a measuring instrument, and an
+instrument must itself be validated before its readings are trusted. The
+"stronger-model-scores-lower" signal is a standing audit of the answer key — keep it
+as a check on every dataset, not a one-time catch.
+
+Residuals: recalibrating toward unambiguous-floor cases means the dataset
+intentionally does NOT yet probe the genuinely ambiguous middle, where planner
+judgment is hardest and answer keys are contestable — that band needs multi-rater
+ground truth, not one author's verdict, and is deferred. The 0.2.0 mapping rule is
+validated against the recalibrated set, not yet against a live foundry generation.
