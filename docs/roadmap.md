@@ -1677,6 +1677,19 @@ B. Console UX — DONE 2026-08-12, far beyond the original scope. See
    around a design language — evidence as form, not blocks of text —
    and brought the model comparison eval and self-hardening loop into the UI as
    first-class screens. Operator signed off live ("a major milestone").
+   CONSOLE FEEL PASS SHIPPED 2026-08-16: a deliberate shift from
+   "screen-share pitch" to "familiar working tool" (operator goal: a viewer
+   should recognize it as a real tool, so the differentiator lands without the
+   packaging distracting). The pitch front door (giant hero + governed-chain
+   orientation band + guarantee cards) was REPLACED — a hard cut, no hybrid —
+   with a working dashboard: live stat tiles (agents · latest eval pass-rate ·
+   model-comparison runs · self-hardening cycles · recent evidence · provider)
+   and recent-activity lists (recent evaluations, latest self-hardening cycle
+   as a prominent card, recent foundry projects). Type scale calibrated down
+   (page titles 62→30px cap) and density tightened toward a tool, not a landing
+   page; breadcrumbs added on detail pages; table row-hover. The self-hardening
+   loop is reachable in one glance from the dashboard (not forced as a literal
+   hero) and its detail page now leads verdict-first. 1038 tests green.
 C. Model qualification (Decision 086) — moved down by operator call.
 D. Foresight agent — DECISION DEFERRED: after one full generation runs
    with the advisory lifecycle, examine the residual gaps that no

@@ -228,8 +228,8 @@ function CoverageCell({ entry }: { entry?: { test: boolean; holdout: boolean } |
   );
 }
 
-export function PageHeader({ eyebrow, title, children }: { eyebrow: string; title: string; children?: React.ReactNode }) {
-  return <header className="page-header"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1></div>{children}</header>;
+export function PageHeader({ eyebrow, title, back, children }: { eyebrow: string; title: string; back?: { to: string; label: string }; children?: React.ReactNode }) {
+  return <header className="page-header"><div>{back ? <Link className="crumb" to={back.to}>← {back.label}</Link> : null}<span className="eyebrow">{eyebrow}</span><h1>{title}</h1></div>{children}</header>;
 }
 
 export function EmptyState({ children }: { children: React.ReactNode }) {

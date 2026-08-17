@@ -710,7 +710,12 @@ working, holdout-verified software), builder-session isolation is structural
 capability-planner now carries a verification dataset (Decision 093, closing the
 Decision 091 watch-item — the last unmeasured pipeline doer), and the console UX
 masterplan closed 2026-08-12 (Decision 092) — every governed capability now has a
-legible first-class screen. Direction is being regrouped
+legible first-class screen. A console FEEL pass followed (2026-08-16): the pitch
+front door was replaced (hard cut) with a working dashboard — live stat tiles +
+recent-activity lists (evaluations, latest self-hardening cycle, foundry
+projects) — with the type scale/density calibrated toward a familiar tool and
+breadcrumbs on detail pages, so a viewer reads it as a real product rather than a
+screen-share pitch. Direction is being regrouped
 with the operator. Standing candidates (see the roadmap's north-star section
 for detail):
 

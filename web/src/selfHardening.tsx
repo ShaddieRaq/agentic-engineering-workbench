@@ -194,6 +194,7 @@ export function SelfHardeningDetailPage() {
       <PageHeader
         eyebrow={agentLabel(cycle.subjectAgentId, cycle.subjectAgentVersion)}
         title="Self-hardening cycle"
+        back={{ to: "/self-hardening", label: "Self-hardening" }}
       >
         <StatusBadge value={cycle.decision} />
       </PageHeader>
@@ -212,6 +213,13 @@ export function SelfHardeningDetailPage() {
         <Link to={`/agents/${cycle.subjectAgentId}`}>Agent contract →</Link>
         <Link to="/model-comparisons">Model comparison eval runs →</Link>
       </div>
+
+      <section className="metric-grid evidence-metrics">
+        <div><span>Decision</span><strong className="metric-word">{DECISION_VERB[cycle.decision]}</strong></div>
+        <div><span>Promotion gates</span><strong className="metric-word">{cycle.gatesPassed ? "Passed" : "Failed"}</strong></div>
+        <div><span>Outcome</span><strong className="metric-word">{cycle.released ? "Released" : "Held"}</strong></div>
+        <div><span>Decided</span><strong className="metric-word">{new Date(cycle.decidedAt).toLocaleDateString()}</strong></div>
+      </section>
 
       <Stepper steps={cycleSteps(cycle)} />
 

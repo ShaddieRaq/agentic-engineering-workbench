@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type Health, type ImprovementProposalArtifact, type ModelComparisonIndex, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type SelfHardeningIndex, type ToolDescription, type ToolSummary } from "./api.js";
+import { api, type AgentDescription, type AgentManifest, type ArtifactList, type ArtifactPresentation, type CandidateEvaluationArtifact, type EvaluationCase, type EvaluationComparison, type EvaluationList, type EvaluationView, type FoundryProjectIndex, type Health, type ImprovementProposalArtifact, type ModelComparisonIndex, type Operation, type PromotionDecisionEvidence, type PromotionDecisionKind, type SelfHardeningIndex, type ToolDescription, type ToolSummary } from "./api.js";
 import { ArtifactPresentationView } from "./artifactPresentation.js";
 import { AgentCard, EmptyState, ErrorNotice, JsonView, Loading, OperationTrace, PageHeader, RawDrawer, RunAgentPanel, SchemaView, StatusBadge } from "./components.js";
 import { FoundryArtifactPage, FoundryProjectPage, FoundryProjectsPage, OperatorSettingsPage } from "./foundry.js";
@@ -39,81 +39,101 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-// The governed chain the demo drives — the real pipeline, not the runtime
-// execution path of one agent call. Static so it paints instantly and survives
-// a failed fetch: the screen-share opener can never blank to an error card.
-const GOVERNED_CHAIN = [
-  { step: "Interview", note: "an idea interrogated into a decision-ready brief; every fact tagged with its provenance" },
-  { step: "Architecture", note: "a plan where every acceptance criterion maps to a check, or it fails loudly" },
-  { step: "Capability", note: "what to build versus reuse, coverage-validated against the plan" },
-  { step: "Independent tests", note: "acceptance tests written blind to the code, with a hidden holdout" },
-  { step: "Gated build", note: "an isolated builder; tests verified out-of-tree, holdout on first exposure" },
-];
-
-function OrientationBand() {
-  return (
-    <>
-      <section className="orientation">
-        <p className="orientation-claim">
-          Every step from an idea to shipped code is gated by evidence a form can&apos;t fake. This is the governed chain the workbench drives:
-        </p>
-        <ol className="governed-chain">
-          {GOVERNED_CHAIN.map(({ step, note }, index) => (
-            <li key={step}>
-              <span className="chain-index">{index + 1}</span>
-              <div><strong>{step}</strong><small>{note}</small></div>
-            </li>
-          ))}
-        </ol>
-      </section>
-      <section className="guarantees">
-        <Link className="guarantee-card" to="/foundry">
-          <strong>Null-implementation gate</strong>
-          <p>Every generated test is run against an empty stub. A suite that passes on nothing is rejected by name — the tests can&apos;t be tautologies.</p>
-        </Link>
-        <Link className="guarantee-card" to="/foundry">
-          <strong>Blind holdout</strong>
-          <p>A hidden subset of tests the builder never sees. It must pass on first exposure — no teaching to the test.</p>
-        </Link>
-        <Link className="guarantee-card" to="/runs">
-          <strong>Faithful evidence</strong>
-          <p>Everything rendered is byte-equal to a stored record; every line maps to a source id. Fabrication is structurally impossible.</p>
-        </Link>
-      </section>
-    </>
-  );
-}
-
 function OverviewPage() {
-  const { workspaces, selectedWorkspaceId } = useWorkspace();
   const health = useResource<Health>("/api/health");
   const agents = useResource<{ agents: AgentManifest[] }>("/api/agents");
   const artifacts = useResource<ArtifactList>("/api/artifacts?limit=5");
-  // Ungated: these enrich the pulse but must never block or blank the front
-  // door — a failure just leaves their tiles at 0.
   const modelComparisons = useResource<ModelComparisonIndex>("/api/foundry/model-comparisons");
   const selfHardening = useResource<SelfHardeningIndex>("/api/self-hardening");
-  const loading = health.loading || agents.loading || artifacts.loading;
-  const error = health.error ?? agents.error ?? artifacts.error;
+  const evaluations = useResource<EvaluationList>("/api/evaluations?limit=5");
+  const projects = useResource<FoundryProjectIndex>("/api/foundry/projects");
+
+  // Every panel is ungated: a failed fetch leaves its own tile or list empty —
+  // the working front door never blanks to an error card.
+  const experiments = [...(evaluations.data?.experiments ?? [])].sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""));
+  const latestEval = experiments[0];
+  const cycles = [...(selfHardening.data?.cycles ?? [])].sort((a, b) => (b.decidedAt ?? "").localeCompare(a.decidedAt ?? ""));
+  const latestCycle = cycles[0];
+  const recentProjects = [...(projects.data?.projects ?? [])].sort((a, b) => (b.latestActivityAt ?? "").localeCompare(a.latestActivityAt ?? "")).slice(0, 5);
+
   return (
     <>
-      <PageHeader eyebrow="Local agent engineering platform" title="Turn an idea into software you can trust">
-        <Link className="button" to="/foundry">Start a project →</Link>
+      <PageHeader eyebrow="Local control plane" title="Workbench">
+        <div className="header-actions">
+          <Link className="button" to="/foundry">Start a project →</Link>
+          <Link className="button button-secondary" to="/evaluations">New evaluation</Link>
+        </div>
       </PageHeader>
-      <OrientationBand />
-      {error ? <ErrorNotice message={error} /> : loading ? <Loading /> : (
-        <>
-          <section className="metric-grid overview-metrics">
-            <div><span>Registered agents</span><strong>{agents.data?.agents.length ?? 0}</strong></div>
-            <div><Link to="/model-comparisons"><span>Model comparison eval runs</span><strong>{modelComparisons.data?.modelComparisons.length ?? 0}</strong></Link></div>
-            <div><Link to="/self-hardening"><span>Self-hardening cycles</span><strong>{selfHardening.data?.cycles.length ?? 0}</strong></Link></div>
-            <div><span>Recent artifacts</span><strong>{artifacts.data?.artifacts.length ?? 0}</strong></div>
-            <div><span>Provider</span><strong className="metric-word">{health.data?.apiKeyConfigured ? "Ready" : "Not configured"}</strong></div>
-            <div><span>Workspace</span><strong className="metric-path">{workspaces.find(({ id }) => id === selectedWorkspaceId)?.name ?? "Loading"}</strong></div>
-          </section>
-          <section><div className="section-heading"><div><span className="eyebrow">Products</span><h2>Registered agents</h2></div><Link to="/agents">View catalog →</Link></div><div className="card-grid">{agents.data?.agents.map((agent) => <AgentCard agent={agent} key={agent.id} />)}</div></section>
-        </>
-      )}
+
+      <section className="metric-grid overview-metrics">
+        <div><Link to="/agents"><span>Registered agents</span><strong>{agents.data?.agents.length ?? 0}</strong></Link></div>
+        <div><Link to="/evaluations"><span>Latest eval pass-rate</span><strong>{latestEval ? passRate(latestEval.summary.passRate) : "—"}</strong></Link></div>
+        <div><Link to="/model-comparisons"><span>Model comparison runs</span><strong>{modelComparisons.data?.modelComparisons.length ?? 0}</strong></Link></div>
+        <div><Link to="/self-hardening"><span>Self-hardening cycles</span><strong>{selfHardening.data?.cycles.length ?? 0}</strong></Link></div>
+        <div><Link to="/runs"><span>Recent evidence</span><strong>{artifacts.data?.artifacts.length ?? 0}</strong></Link></div>
+        <div><span>Provider</span><strong className="metric-word">{health.data?.apiKeyConfigured ? "Ready" : "Not configured"}</strong></div>
+      </section>
+
+      <section className="dashboard-split">
+        <div className="dashboard-col">
+          <div className="section-heading"><div><span className="eyebrow">Reliability</span><h2>Recent evaluations</h2></div><Link to="/evaluations">Evaluation Studio →</Link></div>
+          {experiments.length === 0 ? (
+            <EmptyState>No experiments recorded yet. <Link to="/evaluations">Run one →</Link></EmptyState>
+          ) : (
+            <div className="table-wrap"><table><thead><tr><th>Experiment</th><th>Agent</th><th>Pass rate</th><th>Gate</th></tr></thead><tbody>
+              {experiments.slice(0, 5).map((experiment) => (
+                <tr key={experiment.experimentId}>
+                  <td><Link to={`/evaluations/${experiment.experimentId}`}>{experiment.experimentId.slice(0, 8)}</Link></td>
+                  <td>{experiment.agentId}@{experiment.agentVersion}</td>
+                  <td>{passRate(experiment.summary.passRate)}</td>
+                  <td><StatusBadge value={experiment.passed ? "completed" : "failed"} /></td>
+                </tr>
+              ))}
+            </tbody></table></div>
+          )}
+        </div>
+        <div className="dashboard-col">
+          <div className="section-heading"><div><span className="eyebrow">The platform improving itself</span><h2>Latest self-hardening</h2></div><Link to="/self-hardening">All cycles →</Link></div>
+          {latestCycle ? (
+            <Link className="dashboard-cycle" to={`/self-hardening/${latestCycle.decisionId}`}>
+              <div className="dashboard-cycle-head">
+                <strong>{latestCycle.subjectAgentId}@{latestCycle.subjectAgentVersion}</strong>
+                <StatusBadge value={latestCycle.decision} />
+              </div>
+              <dl className="dashboard-cycle-facts">
+                <div><dt>Gates</dt><dd>{latestCycle.gatesPassed ? "passed" : "failed"}</dd></div>
+                <div><dt>Outcome</dt><dd>{latestCycle.released ? "released" : "held"}</dd></div>
+                <div><dt>Decided</dt><dd>{new Date(latestCycle.decidedAt).toLocaleDateString()}</dd></div>
+              </dl>
+            </Link>
+          ) : (
+            <EmptyState>No self-hardening cycles yet. Run <code>npm run auto-improve &lt;agent&gt;</code>.</EmptyState>
+          )}
+        </div>
+      </section>
+
+      <section>
+        <div className="section-heading"><div><span className="eyebrow">Build</span><h2>Recent projects</h2></div><Link to="/foundry">Foundry →</Link></div>
+        {recentProjects.length === 0 ? (
+          <EmptyState>No foundry projects yet. <Link to="/foundry">Start one →</Link></EmptyState>
+        ) : (
+          <div className="table-wrap"><table><thead><tr><th>Project</th><th>Version</th><th>Status</th><th>Last activity</th></tr></thead><tbody>
+            {recentProjects.map((project) => (
+              <tr key={project.briefId}>
+                <td><Link to={`/foundry/${project.briefId}`}>{project.title}</Link></td>
+                <td>v{project.latestVersion}</td>
+                <td><StatusBadge value={project.status} /></td>
+                <td>{new Date(project.latestActivityAt).toLocaleDateString()}</td>
+              </tr>
+            ))}
+          </tbody></table></div>
+        )}
+      </section>
+
+      <section>
+        <div className="section-heading"><div><span className="eyebrow">Catalog</span><h2>Registered agents</h2></div><Link to="/agents">View all →</Link></div>
+        <div className="card-grid">{(agents.data?.agents ?? []).map((agent) => <AgentCard agent={agent} key={agent.id} />)}</div>
+      </section>
     </>
   );
 }
@@ -138,7 +158,7 @@ function ToolDetailPage() {
   if (resource.loading) return <Loading />;
   if (resource.error || !resource.data) return <ErrorNotice message={resource.error ?? "Tool not found"} />;
   const tool = resource.data;
-  return <><PageHeader eyebrow="Controlled TypeScript capability" title={tool.id}><StatusBadge value="active" /></PageHeader><p className="lede">{tool.description}</p><section className="detail-grid"><ListBlock title="Permitted agent consumers" values={tool.consumerAgentIds} /><div className="detail-block"><h3>Registration boundary</h3><p>This tool is explicitly imported into the platform registry and rebuilt for the selected workspace root.</p></div></section><section className="contract-grid"><div className="panel"><span className="eyebrow">Validated input</span><SchemaView schema={tool.inputSchema} /><RawDrawer label="Raw input schema" value={tool.inputSchema} /></div><div className="panel"><span className="eyebrow">Validated output</span><SchemaView schema={tool.outputSchema} /><RawDrawer label="Raw output schema" value={tool.outputSchema} /></div></section></>;
+  return <><PageHeader eyebrow="Controlled TypeScript capability" title={tool.id} back={{ to: "/tools", label: "Tools" }}><StatusBadge value="active" /></PageHeader><p className="lede">{tool.description}</p><section className="detail-grid"><ListBlock title="Permitted agent consumers" values={tool.consumerAgentIds} /><div className="detail-block"><h3>Registration boundary</h3><p>This tool is explicitly imported into the platform registry and rebuilt for the selected workspace root.</p></div></section><section className="contract-grid"><div className="panel"><span className="eyebrow">Validated input</span><SchemaView schema={tool.inputSchema} /><RawDrawer label="Raw input schema" value={tool.inputSchema} /></div><div className="panel"><span className="eyebrow">Validated output</span><SchemaView schema={tool.outputSchema} /><RawDrawer label="Raw output schema" value={tool.outputSchema} /></div></section></>;
 }
 
 function ListBlock({ title, values }: { title: string; values: string[] }) {
@@ -153,7 +173,7 @@ function AgentDetailPage() {
   const { manifest, inputSchema, outputSchema } = resource.data;
   return (
     <>
-      <PageHeader eyebrow={`${manifest.id} · v${manifest.version}`} title={manifest.name}><StatusBadge value={manifest.status} /></PageHeader>
+      <PageHeader eyebrow={`${manifest.id} · v${manifest.version}`} title={manifest.name} back={{ to: "/agents", label: "Agents" }}><StatusBadge value={manifest.status} /></PageHeader>
       <p className="lede">{manifest.description}</p>
       <section className="detail-grid">
         <div className="panel span-two"><span className="eyebrow">Product identity</span><dl className="definition-list"><div><dt>Owner</dt><dd>{manifest.owner}</dd></div><div><dt>Default model</dt><dd>{manifest.defaultModel}</dd></div><div><dt>Verification threshold</dt><dd>{manifest.verification.minimumPassRate === null ? "Not gated" : `${manifest.verification.minimumPassRate * 100}% per case`}</dd></div></dl><div className="tag-row">{manifest.tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}</div></div>
@@ -689,7 +709,7 @@ function EvaluationDetailPage() {
       setImprovementError(cause instanceof Error ? cause.message : String(cause));
     }
   }
-  return <><PageHeader eyebrow={`${experiment.agentId}@${experiment.agentVersion}`} title={`Evaluation ${experiment.experimentId.slice(0, 8)}`}><StatusBadge value={experiment.passed ? "completed" : "failed"} /></PageHeader><p className="lede">An immutable experiment over {experiment.summary.totalCases} cases and {experiment.summary.totalRuns} trials.</p><section className="metric-grid evidence-metrics"><div><span>Pass rate</span><strong>{passRate(experiment.summary.passRate)}</strong></div><div><span>Cases meeting gate</span><strong>{experiment.summary.passedCases}/{experiment.summary.totalCases}</strong></div><div><span>Trials passed</span><strong>{experiment.summary.passedRuns}/{experiment.summary.totalRuns}</strong></div><div><span>Execution</span><strong className="metric-word">{experiment.execution.repetitions}× · concurrency {experiment.execution.concurrency}</strong></div></section>{!experiment.passed && <section className="panel"><div className="section-heading"><div><span className="eyebrow">Read-only diagnosis</span><h2>Analyze failed cases</h2></div><button className="button" type="button" onClick={() => void analyzeFailures()} disabled={improvementOperation.data?.status === "running"}>Analyze failures</button></div><p>Build a bounded packet from saved failure evidence, withhold the held-out expected outputs, and ask the Agent Improvement Analyst for a cited proposal. No source or agent configuration will be changed.</p><label>Operator guidance (optional — steer the analyst; e.g. name the revision surface so instructions fixes are routed candidate-ready)<textarea rows={3} value={improvementGuidance} onChange={(event) => setImprovementGuidance(event.target.value)} placeholder="The agent's only revision surface is its instructions. If your fix is an instructions change, mark the proposal candidate-ready." /></label>{improvementError && <ErrorNotice message={improvementError} />}{improvementOperation.data && <OperationTrace operation={improvementOperation.data} />}</section>}<section className="panel comparison-panel"><div className="section-heading"><div><span className="eyebrow">Version comparison</span><h2>Compare with a baseline</h2></div></div><label>Baseline experiment<select value={baselineId} onChange={(event) => setBaselineId(event.target.value)}><option value="">Choose an earlier experiment</option>{alternatives.map((item) => <option key={item.experimentId} value={item.experimentId}>{item.experimentId.slice(0, 8)} · v{item.agentVersion} · {item.model} · {passRate(item.summary.passRate)}</option>)}</select></label>{comparison.loading && <Loading />}{comparison.error && <ErrorNotice message={comparison.error} />}{comparison.data && <><div className="metric-grid comparison-metrics"><div><span>Improved</span><strong>{comparison.data.summary.improvedCases}</strong></div><div><span>Regressed</span><strong>{comparison.data.summary.regressedCases}</strong></div><div><span>Unchanged</span><strong>{comparison.data.summary.unchangedCases}</strong></div><div><span>Insufficient evidence</span><strong>{comparison.data.summary.insufficientEvidenceCases}</strong></div></div><div className="table-wrap"><table><thead><tr><th>Case</th><th>Baseline</th><th>Candidate</th><th>Delta</th><th>Classification</th></tr></thead><tbody>{comparison.data.cases.map((item) => <tr key={`${item.datasetId}/${item.datasetCaseId}`}><td>{item.datasetId} / {item.datasetCaseId}</td><td>{passRate(item.baselinePassRate)}</td><td>{passRate(item.candidatePassRate)}</td><td>{item.passRateDelta === null ? "—" : `${item.passRateDelta >= 0 ? "+" : ""}${Math.round(item.passRateDelta * 100)} points`}</td><td><StatusBadge value={item.classification} /></td></tr>)}</tbody></table></div></>}</section>{datasets.map((dataset) => <section key={dataset.datasetId}><div className="section-heading"><div><span className="eyebrow">Dataset · threshold {dataset.minimumPassRate === null ? "not gated" : passRate(dataset.minimumPassRate)}</span><h2>{dataset.datasetId}</h2></div><StatusBadge value={dataset.passed ? "completed" : "failed"} /></div><div className="table-wrap"><table><thead><tr><th>Case</th><th>Trials</th><th>Passed</th><th>Pass rate</th><th>Gate</th></tr></thead><tbody>{dataset.cases.map((datasetCase) => <tr key={datasetCase.datasetCaseId}><td><Link to={`/evaluations/${experiment.experimentId}/cases/${encodeURIComponent(dataset.datasetId)}/${encodeURIComponent(datasetCase.datasetCaseId)}`}>{datasetCase.datasetCaseId}</Link></td><td>{datasetCase.totalRuns}</td><td>{datasetCase.passedRuns}</td><td>{passRate(datasetCase.passRate)}</td><td><StatusBadge value={datasetCase.passed ? "completed" : "failed"} /></td></tr>)}</tbody></table></div></section>)}</>;
+  return <><PageHeader eyebrow={`${experiment.agentId}@${experiment.agentVersion}`} title={`Evaluation ${experiment.experimentId.slice(0, 8)}`} back={{ to: "/evaluations", label: "Evaluation Studio" }}><StatusBadge value={experiment.passed ? "completed" : "failed"} /></PageHeader><p className="lede">An immutable experiment over {experiment.summary.totalCases} cases and {experiment.summary.totalRuns} trials.</p><section className="metric-grid evidence-metrics"><div><span>Pass rate</span><strong>{passRate(experiment.summary.passRate)}</strong></div><div><span>Cases meeting gate</span><strong>{experiment.summary.passedCases}/{experiment.summary.totalCases}</strong></div><div><span>Trials passed</span><strong>{experiment.summary.passedRuns}/{experiment.summary.totalRuns}</strong></div><div><span>Execution</span><strong className="metric-word">{experiment.execution.repetitions}× · concurrency {experiment.execution.concurrency}</strong></div></section>{!experiment.passed && <section className="panel"><div className="section-heading"><div><span className="eyebrow">Read-only diagnosis</span><h2>Analyze failed cases</h2></div><button className="button" type="button" onClick={() => void analyzeFailures()} disabled={improvementOperation.data?.status === "running"}>Analyze failures</button></div><p>Build a bounded packet from saved failure evidence, withhold the held-out expected outputs, and ask the Agent Improvement Analyst for a cited proposal. No source or agent configuration will be changed.</p><label>Operator guidance (optional — steer the analyst; e.g. name the revision surface so instructions fixes are routed candidate-ready)<textarea rows={3} value={improvementGuidance} onChange={(event) => setImprovementGuidance(event.target.value)} placeholder="The agent's only revision surface is its instructions. If your fix is an instructions change, mark the proposal candidate-ready." /></label>{improvementError && <ErrorNotice message={improvementError} />}{improvementOperation.data && <OperationTrace operation={improvementOperation.data} />}</section>}<section className="panel comparison-panel"><div className="section-heading"><div><span className="eyebrow">Version comparison</span><h2>Compare with a baseline</h2></div></div><label>Baseline experiment<select value={baselineId} onChange={(event) => setBaselineId(event.target.value)}><option value="">Choose an earlier experiment</option>{alternatives.map((item) => <option key={item.experimentId} value={item.experimentId}>{item.experimentId.slice(0, 8)} · v{item.agentVersion} · {item.model} · {passRate(item.summary.passRate)}</option>)}</select></label>{comparison.loading && <Loading />}{comparison.error && <ErrorNotice message={comparison.error} />}{comparison.data && <><div className="metric-grid comparison-metrics"><div><span>Improved</span><strong>{comparison.data.summary.improvedCases}</strong></div><div><span>Regressed</span><strong>{comparison.data.summary.regressedCases}</strong></div><div><span>Unchanged</span><strong>{comparison.data.summary.unchangedCases}</strong></div><div><span>Insufficient evidence</span><strong>{comparison.data.summary.insufficientEvidenceCases}</strong></div></div><div className="table-wrap"><table><thead><tr><th>Case</th><th>Baseline</th><th>Candidate</th><th>Delta</th><th>Classification</th></tr></thead><tbody>{comparison.data.cases.map((item) => <tr key={`${item.datasetId}/${item.datasetCaseId}`}><td>{item.datasetId} / {item.datasetCaseId}</td><td>{passRate(item.baselinePassRate)}</td><td>{passRate(item.candidatePassRate)}</td><td>{item.passRateDelta === null ? "—" : `${item.passRateDelta >= 0 ? "+" : ""}${Math.round(item.passRateDelta * 100)} points`}</td><td><StatusBadge value={item.classification} /></td></tr>)}</tbody></table></div></>}</section>{datasets.map((dataset) => <section key={dataset.datasetId}><div className="section-heading"><div><span className="eyebrow">Dataset · threshold {dataset.minimumPassRate === null ? "not gated" : passRate(dataset.minimumPassRate)}</span><h2>{dataset.datasetId}</h2></div><StatusBadge value={dataset.passed ? "completed" : "failed"} /></div><div className="table-wrap"><table><thead><tr><th>Case</th><th>Trials</th><th>Passed</th><th>Pass rate</th><th>Gate</th></tr></thead><tbody>{dataset.cases.map((datasetCase) => <tr key={datasetCase.datasetCaseId}><td><Link to={`/evaluations/${experiment.experimentId}/cases/${encodeURIComponent(dataset.datasetId)}/${encodeURIComponent(datasetCase.datasetCaseId)}`}>{datasetCase.datasetCaseId}</Link></td><td>{datasetCase.totalRuns}</td><td>{datasetCase.passedRuns}</td><td>{passRate(datasetCase.passRate)}</td><td><StatusBadge value={datasetCase.passed ? "completed" : "failed"} /></td></tr>)}</tbody></table></div></section>)}</>;
 }
 
 function EvaluationCasePage() {

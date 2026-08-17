@@ -177,7 +177,7 @@ export function ModelComparisonDetailPage() {
 
   return (
     <>
-      <PageHeader eyebrow={agentLabel(view.agentId, view.agentVersion)} title="Model comparison eval">
+      <PageHeader eyebrow={agentLabel(view.agentId, view.agentVersion)} title="Model comparison eval" back={{ to: "/model-comparisons", label: "Model Comparison Eval" }}>
         <span className={`status status-${allPass ? "pass" : "fail"}`}>
           {summary.modelsPassing}/{summary.modelCount} models pass
         </span>

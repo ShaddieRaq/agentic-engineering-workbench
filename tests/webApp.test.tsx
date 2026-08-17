@@ -713,25 +713,24 @@ describe("agent workbench web interface", () => {
     expect(screen.getByText("Streak resets after a missed day")).toBeInTheDocument();
   });
 
-  it("front door leads with the governed chain and guarantees even when data fails to load", async () => {
+  it("front door renders the working dashboard even when data fails to load", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);
       if (path.endsWith("/api/workspaces")) {
         return new Response(JSON.stringify({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] }), { status: 200, headers: { "content-type": "application/json" } });
       }
-      // Health/agents/artifacts all fail — the static orientation must survive.
+      // Every data endpoint fails — the working dashboard must still render, with
+      // each tile/list falling back to its empty state rather than blanking.
       return new Response("boom", { status: 500 });
     }));
 
     window.history.replaceState(null, "", "/");
     render(<AppRoutes />);
 
-    expect(await screen.findByRole("heading", { name: "Turn an idea into software you can trust" })).toBeInTheDocument();
-    expect(screen.getByText(/governed chain the workbench drives/)).toBeInTheDocument();
-    expect(screen.getByText("Independent tests")).toBeInTheDocument();
-    expect(screen.getByText("Null-implementation gate")).toBeInTheDocument();
-    expect(screen.getByText("Blind holdout")).toBeInTheDocument();
-    expect(screen.getByText("Faithful evidence")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Workbench" })).toBeInTheDocument();
+    expect(screen.getByText("Latest eval pass-rate")).toBeInTheDocument();
+    expect(screen.getByText("Recent evaluations")).toBeInTheDocument();
+    expect(screen.getByText("Latest self-hardening")).toBeInTheDocument();
   });
 
   it("groups the nav and shows live modelComparison/self-hardening counts on the front door", async () => {
@@ -742,7 +741,12 @@ describe("agent workbench web interface", () => {
       if (path.endsWith("/api/workspaces")) return json({ workspaces: [{ id: "workbench", name: "Workbench", rootPath: "/repo", addedAt: "2026-08-02T12:00:00.000Z", builtIn: true }] });
       if (path.endsWith("/api/health")) return json({ apiKeyConfigured: true });
       if (path.includes("/api/foundry/model-comparisons")) return json({ modelComparisons: [{ modelComparisonId: "m1" }] });
-      if (path.includes("/api/self-hardening")) return json({ cycles: [{ decisionId: "d1" }, { decisionId: "d2" }] });
+      if (path.includes("/api/foundry/projects")) return json({ projects: [], rejected: [] });
+      if (path.includes("/api/self-hardening")) return json({ cycles: [
+        { decisionId: "d1", subjectAgentId: "capability-planner", subjectAgentVersion: "0.2.0", decision: "approve", gatesPassed: true, released: true, decidedAt: "2026-08-12T10:00:00.000Z" },
+        { decisionId: "d2", subjectAgentId: "project-intake", subjectAgentVersion: "0.7.0", decision: "reject", gatesPassed: false, released: false, decidedAt: "2026-08-10T10:00:00.000Z" },
+      ] });
+      if (path.includes("/api/evaluations")) return json({ experiments: [], rejected: [] });
       if (path.includes("/api/agents")) return json({ agents: [] });
       if (path.includes("/api/artifacts")) return json({ artifacts: [] });
       return json({});
@@ -751,12 +755,13 @@ describe("agent workbench web interface", () => {
     window.history.replaceState(null, "", "/");
     render(<AppRoutes />);
 
-    // The grouped nav teaches the mental model instead of a flat list.
-    expect(await screen.findByText("Reliability")).toBeInTheDocument();
-    expect(screen.getByText("Catalog")).toBeInTheDocument();
-    // The two new capabilities have a live pulse on the front door.
-    expect(await screen.findByText("Model comparison eval runs")).toBeInTheDocument();
+    // The two capabilities have a live count on the working dashboard.
+    expect(await screen.findByText("Model comparison runs")).toBeInTheDocument();
     expect(screen.getByText("Self-hardening cycles")).toBeInTheDocument();
+    // The grouped nav teaches the mental model instead of a flat list (the
+    // section eyebrows reuse these words, so target the nav group specifically).
+    expect(screen.getByText("Reliability", { selector: ".nav-group" })).toBeInTheDocument();
+    expect(screen.getByText("Catalog", { selector: ".nav-group" })).toBeInTheDocument();
   });
 
   it("submission leads with the verdict, named scope sub-checks, and a holdout first-exposure banner", () => {
