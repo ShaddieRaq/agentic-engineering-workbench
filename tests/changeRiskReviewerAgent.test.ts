@@ -29,6 +29,8 @@ describe("changeRiskReviewerAgent", () => {
       "agent-improvement-analyst",
       "capability-planner",
       "change-risk-reviewer",
+      "council-advocate",
+      "council-judge",
       "deployer-forensics",
       "documentation-auditor",
       "impersonation-analyst",

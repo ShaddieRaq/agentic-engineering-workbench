@@ -1,6 +1,8 @@
 import { AgentRegistry } from "./agentRegistry.js";
 import { repositoryAssistantAgent } from "./repositoryAssistant/repositoryAssistantAgent.js";
 import { changeRiskReviewerAgent } from "./changeRiskReviewer/changeRiskReviewerAgent.js";
+import { councilAdvocateAgent } from "./councilAdvocate/councilAdvocateAgent.js";
+import { councilJudgeAgent } from "./councilJudge/councilJudgeAgent.js";
 import { deployerForensicsAgent } from "./deployerForensics/deployerForensicsAgent.js";
 import { documentationAuditorAgent } from "./documentationAuditor/documentationAuditorAgent.js";
 import { impersonationAnalystAgent } from "./impersonationAnalyst/impersonationAnalystAgent.js";
@@ -16,6 +18,8 @@ export const platformAgentRegistry = new AgentRegistry([
   agentImprovementAnalystAgent,
   capabilityPlannerAgent,
   changeRiskReviewerAgent,
+  councilAdvocateAgent,
+  councilJudgeAgent,
   deployerForensicsAgent,
   documentationAuditorAgent,
   impersonationAnalystAgent,

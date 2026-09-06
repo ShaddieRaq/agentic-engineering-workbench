@@ -1,6 +1,10 @@
 import type { AgentDatasetDefinition } from "./agentDatasetDefinition.js";
 import { repositoryAssistantDataset } from "./repositoryAssistantDataset.js";
 import { changeRiskReviewerDataset } from "./changeRiskReviewerDataset.js";
+import { councilAdvocateDataset } from "./councilAdvocateDataset.js";
+import { councilAdvocateProtectedDataset } from "./councilAdvocateProtectedDataset.js";
+import { councilJudgeDataset } from "./councilJudgeDataset.js";
+import { councilJudgeProtectedDataset } from "./councilJudgeProtectedDataset.js";
 import { deployerForensicsDataset } from "./deployerForensicsDataset.js";
 import { deployerForensicsProtectedDataset } from "./deployerForensicsProtectedDataset.js";
 import { documentationAuditorDataset } from "./documentationAuditorDataset.js";
@@ -24,6 +28,10 @@ const datasets: Record<string, AgentDatasetDefinition> = {
   [projectIntakeDataset.id]: projectIntakeDataset,
   [testDesignerDataset.id]: testDesignerDataset,
   [changeRiskReviewerDataset.id]: changeRiskReviewerDataset,
+  [councilAdvocateDataset.id]: councilAdvocateDataset,
+  [councilAdvocateProtectedDataset.id]: councilAdvocateProtectedDataset,
+  [councilJudgeDataset.id]: councilJudgeDataset,
+  [councilJudgeProtectedDataset.id]: councilJudgeProtectedDataset,
   [deployerForensicsDataset.id]: deployerForensicsDataset,
   [deployerForensicsProtectedDataset.id]: deployerForensicsProtectedDataset,
   [documentationAuditorDataset.id]: documentationAuditorDataset,
