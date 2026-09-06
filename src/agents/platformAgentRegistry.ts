@@ -1,6 +1,7 @@
 import { AgentRegistry } from "./agentRegistry.js";
 import { repositoryAssistantAgent } from "./repositoryAssistant/repositoryAssistantAgent.js";
 import { changeRiskReviewerAgent } from "./changeRiskReviewer/changeRiskReviewerAgent.js";
+import { deployerForensicsAgent } from "./deployerForensics/deployerForensicsAgent.js";
 import { documentationAuditorAgent } from "./documentationAuditor/documentationAuditorAgent.js";
 import { toolBuilderAgent } from "./toolBuilder/toolBuilderAgent.js";
 import { playwrightFailureTriageAgent } from "./playwrightFailureTriage/playwrightFailureTriageAgent.js";
@@ -14,6 +15,7 @@ export const platformAgentRegistry = new AgentRegistry([
   agentImprovementAnalystAgent,
   capabilityPlannerAgent,
   changeRiskReviewerAgent,
+  deployerForensicsAgent,
   documentationAuditorAgent,
   playwrightFailureTriageAgent,
   projectArchitectAgent,

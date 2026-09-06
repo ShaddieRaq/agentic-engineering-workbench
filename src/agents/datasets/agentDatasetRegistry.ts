@@ -1,6 +1,8 @@
 import type { AgentDatasetDefinition } from "./agentDatasetDefinition.js";
 import { repositoryAssistantDataset } from "./repositoryAssistantDataset.js";
 import { changeRiskReviewerDataset } from "./changeRiskReviewerDataset.js";
+import { deployerForensicsDataset } from "./deployerForensicsDataset.js";
+import { deployerForensicsProtectedDataset } from "./deployerForensicsProtectedDataset.js";
 import { documentationAuditorDataset } from "./documentationAuditorDataset.js";
 import {
   documentationAuditorProtectedDataset,
@@ -20,6 +22,8 @@ const datasets: Record<string, AgentDatasetDefinition> = {
   [projectIntakeDataset.id]: projectIntakeDataset,
   [testDesignerDataset.id]: testDesignerDataset,
   [changeRiskReviewerDataset.id]: changeRiskReviewerDataset,
+  [deployerForensicsDataset.id]: deployerForensicsDataset,
+  [deployerForensicsProtectedDataset.id]: deployerForensicsProtectedDataset,
   [documentationAuditorDataset.id]: documentationAuditorDataset,
   [documentationAuditorProtectedDataset.id]:
     documentationAuditorProtectedDataset,

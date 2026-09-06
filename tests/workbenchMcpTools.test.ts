@@ -228,9 +228,12 @@ describe("workbench MCP tools", () => {
     const { tools } = await createTools();
     const agents = await tools.listAgents();
 
-    expect(agents).toHaveLength(10);
+    expect(agents).toHaveLength(11);
     expect(agents).toContainEqual(
       expect.objectContaining({ id: "project-intake", version: "0.7.0" }),
+    );
+    expect(agents).toContainEqual(
+      expect.objectContaining({ id: "deployer-forensics", version: "0.1.0" }),
     );
 
     const manifest = await tools.describeAgent({ agentId: "project-intake" });
