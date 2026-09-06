@@ -114,11 +114,12 @@ export async function runDeployerForensics(
   const startedAt = performance.now();
   const validatedPolicy = deployerForensicsPolicySchema.parse(policy);
 
-  const dossier = await executeTool(tool, {
-    deployer: input.deployer,
-    chain: input.chain,
-    excludeToken: input.token,
-  });
+  // Build without undefined keys: the run result is serialized through z.json(),
+  // which rejects explicit `undefined` (e.g. an absent excludeToken).
+  const dossierInput: DeployerHistoryInput = { deployer: input.deployer };
+  if (input.chain !== undefined) dossierInput.chain = input.chain;
+  if (input.token !== undefined) dossierInput.excludeToken = input.token;
+  const dossier = await executeTool(tool, dossierInput);
 
   if (!dossier.succeeded || !dossier.output) {
     return {
