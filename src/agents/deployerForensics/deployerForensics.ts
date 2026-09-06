@@ -13,12 +13,28 @@ import type {
 import type { ToolDefinition } from "../../tools/toolDefinition.js";
 import { executeTool, type ToolCallEvidence } from "../../tools/toolExecutor.js";
 import {
+  evaluateCitationGrounding,
+  resolveCitationRefs,
+  type CitationGrounding,
+} from "../shared/evidenceCitation.js";
+import {
   deployerForensicsBaselinePolicy,
   deployerForensicsPolicySchema,
   type DeployerForensicsPolicy,
 } from "./deployerForensicsPolicy.js";
 
+// What the model returns: risk flags cite prior tokens by item number.
 export const deployerRiskFlagSchema = z
+  .object({
+    flag: z.string().min(1),
+    severity: z.enum(["low", "medium", "high"]),
+    evidenceItems: z.array(z.number().int().positive()),
+    explanation: z.string().min(1),
+  })
+  .strict();
+
+// What we expose downstream: item numbers resolved back to real addresses.
+export const resolvedDeployerRiskFlagSchema = z
   .object({
     flag: z.string().min(1),
     severity: z.enum(["low", "medium", "high"]),
@@ -26,6 +42,10 @@ export const deployerRiskFlagSchema = z
     explanation: z.string().min(1),
   })
   .strict();
+
+export type ResolvedDeployerRiskFlag = z.infer<
+  typeof resolvedDeployerRiskFlagSchema
+>;
 
 export const deployerForensicsJudgmentSchema = z
   .object({
@@ -59,31 +79,20 @@ export interface DeployerForensicsResult {
   prompt: string;
   rawOutput: string;
   parsedOutput: DeployerForensicsJudgment | null;
+  resolvedRiskFlags: ResolvedDeployerRiskFlag[];
   refusal: string | null;
   provider: AIProviderEvidence | null;
   executionFailure: {
     category: "transport" | "parsing" | "unknown";
     message: string;
   } | null;
-  groundingEvaluation: {
-    passed: boolean;
-    availableTokens: string[];
-    citedTokens: string[];
-    invalidTokens: string[];
-    message: string;
-  } | null;
+  groundingEvaluation: CitationGrounding | null;
   succeeded: boolean;
   durationMs: number;
   completedAt: string;
 }
 
-function uniqueSortedLower(values: string[]): string[] {
-  return [...new Set(values.map((value) => value.toLowerCase()))].sort(
-    (left, right) => left.localeCompare(right),
-  );
-}
-
-function formatPriorToken(
+function priorTokenBody(
   token: DeployerHistoryOutput["prior_tokens"][number],
 ): string {
   const parts = [
@@ -102,7 +111,7 @@ function formatPriorToken(
       : null,
     token.date ? `firstSeen=${token.date}` : null,
   ].filter((part): part is string => part !== null);
-  return `- ${parts.join(" ")}`;
+  return parts.join(" ");
 }
 
 export async function runDeployerForensics(
@@ -128,6 +137,7 @@ export async function runDeployerForensics(
       prompt: "",
       rawOutput: "",
       parsedOutput: null,
+      resolvedRiskFlags: [],
       refusal: null,
       provider: null,
       executionFailure: {
@@ -144,10 +154,13 @@ export async function runDeployerForensics(
   }
 
   const output = dossier.output;
+  const orderedTokens = output.prior_tokens.map((token) => token.token);
   const priorLines =
     output.prior_tokens.length > 0
-      ? output.prior_tokens.map(formatPriorToken)
-      : ["- (no prior tokens observed for this deployer)"];
+      ? output.prior_tokens.map(
+          (token, index) => `[${index + 1}] ${priorTokenBody(token)}`,
+        )
+      : ["(no prior tokens observed for this deployer)"];
 
   const prompt = [
     "ROLE:",
@@ -162,7 +175,7 @@ export async function runDeployerForensics(
     `address=${output.deployer}`,
     `priorCount=${output.summary.prior_count} blockedByUs=${output.summary.blocked_count} resolvedUnsellable=${output.summary.resolved_unsellable_count} chains=${output.summary.chains.join(",") || "none"}`,
     "",
-    "PRIOR TOKENS:",
+    "PRIOR TOKENS (cite these by their [number] in evidenceItems):",
     ...priorLines,
     "",
     "TASK:",
@@ -192,30 +205,22 @@ export async function runDeployerForensics(
   const groundingEvaluation =
     providerResult.parsedOutput === null
       ? null
-      : (() => {
-          const availableTokens = uniqueSortedLower(
-            output.prior_tokens.map((token) => token.token),
-          );
-          const citedTokens = uniqueSortedLower(
-            providerResult.parsedOutput!.riskFlags.flatMap(
-              ({ evidenceTokens }) => evidenceTokens,
-            ),
-          );
-          const available = new Set(availableTokens);
-          const invalidTokens = citedTokens.filter(
-            (token) => !available.has(token),
-          );
-          return {
-            passed: invalidTokens.length === 0,
-            availableTokens,
-            citedTokens,
-            invalidTokens,
-            message:
-              invalidTokens.length === 0
-                ? "Every risk flag cites a prior token from the dossier."
-                : `Deployer forensics cites tokens absent from the dossier: ${invalidTokens.join(", ")}.`,
-          };
-        })();
+      : evaluateCitationGrounding(
+          providerResult.parsedOutput.riskFlags.flatMap(
+            ({ evidenceItems }) => evidenceItems,
+          ),
+          orderedTokens.length,
+        );
+
+  const resolvedRiskFlags: ResolvedDeployerRiskFlag[] =
+    providerResult.parsedOutput === null || groundingEvaluation?.passed !== true
+      ? []
+      : providerResult.parsedOutput.riskFlags.map((flag) => ({
+          flag: flag.flag,
+          severity: flag.severity,
+          explanation: flag.explanation,
+          evidenceTokens: resolveCitationRefs(flag.evidenceItems, orderedTokens),
+        }));
 
   return {
     forensicsRunId: randomUUID(),
@@ -223,6 +228,7 @@ export async function runDeployerForensics(
     prompt,
     rawOutput: providerResult.rawOutput,
     parsedOutput: providerResult.parsedOutput,
+    resolvedRiskFlags,
     refusal: providerResult.refusal,
     provider: executionFailure === null ? providerResult.provider : null,
     executionFailure,

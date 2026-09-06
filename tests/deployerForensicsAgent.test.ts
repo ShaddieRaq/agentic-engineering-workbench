@@ -82,15 +82,14 @@ const oneTokenDossier: DeployerHistoryOutput = {
 };
 
 describe("deployer forensics", () => {
-  it("accepts a judgment whose risk flags cite a prior token from the dossier", async () => {
+  it("accepts a judgment whose risk flags cite a prior token by item number", async () => {
     const provider = judgeReturning({
       actorReputation: "mixed",
       riskFlags: [
         {
           flag: "prior-token-turned-unsellable",
           severity: "medium",
-          // cite in a different case to prove case-insensitive grounding
-          evidenceTokens: [PRIOR_TOKEN.toUpperCase()],
+          evidenceItems: [1],
           explanation: "A prior launch resolved unsellable.",
         },
       ],
@@ -107,18 +106,20 @@ describe("deployer forensics", () => {
     expect(result.succeeded).toBe(true);
     expect(result.groundingEvaluation?.passed).toBe(true);
     expect(result.parsedOutput?.actorReputation).toBe("mixed");
+    // item number resolved back to the real address for downstream
+    expect(result.resolvedRiskFlags[0]?.evidenceTokens).toContain(PRIOR_TOKEN);
     expect(result.executionFailure).toBeNull();
   });
 
-  it("rejects a judgment that cites a token absent from the dossier (cannot guess history)", async () => {
+  it("rejects a judgment that cites an item number outside the dossier (cannot guess history)", async () => {
     const provider = judgeReturning({
       actorReputation: "repeat-rugger",
       riskFlags: [
         {
           flag: "invented-rug",
           severity: "high",
-          evidenceTokens: ["0x9999999999999999999999999999999999999999"],
-          explanation: "Cites a token that is not in the dossier.",
+          evidenceItems: [99],
+          explanation: "Cites an item that is not in the dossier.",
         },
       ],
       confidence: "high",
@@ -133,9 +134,8 @@ describe("deployer forensics", () => {
 
     expect(result.succeeded).toBe(false);
     expect(result.groundingEvaluation?.passed).toBe(false);
-    expect(result.groundingEvaluation?.invalidTokens).toContain(
-      "0x9999999999999999999999999999999999999999",
-    );
+    expect(result.groundingEvaluation?.invalidRefs).toContain(99);
+    expect(result.resolvedRiskFlags).toHaveLength(0);
   });
 
   it("fails as a transport error when the dossier cannot be fetched", async () => {

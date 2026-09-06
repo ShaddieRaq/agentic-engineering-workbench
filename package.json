@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "agent": "tsx src/index.ts",
+    "agent-once": "tsx src/runAgentOnce.ts",
     "agents": "tsx src/runAgents.ts",
     "model-comparison": "tsx src/runAgents.ts model-comparison",
     "model-comparison-report": "tsx src/runModelComparisonReport.ts",

@@ -7,6 +7,7 @@ import { createSearchTextTool } from "./searchTextTool.js";
 import { createDependencyVersionAuditorTool } from "./dependencyVersionAuditor.js";
 import { createVerificationCommandTool } from "./verificationCommandTool.js";
 import { createDeployerHistoryTool } from "./deployerHistoryTool.js";
+import { createBrandCollisionTool } from "./brandCollisionTool.js";
 import type { ToolDefinition } from "./toolDefinition.js";
 import type { AgentToolCatalog } from "../agents/agentRegistration.js";
 
@@ -60,5 +61,6 @@ export function createPlatformToolRegistry(
     createSearchTextTool({ allowedRoot }),
     createVerificationCommandTool({ allowedRoot }),
     createDeployerHistoryTool(),
+    createBrandCollisionTool(),
   ]);
 }

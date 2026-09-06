@@ -10,7 +10,7 @@ import {
 import { defineAgentRevisionSurface } from "../agentRevisionSurface.js";
 import {
   deployerForensicsJudgmentSchema,
-  deployerRiskFlagSchema,
+  resolvedDeployerRiskFlagSchema,
   runDeployerForensics,
 } from "./deployerForensics.js";
 import {
@@ -43,7 +43,7 @@ export const deployerForensicsOutputSchema = z
     succeeded: z.boolean(),
     actorReputation:
       deployerForensicsJudgmentSchema.shape.actorReputation.nullable(),
-    riskFlags: z.array(deployerRiskFlagSchema),
+    riskFlags: z.array(resolvedDeployerRiskFlagSchema),
     priorTokenCount: z.number().int().nonnegative(),
     confidence: deployerForensicsJudgmentSchema.shape.confidence.nullable(),
     rationale: z.string().nullable(),
@@ -110,7 +110,7 @@ export function createDeployerForensicsAgent(
         forensicsRunId: result.forensicsRunId,
         succeeded: result.succeeded,
         actorReputation: result.parsedOutput?.actorReputation ?? null,
-        riskFlags: result.parsedOutput?.riskFlags ?? [],
+        riskFlags: result.resolvedRiskFlags,
         priorTokenCount: result.dossier.output?.summary.prior_count ?? 0,
         confidence: result.parsedOutput?.confidence ?? null,
         rationale: result.parsedOutput?.rationale ?? null,

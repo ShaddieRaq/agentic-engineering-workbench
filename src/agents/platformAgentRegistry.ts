@@ -3,6 +3,7 @@ import { repositoryAssistantAgent } from "./repositoryAssistant/repositoryAssist
 import { changeRiskReviewerAgent } from "./changeRiskReviewer/changeRiskReviewerAgent.js";
 import { deployerForensicsAgent } from "./deployerForensics/deployerForensicsAgent.js";
 import { documentationAuditorAgent } from "./documentationAuditor/documentationAuditorAgent.js";
+import { impersonationAnalystAgent } from "./impersonationAnalyst/impersonationAnalystAgent.js";
 import { toolBuilderAgent } from "./toolBuilder/toolBuilderAgent.js";
 import { playwrightFailureTriageAgent } from "./playwrightFailureTriage/playwrightFailureTriageAgent.js";
 import { agentImprovementAnalystAgent } from "./agentImprovement/agentImprovementAnalystAgent.js";
@@ -17,6 +18,7 @@ export const platformAgentRegistry = new AgentRegistry([
   changeRiskReviewerAgent,
   deployerForensicsAgent,
   documentationAuditorAgent,
+  impersonationAnalystAgent,
   playwrightFailureTriageAgent,
   projectArchitectAgent,
   projectIntakeAgent,
