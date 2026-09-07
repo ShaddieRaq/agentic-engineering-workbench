@@ -8,6 +8,8 @@
  * the integers are in range, and we resolve them back to real addresses on our
  * side. Integers are trivial for a model to reproduce exactly.
  */
+import { z } from "zod";
+
 export interface CitationGrounding {
   passed: boolean;
   availableRefs: number[];
@@ -15,6 +17,17 @@ export interface CitationGrounding {
   invalidRefs: number[];
   message: string;
 }
+
+/** Zod mirror of CitationGrounding, for agents that expose the diagnostic in their output. */
+export const citationGroundingSchema = z
+  .object({
+    passed: z.boolean(),
+    availableRefs: z.array(z.number().int()),
+    citedRefs: z.array(z.number().int()),
+    invalidRefs: z.array(z.number().int()),
+    message: z.string(),
+  })
+  .strict();
 
 export function evaluateCitationGrounding(
   citedRefs: number[],

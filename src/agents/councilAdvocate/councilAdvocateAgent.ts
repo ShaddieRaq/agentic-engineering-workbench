@@ -4,7 +4,9 @@ import {
   type AgentRegistration,
 } from "../agentRegistration.js";
 import { defineAgentRevisionSurface } from "../agentRevisionSurface.js";
+import { citationGroundingSchema } from "../shared/evidenceCitation.js";
 import {
+  droppedAdvocatePointSchema,
   resolvedAdvocatePointSchema,
   runCouncilAdvocate,
 } from "./councilAdvocate.js";
@@ -39,7 +41,13 @@ export const councilAdvocateOutputSchema = z
     succeeded: z.boolean(),
     stance: z.enum(["for", "against"]),
     proposedGrade: z.number().int().min(0).max(100).nullable(),
+    // only points with at least one validated fact ref; each carries its refs
     points: z.array(resolvedAdvocatePointSchema),
+    // points whose every ref was out of range — diagnostic, not part of the argument
+    droppedPoints: z.array(droppedAdvocatePointSchema),
+    // parsed, but nothing cited: evidentially UNMADE (succeeded stays true)
+    allUnsupported: z.boolean(),
+    groundingEvaluation: citationGroundingSchema.nullable(),
     strongestOpposingPoint: z.string().nullable(),
     summary: z.string().nullable(),
     advocateEvidence: z.json(),
@@ -103,6 +111,9 @@ export function createCouncilAdvocateAgent(
         stance: result.stance,
         proposedGrade: result.parsedOutput?.proposedGrade ?? null,
         points: result.resolvedPoints,
+        droppedPoints: result.droppedPoints,
+        allUnsupported: result.allUnsupported,
+        groundingEvaluation: result.groundingEvaluation,
         strongestOpposingPoint:
           result.parsedOutput?.strongestOpposingPoint ?? null,
         summary: result.parsedOutput?.summary ?? null,
@@ -112,11 +123,17 @@ export function createCouncilAdvocateAgent(
       };
     },
     assess(output) {
+      // The eval bar is a USEFUL argument: an all-unsupported one is an
+      // operational success but an evidential failure, and the eval loop
+      // should push the policy away from it.
+      const passed = output.succeeded && !output.allUnsupported;
       return {
-        passed: output.succeeded,
-        message: output.succeeded
-          ? "Advocate produced a grounded, fact-cited argument."
-          : "Advocate did not produce a grounded successful argument.",
+        passed,
+        message: !output.succeeded
+          ? "Advocate did not produce an argument (provider, refusal or schema failure)."
+          : output.allUnsupported
+            ? "Advocate produced an argument but no point cites a supplied fact (evidentially unmade)."
+            : "Advocate produced a fact-cited argument.",
       };
     },
   });

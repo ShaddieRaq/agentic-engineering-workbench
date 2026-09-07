@@ -37,11 +37,14 @@ export const advocateArgumentSchema = z
 
 export type AdvocateArgument = z.infer<typeof advocateArgumentSchema>;
 
-// What we expose downstream: fact numbers resolved to their text.
+// What we expose downstream: each kept point carries ONLY its validated fact
+// numbers (in range, de-duplicated) plus their resolved text, so the consumer can
+// render and audit exactly which supplied fact backs each claim (Q1).
 export const resolvedAdvocatePointSchema = z
   .object({
     claim: z.string().min(1),
-    evidence: z.array(z.string().min(1)),
+    factRefs: z.array(z.number().int().positive()).min(1),
+    evidence: z.array(z.string().min(1)).min(1),
     weight: z.enum(["low", "medium", "high"]),
   })
   .strict();
@@ -49,6 +52,18 @@ export const resolvedAdvocatePointSchema = z
 export type ResolvedAdvocatePoint = z.infer<
   typeof resolvedAdvocatePointSchema
 >;
+
+// A point whose every citation was out of range. Dropped from the argument and
+// reported here — an invalid ref is diagnostic, never fatal to the run (Q2).
+export const droppedAdvocatePointSchema = z
+  .object({
+    claim: z.string().min(1),
+    weight: z.enum(["low", "medium", "high"]),
+    invalidRefs: z.array(z.number().int()),
+  })
+  .strict();
+
+export type DroppedAdvocatePoint = z.infer<typeof droppedAdvocatePointSchema>;
 
 export type AdvocateStance = "for" | "against";
 
@@ -67,6 +82,11 @@ export interface CouncilAdvocateResult {
   rawOutput: string;
   parsedOutput: AdvocateArgument | null;
   resolvedPoints: ResolvedAdvocatePoint[];
+  droppedPoints: DroppedAdvocatePoint[];
+  /** Parsed fine, but not one point cites a supplied fact: operationally a
+   *  success, evidentially an UNMADE argument. Consumers must not let its
+   *  proposedGrade/summary stand in for the dropped claims. */
+  allUnsupported: boolean;
   refusal: string | null;
   provider: AIProviderEvidence | null;
   executionFailure: {
@@ -141,14 +161,34 @@ export async function runCouncilAdvocate(
           input.facts.length,
         );
 
-  const resolvedPoints: ResolvedAdvocatePoint[] =
-    providerResult.parsedOutput === null || groundingEvaluation?.passed !== true
-      ? []
-      : providerResult.parsedOutput.points.map((point) => ({
-          claim: point.claim,
-          weight: point.weight,
-          evidence: resolveCitationRefs(point.factRefs, input.facts),
-        }));
+  // Per-point grounding, aligned with the judge: an invalid ref is DROPPED, not
+  // fatal. A point keeps its valid refs; a point with none is dropped and
+  // reported; the argument survives with whatever is actually cited (Q2).
+  const factCount = input.facts.length;
+  const inRange = (ref: number) =>
+    Number.isInteger(ref) && ref >= 1 && ref <= factCount;
+  const resolvedPoints: ResolvedAdvocatePoint[] = [];
+  const droppedPoints: DroppedAdvocatePoint[] = [];
+  for (const point of providerResult.parsedOutput?.points ?? []) {
+    const refs = [...new Set(point.factRefs)].sort((a, b) => a - b);
+    const validRefs = refs.filter(inRange);
+    if (validRefs.length === 0) {
+      droppedPoints.push({
+        claim: point.claim,
+        weight: point.weight,
+        invalidRefs: refs.filter((ref) => !inRange(ref)),
+      });
+      continue;
+    }
+    resolvedPoints.push({
+      claim: point.claim,
+      weight: point.weight,
+      factRefs: validRefs,
+      evidence: resolveCitationRefs(validRefs, input.facts),
+    });
+  }
+  const allUnsupported =
+    providerResult.parsedOutput !== null && resolvedPoints.length === 0;
 
   return {
     advocateRunId: randomUUID(),
@@ -157,15 +197,18 @@ export async function runCouncilAdvocate(
     rawOutput: providerResult.rawOutput,
     parsedOutput: providerResult.parsedOutput,
     resolvedPoints,
+    droppedPoints,
+    allUnsupported,
     refusal: providerResult.refusal,
     provider: executionFailure === null ? providerResult.provider : null,
     executionFailure,
     groundingEvaluation,
+    // Operational success only: the provider answered, wasn't refused, and the
+    // output parsed. Grounding is a diagnostic on the argument, not on the run.
     succeeded:
       executionFailure === null &&
       providerResult.refusal === null &&
-      providerResult.parsedOutput !== null &&
-      groundingEvaluation?.passed === true,
+      providerResult.parsedOutput !== null,
     durationMs: performance.now() - startedAt,
     completedAt: new Date().toISOString(),
   };
