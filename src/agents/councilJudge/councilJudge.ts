@@ -116,8 +116,10 @@ export async function runCouncilJudge(
           input.facts.length,
         );
 
+  // The grade is the payload. A stray out-of-range fact citation must NOT nuke the
+  // whole ruling — keep the grade, drop the invalid refs (resolveCitationRefs does).
   const decidingFacts =
-    providerResult.parsedOutput === null || groundingEvaluation?.passed !== true
+    providerResult.parsedOutput === null
       ? []
       : resolveCitationRefs(
           providerResult.parsedOutput.decidingFactRefs,
@@ -137,8 +139,7 @@ export async function runCouncilJudge(
     succeeded:
       executionFailure === null &&
       providerResult.refusal === null &&
-      providerResult.parsedOutput !== null &&
-      groundingEvaluation?.passed === true,
+      providerResult.parsedOutput !== null,
     durationMs: performance.now() - startedAt,
     completedAt: new Date().toISOString(),
   };

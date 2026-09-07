@@ -105,13 +105,13 @@ describe("council judge", () => {
     expect(result.decidingFacts).toEqual([FACTS[2]]);
   });
 
-  it("rejects a ruling that cites a deciding fact out of range", async () => {
+  it("keeps the grade but drops a deciding fact cited out of range", async () => {
     const result = await runCouncilJudge(
       judgeProvider({
         grade: 70,
         gradeConfidence: "high",
-        decidingFactRefs: [42],
-        rationale: "Cites a fact that was never supplied.",
+        decidingFactRefs: [3, 42],
+        rationale: "Cites one real fact and one that was never supplied.",
       }),
       {
         facts: FACTS,
@@ -121,7 +121,10 @@ describe("council judge", () => {
       },
     );
 
-    expect(result.succeeded).toBe(false);
+    // the grade is the payload — a stray citation must not nuke the whole ruling
+    expect(result.succeeded).toBe(true);
+    expect(result.parsedOutput?.grade).toBe(70);
+    expect(result.decidingFacts).toEqual([FACTS[2]]);   // 42 dropped, 3 kept
     expect(result.groundingEvaluation?.invalidRefs).toContain(42);
   });
 });
