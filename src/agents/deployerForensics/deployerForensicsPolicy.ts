@@ -20,6 +20,7 @@ export const deployerForensicsPolicySchema = z
       .object({
         establishedMinPriorTokens: z.number().int().min(1).max(100),
         repeatRugMinUnsellable: z.number().int().min(1).max(100),
+        provenWinnerMinRisers: z.number().int().min(1).max(100),
         freshWalletIsNeutral: z.boolean(),
       })
       .strict(),
@@ -41,14 +42,17 @@ export const deployerForensicsBaselinePolicy =
         "A deployer with no or minimal prior history is insufficient-evidence, not bad — never penalize a fresh wallet.",
         "Weight resolved outcomes (turned unsellable, rugged) far more heavily than launches that have not yet resolved.",
         "Distinguish a serial launcher (many launches) from a repeat rugger (many launches that resolved unsellable) — volume alone is not fraud.",
-        "State confidence honestly: low when little has resolved, higher when the pattern is backed by resolved outcomes.",
+        "Also identify a POSITIVE track record: prior tokens that ROSE (positive return) or stayed sellable are a reason-to-buy signal, not merely the absence of rugs.",
+        "proven-winner = a deployer whose prior tokens repeatedly rose per the dossier's return/outcome data; this is a genuine positive signal, distinct from established-clean (which is only the absence of danger).",
+        "State confidence honestly: low when little has resolved, higher when the pattern is backed by resolved outcomes — this applies to a winning record as much as a rugging one.",
       ],
       defaultTaskInstruction:
-        "Assess this deployer's reputation and post-launch risk from its prior-launch dossier.",
+        "Assess this deployer's reputation — risk AND any proven track record — from its prior-launch dossier.",
     },
     rubric: {
       establishedMinPriorTokens: 3,
       repeatRugMinUnsellable: 2,
+      provenWinnerMinRisers: 2,
       freshWalletIsNeutral: true,
     },
   });
