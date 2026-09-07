@@ -38,6 +38,7 @@ export const councilAdvocateOutputSchema = z
     advocateRunId: z.string().min(1),
     succeeded: z.boolean(),
     stance: z.enum(["for", "against"]),
+    proposedGrade: z.number().int().min(0).max(100).nullable(),
     points: z.array(resolvedAdvocatePointSchema),
     strongestOpposingPoint: z.string().nullable(),
     summary: z.string().nullable(),
@@ -100,6 +101,7 @@ export function createCouncilAdvocateAgent(
         advocateRunId: result.advocateRunId,
         succeeded: result.succeeded,
         stance: result.stance,
+        proposedGrade: result.parsedOutput?.proposedGrade ?? null,
         points: result.resolvedPoints,
         strongestOpposingPoint:
           result.parsedOutput?.strongestOpposingPoint ?? null,

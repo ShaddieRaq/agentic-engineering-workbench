@@ -28,6 +28,7 @@ export const advocatePointSchema = z
 
 export const advocateArgumentSchema = z
   .object({
+    proposedGrade: z.number().int().min(0).max(100),
     points: z.array(advocatePointSchema).min(1),
     strongestOpposingPoint: z.string().min(1),
     summary: z.string().min(1),
@@ -101,6 +102,10 @@ export async function runCouncilAdvocate(
     "",
     "CASE FACTS (cite these by their [number] in factRefs):",
     ...factLines,
+    "",
+    "GRADE: also output proposedGrade — a 0-100 assessment of how BUY-WORTHY this token is "
+      + "(0 = avoid, 50 = neutral / no edge, 100 = strong buy). Argue from your stance: a FOR "
+      + "advocate justifies a higher grade, an AGAINST advocate a lower one. The judge reconciles.",
     "",
     "TASK:",
     input.instruction.trim(),

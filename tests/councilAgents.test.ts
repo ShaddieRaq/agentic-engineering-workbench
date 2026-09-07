@@ -48,6 +48,7 @@ describe("council advocate", () => {
   it("resolves cited fact numbers back to fact text", async () => {
     const result = await runCouncilAdvocate(
       advocateProvider({
+        proposedGrade: 62,
         points: [
           { claim: "It is currently exitable.", factRefs: [1, 2], weight: "medium" },
         ],
@@ -59,12 +60,14 @@ describe("council advocate", () => {
 
     expect(result.succeeded).toBe(true);
     expect(result.groundingEvaluation?.passed).toBe(true);
+    expect(result.parsedOutput?.proposedGrade).toBe(62);
     expect(result.resolvedPoints[0]?.evidence).toEqual([FACTS[0], FACTS[1]]);
   });
 
   it("rejects a point citing a fact number out of range", async () => {
     const result = await runCouncilAdvocate(
       advocateProvider({
+        proposedGrade: 20,
         points: [
           { claim: "Invented support.", factRefs: [99], weight: "high" },
         ],
@@ -84,8 +87,8 @@ describe("council judge", () => {
   it("rules and resolves the deciding fact numbers", async () => {
     const result = await runCouncilJudge(
       judgeProvider({
-        decision: "skip",
-        conviction: "medium",
+        grade: 35,
+        gradeConfidence: "medium",
         decidingFactRefs: [3],
         rationale: "Serial-launcher deployer outweighs the thin upside.",
       }),
@@ -98,15 +101,15 @@ describe("council judge", () => {
     );
 
     expect(result.succeeded).toBe(true);
-    expect(result.parsedOutput?.decision).toBe("skip");
+    expect(result.parsedOutput?.grade).toBe(35);
     expect(result.decidingFacts).toEqual([FACTS[2]]);
   });
 
   it("rejects a ruling that cites a deciding fact out of range", async () => {
     const result = await runCouncilJudge(
       judgeProvider({
-        decision: "act",
-        conviction: "high",
+        grade: 70,
+        gradeConfidence: "high",
         decidingFactRefs: [42],
         rationale: "Cites a fact that was never supplied.",
       }),

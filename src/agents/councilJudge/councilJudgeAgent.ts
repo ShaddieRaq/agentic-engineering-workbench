@@ -36,8 +36,8 @@ export const councilJudgeOutputSchema = z
   .object({
     judgeRunId: z.string().min(1),
     succeeded: z.boolean(),
-    decision: judgeRulingSchema.shape.decision.nullable(),
-    conviction: judgeRulingSchema.shape.conviction.nullable(),
+    grade: judgeRulingSchema.shape.grade.nullable(),
+    gradeConfidence: judgeRulingSchema.shape.gradeConfidence.nullable(),
     decidingFacts: z.array(z.string().min(1)),
     rationale: z.string().nullable(),
     judgeEvidence: z.json(),
@@ -96,8 +96,8 @@ export function createCouncilJudgeAgent(
       return {
         judgeRunId: result.judgeRunId,
         succeeded: result.succeeded,
-        decision: result.parsedOutput?.decision ?? null,
-        conviction: result.parsedOutput?.conviction ?? null,
+        grade: result.parsedOutput?.grade ?? null,
+        gradeConfidence: result.parsedOutput?.gradeConfidence ?? null,
         decidingFacts: result.decidingFacts,
         rationale: result.parsedOutput?.rationale ?? null,
         judgeEvidence: result as unknown as z.infer<

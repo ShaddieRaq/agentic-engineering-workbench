@@ -19,8 +19,8 @@ import {
 
 export const judgeRulingSchema = z
   .object({
-    decision: z.enum(["act", "skip"]),
-    conviction: z.enum(["low", "medium", "high"]),
+    grade: z.number().int().min(0).max(100),
+    gradeConfidence: z.enum(["low", "medium", "high"]),
     decidingFactRefs: z.array(z.number().int().positive()),
     rationale: z.string().min(1),
   })
@@ -78,6 +78,11 @@ export async function runCouncilJudge(
     "",
     "ARGUMENT AGAINST ACTING:",
     input.againstArgument.trim(),
+    "",
+    "GRADE this token's BUY-WORTHINESS on a 0-100 scale (not a yes/no): 0-40 = avoid, "
+      + "40-60 = neutral / no edge, 60-80 = speculative (a small shot), 80-100 = conviction. "
+      + "Reconcile the two advocates' proposed grades on the merits. gradeConfidence is how sure "
+      + "you are of the grade given the evidence. Sizing and the act threshold are decided downstream.",
     "",
     "TASK:",
     input.instruction.trim(),
