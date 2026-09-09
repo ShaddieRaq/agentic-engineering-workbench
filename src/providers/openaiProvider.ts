@@ -19,9 +19,18 @@ export class OpenAIProvider implements AIProvider {
         options: {
             client?: OpenAI;
             model?: string;
+            /** SDK automatic retries. The risk-linter handshake (runAgentOnce) passes 0: the
+             *  admitting side's dependency guard is the only retry authority, so one admitted
+             *  request is exactly one HTTP request. Default: the SDK's own (2). */
+            maxRetries?: number;
         } = {},
     ) {
-        this.client = options.client ?? new OpenAI({ apiKey });
+        this.client =
+            options.client ??
+            new OpenAI({
+                apiKey,
+                ...(options.maxRetries !== undefined ? { maxRetries: options.maxRetries } : {}),
+            });
         this.model = options.model ?? "gpt-5.4";
     }
 
